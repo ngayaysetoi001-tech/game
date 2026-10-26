@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tu Tiên Ký</title>
+<style>
+  :root {
+    --bg: #12141c; --panel: #1b1f2b; --line: #2d3446;
+    --text: #e8e6df; --dim: #8a90a3; --gold: #e6c36a; --qi: #6ad1e6; --red: #e66a6a; --green: #7bd88f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; line-height: 1.5; }
+  main { max-width: 640px; margin: 0 auto; padding: 16px; }
+  h1 { text-align: center; color: var(--gold); margin: 8px 0 16px; letter-spacing: 2px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+  .realm { font-size: 1.3rem; color: var(--gold); }
+  .row { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; color: var(--dim); font-size: .9rem; }
+  .bar { height: 14px; background: #0c0e14; border-radius: 7px; overflow: hidden; margin: 8px 0; border: 1px solid var(--line); }
+  .bar > div { height: 100%; width: 0; transition: width .2s; }
+  #qiBar > div { background: linear-gradient(90deg, #3a8fb0, var(--qi)); }
+  #hpBar > div { background: linear-gradient(90deg, #a03a3a, var(--red)); }
+  #ehpBar > div { background: linear-gradient(90deg, #7a3a8f, #c06ae6); }
+  .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  button { background: #2a3150; color: var(--text); border: 1px solid #3d4670; border-radius: 8px; padding: 9px 14px; font-size: .95rem; cursor: pointer; }
+  button:hover:not(:disabled) { background: #36406a; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button.primary { background: #7a5d1c; border-color: var(--gold); }
+  button.primary:hover:not(:disabled) { background: #96731f; }
+  button.danger { background: #5a2a2a; border-color: #8a4040; }
+  h2 { font-size: 1rem; margin: 0 0 8px; color: var(--qi); }
+  #log { height: 160px; overflow-y: auto; font-size: .88rem; color: var(--dim); }
+  #log p { margin: 2px 0; }
+  #log .good { color: var(--green); } #log .bad { color: var(--red); } #log .gold { color: var(--gold); }
+  .shop { display: grid; gap: 8px; }
+  .item { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .item small { color: var(--dim); display: block; }
+</style>
+</head>
+<body>
+<main>
+  <h1>☯ TU TIÊN KÝ ☯</h1>
+
+  <div class="panel">
+    <div class="realm" id="realm"></div>
+    <div class="row"><span id="age"></span><span id="stones"></span></div>
+    <div class="bar" id="qiBar"><div></div></div>
+    <div class="row"><span id="qiText"></span><span id="rate"></span></div>
+    <div class="bar" id="hpBar"><div></div></div>
+    <div class="row"><span id="hpText"></span><span id="atkText"></span></div>
+    <div class="btns">
+      <button id="meditate">🧘 Tĩnh tọa (+Linh khí)</button>
+      <button id="breakthrough" class="primary">⚡ Đột phá</button>
+      <button id="heal">💊 Dưỡng thương (10 linh thạch)</button>
+    </div>
+  </div>
+
+  <div class="panel" id="fightPanel">
+    <h2>⚔ Săn yêu thú</h2>
+    <div id="enemyInfo" class="row"><span>Chưa gặp yêu thú.</span></div>
+    <div class="bar" id="ehpBar"><div></div></div>
+    <div class="btns">
+      <button id="hunt">🐺 Tìm yêu thú</button>
+      <button id="attack" disabled>🗡 Tấn công</button>
+      <button id="flee" class="danger" disabled>🏃 Bỏ chạy</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>🏮 Cửa hàng</h2>
+    <div class="shop" id="shop"></div>
+  </div>
+
+  <div class="panel">
+    <h2>📜 Nhật ký</h2>
+    <div id="log"></div>
+  </div>
+
+  <div class="btns" style="justify-content:center">
+    <button id="reset" class="danger">Xóa dữ liệu, tu lại từ đầu</button>
+  </div>
+</main>
+
+<script>
+const REALMS = [
+  { name: "Luyện Khí",  need: 100 },
+  { name: "Trúc Cơ",    need: 400 },
+  { name: "Kim Đan",    need: 1500 },
+  { name: "Nguyên Anh", need: 6000 },
+  { name: "Hóa Thần",   need: 25000 },
+  { name: "Luyện Hư",   need: 100000 },
+  { name: "Hợp Thể",    need: 400000 },
+  { name: "Đại Thừa",   need: 1600000 },
+  { name: "Độ Kiếp",    need: 6000000 },
+  { name: "Phi Thăng",  need: Infinity },
+];
+const STAGES = 9; // số tầng mỗi cảnh giới
+const MONSTERS = [
+  "Sói Hoang", "Hắc Xà", "Hổ Yêu", "Quỷ Ảnh", "Hỏa Hồ", "Thiết Giáp Tê Giác", "Băng Long Ấu",
+];
+const SHOP = [
+  { id: "sword", name: "Phi Kiếm", desc: "+5 công kích", base: 30, grow: 1.6, apply: s => s.atk += 5 },
+  { id: "armor", name: "Hộ Giáp", desc: "+30 sinh lực tối đa", base: 30, grow: 1.6, apply: s => { s.maxHp += 30; s.hp += 30; } },
+  { id: "array", name: "Tụ Linh Trận", desc: "+1 linh khí/giây", base: 50, grow: 1.7, apply: s => s.rate += 1 },
+  { id: "pill",  name: "Bồi Nguyên Đan", desc: "+50 linh khí ngay", base: 15, grow: 1.2, apply: s => s.qi += 50 },
+];
+
+const KEY = "tutien-save-v1";
+const fresh = () => ({ realm: 0, stage: 1, qi: 0, stones: 20, atk: 10, maxHp: 100, hp: 100, rate: 1, ticks: 0, bought: {}, enemy: null });
+let S = load();
+
+function load() {
+  try { return Object.assign(fresh(), JSON.parse(localStorage.getItem(KEY))); } catch { return fresh(); }
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} }
+
+const $ = id => document.getElementById(id);
+const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e4 ? (n / 1e3).toFixed(1) + "K" : Math.floor(n);
+const qiNeed = () => Math.floor(REALMS[S.realm].need * (1 + (S.stage - 1) * 0.35) / 2);
+const mult = () => 1 + S.realm * 1.5; // cảnh giới càng cao, tụ khí càng nhanh
+
+function log(msg, cls = "") {
+  const p = document.createElement("p");
+  p.textContent = msg; if (cls) p.className = cls;
+  const el = $("log"); el.appendChild(p);
+  while (el.children.length > 80) el.firstChild.remove();
+  el.scrollTop = el.scrollHeight;
+}
+
+function price(it) { return Math.floor(it.base * Math.pow(it.grow, S.bought[it.id] || 0)); }
+
+function render() {
+  const r = REALMS[S.realm];
+  $("realm").textContent = r.name + " tầng " + S.stage;
+  $("age").textContent = "Tu luyện: " + Math.floor(S.ticks / 60) + " phút";
+  $("stones").textContent = "💎 Linh thạch: " + fmt(S.stones);
+  const need = qiNeed();
+  $("qiBar").firstElementChild.style.width = Math.min(100, S.qi / need * 100) + "%";
+  $("qiText").textContent = "Linh khí: " + fmt(S.qi) + " / " + fmt(need);
+  $("rate").textContent = "+" + fmt(S.rate * mult()) + "/giây";
+  $("hpBar").firstElementChild.style.width = S.hp / S.maxHp * 100 + "%";
+  $("hpText").textContent = "Sinh lực: " + Math.ceil(S.hp) + " / " + S.maxHp;
+  $("atkText").textContent = "Công kích: " + S.atk;
+  $("breakthrough").disabled = S.qi < need || S.realm >= REALMS.length - 1;
+  $("heal").disabled = S.stones < 10 || S.hp >= S.maxHp;
+  const e = S.enemy;
+  $("attack").disabled = !e; $("flee").disabled = !e; $("hunt").disabled = !!e;
+  $("ehpBar").firstElementChild.style.width = e ? e.hp / e.maxHp * 100 + "%" : "0";
+  $("enemyInfo").innerHTML = e ? `<span>${e.name}</span><span>HP ${Math.ceil(e.hp)}/${e.maxHp} · ATK ${e.atk}</span>` : "<span>Chưa gặp yêu thú.</span>";
+  SHOP.forEach(it => { const b = $("buy-" + it.id); if (b) b.disabled = S.stones < price(it); });
+  SHOP.forEach(it => $("cost-" + it.id).textContent = price(it) + " 💎");
+}
+
+function buildShop() {
+  $("shop").innerHTML = SHOP.map(it => `
+    <div class="item"><div>${it.name}<small>${it.desc}</small></div>
+    <button id="buy-${it.id}"><span id="cost-${it.id}"></span></button></div>`).join("");
+  SHOP.forEach(it => $("buy-" + it.id).onclick = () => {
+    const p = price(it); if (S.stones < p) return;
+    S.stones -= p; S.bought[it.id] = (S.bought[it.id] || 0) + 1; it.apply(S);
+    log("Mua " + it.name + ".", "gold"); render(); save();
+  });
+}
+
+function gainQi(n) { S.qi = Math.min(S.qi + n, qiNeed() * 1.5); }
+
+$("meditate").onclick = () => { gainQi(5 * mult()); render(); };
+
+$("breakthrough").onclick = () => {
+  const need = qiNeed(); if (S.qi < need) return;
+  S.qi -= need;
+  // Tỉ lệ thành công; thất bại mất sinh lực
+  const chance = S.stage === STAGES ? 0.7 : 0.9;
+  if (Math.random() > chance) {
+    S.hp = Math.max(1, S.hp * 0.5);
+    log("Đột phá thất bại! Linh khí phản phệ, sinh lực giảm mạnh.", "bad");
+  } else if (S.stage === STAGES) {
+    S.realm++; S.stage = 1; S.atk += 15; S.maxHp += 80; S.hp = S.maxHp;
+    log("🌟 Đột phá thành công! Tiến vào cảnh giới " + REALMS[S.realm].name + "!", "gold");
+    if (S.realm === REALMS.length - 1) log("☯ Ngươi đã phi thăng thành tiên. Chúc mừng đại đạo viên mãn!", "gold");
+  } else {
+    S.stage++; S.atk += 3; S.maxHp += 15; S.hp = Math.min(S.maxHp, S.hp + 15);
+    log("Đột phá thành công, lên tầng " + S.stage + ".", "good");
+  }
+  render(); save();
+};
+
+$("heal").onclick = () => { S.stones -= 10; S.hp = S.maxHp; log("Dùng linh thạch dưỡng thương, hồi phục đầy sinh lực.", "good"); render(); save(); };
+
+$("hunt").onclick = () => {
+  const power = S.realm * STAGES + S.stage; // 1..
+  const name = MONSTERS[Math.min(MONSTERS.length - 1, Math.floor(Math.random() * (1 + power / 6)))];
+  const hp = Math.floor(40 + power * 18 * (0.8 + Math.random() * 0.5));
+  S.enemy = { name, hp, maxHp: hp, atk: Math.floor(4 + power * 2.2) };
+  log("Gặp " + name + "!");
+  render();
+};
+
+$("attack").onclick = () => {
+  const e = S.enemy; if (!e) return;
+  const dmg = Math.floor(S.atk * (0.8 + Math.random() * 0.4));
+  e.hp -= dmg;
+  let msg = `Ngươi đánh ${e.name} ${dmg} sát thương.`;
+  if (e.hp <= 0) {
+    const stones = Math.floor(e.maxHp / 6 + Math.random() * 8);
+    const qi = Math.floor(e.maxHp / 3 * mult());
+    S.stones += stones; gainQi(qi); S.enemy = null;
+    log(msg + ` Hạ gục! Nhận ${stones} 💎 và ${qi} linh khí.`, "good");
+  } else {
+    const back = Math.floor(e.atk * (0.8 + Math.random() * 0.4));
+    S.hp -= back;
+    log(msg + ` ${e.name} phản công ${back}.`);
+    if (S.hp <= 0) {
+      const lost = Math.floor(S.qi * 0.3);
+      S.qi -= lost; S.hp = Math.ceil(S.maxHp * 0.3); S.enemy = null;
+      log(`Ngươi trọng thương ngất đi, mất ${lost} linh khí.`, "bad");
+    }
+  }
+  render(); save();
+};
+
+$("flee").onclick = () => {
+  if (Math.random() < 0.7) { log("Ngươi chạy thoát.", ""); S.enemy = null; }
+  else { const b = Math.floor(S.enemy.atk * 0.8); S.hp = Math.max(1, S.hp - b); log(`Chạy không thoát, bị đánh ${b}.`, "bad"); }
+  render(); save();
+};
+
+$("reset").onclick = () => {
+  if (!confirm("Xóa toàn bộ tiến trình?")) return;
+  S = fresh(); localStorage.removeItem(KEY); $("log").innerHTML = ""; log("Một đời tu tiên mới bắt đầu..."); render();
+};
+
+// Mỗi giây: tự động hấp thụ linh khí
+setInterval(() => {
+  if (S.realm >= REALMS.length - 1) return;
+  S.ticks++; gainQi(S.rate * mult());
+  if (!S.enemy && S.hp < S.maxHp) S.hp = Math.min(S.maxHp, S.hp + S.maxHp * 0.005);
+  render(); if (S.ticks % 10 === 0) save();
+}, 1000);
+
+buildShop();
+log("Ngươi là một phàm nhân vừa bước lên con đường tu tiên. Hãy tĩnh tọa tụ khí, săn yêu thú, rồi đột phá!");
+render();
+</script>
+</body>
+</html>
