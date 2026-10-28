@@ -84,7 +84,7 @@ export default function BattleStage({ s, onPlaying }: { s: GameState; onPlaying:
     if (fx === 'hit' || fx === 'miss') cls(ev.by).push('lunge');
     if (fx === 'hit') cls(target).push(ev.crit ? 'hit crit' : 'hit');
     if (fx === 'miss') cls(target).push('dodge');
-    if (fx === 'burn') cls(target).push('hit burn');
+    if (fx === 'burn' || fx === 'thorns') cls(target).push('hit burn');
     if (fx === 'stun') cls(target).push('stunned');
     if (fx === 'heal' || fx === 'shield' || fx === 'buff' || fx === 'cleanse') cls(ev.by).push(`cast cast-${fx}`);
   }
@@ -120,6 +120,7 @@ export default function BattleStage({ s, onPlaying }: { s: GameState; onPlaying:
             </>
           )}
           {fx === 'burn' && <>−{formatNumber(ev.dmg)}</>}
+          {fx === 'thorns' && <>Phản đòn −{formatNumber(ev.dmg)}</>}
           {fx === 'miss' && 'Né!'}
           {fx === 'stun' && 'Choáng'}
           {fx === 'heal' && <>+{formatNumber(ev.amount ?? 0)}</>}

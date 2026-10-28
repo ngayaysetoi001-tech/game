@@ -33,6 +33,20 @@ export function ItemIcon({ slot, tier }: { slot: Slot; tier: number }) {
             <path d="M12,24 L28,24" stroke={INK.dark} strokeWidth={1.4} />
           </g>
         )}
+        {slot === 'ring' && (
+          <g>
+            <circle cx={20} cy={24} r={8} fill="none" stroke={c} strokeWidth={3} />
+            <path d="M16,15 L20,9 L24,15 L20,19 Z" fill="#fff" opacity={0.92} />
+            <path d="M16,15 L20,19 L24,15" fill="none" stroke={c} strokeWidth={1} />
+          </g>
+        )}
+        {slot === 'boots' && (
+          <g>
+            <path d="M14,9 L23,9 L23,21 L31,25 Q34,27 32,31 L11,31 L11,24 Z" fill={c} opacity={0.88} />
+            <path d="M11,28 L32,28" stroke={INK.dark} strokeWidth={1.4} />
+            <path d="M14,13 L23,13" stroke={INK.dark} strokeWidth={1} />
+          </g>
+        )}
         {slot === 'pendant' && (
           <g>
             <path d="M20,4 L20,10" stroke={c} strokeWidth={1} />

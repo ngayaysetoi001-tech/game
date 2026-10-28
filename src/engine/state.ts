@@ -1,5 +1,6 @@
 // Kiểu dữ liệu, tra cứu cảnh giới và các hàm tiện ích dùng chung cho toàn engine.
 
+import type { AffixId } from './gear';
 import type { SkillId } from './skills';
 import {
   BASIC_ELEMENTS,
@@ -35,12 +36,21 @@ export interface LogEntry {
   kind: 'info' | 'good' | 'bad';
 }
 
+export interface ItemAffix {
+  id: AffixId;
+  v: number;
+}
+
 export interface Item {
   id: number;
   slot: Slot;
   tier: number;
-  /** Tầng bí cảnh rơi ra, quyết định chỉ số */
+  /** Tầng bí cảnh rơi ra, quyết định chỉ số và bộ trang bị */
   floor: number;
+  /** Thuộc tính phụ ngẫu nhiên; save cũ không có */
+  affixes?: ItemAffix[];
+  /** Cấp cường hóa 0..10; save cũ không có */
+  plus?: number;
 }
 
 export interface Farming {
@@ -60,7 +70,7 @@ export interface BattleEvent {
   crit: boolean;
   /** Tên võ kỹ nếu đòn này là chiêu thức */
   skill?: string;
-  fx?: 'hit' | 'miss' | 'burn' | 'stun' | 'heal' | 'shield' | 'buff' | 'cleanse';
+  fx?: 'hit' | 'miss' | 'burn' | 'thorns' | 'stun' | 'heal' | 'shield' | 'buff' | 'cleanse';
   /** Lượng hồi máu / khiên */
   amount?: number;
   /** Khí huyết còn lại của hai bên sau đòn này */
@@ -104,7 +114,7 @@ export interface Stats {
 }
 
 export interface GameState {
-  version: 4;
+  version: 5;
   name: string;
   root: SpiritRoot;
   /** Chỉ số tầng đã "trải phẳng" qua mọi cảnh giới */

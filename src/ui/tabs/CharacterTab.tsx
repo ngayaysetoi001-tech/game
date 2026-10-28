@@ -1,42 +1,35 @@
 import { useState } from 'react';
-import { BAG_LIMIT, BASE_TECH, PATHS, PATH_UNLOCK_LEVEL, SLOTS, SLOT_NAMES, TIERS, type PathId } from '../../engine/data';
+import { BASE_TECH, PATHS, PATH_UNLOCK_LEVEL, type PathId } from '../../engine/data';
 import {
   applyOffline,
   canUpgradeTech,
   choosePath,
   combatPower,
   cultivationBonus,
-  equipItem,
+  MOD_LABELS,
+  formatMod,
+  gearMods,
   exportSave,
   formatNumber,
   hasAffinity,
   importSave,
-  isWorse,
-  itemName,
-  itemScore,
-  itemSellPrice,
-  itemStats,
   levelInfo,
   levelName,
   pathBonus,
   playerStats,
-  sellItem,
-  sellWorse,
   techMaxLevel,
   techUpgradeCost,
   upgradeTech,
   type GameState,
-  type Item,
   type TechKind,
 } from '../../engine/engine';
 import type { TabProps } from '../GameScreen';
 import Cultivator from '../art/Cultivator';
-import { ItemIcon } from '../art/Icons';
 import Landscape from '../art/Landscape';
 import { HOME_THEME, REALM_AURA } from '../art/palette';
 import { Art } from '../art/registry';
-import AutoToggle from '../AutoToggle';
 import SkillsPanel from './SkillsPanel';
+import { BagPanel, GearPanel, SetPanel } from './GearPanels';
 
 type Sub = 'overview' | 'technique' | 'skills' | 'gear';
 
@@ -74,6 +67,7 @@ export default function CharacterTab(props: TabProps) {
       {sub === 'gear' && (
         <>
           <GearPanel {...props} />
+          <SetPanel {...props} />
           <BagPanel {...props} />
         </>
       )}
@@ -91,6 +85,11 @@ function StatsPanel({ state: s }: TabProps) {
     ['Bạo kích', `${Math.round(p.crit * 100)}%`],
     ['Tu luyện', `+${Math.round((cultivationBonus(s) - 1) * 100)}%`],
   ];
+  // Hiệu ứng từ pháp bảo và bộ trang bị, chỉ hiện khi có
+  const m = gearMods(s);
+  for (const k of ['lifesteal', 'thorns', 'dodge', 'stunHit', 'burnHit', 'stones'] as const) {
+    if (m[k] > 0) rows.push([MOD_LABELS[k], formatMod(k, m[k])]);
+  }
   const realm = levelInfo(s.level).realm;
   return (
     <section className="card">
@@ -205,93 +204,6 @@ function PathChooser({ s, act }: { s: GameState; act: TabProps['act'] }) {
         </button>
       )}
     </div>
-  );
-}
-
-function ItemLine({ it }: { it: Item }) {
-  const st = itemStats(it);
-  const parts: string[] = [];
-  if (st.atk) parts.push(`Công +${formatNumber(st.atk)}`);
-  if (st.def) parts.push(`Thủ +${formatNumber(st.def)}`);
-  if (st.hp) parts.push(`Khí huyết +${formatNumber(st.hp)}`);
-  if (st.cultivation) parts.push(`Tu luyện +${Math.round(st.cultivation * 100)}%`);
-  return (
-    <div>
-      <div className={`tier-${it.tier}`}>
-        <b>{itemName(it)}</b> <span className="small">{TIERS[it.tier].name}</span>
-      </div>
-      <div className="small muted">
-        {parts.join(' · ')} · tầng {it.floor}
-      </div>
-    </div>
-  );
-}
-
-function GearPanel({ state: s }: TabProps) {
-  return (
-    <section className="card">
-      <h2>Pháp Bảo Đang Dùng</h2>
-      {SLOTS.map((slot) => {
-        const it = s.gear[slot];
-        return (
-          <div key={slot} className="item-row">
-            <span className="slot-label muted small">{SLOT_NAMES[slot]}</span>
-            {it ? (
-              <>
-                <ItemIcon slot={slot} tier={it.tier} />
-                <ItemLine it={it} />
-              </>
-            ) : (
-              <span className="muted small">Trống</span>
-            )}
-          </div>
-        );
-      })}
-    </section>
-  );
-}
-
-function BagPanel({ state: s, act }: TabProps) {
-  const items = [...s.bag].sort((a, b) => a.slot.localeCompare(b.slot) || itemScore(b) - itemScore(a));
-  const worse = s.bag.filter((it) => isWorse(s, it)).length;
-  return (
-    <section className="card">
-      <div className="row spread">
-        <h2>
-          Túi Đồ{' '}
-          <span className="muted small">
-            {s.bag.length}/{BAG_LIMIT}
-          </span>
-        </h2>
-        <button disabled={worse === 0} onClick={() => act(sellWorse)}>
-          Bán {worse} món kém hơn
-        </button>
-      </div>
-      <AutoToggle s={s} act={act} k="equip" label="Tự dùng pháp bảo tốt hơn khi nhặt được" />
-      <AutoToggle s={s} act={act} k="sell" label="Tự bán pháp bảo kém hơn khi nhặt được" />
-      {items.length === 0 && <p className="muted small">Túi trống. Vượt Bí Cảnh hoặc lịch luyện để nhặt pháp bảo.</p>}
-      {s.bag.length >= BAG_LIMIT && <p className="notice">Túi đã đầy, pháp bảo nhặt thêm sẽ tự động bán.</p>}
-      {items.map((it) => {
-        const eq = s.gear[it.slot];
-        const better = !eq || itemScore(it) > itemScore(eq);
-        return (
-          <div key={it.id} className="item-row">
-            <span className="slot-label muted small">
-              {SLOT_NAMES[it.slot]}
-              {better && <span className="up"> ▲</span>}
-            </span>
-            <ItemIcon slot={it.slot} tier={it.tier} />
-            <ItemLine it={it} />
-            <div className="item-actions">
-              <button onClick={() => act((st, now, rng) => equipItem(st, it.id, now, rng))}>Dùng</button>
-              <button onClick={() => act((st, now, rng) => sellItem(st, it.id, now, rng))}>
-                Bán {formatNumber(itemSellPrice(it))}
-              </button>
-            </div>
-          </div>
-        );
-      })}
-    </section>
   );
 }
 

@@ -63,6 +63,15 @@ npm run build    # bản build tĩnh ở dist/, deploy được lên GitHub Page
 - Sân đấu hô tên chiêu, hiện hồi máu, khiên, né, choáng, thiêu đốt. Tab Nhân Vật chia mục con: Tổng quan / Công Pháp / Võ Kỹ / Pháp Bảo.
 - Save cũ tự nâng lên v4 và được trao lại các võ kỹ tương ứng với những thủ lĩnh đã hạ.
 
+### Pháp bảo (đợt B)
+
+- **5 ô**: Vũ Khí, Hộ Giáp, Linh Bội, Giới Chỉ (bạo kích), Hài (tốc độ). Thêm phẩm **Thần Phẩm** (×5.5), chỉ rơi từ thủ lĩnh; lịch luyện ở tầng thủ lĩnh cũng rơi đồ tốt như thủ lĩnh.
+- **Thuộc tính phụ ngẫu nhiên** theo phẩm (0 / 1 / 2 / 3 / 3 dòng): hút máu, phản đòn, né tránh, bạo kích, % công / khí huyết / thủ, tốc độ, tu luyện, linh thạch.
+- **Bộ trang bị theo khu bí cảnh**: pháp bảo rơi ở khu nào thì thuộc bộ khu đó (Thanh Lang, Huyết Ma, Yêu Hồ, Cổ Ma, Lôi Đình, U Minh, Tiên Phủ, Hỗn Độn).
+  Mặc 2 món / 4 món cùng bộ để nhận thêm thuộc tính (hút máu, thiêu đốt mỗi đòn, phản đòn, choáng mỗi đòn…).
+- **Cường hóa +1 đến +10** bằng linh thạch, mỗi cấp +8% chỉ số gốc; tỉ lệ thành công giảm dần (100% → 15%). Thất bại chỉ mất linh thạch.
+- Chiến đấu hỗ trợ hút máu, phản đòn, né tránh, choáng và thiêu đốt từ pháp bảo. Save v4 tự nâng lên v5 (đồ cũ giữ nguyên, thêm ô Giới Chỉ và Hài).
+
 Nhịp độ dự kiến với linh căn trung bình (không bế quan): Luyện Khí ~10 phút, Trúc Cơ ~30 phút,
 Kim Đan ~1.5 giờ, Nguyên Anh ~4 giờ… hết Độ Kiếp ~10 ngày.
 

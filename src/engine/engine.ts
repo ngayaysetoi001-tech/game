@@ -2,6 +2,7 @@
 // và trả về state mới; thời gian (`now`, ms) và hàm ngẫu nhiên (`rng`) được truyền
 // vào để test được một cách tất định.
 
+import { ENHANCE_COST, ENHANCE_MAX, ENHANCE_RATES } from './gear';
 import {
   AUTO_CLIMB_SECONDS,
   BAG_LIMIT,
@@ -31,6 +32,7 @@ import {
   REALMS,
   ROOT_TIERS,
   SECLUSIONS,
+  SLOTS,
   type SeclusionId,
   STARTING_STONES,
   TIERS,
@@ -54,11 +56,13 @@ import {
   enemyFor,
   isBossFloor,
   itemName,
+  itemPlus,
   itemScore,
   itemSellPrice,
   playerStats,
   rollItem,
   simulateBattle,
+  stoneBonus,
   zoneOf,
 } from './combat';
 import {
@@ -84,6 +88,7 @@ import {
 export * from './state';
 export * from './combat';
 export * from './skills';
+export * from './gear';
 
 // ---------- Tốc độ ----------
 
@@ -101,7 +106,7 @@ export function cultivationRate(s: GameState, time: number): number {
 }
 
 export function stoneRate(s: GameState): number {
-  return BASE_STONE_RATE * 2 ** realmOf(s);
+  return BASE_STONE_RATE * 2 ** realmOf(s) * stoneBonus(s);
 }
 
 export function seclusionDef(id: SeclusionId) {
@@ -130,7 +135,7 @@ function emptyStats(): Stats {
 
 export function newGame(name: string, root: SpiritRoot, now: number): GameState {
   const s: GameState = {
-    version: 4,
+    version: 5,
     name: name.trim() || 'Vô Danh',
     root,
     level: 0,
@@ -145,7 +150,7 @@ export function newGame(name: string, root: SpiritRoot, now: number): GameState 
     createdAt: now,
     path: null,
     tech: { base: 0, path: 0 },
-    gear: { weapon: null, armor: null, pendant: null },
+    gear: { weapon: null, armor: null, pendant: null, ring: null, boots: null },
     bag: [],
     fragments: 0,
     floor: 0,
@@ -495,7 +500,7 @@ function fight(s: GameState, now: number, rng: Rng, auto: boolean) {
   if (result.win) {
     const boss = isBossFloor(floor);
     s.floor = floor;
-    const stones = floorStones(floor);
+    const stones = floorStones(floor) * stoneBonus(s);
     const fragments = boss ? 3 : 1;
     s.stones += stones;
     s.fragments += fragments;
@@ -575,10 +580,11 @@ export function stopFarming(prev: GameState, now: number, rng: Rng): GameState {
 
 function farmLoot(s: GameState, time: number, rng: Rng) {
   const floor = s.farming!.floor;
-  s.stones += floorStones(floor) * FARM_STONE_SHARE;
+  s.stones += floorStones(floor) * FARM_STONE_SHARE * stoneBonus(s);
   if (rng() < FARM_FRAGMENT_CHANCE) s.fragments++;
   if (rng() < FARM_ITEM_CHANCE) {
-    const it = newItem(s, floor, false, rng);
+    // Lịch luyện ở tầng thủ lĩnh rơi đồ tốt như thủ lĩnh
+    const it = newItem(s, floor, isBossFloor(floor), rng);
     const result = addItem(s, it);
     // Chỉ ghi nhật ký đồ tốt hoặc vừa tự trang bị, để không bị spam
     if (it.tier >= 2 || result === 'equipped') {
@@ -627,6 +633,40 @@ export function sellWorse(prev: GameState, now: number, rng: Rng): GameState {
   addLog(s, now, `Bán ${s.bag.length - keep.length} pháp bảo cũ, thu ${formatNumber(total)} linh thạch.`);
   s.bag = keep;
   s.stones += total;
+  return s;
+}
+
+// ---------- Cường hóa ----------
+
+export function findItem(s: GameState, id: number): Item | undefined {
+  return SLOTS.map((slot) => s.gear[slot]).find((it) => it?.id === id) ?? s.bag.find((it) => it.id === id);
+}
+
+export function enhanceCost(it: Item): number {
+  return floorStones(it.floor) * ENHANCE_COST * (itemPlus(it) + 1);
+}
+
+export function enhanceChance(it: Item): number {
+  return ENHANCE_RATES[itemPlus(it)] ?? 0;
+}
+
+export function canEnhance(s: GameState, it: Item): boolean {
+  return itemPlus(it) < ENHANCE_MAX && s.stones >= enhanceCost(it);
+}
+
+/** Thất bại chỉ mất linh thạch, pháp bảo giữ nguyên cấp */
+export function enhanceItem(prev: GameState, id: number, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  const it = findItem(s, id);
+  if (!it || !canEnhance(s, it)) return s;
+  s.stones -= enhanceCost(it);
+  const name = `${itemName(it)} (${TIERS[it.tier].name})`;
+  if (rng() < enhanceChance(it)) {
+    it.plus = itemPlus(it) + 1;
+    addLog(s, now, `Cường hóa thành công! ${name} lên +${it.plus}.`, 'good');
+  } else {
+    addLog(s, now, `Cường hóa ${name} thất bại, mất linh thạch nhưng pháp bảo vẫn giữ +${itemPlus(it)}.`, 'bad');
+  }
   return s;
 }
 
@@ -839,7 +879,10 @@ function migrate(raw: Record<string, unknown>): GameState | null {
     grantEarnedSkills(g, g.lastTick);
     s = g as unknown as Record<string, unknown>;
   }
-  return s.version === 4 ? (s as unknown as GameState) : null;
+  if (s.version === 4) {
+    s = { ...s, version: 5, gear: { ...(s.gear as object), ring: null, boots: null } };
+  }
+  return s.version === 5 ? (s as unknown as GameState) : null;
 }
 
 export function deserialize(raw: string): GameState | null {

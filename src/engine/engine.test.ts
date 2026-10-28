@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BAG_LIMIT, PATH_UNLOCK_LEVEL, REALMS, SECLUSIONS } from './data';
+import { BAG_LIMIT, PATH_UNLOCK_LEVEL, REALMS, SECLUSIONS, SLOTS, TIERS } from './data';
 import {
   MAX_LEVEL,
   applyOffline,
@@ -37,6 +37,20 @@ import {
   stopFarming,
   upgradeTech,
   applyOffline as offline,
+  AFFIXES,
+  AFFIX_COUNTS,
+  ENHANCE_MAX,
+  SETS,
+  canEnhance,
+  enhanceChance,
+  enhanceCost,
+  enhanceItem,
+  gearMods,
+  itemScore,
+  itemSellPrice,
+  itemStats,
+  rollItem,
+  stoneRate,
   buySkill,
   equippedSkills,
   moveSkill,
@@ -343,7 +357,7 @@ describe('migration', () => {
     for (const k of ['path', 'tech', 'gear', 'bag', 'fragments', 'floor', 'farming', 'nextItemId', 'lastBattle']) delete v1[k];
     v1.version = 1;
     const s = deserialize(JSON.stringify(v1))!;
-    expect(s.version).toBe(4);
+    expect(s.version).toBe(5);
     expect(s.floor).toBe(REALMS[1].gateFloor);
     expect(s.gear.weapon).toBeNull();
     expect(s.auto.climb).toBe(false);
@@ -541,5 +555,231 @@ describe('skills', () => {
       const skilled = simulateBattle(dummy({ spd: 99, skills: [{ id: 'kiem_pha_thien', level: 1 }] }), dummy(), always(0.5));
       expect(skilled.win).toBe(true);
     });
+  });
+});
+
+describe('gear: slots, tiers and affixes', () => {
+  it('rolls every slot, including ring and boots', () => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 300; i++) seen.add(rollItem(5, false, Math.random, i).slot);
+    expect([...seen].sort()).toEqual([...SLOTS].sort());
+  });
+
+  it('Thần Phẩm only drops from bosses; bosses never drop Phàm Phẩm', () => {
+    for (let i = 0; i < 1500; i++) expect(rollItem(5, false, Math.random, i).tier).toBeLessThan(4);
+    const tiers = new Set<number>();
+    for (let i = 0; i < 3000; i++) tiers.add(rollItem(5, true, Math.random, i).tier);
+    expect(tiers.has(0)).toBe(false);
+    expect(tiers.has(4)).toBe(true);
+  });
+
+  it('affix count follows the tier, with unique ids and values in range', () => {
+    for (let i = 0; i < 800; i++) {
+      const it = rollItem(10, i % 2 === 0, Math.random, i);
+      const affixes = it.affixes ?? [];
+      expect(affixes).toHaveLength(AFFIX_COUNTS[it.tier]);
+      expect(new Set(affixes.map((a) => a.id)).size).toBe(affixes.length);
+      for (const a of affixes) {
+        const def = AFFIXES.find((x) => x.id === a.id)!;
+        const scale = 1 + 0.15 * (it.tier - 1);
+        expect(a.v).toBeGreaterThanOrEqual(def.range[0] * scale - 0.5e-3 - (a.id === 'spd' ? 0.5 : 0));
+        expect(a.v).toBeLessThanOrEqual(def.range[1] * scale + 0.5e-3 + (a.id === 'spd' ? 0.5 : 0));
+      }
+    }
+  });
+
+  it('ring adds crit and boots add speed', () => {
+    const base = fresh();
+    const ring: Item = { id: 1, slot: 'ring', tier: 2, floor: 5 };
+    const boots: Item = { id: 2, slot: 'boots', tier: 2, floor: 5 };
+    const crit0 = playerStats(base, T0).crit;
+    const spd0 = playerStats(base, T0).spd;
+    const s = { ...base, gear: { ...base.gear, ring, boots } };
+    expect(playerStats(s, T0).crit).toBeCloseTo(crit0 + 0.012 * 2.2);
+    expect(playerStats(s, T0).spd).toBeCloseTo(spd0 + 2 * 2.2);
+  });
+
+  it('affixes feed into combat stats and compare in itemScore', () => {
+    const plain: Item = { id: 1, slot: 'weapon', tier: 2, floor: 5, affixes: [] };
+    const rich: Item = {
+      ...plain,
+      id: 2,
+      affixes: [
+        { id: 'lifesteal', v: 0.05 },
+        { id: 'atkPct', v: 0.1 },
+      ],
+    };
+    expect(itemScore(rich)).toBeGreaterThan(itemScore(plain));
+    const s = { ...fresh(), gear: { ...fresh().gear, weapon: rich } };
+    const p = playerStats(s, T0);
+    expect(p.lifesteal).toBeCloseTo(0.05);
+    expect(p.atk / playerStats({ ...s, gear: { ...s.gear, weapon: { ...plain } } }, T0).atk).toBeCloseTo(1.1, 1);
+  });
+
+  it('stone and cultivation affixes raise income', () => {
+    const s = fresh();
+    const pendant: Item = { id: 1, slot: 'pendant', tier: 0, floor: 1, affixes: [{ id: 'stones', v: 0.5 }, { id: 'cultivation', v: 0.25 }] };
+    const geared = { ...s, gear: { ...s.gear, pendant } };
+    expect(stoneRate(geared) / stoneRate(s)).toBeCloseTo(1.5);
+    expect(cultivationBonus(geared)).toBeCloseTo(1 + 0.02 + 0.25);
+  });
+});
+
+describe('gear sets', () => {
+  const piece = (slot: Item['slot'], floor: number, id: number): Item => ({ id, slot, tier: 0, floor, affixes: [] });
+
+  it('two pieces from the same zone grant the 2-piece bonus, four add the 4-piece bonus', () => {
+    const s = fresh();
+    s.gear.weapon = piece('weapon', 1, 1);
+    expect(gearMods(s).hpPct).toBe(0);
+    s.gear.armor = piece('armor', 3, 2);
+    expect(gearMods(s).hpPct).toBeCloseTo(SETS[0].two.hpPct!);
+    s.gear.ring = piece('ring', 5, 3);
+    s.gear.boots = piece('boots', 2, 4);
+    expect(gearMods(s).spd).toBeCloseTo(SETS[0].four.spd!);
+    expect(gearMods(s).crit).toBeCloseTo(SETS[0].four.crit!);
+  });
+
+  it('pieces from different zones do not combine', () => {
+    const s = fresh();
+    s.gear.weapon = piece('weapon', 1, 1);
+    s.gear.armor = piece('armor', 6, 2);
+    s.gear.ring = piece('ring', 11, 3);
+    expect(gearMods(s).hpPct).toBe(0);
+    expect(gearMods(s).lifesteal).toBe(0);
+  });
+
+  it('set bonuses stack with item affixes', () => {
+    const s = fresh();
+    s.gear.weapon = { ...piece('weapon', 6, 1), affixes: [{ id: 'lifesteal', v: 0.03 }] };
+    s.gear.armor = piece('armor', 7, 2);
+    expect(gearMods(s).lifesteal).toBeCloseTo(0.03 + SETS[1].two.lifesteal!);
+  });
+});
+
+describe('gear combat passives', () => {
+  const dummy = (over: Partial<Fighter> = {}): Fighter => ({
+    name: 'X', hp: 1000, atk: 50, def: 10, spd: 100, crit: 0, skills: [], ...over,
+  });
+
+  it('lifesteal heals the attacker for a share of damage dealt', () => {
+    const r = simulateBattle(dummy({ lifesteal: 0.5 }), dummy({ atk: 80 }), always(0.5));
+    const hpAfterHit = r.events.filter((e) => e.by === 'p' && e.fx === 'hit').length;
+    expect(hpAfterHit).toBeGreaterThan(0);
+    const without = simulateBattle(dummy(), dummy({ atk: 80 }), always(0.5));
+    expect(r.events.length).toBeGreaterThanOrEqual(without.events.length);
+    expect(r.events.some((e) => e.by === 'e' && e.hpP > 0 && e.hpP < 1000) || r.win).toBe(true);
+  });
+
+  it('thorns reflect damage and can kill the attacker', () => {
+    const r = simulateBattle(dummy(), dummy({ thorns: 0.6 }), always(0.5));
+    expect(r.events.some((e) => e.fx === 'thorns' && e.target === 'p' && e.dmg > 0)).toBe(true);
+    const lethal = simulateBattle(dummy({ hp: 20 }), dummy({ hp: 100000, thorns: 5 }), always(0.5));
+    expect(lethal.win).toBe(false);
+  });
+
+  it('passive dodge makes attacks miss', () => {
+    const r = simulateBattle(dummy(), dummy({ dodge: 0.6 }), always(0));
+    expect(r.events.some((e) => e.fx === 'miss' && e.by === 'p')).toBe(true);
+  });
+
+  it('stunHit and burnHit apply on normal attacks', () => {
+    const r = simulateBattle(dummy({ stunHit: 1, burnHit: 0.3 }), dummy(), always(0.5));
+    expect(r.events.some((e) => e.fx === 'stun' && e.by === 'e')).toBe(true);
+    expect(r.events.some((e) => e.fx === 'burn' && e.target === 'e')).toBe(true);
+  });
+});
+
+describe('enhancement', () => {
+  const sword = (over: Partial<Item> = {}): Item => ({ id: 7, slot: 'weapon', tier: 1, floor: 10, plus: 0, affixes: [], ...over });
+
+  it('each level adds 8% of the base stats', () => {
+    expect(itemStats(sword({ plus: 5 })).atk / itemStats(sword()).atk).toBeCloseTo(1.4);
+    expect(itemStats(sword({ plus: 10, slot: 'boots' })).spd / itemStats(sword({ slot: 'boots' })).spd).toBeCloseTo(1.8);
+  });
+
+  it('success levels up and costs stones; works on bag items too', () => {
+    let s = { ...fresh(), stones: 1e6, bag: [sword()] };
+    const cost = enhanceCost(s.bag[0]);
+    s = enhanceItem(s, 7, T0, always(0));
+    expect(s.bag[0].plus).toBe(1);
+    expect(s.stones).toBeCloseTo(1e6 - cost);
+    s.gear.weapon = sword({ id: 8, plus: 3 });
+    s = enhanceItem(s, 8, T0, always(0));
+    expect(s.gear.weapon?.plus).toBe(4);
+  });
+
+  it('failure keeps the item level but still costs stones', () => {
+    let s = { ...fresh(), stones: 1e6, bag: [sword({ plus: 6 })] };
+    const cost = enhanceCost(s.bag[0]);
+    s = enhanceItem(s, 7, T0, always(0.999));
+    expect(s.bag[0].plus).toBe(6);
+    expect(s.stones).toBeCloseTo(1e6 - cost);
+    expect(s.log[0].kind).toBe('bad');
+  });
+
+  it('chance drops with level, cost rises, cap is +10 and stones are required', () => {
+    expect(enhanceChance(sword({ plus: 0 }))).toBe(1);
+    expect(enhanceChance(sword({ plus: 9 }))).toBeLessThan(enhanceChance(sword({ plus: 4 })));
+    expect(enhanceCost(sword({ plus: 4 }))).toBeGreaterThan(enhanceCost(sword({ plus: 1 })));
+    const rich = { ...fresh(), stones: 1e9 };
+    expect(canEnhance(rich, sword({ plus: ENHANCE_MAX }))).toBe(false);
+    expect(canEnhance({ ...fresh(), stones: 0 }, sword())).toBe(false);
+    expect(enhanceItem({ ...fresh(), stones: 0, bag: [sword()] }, 7, T0, always(0)).bag[0].plus).toBe(0);
+  });
+
+  it('enhanced items sell for more', () => {
+    expect(itemSellPrice(sword({ plus: 5 }))).toBeGreaterThan(itemSellPrice(sword()));
+  });
+});
+
+describe('gear farming and migration', () => {
+  it('farming a boss floor drops boss-quality items', () => {
+    let s = { ...fresh(), floor: 5 };
+    s = startFarming(s, 5, T0, always(0));
+    s = tick(s, T0 + 5 * 60_000, always(0));
+    expect(s.bag.length).toBeGreaterThan(0);
+    expect(s.bag.every((it) => it.tier >= 1)).toBe(true);
+  });
+
+  it('v4 saves gain empty ring and boots slots and keep their items', () => {
+    const v5 = fresh();
+    v5.gear.weapon = { id: 1, slot: 'weapon', tier: 1, floor: 3 };
+    const v4: Record<string, unknown> = JSON.parse(serialize(v5));
+    v4.version = 4;
+    const g = v4.gear as Record<string, unknown>;
+    delete g.ring;
+    delete g.boots;
+    const s = deserialize(JSON.stringify(v4))!;
+    expect(s.version).toBe(5);
+    expect(s.gear.ring).toBeNull();
+    expect(s.gear.boots).toBeNull();
+    expect(s.gear.weapon?.id).toBe(1);
+    expect(TIERS).toHaveLength(5);
+  });
+});
+
+describe('balance guards: full gear sets', () => {
+  const geared = (tier: number, techFrac: number, skillLv: number): GameState => {
+    const s: GameState = {
+      ...fresh(),
+      level: 12,
+      floor: 4,
+      path: 'kiem',
+      tech: { base: Math.round(5 * techFrac), path: Math.max(1, Math.round(4 * techFrac)) },
+      skills: { kiem_pha_thien: skillLv, kiem_phan_quang: skillLv },
+      loadout: ['kiem_pha_thien', 'kiem_phan_quang'],
+    };
+    for (const slot of SLOTS) s.gear[slot] = { id: 1, slot, tier, floor: 3, affixes: [], plus: 0 };
+    return s;
+  };
+  const wins = (s: GameState) => simulateBattle(playerStats(s, T0), enemyFor(5), always(0.5)).win;
+
+  it('five Phàm Phẩm pieces with half-built techniques still cannot beat the Kim Đan gate', () => {
+    expect(wins(geared(0, 0.5, 1))).toBe(false);
+  });
+
+  it('five Bảo Phẩm pieces with well-built techniques beat it', () => {
+    expect(wins(geared(2, 1, 3))).toBe(true);
   });
 });

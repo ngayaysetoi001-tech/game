@@ -568,6 +568,10 @@ button.link {
 .tier-3 {
   color: #d39cff;
 }
+.tier-4 {
+  color: #ffb04a;
+  text-shadow: 0 0 8px rgba(255, 176, 74, 0.45);
+}
 .paths {
   display: flex;
   flex-direction: column;
@@ -767,4 +771,44 @@ button.link {
 .skill-actions button {
   padding: 4px 10px;
   font-size: 13px;
+}
+
+/* Pháp bảo: thuộc tính phụ, bộ trang bị */
+.item-line {
+  min-width: 0;
+}
+.plus {
+  color: var(--gold);
+}
+.affix {
+  color: #9fd7ff;
+}
+.set-tag {
+  color: var(--jade);
+}
+.set-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.set-on {
+  color: var(--good);
+}
+
+/* Hàng pháp bảo: biểu tượng + nội dung, các nút xuống dưới để tên không bị bóp */
+.item-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: start;
+  gap: 6px 10px;
+}
+.item-row .item-actions {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.item-row .item-empty {
+  grid-column: 1 / -1;
 }

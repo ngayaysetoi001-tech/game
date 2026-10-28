@@ -165,7 +165,7 @@ export const BOSS_MULT = { hp: 3, atk: 1.15, def: 1.2 };
  * Ba tầng đầu được giảm để nhân vật mới có thể lấy món pháp bảo đầu tiên.
  */
 export function floorLevel(floor: number): number {
-  return 9.5 + 0.8 * floor - Math.max(0, 4 - floor) * 2;
+  return 9.5 + (floor >= 4 ? 1 : 0) + 0.8 * floor - Math.max(0, 4 - floor) * 2;
 }
 
 export interface Zone {
@@ -197,38 +197,60 @@ export const FARM_FRAGMENT_CHANCE = 0.25;
 export const FARM_CULTIVATION_MULT = 0.5;
 
 // --- Pháp bảo ---
-export type Slot = 'weapon' | 'armor' | 'pendant';
-export const SLOTS: Slot[] = ['weapon', 'armor', 'pendant'];
-export const SLOT_NAMES: Record<Slot, string> = { weapon: 'Vũ Khí', armor: 'Hộ Giáp', pendant: 'Linh Bội' };
+export type Slot = 'weapon' | 'armor' | 'pendant' | 'ring' | 'boots';
+export const SLOTS: Slot[] = ['weapon', 'armor', 'pendant', 'ring', 'boots'];
+export const SLOT_NAMES: Record<Slot, string> = {
+  weapon: 'Vũ Khí',
+  armor: 'Hộ Giáp',
+  pendant: 'Linh Bội',
+  ring: 'Giới Chỉ',
+  boots: 'Hài',
+};
 
 export interface TierDef {
   name: string;
   mult: number;
+  /** Trọng số rơi thường */
   weight: number;
+  /** Trọng số rơi từ thủ lĩnh (và khi lịch luyện ở tầng thủ lĩnh) */
+  bossWeight: number;
   /** Linh bội: % tốc độ tu luyện */
   cultivation: number;
 }
 
 export const TIERS: TierDef[] = [
-  { name: 'Phàm Phẩm', mult: 1, weight: 60, cultivation: 0.02 },
-  { name: 'Linh Phẩm', mult: 1.5, weight: 28, cultivation: 0.04 },
-  { name: 'Bảo Phẩm', mult: 2.2, weight: 10, cultivation: 0.07 },
-  { name: 'Tiên Phẩm', mult: 3.5, weight: 2, cultivation: 0.12 },
+  { name: 'Phàm Phẩm', mult: 1, weight: 60, bossWeight: 0, cultivation: 0.02 },
+  { name: 'Linh Phẩm', mult: 1.5, weight: 28, bossWeight: 50, cultivation: 0.04 },
+  { name: 'Bảo Phẩm', mult: 2.2, weight: 10, bossWeight: 34, cultivation: 0.07 },
+  { name: 'Tiên Phẩm', mult: 3.5, weight: 2, bossWeight: 10, cultivation: 0.12 },
+  { name: 'Thần Phẩm', mult: 5.5, weight: 0, bossWeight: 6, cultivation: 0.18 },
 ];
-/** Boss rơi đồ tốt hơn: bỏ qua phẩm thấp nhất */
-export const BOSS_MIN_TIER = 1;
 
-/** Chỉ số pháp bảo = giá trị dưới đây × SCALE^cấp tầng × hệ số phẩm */
-export const ITEM_STATS: Record<Slot, { hp: number; atk: number; def: number }> = {
+export interface ItemBase {
+  hp: number;
+  atk: number;
+  def: number;
+  /** Bạo kích cộng thẳng, chỉ nhân hệ số phẩm (không theo tầng) */
+  crit?: number;
+  /** Tốc độ cộng thẳng, chỉ nhân hệ số phẩm (không theo tầng) */
+  spd?: number;
+}
+
+/** Hp / Công / Thủ = giá trị dưới đây × SCALE^cấp tầng × hệ số phẩm */
+export const ITEM_STATS: Record<Slot, ItemBase> = {
   weapon: { hp: 0, atk: 6, def: 0 },
   armor: { hp: 40, atk: 0, def: 3 },
   pendant: { hp: 25, atk: 0, def: 0 },
+  ring: { hp: 0, atk: 3, def: 0, crit: 0.012 },
+  boots: { hp: 15, atk: 0, def: 1.5, spd: 2 },
 };
 
 export const ITEM_NAMES: Record<Slot, string[]> = {
-  weapon: ['Thiết Kiếm', 'Thanh Phong Kiếm', 'Tử Điện Kiếm', 'Tru Tiên Kiếm'],
-  armor: ['Bố Y', 'Linh Văn Giáp', 'Huyền Quy Giáp', 'Thiên Tàm Bảo Y'],
-  pendant: ['Ngọc Bội', 'Tụ Linh Bội', 'Càn Khôn Bội', 'Hỗn Nguyên Châu'],
+  weapon: ['Thiết Kiếm', 'Thanh Phong Kiếm', 'Tử Điện Kiếm', 'Tru Tiên Kiếm', 'Hồng Mông Kiếm'],
+  armor: ['Bố Y', 'Linh Văn Giáp', 'Huyền Quy Giáp', 'Thiên Tàm Bảo Y', 'Cửu Thiên Huyền Giáp'],
+  pendant: ['Ngọc Bội', 'Tụ Linh Bội', 'Càn Khôn Bội', 'Hỗn Nguyên Châu', 'Thái Cực Đồ'],
+  ring: ['Thiết Giới', 'Linh Ngọc Giới', 'Huyền Băng Giới', 'Chân Long Giới', 'Hỗn Độn Giới'],
+  boots: ['Vải Hài', 'Phi Vân Ngoa', 'Truy Phong Ngoa', 'Đạp Tiên Ngoa', 'Xích Tiêu Ngoa'],
 };
 
 export const BAG_LIMIT = 30;

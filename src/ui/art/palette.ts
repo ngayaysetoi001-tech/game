@@ -32,7 +32,7 @@ export const ELEMENT_COLORS: Record<Element, string> = {
   Băng: '#a8e4ff',
 };
 
-export const TIER_COLORS = ['#cfc6b4', '#7fcf8a', '#6fb2ff', '#d39cff'];
+export const TIER_COLORS = ['#cfc6b4', '#7fcf8a', '#6fb2ff', '#d39cff', '#ffb04a'];
 
 export const PATH_COLORS: Record<PathId | 'none', string> = {
   none: '#9a8f7c',

@@ -410,6 +410,10 @@
   color: #ffae3d;
   font-size: 17px;
 }
+.dmg.fx-thorns {
+  color: #ff9a5c;
+  font-size: 15px;
+}
 .dmg.fx-heal {
   color: #8fe39a;
 }

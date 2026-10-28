@@ -5,7 +5,6 @@ import {
   BASE_STATS,
   BASE_TECH,
   BOSS_EVERY,
-  BOSS_MIN_TIER,
   BOSS_MULT,
   CRIT_DAMAGE,
   INJURY_COMBAT_MULT,
@@ -21,6 +20,16 @@ import {
   floorStones,
 } from './data';
 import {
+  AFFIXES,
+  AFFIX_COUNTS,
+  AFFIX_TIER_SCALE,
+  ENHANCE_BONUS,
+  ENHANCE_SELL_BONUS,
+  MOD_KEYS,
+  SETS,
+  type Mods,
+} from './gear';
+import {
   CLEANSE_IMMUNE_TURNS,
   ENEMY_SKILLS,
   HEAL_THRESHOLD,
@@ -32,7 +41,7 @@ import {
   enemySkillLevel,
   skillSlots,
 } from './skills';
-import { type BattleEvent, type GameState, type Item, type Rng, formatNumber, isInjured, levelInfo, weightedPick } from './state';
+import { type BattleEvent, type GameState, type Item, type ItemAffix, type Rng, formatNumber, isInjured, levelInfo, weightedPick } from './state';
 
 export interface Fighter {
   name: string;
@@ -43,6 +52,12 @@ export interface Fighter {
   crit: number;
   /** Võ kỹ theo thứ tự ưu tiên */
   skills: { id: SkillId; level: number }[];
+  // Từ pháp bảo và bộ trang bị
+  lifesteal?: number;
+  thorns?: number;
+  dodge?: number;
+  stunHit?: number;
+  burnHit?: number;
 }
 
 // ---------- Công pháp ----------
@@ -61,10 +76,15 @@ export function pathBonus(s: GameState, key: 'hp' | 'atk' | 'def' | 'rate' | 'cr
   return per * s.tech.path * (hasAffinity(s) ? AFFINITY_MULT : 1);
 }
 
-/** Hệ số tốc độ tu luyện từ linh bội + công pháp */
+/** Hệ số tốc độ tu luyện từ linh bội + công pháp + thuộc tính phụ / bộ trang bị */
 export function cultivationBonus(s: GameState): number {
   const pendant = s.gear.pendant ? itemStats(s.gear.pendant).cultivation : 0;
-  return 1 + pendant + pathBonus(s, 'rate');
+  return 1 + pendant + pathBonus(s, 'rate') + gearMods(s).cultivation;
+}
+
+/** Hệ số linh thạch kiếm được */
+export function stoneBonus(s: GameState): number {
+  return 1 + gearMods(s).stones;
 }
 
 // ---------- Nhân vật ----------
@@ -72,7 +92,7 @@ export function cultivationBonus(s: GameState): number {
 export function playerStats(s: GameState, time: number): Fighter {
   const b = POWER_SCALE ** s.level;
   const base = 1 + BASE_TECH.perLevel * s.tech.base;
-  const gear = { hp: 0, atk: 0, def: 0 };
+  const gear = { hp: 0, atk: 0, def: 0, crit: 0, spd: 0 };
   for (const slot of SLOTS) {
     const it = s.gear[slot];
     if (!it) continue;
@@ -80,17 +100,25 @@ export function playerStats(s: GameState, time: number): Fighter {
     gear.hp += st.hp;
     gear.atk += st.atk;
     gear.def += st.def;
+    gear.crit += st.crit;
+    gear.spd += st.spd;
   }
+  const m = gearMods(s);
   const injured = isInjured(s, time) ? INJURY_COMBAT_MULT : 1;
   const path = s.path ? PATHS[s.path] : null;
   return {
     name: s.name,
-    hp: (BASE_STATS.hp * b + gear.hp) * base * (1 + pathBonus(s, 'hp')) * injured,
-    atk: (BASE_STATS.atk * b + gear.atk) * base * (1 + pathBonus(s, 'atk')) * injured,
-    def: (BASE_STATS.def * b + gear.def) * base * (1 + pathBonus(s, 'def')) * injured,
-    spd: BASE_STATS.spd + (path?.spd ?? 0),
-    crit: (path?.baseCrit ?? 0.05) + pathBonus(s, 'crit'),
+    hp: (BASE_STATS.hp * b + gear.hp) * base * (1 + pathBonus(s, 'hp') + m.hpPct) * injured,
+    atk: (BASE_STATS.atk * b + gear.atk) * base * (1 + pathBonus(s, 'atk') + m.atkPct) * injured,
+    def: (BASE_STATS.def * b + gear.def) * base * (1 + pathBonus(s, 'def') + m.defPct) * injured,
+    spd: BASE_STATS.spd + (path?.spd ?? 0) + gear.spd + m.spd,
+    crit: (path?.baseCrit ?? 0.05) + pathBonus(s, 'crit') + gear.crit + m.crit,
     skills: equippedSkills(s),
+    lifesteal: m.lifesteal,
+    thorns: m.thorns,
+    dodge: m.dodge,
+    stunHit: m.stunHit,
+    burnHit: m.burnHit,
   };
 }
 
@@ -106,7 +134,11 @@ export function equippedSkills(s: GameState): { id: SkillId; level: number }[] {
 export function combatPower(f: Fighter): number {
   // Mỗi võ kỹ cộng khoảng 8% (tăng theo cấp) để chiến lực phản ánh cả chiêu thức
   const skillMult = 1 + f.skills.reduce((a, sk) => a + 0.08 * (1 + SKILL_LEVEL_POWER * (sk.level - 1)), 0);
-  return Math.round((Math.sqrt(f.hp * f.atk * (1 + f.crit * (CRIT_DAMAGE - 1))) * (f.spd / 100) + f.def * 2) * skillMult);
+  const gearMult =
+    1 + (f.lifesteal ?? 0) * 2 + (f.thorns ?? 0) + (f.dodge ?? 0) * 1.5 + (f.stunHit ?? 0) * 1.5 + (f.burnHit ?? 0);
+  return Math.round(
+    (Math.sqrt(f.hp * f.atk * (1 + f.crit * (CRIT_DAMAGE - 1))) * (f.spd / 100) + f.def * 2) * skillMult * gearMult,
+  );
 }
 
 // ---------- Bí cảnh ----------
@@ -291,7 +323,8 @@ export function simulateBattle(pf: Fighter, ef: Fighter, rng: Rng): BattleResult
       const def2 = foe.f.def * (1 - (foe.armorT > 0 ? foe.armor : 0));
       let landed = false;
       for (let h = 0; h < (e.hits ?? 1); h++) {
-        if (foe.dodgeT > 0 && rng() < foe.dodge) {
+        const dodgeP = Math.min(0.6, (foe.f.dodge ?? 0) + (foe.dodgeT > 0 ? foe.dodge : 0));
+        if (dodgeP > 0 && rng() < dodgeP) {
           push(me, foe, { fx: 'miss', skill });
           lines.push(`${foe.f.name} né được.`);
           continue;
@@ -300,12 +333,20 @@ export function simulateBattle(pf: Fighter, ef: Fighter, rng: Rng): BattleResult
         const crit = rng() < me.f.crit + (e.crit ?? 0);
         const dmg = ((atk * atk) / (atk + def2)) * (0.9 + 0.2 * rng()) * e.dmg * (def ? pw : 1) * (crit ? CRIT_DAMAGE : 1);
         absorb(foe, dmg);
-        if (e.lifesteal) me.hp = Math.min(me.f.hp, me.hp + dmg * e.lifesteal * pw);
+        const steal = (e.lifesteal ?? 0) * pw + (me.f.lifesteal ?? 0);
+        if (steal > 0) me.hp = Math.min(me.f.hp, me.hp + dmg * steal);
         push(me, foe, { dmg, crit, fx: 'hit', skill });
         lines.push(
           `${me.f.name} ${def ? 'đánh trúng' : me.key === 'p' ? 'xuất chiêu' : 'tấn công'}${crit ? ' — BẠO KÍCH' : ''}: −${formatNumber(dmg)} (${foe.f.name} còn ${formatNumber(foe.hp)})`,
         );
         if (foe.hp <= 0) return true;
+        if ((foe.f.thorns ?? 0) > 0) {
+          const back = dmg * foe.f.thorns!;
+          me.hp = Math.max(0, me.hp - back);
+          push(foe, me, { dmg: back, fx: 'thorns' });
+          lines.push(`${foe.f.name} phản đòn: −${formatNumber(back)}`);
+          if (me.hp <= 0) return true;
+        }
       }
       // Hiệu ứng xấu chỉ bám khi có ít nhất một đòn trúng và đối thủ không miễn nhiễm
       if (landed && foe.immuneT === 0) {
@@ -322,6 +363,15 @@ export function simulateBattle(pf: Fighter, ef: Fighter, rng: Rng): BattleResult
           foe.armorT = e.armorBreak.turns;
         }
         if (e.stun && rng() < e.stun + SKILL_LEVEL_CHANCE * (lv - 1)) {
+          foe.stunned = true;
+          lines.push(`${foe.f.name} bị choáng!`);
+        }
+        // Hiệu ứng mỗi đòn từ bộ trang bị
+        if (me.f.burnHit) {
+          foe.burn = Math.max(foe.burnT > 0 ? foe.burn : 0, atk * me.f.burnHit);
+          foe.burnT = Math.max(foe.burnT, 2);
+        }
+        if (me.f.stunHit && !foe.stunned && rng() < me.f.stunHit) {
           foe.stunned = true;
           lines.push(`${foe.f.name} bị choáng!`);
         }
@@ -355,19 +405,35 @@ export function simulateBattle(pf: Fighter, ef: Fighter, rng: Rng): BattleResult
 export function rollItem(floor: number, boss: boolean, rng: Rng, id: number): Item {
   const slot = SLOTS[Math.floor(rng() * SLOTS.length)];
   const tier = weightedPick(
-    TIERS.map((t, i) => (boss && i < BOSS_MIN_TIER ? 0 : t.weight)),
+    TIERS.map((t) => (boss ? t.bossWeight : t.weight)),
     rng,
   );
-  return { id, slot, tier, floor };
+  // Thuộc tính phụ: số dòng theo phẩm, không trùng nhau, giá trị tăng theo phẩm
+  const pool = [...AFFIXES];
+  const affixes: ItemAffix[] = [];
+  const scale = 1 + AFFIX_TIER_SCALE * (tier - 1);
+  for (let i = 0; i < AFFIX_COUNTS[tier]; i++) {
+    const a = pool.splice(Math.floor(rng() * pool.length), 1)[0];
+    const raw = (a.range[0] + (a.range[1] - a.range[0]) * rng()) * scale;
+    affixes.push({ id: a.id, v: a.id === 'spd' ? Math.round(raw) : Math.round(raw * 1000) / 1000 });
+  }
+  return { id, slot, tier, floor, affixes, plus: 0 };
+}
+
+export function itemPlus(it: Item): number {
+  return it.plus ?? 0;
 }
 
 export function itemStats(it: Item) {
-  const k = POWER_SCALE ** floorLevel(it.floor) * TIERS[it.tier].mult;
+  const k = POWER_SCALE ** floorLevel(it.floor) * TIERS[it.tier].mult * (1 + ENHANCE_BONUS * itemPlus(it));
+  const flat = TIERS[it.tier].mult * (1 + ENHANCE_BONUS * itemPlus(it));
   const base = ITEM_STATS[it.slot];
   return {
     hp: base.hp * k,
     atk: base.atk * k,
     def: base.def * k,
+    crit: (base.crit ?? 0) * flat,
+    spd: (base.spd ?? 0) * flat,
     cultivation: it.slot === 'pendant' ? TIERS[it.tier].cultivation : 0,
   };
 }
@@ -376,12 +442,45 @@ export function itemName(it: Item): string {
   return ITEM_NAMES[it.slot][it.tier];
 }
 
+/** Bộ trang bị (chỉ số trong SETS) của một pháp bảo, theo khu bí cảnh nơi nó rơi */
+export function itemSetIndex(it: Item): number {
+  return Math.min(SETS.length - 1, Math.floor((Math.max(1, it.floor) - 1) / BOSS_EVERY));
+}
+
+/** Số món đang mặc của từng bộ */
+export function setCounts(s: GameState): number[] {
+  const counts = SETS.map(() => 0);
+  for (const slot of SLOTS) {
+    const it = s.gear[slot];
+    if (it) counts[itemSetIndex(it)]++;
+  }
+  return counts;
+}
+
+export type FullMods = Required<Mods>;
+
+/** Tổng cộng thêm từ thuộc tính phụ của đồ đang mặc và các bộ đã đủ 2 / 4 món */
+export function gearMods(s: GameState): FullMods {
+  const m = Object.fromEntries(MOD_KEYS.map((k) => [k, 0])) as FullMods;
+  for (const slot of SLOTS) {
+    for (const a of s.gear[slot]?.affixes ?? []) m[a.id] += a.v;
+  }
+  setCounts(s).forEach((n, i) => {
+    if (n >= 2) for (const k of MOD_KEYS) m[k] += SETS[i].two[k] ?? 0;
+    if (n >= 4) for (const k of MOD_KEYS) m[k] += SETS[i].four[k] ?? 0;
+  });
+  return m;
+}
+
 /** Điểm so sánh giữa các pháp bảo cùng ô */
 export function itemScore(it: Item): number {
   const st = itemStats(it);
-  return st.hp / BASE_STATS.hp + st.atk / BASE_STATS.atk + st.def / BASE_STATS.def + st.cultivation * 20;
+  let score =
+    st.hp / BASE_STATS.hp + st.atk / BASE_STATS.atk + st.def / BASE_STATS.def + st.cultivation * 20 + st.crit * 5 + st.spd * 0.03;
+  for (const a of it.affixes ?? []) score += a.v * (AFFIXES.find((x) => x.id === a.id)?.score ?? 0);
+  return score;
 }
 
 export function itemSellPrice(it: Item): number {
-  return floorStones(it.floor) * 0.2 * TIERS[it.tier].mult;
+  return floorStones(it.floor) * 0.2 * TIERS[it.tier].mult * (1 + ENHANCE_SELL_BONUS * itemPlus(it));
 }
