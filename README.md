@@ -87,6 +87,12 @@ npm run build    # bản build tĩnh ở dist/, deploy được lên GitHub Page
 - Tiến hóa 4 giai đoạn (Phàm, Linh, Bảo, Tiên Khí) với thưởng thêm mỗi giai đoạn; có **chiêu bản mệnh riêng** luôn ưu tiên dùng trước trong trận, mạnh lên theo cấp. Bản mệnh lơ lửng cạnh nhân vật trong cảnh tu luyện.
 - Sức quái từ tầng 6 trở đi tăng thêm để bù cho các nguồn sức mạnh mới.
 
+### Biểu tượng võ kỹ và công pháp
+
+- Mỗi võ kỹ, chiêu của quái, chiêu bản mệnh và công pháp có biểu tượng riêng cùng kiểu khung với pháp bảo: võ kỹ có vòng tròn, số cấp và số thứ tự ưu tiên; công pháp có hai trục cuộn, màu khung theo phẩm cấp và số chấm = phẩm cấp.
+- Hiện ở mục Võ Kỹ, Công Pháp, Phường Thị, chiêu thức của đối thủ, chiêu bản mệnh và khi hô tên chiêu trong trận. Thẻ **Đang Trang Bị** ở mục Tổng quan gom công pháp, võ kỹ và bản mệnh đang dùng, chạm vào để mở mục tương ứng.
+- Thay bằng ảnh thật: `src/assets/art/skills/<mã võ kỹ>`, `techs/<mã công pháp>`, `natal/<mã>` (xem README trong thư mục đó). Xem tất cả ở trang `#gallery`.
+
 Nhịp độ dự kiến với linh căn trung bình (không bế quan): Luyện Khí ~10 phút, Trúc Cơ ~30 phút,
 Kim Đan ~1.5 giờ, Nguyên Anh ~4 giờ… hết Độ Kiếp ~10 ngày.
 

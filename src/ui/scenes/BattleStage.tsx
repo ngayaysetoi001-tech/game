@@ -15,6 +15,7 @@ import Monster from '../art/Monster';
 import { prefersReducedMotion } from '../art/Particles';
 import { REALM_AURA, ZONE_THEMES } from '../art/palette';
 import { Art, slugify } from '../art/registry';
+import { SkillIcon, skillIdByName } from '../art/SkillIcons';
 import { FRESH_MS, claim, mountStage, playedTime, release } from './playback';
 import { ZONES } from '../../engine/data';
 
@@ -133,7 +134,8 @@ export default function BattleStage({ s }: { s: GameState }) {
       )}
       {view?.shout && (
         <div key={`s-${view.key}`} className={`skill-shout ${view.shout.side === 'p' ? 'left' : 'right'}`}>
-          {view.shout.name}
+          {skillIdByName(view.shout.name) && <SkillIcon id={skillIdByName(view.shout.name)!} size={24} />}
+          <span>{view.shout.name}</span>
         </div>
       )}
 

@@ -28,6 +28,7 @@ import type { TabProps } from '../GameScreen';
 import BattleStage from '../scenes/BattleStage';
 import { useBattleHold } from '../scenes/playback';
 import AutoToggle from '../AutoToggle';
+import { SkillIcon } from '../art/SkillIcons';
 
 const ESTIMATE_RUNS = 100;
 
@@ -94,8 +95,8 @@ export default function DungeonTab(props: TabProps) {
                 <div className="small">
                   Chiêu thức:{' '}
                   {enemy.skills.map((sk) => (
-                    <span key={sk.id} className="tag bad">
-                      {SKILLS[sk.id].name} {sk.level}
+                    <span key={sk.id} className="tag bad skill-chip">
+                      <SkillIcon id={sk.id} size={22} /> {SKILLS[sk.id].name} {sk.level}
                     </span>
                   ))}
                 </div>

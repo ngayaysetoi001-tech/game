@@ -26,6 +26,7 @@ import {
 import type { TabProps } from '../GameScreen';
 import Cultivator from '../art/Cultivator';
 import { REALM_AURA } from '../art/palette';
+import { TechIcon } from '../art/SkillIcons';
 
 function sourceText(def: TechDef): string {
   const src = def.source;
@@ -76,20 +77,23 @@ function TechRow({
   const learned = hasTech(s, def.id);
   return (
     <div className={`tech-card ${learned ? '' : 'locked'}`}>
-      <div>
-        <b>{def.name}</b> <GradeTag grade={def.grade} />
-        {learned && (
-          <span className="muted small">
-            {' '}
-            tầng {techLevel(s, def.id)}/{techCap(s, def.id)}
-          </span>
-        )}
-      </div>
-      <div className="small muted">{effectText(s, def)}</div>
-      {!learned && <div className="small">{sourceText(def)}</div>}
-      <div className="skill-actions">
-        {learned && <UpgradeButton s={s} act={act} id={def.id} />}
-        {children}
+      <TechIcon id={def.id} grade={def.grade} level={learned ? techLevel(s, def.id) : undefined} dim={!learned} />
+      <div className="tech-body">
+        <div>
+          <b>{def.name}</b> <GradeTag grade={def.grade} />
+          {learned && (
+            <span className="muted small">
+              {' '}
+              tầng {techLevel(s, def.id)}/{techCap(s, def.id)}
+            </span>
+          )}
+        </div>
+        <div className="small muted">{effectText(s, def)}</div>
+        {!learned && <div className="small">{sourceText(def)}</div>}
+        <div className="skill-actions">
+          {learned && <UpgradeButton s={s} act={act} id={def.id} />}
+          {children}
+        </div>
       </div>
     </div>
   );

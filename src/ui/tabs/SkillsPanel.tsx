@@ -15,6 +15,7 @@ import {
 } from '../../engine/engine';
 import { REALMS, PATHS } from '../../engine/data';
 import type { TabProps } from '../GameScreen';
+import { SkillIcon } from '../art/SkillIcons';
 
 function sourceText(def: SkillDef): string {
   switch (def.source.kind) {
@@ -63,6 +64,7 @@ export default function SkillsPanel({ state: s, act }: TabProps) {
           <h2>Chưa Học</h2>
           {locked.map((d) => (
             <div key={d.id} className="skill-row locked">
+              <SkillIcon id={d.id} dim />
               <div className="skill-main">
                 <b>{d.name}</b>
                 <div className="small muted">{describeSkill(d, 1)}</div>
@@ -91,7 +93,7 @@ function SkillRow({
   const full = s.loadout.length >= 3;
   return (
     <div className={`skill-row ${equipped && !active ? 'inactive' : ''}`}>
-      {equipped && <span className="skill-order">{index! + 1}</span>}
+      <SkillIcon id={id} level={lv} order={equipped ? index! + 1 : undefined} dim={equipped && !active} />
       <div className="skill-main">
         <div>
           <b>{def.name}</b> <span className="muted small">cấp {lv}/{SKILL_MAX_LEVEL}</span>

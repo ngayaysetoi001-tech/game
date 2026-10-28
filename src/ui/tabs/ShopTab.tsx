@@ -15,6 +15,7 @@ import { REALMS } from '../../engine/data';
 import { GRADE_NAMES, TECHS, buyTech, canBuyTech, describeMods, hasTech, type TechDef } from '../../engine/engine';
 import type { TabProps } from '../GameScreen';
 import { PillIcon } from '../art/Icons';
+import { SkillIcon, TechIcon } from '../art/SkillIcons';
 import AutoToggle from '../AutoToggle';
 
 export default function ShopTab(props: TabProps) {
@@ -39,6 +40,7 @@ function SkillShop({ state: s, act }: TabProps) {
         const lockedRealm = realmOf(s) < src.realm;
         return (
           <div key={d.id} className="shop-item">
+            <SkillIcon id={d.id} dim={!owned && lockedRealm} />
             <div className="shop-text">
               <b>{d.name}</b>
               <div className="muted small">{describeSkill(d, 1)}</div>
@@ -72,6 +74,7 @@ function TechShop({ state: s, act }: TabProps) {
         const lockedRealm = realmOf(s) < src.realm;
         return (
           <div key={d.id} className="shop-item">
+            <TechIcon id={d.id} grade={d.grade} dim={!owned && lockedRealm} />
             <div className="shop-text">
               <b>{d.name}</b> <span className={`grade grade-${d.grade}`}>{GRADE_NAMES[d.grade]}</span>
               <div className="muted small">

@@ -26,6 +26,7 @@ import {
 import type { TabProps } from '../GameScreen';
 import AutoToggle from '../AutoToggle';
 import NatalIcon from '../art/NatalIcon';
+import { SkillIcon } from '../art/SkillIcons';
 
 export default function NatalPanel({ state: s, act }: TabProps) {
   const [pick, setPick] = useState<NatalId | null>(null);
@@ -112,10 +113,13 @@ export default function NatalPanel({ state: s, act }: TabProps) {
       </div>
       <div className="small">Đang cộng thêm: {describeMods(natalMods(s))}</div>
 
-      <div className="natal-skill">
-        <b>Chiêu bản mệnh 【{skill.name}】</b>{' '}
-        <span className="muted small">cấp {natalSkillLevel(n.level)}/10 · luôn ưu tiên dùng trước</span>
-        <div className="small muted">{describeSkill(skill, natalSkillLevel(n.level))}</div>
+      <div className="natal-skill-row">
+        <SkillIcon id={def.skillId} level={natalSkillLevel(n.level)} />
+        <div className="natal-skill">
+          <b>Chiêu bản mệnh 【{skill.name}】</b>{' '}
+          <span className="muted small">cấp {natalSkillLevel(n.level)}/10 · luôn ưu tiên dùng trước</span>
+          <div className="small muted">{describeSkill(skill, natalSkillLevel(n.level))}</div>
+        </div>
       </div>
 
       <div className="natal-stages">

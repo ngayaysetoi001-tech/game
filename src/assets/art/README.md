@@ -10,5 +10,8 @@ và đúng tên dưới đây. Game sẽ tự dùng ảnh thay cho hình vẽ b�
 | `scenes/` | `dong-phu`, `be-quan`, hoặc tên khu bí cảnh bỏ dấu | `hac-phong-lam.webp` |
 | `items/` | `<o>-<pham>` với ô `weapon`/`armor`/`pendant`, phẩm `0`–`3` | `weapon-3.webp` |
 | `pills/` | `tuKhi`, `phaCanh`, `hoiXuan` | `phaCanh.webp` |
+| `skills/` | mã võ kỹ (xem `src/engine/skills.ts`), gồm cả chiêu quái và bản mệnh | `kiem_pha_thien.webp`, `n_phi_kiem.webp` |
+| `techs/` | mã công pháp (xem `src/engine/techniques.ts`) | `kiem_0.webp`, `dan_khi.webp` |
+| `natal/` | `phi_kiem`, `ho_lo`, `linh_chung` | `phi_kiem.webp` |
 
 Gợi ý kích thước: quái/nhân vật 512×512, bối cảnh 1200×720, biểu tượng 128×128.

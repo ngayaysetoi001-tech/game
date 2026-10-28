@@ -1,5 +1,7 @@
 import { PATHS, ZONES, type PathId, type PillId, SLOTS } from '../../engine/data';
 import { NATAL_IDS } from '../../engine/natal';
+import { PLAYER_SKILLS, SKILLS, SUB_TECHS, MAIN_TECHS, type SkillId } from '../../engine/engine';
+import { SkillIcon, TechIcon } from './SkillIcons';
 import Cultivator from './Cultivator';
 import { ItemIcon, PillIcon } from './Icons';
 import NatalIcon from './NatalIcon';
@@ -63,6 +65,41 @@ export default function Gallery() {
               </span>
             )),
           )}
+        </div>
+      </section>
+      <section className="card">
+        <h2>Võ kỹ người chơi</h2>
+        <div className="icon-grid">
+          {PLAYER_SKILLS.map((d, i) => (
+            <figure key={d.id}>
+              <SkillIcon id={d.id} level={i + 1} order={i < 3 ? i + 1 : undefined} size={48} />
+              <figcaption>{d.name}</figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+      <section className="card">
+        <h2>Chiêu của quái và bản mệnh</h2>
+        <div className="icon-grid">
+          {(Object.keys(SKILLS) as SkillId[])
+            .filter((id) => SKILLS[id].source.kind === 'monster' || SKILLS[id].source.kind === 'natal')
+            .map((id) => (
+              <figure key={id}>
+                <SkillIcon id={id} size={48} />
+                <figcaption>{SKILLS[id].name}</figcaption>
+              </figure>
+            ))}
+        </div>
+      </section>
+      <section className="card">
+        <h2>Công pháp</h2>
+        <div className="icon-grid">
+          {[...MAIN_TECHS, ...SUB_TECHS].map((d) => (
+            <figure key={d.id}>
+              <TechIcon id={d.id} grade={d.grade} level={d.grade + 3} size={48} />
+              <figcaption>{d.name}</figcaption>
+            </figure>
+          ))}
         </div>
       </section>
     </>

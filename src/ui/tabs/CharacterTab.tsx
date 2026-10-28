@@ -17,6 +17,9 @@ import Cultivator from '../art/Cultivator';
 import Landscape from '../art/Landscape';
 import { HOME_THEME, REALM_AURA } from '../art/palette';
 import { Art } from '../art/registry';
+import { NATALS, SKILLS, SUB_SLOTS, TECHS, natalSkillLevel, natalStage, skillSlotCount, techLevel } from '../../engine/engine';
+import NatalIcon from '../art/NatalIcon';
+import { SkillIcon, TechIcon } from '../art/SkillIcons';
 import SkillsPanel from './SkillsPanel';
 import NatalPanel from './NatalPanel';
 import TechniquesPanel from './TechPanels';
@@ -49,6 +52,7 @@ export default function CharacterTab(props: TabProps) {
       {sub === 'overview' && (
         <>
           <StatsPanel {...props} />
+          <LoadoutStrip s={props.state} onGo={setSub} />
           <StatsSummary {...props} />
           <SettingsPanel {...props} />
         </>
@@ -187,6 +191,81 @@ function StatsSummary({ state: s }: TabProps) {
           </div>
         ))}
       </dl>
+    </section>
+  );
+}
+
+/** Một lượt thấy công pháp, võ kỹ và bản mệnh đang dùng; chạm vào nhóm để mở mục tương ứng */
+function LoadoutStrip({ s, onGo }: { s: TabProps['state']; onGo: (sub: Sub) => void }) {
+  const slots = skillSlotCount(s);
+  const main = s.mainTech ? TECHS[s.mainTech] : null;
+  const subs = s.subTechs.map((id) => TECHS[id]);
+  return (
+    <section className="card">
+      <h2>Đang Trang Bị</h2>
+      <div className="loadout">
+        <button className="loadout-group" onClick={() => onGo('technique')} aria-label="Mở mục Công Pháp">
+          <span className="label">Công pháp</span>
+          <span className="loadout-icons">
+            <span className="slot">
+              {main ? <TechIcon id={main.id} grade={main.grade} level={techLevel(s, main.id)} /> : <span className="slot-empty">chính</span>}
+              <span className="slot-cap">{main ? main.name : 'Chưa chọn'}</span>
+            </span>
+            {Array.from({ length: SUB_SLOTS }, (_, i) => {
+              const d = subs[i];
+              return (
+                <span className="slot" key={i}>
+                  {d ? <TechIcon id={d.id} grade={d.grade} level={techLevel(s, d.id)} /> : <span className="slot-empty">phụ</span>}
+                  <span className="slot-cap">{d ? d.name : 'Trống'}</span>
+                </span>
+              );
+            })}
+          </span>
+        </button>
+        <button className="loadout-group" onClick={() => onGo('skills')} aria-label="Mở mục Võ Kỹ">
+          <span className="label">Võ kỹ</span>
+          <span className="loadout-icons">
+            {[0, 1, 2].map((i) => {
+              const id = s.loadout[i];
+              const open = i < slots;
+              return (
+                <span className="slot" key={i}>
+                  {id && open ? (
+                    <SkillIcon id={id} level={s.skills[id]} order={i + 1} />
+                  ) : (
+                    <span className="slot-empty">{open ? 'trống' : 'khóa'}</span>
+                  )}
+                  <span className="slot-cap">{id && open ? SKILLS[id].name : open ? 'Trống' : 'Chưa mở'}</span>
+                </span>
+              );
+            })}
+          </span>
+        </button>
+        <button className="loadout-group" onClick={() => onGo('gear')} aria-label="Mở mục Pháp Bảo">
+          <span className="label">Bản mệnh</span>
+          <span className="loadout-icons">
+            {s.natal ? (
+              <>
+                <span className="slot">
+                  <span className="natal-thumb">
+                    <NatalIcon id={s.natal.id} stage={natalStage(s.natal.level)} />
+                  </span>
+                  <span className="slot-cap">{NATALS[s.natal.id].name}</span>
+                </span>
+                <span className="slot">
+                  <SkillIcon id={NATALS[s.natal.id].skillId} level={natalSkillLevel(s.natal.level)} />
+                  <span className="slot-cap">{SKILLS[NATALS[s.natal.id].skillId].name}</span>
+                </span>
+              </>
+            ) : (
+              <span className="slot">
+                <span className="slot-empty">chưa</span>
+                <span className="slot-cap">Chưa luyện</span>
+              </span>
+            )}
+          </span>
+        </button>
+      </div>
     </section>
   );
 }
