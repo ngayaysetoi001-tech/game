@@ -233,6 +233,7 @@ function LogPanel({ s }: { s: GameState }) {
 function SettingsPanel({ s, replace }: { s: GameState; replace: Props['replace'] }) {
   const [code, setCode] = useState('');
   const [msg, setMsg] = useState('');
+  const [confirmReset, setConfirmReset] = useState(false);
   return (
     <section className="card">
       <h2>Thiết Lập</h2>
@@ -269,14 +270,18 @@ function SettingsPanel({ s, replace }: { s: GameState; replace: Props['replace']
         >
           Nhập
         </button>
-        <button
-          className="danger"
-          onClick={() => {
-            if (confirm('Tán công trùng tu? Toàn bộ tiến độ sẽ mất.')) replace(null);
-          }}
-        >
-          Xóa dữ liệu
-        </button>
+        {confirmReset ? (
+          <>
+            <button className="danger" onClick={() => replace(null)}>
+              Xác nhận xóa toàn bộ
+            </button>
+            <button onClick={() => setConfirmReset(false)}>Hủy</button>
+          </>
+        ) : (
+          <button className="danger" onClick={() => setConfirmReset(true)}>
+            Xóa dữ liệu
+          </button>
+        )}
       </div>
       {msg && <p className="small muted">{msg}</p>}
     </section>
