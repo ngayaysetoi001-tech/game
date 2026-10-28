@@ -305,3 +305,10 @@ export function pathLevelCap(realm: number): number {
 export function techCost(level: number, realm: number): { fragments: number; stones: number } {
   return { fragments: level, stones: 50 * level * 2 ** realm };
 }
+
+// =====================================================================
+// Tiện ích tự động
+// =====================================================================
+
+/** Tự khiêu chiến mỗi bao nhiêu giây */
+export const AUTO_CLIMB_SECONDS = 20;

@@ -8,6 +8,7 @@ import {
   floorStones,
 } from '../../engine/data';
 import {
+  autoClimbStatus,
   canChallenge,
   challengeFloor,
   combatPower,
@@ -24,6 +25,7 @@ import {
 } from '../../engine/engine';
 import type { TabProps } from '../GameScreen';
 import BattleStage from '../scenes/BattleStage';
+import AutoToggle from '../AutoToggle';
 
 const ESTIMATE_RUNS = 100;
 
@@ -116,6 +118,11 @@ export default function DungeonTab(props: TabProps) {
         )}
       </section>
 
+      <section className="card">
+        <AutoToggle s={s} act={act} k="climb" label="Tự động khiêu chiến">
+          <ClimbStatus s={s} />
+        </AutoToggle>
+      </section>
       {s.lastBattle && <BattleReport {...props} />}
       <FarmingPanel {...props} />
     </>
@@ -220,4 +227,29 @@ function FarmRates({ floor }: { floor: number }) {
       tàn quyển · {FARM_ITEM_CHANCE * 100}% pháp bảo
     </p>
   );
+}
+
+function ClimbStatus({ s }: { s: TabProps['state'] }) {
+  const st = autoClimbStatus(s, s.lastTick);
+  switch (st.kind) {
+    case 'off':
+      return <>Tự đánh tầng kế tiếp mỗi 20 giây, kể cả khi offline. Thua thì tạm dừng tới khi chiến lực tăng.</>;
+    case 'top':
+      return <>Đã vượt toàn bộ bí cảnh.</>;
+    case 'seclusion':
+      return <>Đang bế quan, tạm dừng.</>;
+    case 'injured':
+      return <>Đang dưỡng thương, thử lại sau {formatDuration(st.seconds)}.</>;
+    case 'blocked':
+      return (
+        <>
+          Tạm dừng sau trận thua. Chiến lực {formatNumber(st.power)}, cần vượt {formatNumber(st.need)}: hãy mặc đồ tốt hơn,
+          tu luyện công pháp hoặc lên cảnh giới.
+        </>
+      );
+    case 'waiting':
+      return <>Khiêu chiến tầng {s.floor + 1} sau {Math.ceil(st.seconds)} giây.</>;
+    case 'ready':
+      return <>Sắp khiêu chiến tầng {s.floor + 1}.</>;
+  }
 }

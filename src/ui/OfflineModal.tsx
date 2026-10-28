@@ -23,6 +23,21 @@ export default function OfflineModal({ summary, onClose }: { summary: OfflineSum
               <b>{summary.items}</b> pháp bảo
             </li>
           )}
+          {summary.floors > 0 && (
+            <li>
+              Vượt thêm <b>{summary.floors}</b> tầng bí cảnh
+            </li>
+          )}
+          {summary.battlesWon + summary.battlesLost > 0 && (
+            <li>
+              Giao chiến <b>{summary.battlesWon}</b> thắng, <b>{summary.battlesLost}</b> bại
+            </li>
+          )}
+          {summary.seclusions > 0 && (
+            <li>
+              Hoàn thành <b>{summary.seclusions}</b> lần bế quan
+            </li>
+          )}
           {summary.levelsGained > 0 && (
             <li>
               Tinh tiến <b>{summary.levelsGained}</b> tầng

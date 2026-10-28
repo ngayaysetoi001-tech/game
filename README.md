@@ -45,6 +45,14 @@ npm run build    # bản build tĩnh ở dist/, deploy được lên GitHub Page
 - **Thay bằng ảnh thật**: đặt file vào `src/assets/art/` theo quy ước tên trong [README ở đó](src/assets/art/README.md);
   thiếu file nào thì game dùng hình vẽ bằng code.
 
+### Tiện ích tự động (chạy cả khi offline)
+
+- **Tự động khiêu chiến** (tab Bí Cảnh): đánh tầng kế tiếp mỗi 20 giây; thua thì tạm dừng tới khi chiến lực tăng, không bế quan cùng lúc.
+- **Tự bế quan lại** (tab Tu Luyện): bế quan xong tự vào lại cùng loại; dừng khi tu vi đầy bình cảnh để người chơi đột phá.
+- **Tự dùng pháp bảo tốt hơn / tự bán đồ kém hơn** khi nhặt được (tab Nhân Vật).
+- **Tự dùng Hồi Xuân Đan** khi bị thương (tab Phường Thị).
+- Thông báo nổi cho sự kiện quan trọng và khi có thể đột phá; thẻ **Thống Kê**; popup offline tóm tắt cả tầng vượt, trận đấu, số lần bế quan.
+
 Nhịp độ dự kiến với linh căn trung bình (không bế quan): Luyện Khí ~10 phút, Trúc Cơ ~30 phút,
 Kim Đan ~1.5 giờ, Nguyên Anh ~4 giờ… hết Độ Kiếp ~10 ngày.
 

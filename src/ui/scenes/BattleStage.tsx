@@ -18,6 +18,10 @@ import { Art, slugify } from '../art/registry';
 import { ZONES } from '../../engine/data';
 
 const STEP_MS = 420;
+/** Trận dài thì phát nhanh hơn, tổng không quá chừng này */
+const MAX_PLAYBACK_MS = 9000;
+/** Chỉ phát lại trận vừa đánh (không phát trận đánh lúc offline) */
+const FRESH_MS = 5000;
 const BANNER_MS = 1800;
 const DARK_FEATURES = new Set(['ghost', 'void']);
 
@@ -34,6 +38,7 @@ export default function BattleStage({ s, onPlaying }: { s: GameState; onPlaying:
   useEffect(() => {
     if (!battle?.events?.length || battle.time <= lastPlayed) return;
     lastPlayed = battle.time;
+    if (Date.now() - battle.time > FRESH_MS) return;
     if (prefersReducedMotion()) {
       setPhase({ kind: 'done' });
       return;
@@ -47,7 +52,7 @@ export default function BattleStage({ s, onPlaying }: { s: GameState; onPlaying:
       const total = battle?.events?.length ?? 0;
       const t = setTimeout(
         () => setPhase(phase.step + 1 >= total ? { kind: 'done' } : { kind: 'play', step: phase.step + 1 }),
-        STEP_MS,
+        Math.min(STEP_MS, MAX_PLAYBACK_MS / total),
       );
       return () => clearTimeout(t);
     }

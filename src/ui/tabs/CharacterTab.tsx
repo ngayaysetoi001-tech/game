@@ -35,6 +35,7 @@ import { ItemIcon } from '../art/Icons';
 import Landscape from '../art/Landscape';
 import { HOME_THEME, REALM_AURA } from '../art/palette';
 import { Art } from '../art/registry';
+import AutoToggle from '../AutoToggle';
 
 export default function CharacterTab(props: TabProps) {
   return (
@@ -43,6 +44,7 @@ export default function CharacterTab(props: TabProps) {
       <TechniquePanel {...props} />
       <GearPanel {...props} />
       <BagPanel {...props} />
+      <StatsSummary {...props} />
       <SettingsPanel {...props} />
     </>
   );
@@ -234,6 +236,8 @@ function BagPanel({ state: s, act }: TabProps) {
           Bán {worse} món kém hơn
         </button>
       </div>
+      <AutoToggle s={s} act={act} k="equip" label="Tự dùng pháp bảo tốt hơn khi nhặt được" />
+      <AutoToggle s={s} act={act} k="sell" label="Tự bán pháp bảo kém hơn khi nhặt được" />
       {items.length === 0 && <p className="muted small">Túi trống. Vượt Bí Cảnh hoặc lịch luyện để nhặt pháp bảo.</p>}
       {s.bag.length >= BAG_LIMIT && <p className="notice">Túi đã đầy, pháp bảo nhặt thêm sẽ tự động bán.</p>}
       {items.map((it) => {
@@ -313,6 +317,32 @@ function SettingsPanel({ state: s, replace }: TabProps) {
         )}
       </div>
       {msg && <p className="small muted">{msg}</p>}
+    </section>
+  );
+}
+
+function StatsSummary({ state: s }: TabProps) {
+  const st = s.stats;
+  const days = (s.lastTick - s.createdAt) / 86_400_000;
+  const rows: [string, string][] = [
+    ['Tu hành', days >= 1 ? `${Math.floor(days)} ngày` : `${Math.max(1, Math.round(days * 24))} giờ`],
+    ['Tầng bí cảnh', `${s.floor}`],
+    ['Trận thắng / thua', `${st.battlesWon} / ${st.battlesLost}`],
+    ['Đột phá thành / bại', `${st.breakthroughs} / ${st.breakthroughFails}`],
+    ['Lần bế quan', `${st.seclusions}`],
+    ['Pháp bảo nhặt được', `${st.itemsFound}`],
+  ];
+  return (
+    <section className="card">
+      <h2>Thống Kê</h2>
+      <dl className="stat-grid two">
+        {rows.map(([k, v]) => (
+          <div key={k}>
+            <dt>{k}</dt>
+            <dd>{v}</dd>
+          </div>
+        ))}
+      </dl>
     </section>
   );
 }

@@ -2,6 +2,7 @@ import { PILLS, type PillId } from '../../engine/data';
 import { buyPill, canUsePill, formatNumber, pillPrice, usePill } from '../../engine/engine';
 import type { TabProps } from '../GameScreen';
 import { PillIcon } from '../art/Icons';
+import AutoToggle from '../AutoToggle';
 
 export default function ShopTab({ state: s, act }: TabProps) {
   const ids = Object.keys(PILLS) as PillId[];
@@ -39,6 +40,9 @@ export default function ShopTab({ state: s, act }: TabProps) {
           </div>
         );
       })}
+      <AutoToggle s={s} act={act} k="heal" label="Tự dùng Hồi Xuân Đan khi bị thương">
+        Hữu ích khi bật tự động khiêu chiến: không phải chờ hết thương mới tu luyện bình thường.
+      </AutoToggle>
     </section>
   );
 }

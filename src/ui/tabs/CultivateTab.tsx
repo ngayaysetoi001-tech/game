@@ -19,6 +19,7 @@ import {
 } from '../../engine/engine';
 import type { TabProps } from '../GameScreen';
 import CultivationScene from '../scenes/CultivationScene';
+import AutoToggle from '../AutoToggle';
 
 export default function CultivateTab(props: TabProps) {
   const { state: s } = props;
@@ -135,6 +136,9 @@ function SeclusionPanel({ state: s, act }: TabProps) {
           <span>Đã thu {formatNumber(sec.gained)} tu vi</span>
         </div>
         <button onClick={() => act(cancelSeclusion)}>Xuất quan sớm (mất cơ duyên)</button>
+        <AutoToggle s={s} act={act} k="reclusion" label="Tự bế quan lại khi kết thúc">
+          Dừng khi tu vi đầy bình cảnh để bạn đột phá.
+        </AutoToggle>
       </section>
     );
   }
@@ -160,6 +164,9 @@ function SeclusionPanel({ state: s, act }: TabProps) {
           </button>
         ))}
       </div>
+      <AutoToggle s={s} act={act} k="reclusion" label="Tự bế quan lại khi kết thúc">
+        Dừng khi tu vi đầy bình cảnh để bạn đột phá.
+      </AutoToggle>
     </section>
   );
 }

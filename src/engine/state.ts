@@ -72,8 +72,31 @@ export interface BattleReport {
   maxHpE?: number;
 }
 
+/** Các công tắc tự động hóa; chạy cả khi offline */
+export interface AutoSettings {
+  /** Tự khiêu chiến tầng kế tiếp */
+  climb: boolean;
+  /** Tự dùng pháp bảo mới nhặt nếu mạnh hơn */
+  equip: boolean;
+  /** Tự bán pháp bảo mới nhặt nếu kém hơn đồ đang dùng */
+  sell: boolean;
+  /** Bế quan xong tự bế quan lại cùng loại */
+  reclusion: boolean;
+  /** Bị thương thì tự dùng Hồi Xuân Đan */
+  heal: boolean;
+}
+
+export interface Stats {
+  battlesWon: number;
+  battlesLost: number;
+  breakthroughs: number;
+  breakthroughFails: number;
+  seclusions: number;
+  itemsFound: number;
+}
+
 export interface GameState {
-  version: 2;
+  version: 3;
   name: string;
   root: SpiritRoot;
   /** Chỉ số tầng đã "trải phẳng" qua mọi cảnh giới */
@@ -99,6 +122,13 @@ export interface GameState {
   farming: Farming | null;
   nextItemId: number;
   lastBattle: BattleReport | null;
+  // --- tiện ích ---
+  auto: AutoSettings;
+  stats: Stats;
+  /** Chiến lực lúc tự khiêu chiến thua; chỉ thử lại khi chiến lực vượt mức này */
+  climbBlockedPower: number;
+  /** Thời điểm (ms) lần tự khiêu chiến kế tiếp */
+  nextClimbAt: number;
 }
 
 // ---------- Tầng / cảnh giới ----------

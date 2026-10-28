@@ -36,6 +36,9 @@ import {
   startFarming,
   stopFarming,
   upgradeTech,
+  applyOffline as offline,
+  autoClimbStatus,
+  setAuto,
   type GameState,
   type Item,
 } from './engine';
@@ -334,9 +337,11 @@ describe('migration', () => {
     for (const k of ['path', 'tech', 'gear', 'bag', 'fragments', 'floor', 'farming', 'nextItemId', 'lastBattle']) delete v1[k];
     v1.version = 1;
     const s = deserialize(JSON.stringify(v1))!;
-    expect(s.version).toBe(2);
+    expect(s.version).toBe(3);
     expect(s.floor).toBe(REALMS[1].gateFloor);
     expect(s.gear.weapon).toBeNull();
+    expect(s.auto.climb).toBe(false);
+    expect(s.stats.battlesWon).toBe(0);
   });
 });
 
@@ -360,5 +365,71 @@ describe('balance guards', () => {
     expect(wins(mk(12, 4, 1), 5)).toBe(false);
     const ready = { ...mk(12, 4, 1), path: 'kiem' as const, tech: { base: 3, path: 2 } };
     expect(wins(ready, 5)).toBe(true);
+  });
+});
+
+describe('automation', () => {
+  const on = (s: GameState, key: Parameters<typeof setAuto>[1]) => setAuto(s, key, true, T0, always(0.5));
+
+  it('auto-climb clears floors over time, even offline', () => {
+    let s = on({ ...fresh(), level: 20 }, 'climb');
+    const { state, summary } = offline(s, T0 + 5 * 60_000, always(0.5));
+    s = state;
+    expect(s.floor).toBeGreaterThan(5);
+    expect(summary.floors).toBe(s.floor);
+    expect(summary.battlesWon).toBe(s.stats.battlesWon);
+  });
+
+  it('auto-climb pauses after a loss until combat power increases', () => {
+    // Kẹt ở bình cảnh nên chiến lực không tự tăng
+    let s = on({ ...atFirstBottleneck(), floor: 10 }, 'climb');
+    s = tick(s, T0 + 1000, always(0.5));
+    expect(s.stats.battlesLost).toBe(1);
+    s = tick(s, T0 + 30 * 60_000, always(0.5));
+    expect(s.stats.battlesLost).toBe(1);
+    expect(autoClimbStatus(s, s.lastTick).kind).toBe('blocked');
+    s = { ...s, level: 25 };
+    expect(autoClimbStatus(s, s.lastTick).kind).not.toBe('blocked');
+  });
+
+  it('auto-climb does nothing while in seclusion', () => {
+    let s = on({ ...fresh(), level: 20 }, 'climb');
+    s = startSeclusion(s, 'short', T0, always(0.9));
+    s = tick(s, T0 + 5 * 60_000, always(0.9));
+    expect(s.floor).toBe(0);
+  });
+
+  it('auto-equip wears better drops and auto-sell discards worse ones', () => {
+    let s = on(on({ ...fresh(), level: 20 }, 'equip'), 'sell');
+    s.gear.weapon = { id: 99, slot: 'weapon', tier: 3, floor: 40 };
+    s.gear.armor = { id: 98, slot: 'armor', tier: 3, floor: 40 };
+    // rng 0: luôn rơi vũ khí phàm phẩm → kém hơn → bán; pendant ô trống → không xảy ra với rng 0
+    s = challengeFloor(s, T0, always(0));
+    expect(s.bag).toHaveLength(0);
+    expect(s.gear.weapon?.id).toBe(99);
+    s.gear.weapon = null;
+    s = challengeFloor(s, T0, always(0));
+    expect(s.gear.weapon).not.toBeNull();
+    expect(s.stats.itemsFound).toBe(2);
+  });
+
+  it('auto-reclusion chains seclusions but stops at a full bottleneck', () => {
+    // Trúc Cơ: 20 phút bế quan chưa đủ đầy bình cảnh
+    let s = on({ ...fresh(), level: PATH_UNLOCK_LEVEL }, 'reclusion');
+    s = startSeclusion(s, 'short', T0, always(0.9));
+    s = tick(s, T0 + 25 * 60_000, always(0.9));
+    expect(s.stats.seclusions).toBe(2);
+    expect(s.seclusion).not.toBeNull();
+    s = { ...atFirstBottleneck(), auto: s.auto, seclusion: { id: 'short', start: T0, end: T0 + 60_000, gained: 0 } };
+    s = tick(s, T0 + 61_000, always(0.9));
+    expect(s.seclusion).toBeNull();
+  });
+
+  it('auto-heal uses Hồi Xuân Đan when injured', () => {
+    let s = on(atFirstBottleneck(), 'heal');
+    s.pills.hoiXuan = 1;
+    s = breakthrough(s, 0, T0, always(0.99));
+    expect(s.injuryUntil).toBe(0);
+    expect(s.pills.hoiXuan).toBe(0);
   });
 });

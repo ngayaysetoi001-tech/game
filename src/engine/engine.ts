@@ -3,6 +3,7 @@
 // vào để test được một cách tất định.
 
 import {
+  AUTO_CLIMB_SECONDS,
   BAG_LIMIT,
   BASE_RATE,
   BASE_STONE_RATE,
@@ -39,6 +40,7 @@ import {
   techCost,
 } from './data';
 import {
+  combatPower,
   cultivationBonus,
   enemyFor,
   isBossFloor,
@@ -52,8 +54,10 @@ import {
 } from './combat';
 import {
   MAX_LEVEL,
+  type AutoSettings,
   type GameState,
   type Item,
+  type Stats,
   type Rng,
   type SpiritRoot,
   addLog,
@@ -97,13 +101,26 @@ export function seclusionDef(id: SeclusionId) {
 function injure(s: GameState, time: number, seconds: number) {
   const mult = s.path ? PATHS[s.path].injuryMult : 1;
   s.injuryUntil = Math.max(s.injuryUntil, time + seconds * mult * 1000);
+  if (s.auto.heal && s.pills.hoiXuan > 0) {
+    s.pills.hoiXuan--;
+    s.injuryUntil = 0;
+    addLog(s, time, `Tự phục dụng ${PILLS.hoiXuan.name}, thương thế lành hẳn (còn ${s.pills.hoiXuan} viên).`);
+  }
 }
 
 // ---------- Tạo game ----------
 
+function defaultAuto(): AutoSettings {
+  return { climb: false, equip: false, sell: false, reclusion: false, heal: false };
+}
+
+function emptyStats(): Stats {
+  return { battlesWon: 0, battlesLost: 0, breakthroughs: 0, breakthroughFails: 0, seclusions: 0, itemsFound: 0 };
+}
+
 export function newGame(name: string, root: SpiritRoot, now: number): GameState {
   const s: GameState = {
-    version: 2,
+    version: 3,
     name: name.trim() || 'Vô Danh',
     root,
     level: 0,
@@ -125,6 +142,10 @@ export function newGame(name: string, root: SpiritRoot, now: number): GameState 
     farming: null,
     nextItemId: 1,
     lastBattle: null,
+    auto: defaultAuto(),
+    stats: emptyStats(),
+    climbBlockedPower: 0,
+    nextClimbAt: now,
   };
   addLog(s, now, `${s.name} bước lên con đường tu tiên với ${rootName(root)} (${root.elements.join(', ')}).`, 'good');
   return s;
@@ -161,10 +182,17 @@ function gainCultivation(s: GameState, amount: number, time: number): number {
 function advance(s: GameState, now: number, rng: Rng) {
   let t = s.lastTick;
   while (t < now) {
+    // Tự khiêu chiến đúng hẹn (kiểm tra trước khi dời hẹn kế tiếp)
+    if (s.auto.climb && s.nextClimbAt <= t) {
+      const ready = autoClimbStatus(s, t).kind === 'ready';
+      s.nextClimbAt = t + AUTO_CLIMB_SECONDS * 1000;
+      if (ready) fight(s, t, rng, true);
+    }
     // Chia nhỏ tại các mốc làm thay đổi tốc độ (hết bế quan, hết thương thế)
     let next = now;
     if (s.seclusion && s.seclusion.end > t) next = Math.min(next, s.seclusion.end);
     if (s.injuryUntil > t) next = Math.min(next, s.injuryUntil);
+    if (s.auto.climb && s.nextClimbAt > t) next = Math.min(next, s.nextClimbAt);
     const dt = (next - t) / 1000;
     const gained = gainCultivation(s, cultivationRate(s, t) * dt, next);
     s.stones += stoneRate(s) * dt;
@@ -203,6 +231,10 @@ export interface OfflineSummary {
   levelsGained: number;
   items: number;
   fragments: number;
+  floors: number;
+  battlesWon: number;
+  battlesLost: number;
+  seclusions: number;
   /** Tu vi đã đầy ở bình cảnh, phần dư bị lãng phí */
   capped: boolean;
 }
@@ -232,6 +264,8 @@ export function applyOffline(
     level: s.level,
     items: s.nextItemId,
     fragments: s.fragments,
+    floor: s.floor,
+    stats: { ...s.stats },
   };
   advance(s, now, rng);
   return {
@@ -243,6 +277,10 @@ export function applyOffline(
       levelsGained: s.level - before.level,
       items: s.nextItemId - before.items,
       fragments: s.fragments - before.fragments,
+      floors: s.floor - before.floor,
+      battlesWon: s.stats.battlesWon - before.stats.battlesWon,
+      battlesLost: s.stats.battlesLost - before.stats.battlesLost,
+      seclusions: s.stats.seclusions - before.stats.seclusions,
       capped: isBottleneck(s.level) && s.cultivation >= requiredFor(s.level),
     },
   };
@@ -287,6 +325,7 @@ export function breakthrough(prev: GameState, pillsWanted: number, now: number, 
     s.cultivation = 0;
     s.level++;
     s.failBonus = 0;
+    s.stats.breakthroughs++;
     addLog(s, now, `Thiên địa chấn động! Đột phá thành công, bước vào ${levelName(s.level)}.`, 'good');
     if (s.level === PATH_UNLOCK_LEVEL && !s.path) {
       addLog(s, now, 'Đạo cơ đã thành, có thể chọn hướng tu trong mục Nhân Vật.', 'good');
@@ -295,6 +334,7 @@ export function breakthrough(prev: GameState, pillsWanted: number, now: number, 
     const loss = s.path ? PATHS[s.path].failLoss : PATHS.kiem.failLoss;
     s.cultivation *= 1 - loss;
     s.failBonus = Math.min(FAIL_BONUS_MAX, s.failBonus + FAIL_BONUS_STEP);
+    s.stats.breakthroughFails++;
     injure(s, now, INJURY_SECONDS);
     addLog(
       s,
@@ -330,6 +370,7 @@ function finishSeclusion(s: GameState, time: number, rng: Rng) {
   const sec = s.seclusion!;
   const def = seclusionDef(sec.id);
   s.seclusion = null;
+  s.stats.seclusions++;
   addLog(s, time, `${def.name} kết thúc, thu được ${formatNumber(sec.gained)} tu vi.`);
   const r = rng();
   if (r < 0.05) {
@@ -353,6 +394,14 @@ function finishSeclusion(s: GameState, time: number, rng: Rng) {
   } else {
     addLog(s, time, 'Xuất quan bình an.');
   }
+  if (s.auto.reclusion) {
+    if (isBottleneck(s.level) && s.cultivation >= requiredFor(s.level)) {
+      addLog(s, time, 'Tu vi đã đầy bình cảnh, ngừng tự bế quan để chuẩn bị đột phá.');
+    } else {
+      s.seclusion = { id: sec.id, start: time, end: time + def.minutes * 60_000, gained: 0 };
+      addLog(s, time, `Tự bế quan lại: ${def.name}.`);
+    }
+  }
 }
 
 // ---------- Bí cảnh ----------
@@ -361,14 +410,47 @@ export function canChallenge(s: GameState): boolean {
   return s.floor < MAX_FLOOR && s.seclusion === null;
 }
 
-/** Cất pháp bảo vào túi; túi đầy thì tự bán. Trả về true nếu cất được. */
-function addItem(s: GameState, it: Item): boolean {
+type Stash = 'kept' | 'equipped' | 'sold' | 'full';
+
+const STASH_NOTE: Record<Stash, string> = {
+  kept: '',
+  equipped: ' (đã tự trang bị)',
+  sold: ' (kém hơn, đã tự bán)',
+  full: ' (túi đầy, đã bán)',
+};
+
+function isBetter(s: GameState, it: Item): boolean {
+  const eq = s.gear[it.slot];
+  return !eq || itemScore(it) > itemScore(eq);
+}
+
+/** Cất vào túi, túi đầy thì bán */
+function stash(s: GameState, it: Item): Stash {
   if (s.bag.length >= BAG_LIMIT) {
     s.stones += itemSellPrice(it);
-    return false;
+    return 'full';
   }
   s.bag.push(it);
-  return true;
+  return 'kept';
+}
+
+/** Xử lý pháp bảo vừa nhặt theo các công tắc tự trang bị / tự bán */
+function addItem(s: GameState, it: Item): Stash {
+  s.stats.itemsFound++;
+  if (s.auto.equip && isBetter(s, it)) {
+    const old = s.gear[it.slot];
+    s.gear[it.slot] = it;
+    if (old) {
+      if (s.auto.sell) s.stones += itemSellPrice(old);
+      else stash(s, old);
+    }
+    return 'equipped';
+  }
+  if (s.auto.sell && isWorse(s, it)) {
+    s.stones += itemSellPrice(it);
+    return 'sold';
+  }
+  return stash(s, it);
 }
 
 function newItem(s: GameState, floor: number, boss: boolean, rng: Rng): Item {
@@ -378,6 +460,12 @@ function newItem(s: GameState, floor: number, boss: boolean, rng: Rng): Item {
 export function challengeFloor(prev: GameState, now: number, rng: Rng): GameState {
   const s = begin(prev, now, rng);
   if (!canChallenge(s)) return s;
+  fight(s, now, rng, false);
+  return s;
+}
+
+/** Đánh tầng kế tiếp (mutate s). auto = do tự khiêu chiến gọi. */
+function fight(s: GameState, now: number, rng: Rng, auto: boolean) {
   const floor = s.floor + 1;
   const enemy = enemyFor(floor);
   const player = playerStats(s, now);
@@ -400,17 +488,54 @@ export function challengeFloor(prev: GameState, now: number, rng: Rng): GameStat
     s.stones += stones;
     s.fragments += fragments;
     const it = newItem(s, floor, boss, rng);
-    const kept = addItem(s, it);
+    const result = addItem(s, it);
+    s.stats.battlesWon++;
+    s.climbBlockedPower = 0;
     addLog(
       s,
       now,
-      `Vượt tầng ${floor} ${zoneOf(floor).name}, hạ ${enemy.name}. Nhận ${formatNumber(stones)} linh thạch, ${fragments} tàn quyển, ${TIERS[it.tier].name} ${itemName(it)}${kept ? '' : ' (túi đầy, đã bán)'}.`,
+      `${auto ? '[Tự động] ' : ''}Vượt tầng ${floor} ${zoneOf(floor).name}, hạ ${enemy.name}. Nhận ${formatNumber(stones)} linh thạch, ${fragments} tàn quyển, ${TIERS[it.tier].name} ${itemName(it)}${STASH_NOTE[result]}.`,
       'good',
     );
   } else {
+    s.stats.battlesLost++;
+    // Không thử lại cho tới khi mạnh hơn lúc thua
+    s.climbBlockedPower = combatPower(player);
     injure(s, now, DEFEAT_INJURY_SECONDS);
-    addLog(s, now, `Bại trận trước ${enemy.name} ở tầng ${floor}, bị thương phải rút lui.`, 'bad');
+    addLog(
+      s,
+      now,
+      `${auto ? '[Tự động] ' : ''}Bại trận trước ${enemy.name} ở tầng ${floor}, bị thương phải rút lui.${auto ? ' Tạm dừng tự khiêu chiến tới khi chiến lực tăng.' : ''}`,
+      'bad',
+    );
   }
+}
+
+export type AutoClimbStatus =
+  | { kind: 'off' | 'top' | 'seclusion' | 'ready' }
+  | { kind: 'injured'; seconds: number }
+  | { kind: 'blocked'; power: number; need: number }
+  | { kind: 'waiting'; seconds: number };
+
+/** Tình trạng tự khiêu chiến, để engine quyết định và giao diện hiển thị */
+export function autoClimbStatus(s: GameState, now: number): AutoClimbStatus {
+  if (!s.auto.climb) return { kind: 'off' };
+  if (s.floor >= MAX_FLOOR) return { kind: 'top' };
+  if (s.seclusion) return { kind: 'seclusion' };
+  if (isInjured(s, now)) return { kind: 'injured', seconds: (s.injuryUntil - now) / 1000 };
+  const power = combatPower(playerStats(s, now));
+  if (s.climbBlockedPower > 0 && power <= s.climbBlockedPower) {
+    return { kind: 'blocked', power, need: s.climbBlockedPower };
+  }
+  if (s.nextClimbAt > now) return { kind: 'waiting', seconds: (s.nextClimbAt - now) / 1000 };
+  return { kind: 'ready' };
+}
+
+export function setAuto(prev: GameState, key: keyof AutoSettings, value: boolean, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  s.auto[key] = value;
+  // Bật tự khiêu chiến thì thử ngay ở nhịp kế tiếp
+  if (key === 'climb' && value) s.nextClimbAt = now;
   return s;
 }
 
@@ -436,10 +561,10 @@ function farmLoot(s: GameState, time: number, rng: Rng) {
   if (rng() < FARM_FRAGMENT_CHANCE) s.fragments++;
   if (rng() < FARM_ITEM_CHANCE) {
     const it = newItem(s, floor, false, rng);
-    const kept = addItem(s, it);
-    // Chỉ ghi nhật ký đồ tốt để không bị spam
-    if (it.tier >= 2) {
-      addLog(s, time, `Lịch luyện nhặt được ${TIERS[it.tier].name} ${itemName(it)}${kept ? '' : ' (túi đầy, đã bán)'}!`, 'good');
+    const result = addItem(s, it);
+    // Chỉ ghi nhật ký đồ tốt hoặc vừa tự trang bị, để không bị spam
+    if (it.tier >= 2 || result === 'equipped') {
+      addLog(s, time, `Lịch luyện nhặt được ${TIERS[it.tier].name} ${itemName(it)}${STASH_NOTE[result]}!`, it.tier >= 2 ? 'good' : 'info');
     }
   }
 }
@@ -575,14 +700,14 @@ export function serialize(s: GameState): string {
   return JSON.stringify(s);
 }
 
-/** Nâng save bản cũ lên bản hiện tại */
+/** Nâng save bản cũ lên bản hiện tại, từng bước một */
 function migrate(raw: Record<string, unknown>): GameState | null {
-  if (raw.version === 1) {
+  let s = raw;
+  if (s.version === 1) {
     // Save MVP: chưa có chiến đấu. Cho vượt sẵn các tầng chặn cảnh giới đã đạt để không bị kẹt.
-    const level = raw.level as number;
-    const realm = levelInfo(level)?.realm ?? 0;
-    return {
-      ...(raw as object),
+    const realm = levelInfo(s.level as number)?.realm ?? 0;
+    s = {
+      ...s,
       version: 2,
       path: null,
       tech: { base: 0, path: 0 },
@@ -593,9 +718,19 @@ function migrate(raw: Record<string, unknown>): GameState | null {
       farming: null,
       nextItemId: 1,
       lastBattle: null,
-    } as unknown as GameState;
+    };
   }
-  return raw.version === 2 ? (raw as unknown as GameState) : null;
+  if (s.version === 2) {
+    s = {
+      ...s,
+      version: 3,
+      auto: defaultAuto(),
+      stats: emptyStats(),
+      climbBlockedPower: 0,
+      nextClimbAt: s.lastTick,
+    };
+  }
+  return s.version === 3 ? (s as unknown as GameState) : null;
 }
 
 export function deserialize(raw: string): GameState | null {

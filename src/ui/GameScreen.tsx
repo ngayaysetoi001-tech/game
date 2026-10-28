@@ -16,6 +16,7 @@ import CultivateTab from './tabs/CultivateTab';
 import DungeonTab from './tabs/DungeonTab';
 import CharacterTab from './tabs/CharacterTab';
 import ShopTab from './tabs/ShopTab';
+import Toasts from './Toasts';
 
 export type Tab = 'cultivate' | 'dungeon' | 'character' | 'shop';
 
@@ -80,6 +81,7 @@ export default function GameScreen({ state: s, act, replace }: Omit<TabProps, 'g
         </div>
       </header>
 
+      <Toasts s={s} />
       {tab === 'cultivate' && <CultivateTab {...props} />}
       {tab === 'dungeon' && <DungeonTab {...props} />}
       {tab === 'character' && <CharacterTab {...props} />}
