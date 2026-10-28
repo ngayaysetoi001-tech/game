@@ -1,6 +1,7 @@
 import { PILLS, type PillId } from '../../engine/data';
 import { buyPill, canUsePill, formatNumber, pillPrice, usePill } from '../../engine/engine';
 import type { TabProps } from '../GameScreen';
+import { PillIcon } from '../art/Icons';
 
 export default function ShopTab({ state: s, act }: TabProps) {
   const ids = Object.keys(PILLS) as PillId[];
@@ -12,7 +13,8 @@ export default function ShopTab({ state: s, act }: TabProps) {
         const price = pillPrice(s, id);
         return (
           <div key={id} className="shop-item">
-            <div>
+            <PillIcon id={id} />
+            <div className="shop-text">
               <div>
                 <b>{PILLS[id].name}</b> <span className="muted small">× {s.pills[id]}</span>
               </div>

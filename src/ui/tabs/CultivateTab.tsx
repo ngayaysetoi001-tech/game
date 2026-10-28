@@ -18,6 +18,7 @@ import {
   stoneRate,
 } from '../../engine/engine';
 import type { TabProps } from '../GameScreen';
+import CultivationScene from '../scenes/CultivationScene';
 
 export default function CultivateTab(props: TabProps) {
   const { state: s } = props;
@@ -28,6 +29,7 @@ export default function CultivateTab(props: TabProps) {
   return (
     <>
       <section className="card">
+        <CultivationScene s={s} />
         <div className="bar">
           <div className="bar-fill" style={{ width: `${pct}%` }} />
           <div className="bar-text">

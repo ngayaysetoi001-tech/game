@@ -1,0 +1,66 @@
+import type { ReactNode } from 'react';
+import type { PillId, Slot } from '../../engine/data';
+import { INK, TIER_COLORS } from './palette';
+import { Art } from './registry';
+
+function Frame({ color, glow, children }: { color: string; glow: boolean; children: ReactNode }) {
+  return (
+    <svg className={`art-icon ${glow ? 'glow' : ''}`} viewBox="0 0 40 40" aria-hidden="true" style={{ color }}>
+      <rect x={1} y={1} width={38} height={38} rx={8} fill={INK.dark} stroke={color} strokeOpacity={0.6} />
+      <rect x={1} y={1} width={38} height={38} rx={8} fill={color} opacity={0.1} />
+      {children}
+    </svg>
+  );
+}
+
+export function ItemIcon({ slot, tier }: { slot: Slot; tier: number }) {
+  const c = TIER_COLORS[tier];
+  return (
+    <Art k={`items/${slot}-${tier}`} alt="" className="art-icon">
+      <Frame color={c} glow={tier >= 2}>
+        {slot === 'weapon' && (
+          <g>
+            <path d="M10,30 L29,9 L32,8 L31,11 L12,32 Z" fill="#e6ecf0" />
+            <path d="M10,30 L29,9" stroke={c} strokeWidth={1} />
+            <path d="M8,26 L14,32" stroke={c} strokeWidth={2.4} strokeLinecap="round" />
+            <path d="M10,30 L6,34" stroke={INK.mid} strokeWidth={2.6} strokeLinecap="round" />
+          </g>
+        )}
+        {slot === 'armor' && (
+          <g>
+            <path d="M13,9 L20,12 L27,9 L33,14 L29,19 L28,32 L12,32 L11,19 L7,14 Z" fill={c} opacity={0.85} />
+            <path d="M17,11 L20,18 L23,11" fill="none" stroke={INK.dark} strokeWidth={1.2} />
+            <path d="M12,24 L28,24" stroke={INK.dark} strokeWidth={1.4} />
+          </g>
+        )}
+        {slot === 'pendant' && (
+          <g>
+            <path d="M20,4 L20,10" stroke={c} strokeWidth={1} />
+            <circle cx={20} cy={19} r={9} fill={c} opacity={0.9} />
+            <circle cx={20} cy={19} r={3.2} fill={INK.dark} />
+            <path d="M20,28 L18,36 M20,28 L22,36 M20,28 L20,37" stroke="#b8382c" strokeWidth={1} />
+          </g>
+        )}
+      </Frame>
+    </Art>
+  );
+}
+
+const PILL_COLORS: Record<PillId, string> = {
+  tuKhi: '#7fcf8a',
+  phaCanh: '#f0c35a',
+  hoiXuan: '#f08aa8',
+};
+
+export function PillIcon({ id }: { id: PillId }) {
+  const c = PILL_COLORS[id];
+  return (
+    <Art k={`pills/${id}`} alt="" className="art-icon">
+      <Frame color={c} glow={id === 'phaCanh'}>
+        <circle cx={20} cy={21} r={10} fill={c} />
+        <circle cx={20} cy={21} r={10} fill="none" stroke={INK.dark} strokeOpacity={0.4} strokeDasharray="2 3" />
+        <ellipse cx={16.5} cy={17} rx={3.5} ry={2.2} fill="#fff" opacity={0.7} />
+      </Frame>
+    </Art>
+  );
+}

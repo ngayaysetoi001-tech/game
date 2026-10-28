@@ -1,0 +1,376 @@
+/* Khung tranh: cảnh tu luyện và sân đấu */
+
+.scene {
+  position: relative;
+  aspect-ratio: 5 / 3;
+  max-width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #1b1815;
+  isolation: isolate;
+}
+.scene-bg.art-img {
+  position: absolute;
+  inset: 0;
+  object-fit: cover;
+}
+.scene-figure.sit {
+  position: absolute;
+  left: 50%;
+  bottom: -6%;
+  width: 46%;
+  aspect-ratio: 100 / 120;
+  transform: translateX(-50%);
+}
+.scene-chip {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  z-index: 2;
+  background: rgba(27, 24, 21, 0.72);
+  color: #efe6d2;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.cultivate-scene.injured .scene-figure {
+  filter: drop-shadow(0 0 6px rgba(228, 122, 100, 0.7)) saturate(0.7);
+}
+
+/* Hiệu ứng tu luyện */
+.fx {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+}
+.fx-text {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--gold);
+  text-shadow:
+    0 0 6px #000,
+    0 0 18px currentColor;
+  animation: fx-rise 2.6s ease-out forwards;
+}
+.fx-bolts,
+.fx-cracks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.fx-break {
+  animation: fx-flash 2.6s ease-out forwards;
+}
+.fx-bolts {
+  animation: fx-flicker 0.24s steps(2) 5;
+}
+.fx-fail {
+  background: radial-gradient(circle at 50% 66%, rgba(180, 30, 20, 0.45), transparent 70%);
+  animation: fx-fade 2.6s ease-out forwards;
+}
+.fx-fail .fx-text {
+  color: #ff8a7a;
+}
+.fx-stage .fx-text {
+  position: absolute;
+  top: 14%;
+  font-size: 16px;
+  animation-duration: 1.4s;
+}
+.fx-ring {
+  position: absolute;
+  left: 50%;
+  top: 70%;
+  width: 40px;
+  height: 40px;
+  border: 2px solid;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: fx-ring 1.2s ease-out forwards;
+}
+
+@keyframes fx-flash {
+  0% {
+    background: rgba(255, 255, 255, 0.9);
+  }
+  12% {
+    background: rgba(255, 255, 255, 0);
+  }
+  22% {
+    background: rgba(255, 255, 255, 0.55);
+  }
+  34%,
+  100% {
+    background: rgba(255, 255, 255, 0);
+  }
+}
+@keyframes fx-flicker {
+  50% {
+    opacity: 0.2;
+  }
+}
+@keyframes fx-fade {
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes fx-rise {
+  0% {
+    transform: translateY(10px) scale(0.9);
+    opacity: 0;
+  }
+  15% {
+    transform: none;
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+}
+@keyframes fx-ring {
+  to {
+    transform: translate(-50%, -50%) scale(6);
+    opacity: 0;
+  }
+}
+
+/* Sân đấu */
+.battle-scene .fighter {
+  position: absolute;
+  bottom: 3%;
+  z-index: 1;
+}
+.fighter.hero {
+  left: 5%;
+  width: 30%;
+  aspect-ratio: 100 / 120;
+}
+.fighter.foe {
+  right: 2%;
+  width: 48%;
+  aspect-ratio: 120 / 100;
+}
+.fighter.hero.lunge {
+  animation: lunge-right 0.4s ease-out;
+}
+.fighter.foe.lunge {
+  animation: lunge-left 0.4s ease-out;
+}
+.fighter.hit {
+  animation: hit 0.35s ease-out;
+}
+.fighter.hit.crit {
+  animation: hit-crit 0.4s ease-out;
+}
+.fighter.defeated {
+  animation: defeated 0.9s ease-in forwards;
+}
+@keyframes lunge-right {
+  40% {
+    transform: translateX(45%);
+  }
+}
+@keyframes lunge-left {
+  40% {
+    transform: translateX(-30%);
+  }
+}
+@keyframes hit {
+  20% {
+    transform: translateX(5px);
+    filter: brightness(2.4) drop-shadow(0 0 6px #ff4a3d);
+  }
+  45% {
+    transform: translateX(-4px);
+  }
+  70% {
+    transform: translateX(2px);
+  }
+}
+@keyframes hit-crit {
+  15% {
+    transform: translateX(8px) scale(1.06);
+    filter: brightness(3) drop-shadow(0 0 10px #ffd66b);
+  }
+  45% {
+    transform: translateX(-6px);
+  }
+  70% {
+    transform: translateX(3px);
+  }
+}
+@keyframes defeated {
+  to {
+    transform: translateY(8%) scale(0.92);
+    opacity: 0.12;
+    filter: blur(2px) grayscale(1);
+  }
+}
+
+.dmg {
+  position: absolute;
+  top: 26%;
+  z-index: 3;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow:
+    0 0 4px #000,
+    0 2px 2px #000;
+  animation: dmg-float 0.6s ease-out forwards;
+  pointer-events: none;
+}
+.dmg small {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+.dmg.on-enemy {
+  right: 20%;
+}
+.dmg.on-player {
+  left: 12%;
+}
+.dmg.crit {
+  color: #ffd66b;
+  font-size: 26px;
+}
+@keyframes dmg-float {
+  from {
+    transform: translateY(8px) scale(0.8);
+    opacity: 0;
+  }
+  30% {
+    transform: none;
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-16px);
+    opacity: 0;
+  }
+}
+
+.hp-bars {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.hp {
+  width: 44%;
+  min-width: 0;
+}
+.hp.right {
+  text-align: right;
+}
+.hp-label {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #1b1815;
+  background: rgba(239, 230, 210, 0.8);
+  padding: 0 5px;
+  border-radius: 4px;
+}
+.hp-track {
+  height: 6px;
+  margin-top: 3px;
+  background: rgba(27, 24, 21, 0.65);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #b8382c, #e5654b);
+  transition: width 0.3s ease-out;
+}
+.hp.right .hp-fill {
+  margin-left: auto;
+}
+
+.banner {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  z-index: 4;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: 6px;
+  text-shadow:
+    0 0 6px #000,
+    0 0 22px currentColor;
+  animation: banner-in 0.5s ease-out;
+}
+.banner.win {
+  color: #ffd66b;
+}
+.banner.lose {
+  color: #ff6a5a;
+}
+@keyframes banner-in {
+  from {
+    transform: translate(-50%, -50%) scale(1.6);
+    opacity: 0;
+  }
+}
+.skip {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 4;
+  font-size: 12px;
+  padding: 4px 10px;
+  background: rgba(27, 24, 21, 0.75);
+  color: #efe6d2;
+}
+
+/* Chân dung trong tab Nhân Vật */
+.portrait {
+  aspect-ratio: 5 / 2;
+}
+.portrait .scene-figure.stand {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  height: 96%;
+  aspect-ratio: 100 / 120;
+  transform: translateX(-50%);
+}
+.path-figure {
+  width: 56px;
+  aspect-ratio: 100 / 120;
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx,
+  .fx *,
+  .fighter,
+  .dmg,
+  .banner {
+    animation: none !important;
+  }
+}

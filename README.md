@@ -34,6 +34,17 @@ npm run build    # bản build tĩnh ở dist/, deploy được lên GitHub Page
   Nâng cấp bằng tàn quyển + linh thạch, giới hạn cấp theo cảnh giới.
 - Save bản MVP tự nâng cấp; các tầng chặn của cảnh giới hiện tại được tính là đã vượt.
 
+### Hình ảnh thủy mặc
+
+- Toàn bộ hình vẽ bằng code (SVG + Canvas), không cần file ảnh: tranh sơn thủy nhiều lớp với viền mực loang và sương trôi,
+  8 bối cảnh bí cảnh + động phủ + hang bế quan, tu sĩ ngồi thiền / chiến đấu theo hướng tu, 40 quái vật từ 9 dạng cơ thể.
+- **Tu Luyện**: linh khí xoáy vào người, hào quang đổi màu theo cảnh giới; hiệu ứng lên tầng, sấm sét khi đột phá, vết nứt khi thất bại.
+- **Bí Cảnh**: sân đấu phát lại từng đòn (lao vào, trúng đòn, số sát thương, bạo kích, thanh máu, Thắng/Bại), có nút Bỏ qua.
+- Biểu tượng pháp bảo theo phẩm, đan dược. Tắt mọi chuyển động khi hệ điều hành bật "giảm chuyển động".
+- Xem toàn bộ hình một lượt: mở trang với `#gallery` ở cuối địa chỉ.
+- **Thay bằng ảnh thật**: đặt file vào `src/assets/art/` theo quy ước tên trong [README ở đó](src/assets/art/README.md);
+  thiếu file nào thì game dùng hình vẽ bằng code.
+
 Nhịp độ dự kiến với linh căn trung bình (không bế quan): Luyện Khí ~10 phút, Trúc Cơ ~30 phút,
 Kim Đan ~1.5 giờ, Nguyên Anh ~4 giờ… hết Độ Kiếp ~10 ngày.
 

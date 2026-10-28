@@ -380,8 +380,18 @@ export function challengeFloor(prev: GameState, now: number, rng: Rng): GameStat
   if (!canChallenge(s)) return s;
   const floor = s.floor + 1;
   const enemy = enemyFor(floor);
-  const result = simulateBattle(playerStats(s, now), enemy, rng);
-  s.lastBattle = { floor, enemy: enemy.name, win: result.win, lines: result.lines, time: now };
+  const player = playerStats(s, now);
+  const result = simulateBattle(player, enemy, rng);
+  s.lastBattle = {
+    floor,
+    enemy: enemy.name,
+    win: result.win,
+    lines: result.lines,
+    time: now,
+    events: result.events,
+    maxHpP: player.hp,
+    maxHpE: enemy.hp,
+  };
   if (result.win) {
     const boss = isBossFloor(floor);
     s.floor = floor;

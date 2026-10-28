@@ -49,12 +49,27 @@ export interface Farming {
   carry: number;
 }
 
+/** Một đòn đánh trong trận, dùng để phát lại hoạt ảnh */
+export interface BattleEvent {
+  /** 'p' = người chơi ra đòn, 'e' = đối thủ ra đòn */
+  by: 'p' | 'e';
+  dmg: number;
+  crit: boolean;
+  /** Khí huyết còn lại của hai bên sau đòn này */
+  hpP: number;
+  hpE: number;
+}
+
 export interface BattleReport {
   floor: number;
   enemy: string;
   win: boolean;
   lines: string[];
   time: number;
+  /** Có từ bản thêm hình ảnh; save cũ không có */
+  events?: BattleEvent[];
+  maxHpP?: number;
+  maxHpE?: number;
 }
 
 export interface GameState {

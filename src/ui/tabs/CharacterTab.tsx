@@ -16,6 +16,7 @@ import {
   itemScore,
   itemSellPrice,
   itemStats,
+  levelInfo,
   levelName,
   pathBonus,
   playerStats,
@@ -29,6 +30,11 @@ import {
   type TechKind,
 } from '../../engine/engine';
 import type { TabProps } from '../GameScreen';
+import Cultivator from '../art/Cultivator';
+import { ItemIcon } from '../art/Icons';
+import Landscape from '../art/Landscape';
+import { HOME_THEME, REALM_AURA } from '../art/palette';
+import { Art } from '../art/registry';
 
 export default function CharacterTab(props: TabProps) {
   return (
@@ -52,8 +58,17 @@ function StatsPanel({ state: s }: TabProps) {
     ['Bạo kích', `${Math.round(p.crit * 100)}%`],
     ['Tu luyện', `+${Math.round((cultivationBonus(s) - 1) * 100)}%`],
   ];
+  const realm = levelInfo(s.level).realm;
   return (
     <section className="card">
+      <div className="scene portrait">
+        <Landscape theme={HOME_THEME} seed={5} />
+        <div className="scene-figure stand">
+          <Art k={`cultivator/${s.path ?? 'none'}-stand`} alt={s.name}>
+            <Cultivator pose="stand" path={s.path} aura={REALM_AURA[realm]} power={realm / 8} />
+          </Art>
+        </div>
+      </div>
       <div className="row spread">
         <h2>Chiến lực {formatNumber(combatPower(p))}</h2>
       </div>
@@ -135,13 +150,18 @@ function PathChooser({ s, act }: { s: GameState; act: TabProps['act'] }) {
         const affinity = s.root.elements.some((e) => p.elements.includes(e));
         return (
           <button key={id} className={`path ${pick === id ? 'picked' : ''}`} onClick={() => setPick(id)}>
-            <span className="row spread">
-              <b>{p.name}</b>
-              {affinity && <span className="tag good">Hợp linh căn</span>}
+            <span className="path-figure">
+              <Cultivator pose="stand" path={id} aura={REALM_AURA[1]} power={0.1} />
             </span>
-            <span className="small">{p.desc}</span>
-            <span className="small muted">
-              {p.technique} · hệ {p.elements.join('/')}
+            <span className="path-text">
+              <span className="row spread">
+                <b>{p.name}</b>
+                {affinity && <span className="tag good">Hợp linh căn</span>}
+              </span>
+              <span className="small">{p.desc}</span>
+              <span className="small muted">
+                {p.technique} · hệ {p.elements.join('/')}
+              </span>
             </span>
           </button>
         );
@@ -183,7 +203,14 @@ function GearPanel({ state: s }: TabProps) {
         return (
           <div key={slot} className="item-row">
             <span className="slot-label muted small">{SLOT_NAMES[slot]}</span>
-            {it ? <ItemLine it={it} /> : <span className="muted small">Trống</span>}
+            {it ? (
+              <>
+                <ItemIcon slot={slot} tier={it.tier} />
+                <ItemLine it={it} />
+              </>
+            ) : (
+              <span className="muted small">Trống</span>
+            )}
           </div>
         );
       })}
@@ -218,6 +245,7 @@ function BagPanel({ state: s, act }: TabProps) {
               {SLOT_NAMES[it.slot]}
               {better && <span className="up"> ▲</span>}
             </span>
+            <ItemIcon slot={it.slot} tier={it.tier} />
             <ItemLine it={it} />
             <div className="item-actions">
               <button onClick={() => act((st, now, rng) => equipItem(st, it.id, now, rng))}>Dùng</button>

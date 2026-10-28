@@ -20,7 +20,7 @@ import {
   floorLevel,
   floorStones,
 } from './data';
-import { type GameState, type Item, type Rng, formatNumber, isInjured, weightedPick } from './state';
+import { type BattleEvent, type GameState, type Item, type Rng, formatNumber, isInjured, weightedPick } from './state';
 
 export interface Fighter {
   name: string;
@@ -120,10 +120,17 @@ function damage(a: Fighter, d: Fighter, rng: Rng): { dmg: number; crit: boolean 
  * Đánh theo thanh hành động: mỗi nhịp cộng tốc độ, đủ 100 thì ra đòn.
  * Người chơi ra đòn trước khi hai bên bằng nhau.
  */
-export function simulateBattle(p: Fighter, e: Fighter, rng: Rng): { win: boolean; lines: string[] } {
+export interface BattleResult {
+  win: boolean;
+  lines: string[];
+  events: BattleEvent[];
+}
+
+export function simulateBattle(p: Fighter, e: Fighter, rng: Rng): BattleResult {
   const hp = { p: p.hp, e: e.hp };
   const gauge = { p: 0, e: 0 };
   const lines: string[] = [];
+  const events: BattleEvent[] = [];
   let actions = 0;
   while (actions < MAX_BATTLE_ACTIONS) {
     gauge.p += p.spd;
@@ -135,21 +142,22 @@ export function simulateBattle(p: Fighter, e: Fighter, rng: Rng): { win: boolean
       const { dmg, crit } = damage(atk, def, rng);
       hp[key] = Math.max(0, hp[key] - dmg);
       actions++;
+      events.push({ by: playerTurn ? 'p' : 'e', dmg, crit, hpP: hp.p, hpE: hp.e });
       lines.push(
         `${atk.name} ${playerTurn ? 'xuất chiêu' : 'tấn công'}${crit ? ' — BẠO KÍCH' : ''}: −${formatNumber(dmg)} (${def.name} còn ${formatNumber(hp[key])})`,
       );
       if (hp.e <= 0) {
         lines.push(`${e.name} gục ngã. Thắng!`);
-        return { win: true, lines };
+        return { win: true, lines, events };
       }
       if (hp.p <= 0) {
         lines.push(`${p.name} trọng thương, phải rút lui.`);
-        return { win: false, lines };
+        return { win: false, lines, events };
       }
     }
   }
   lines.push('Giằng co quá lâu, linh lực cạn kiệt, đành rút lui.');
-  return { win: false, lines };
+  return { win: false, lines, events };
 }
 
 // ---------- Pháp bảo ----------

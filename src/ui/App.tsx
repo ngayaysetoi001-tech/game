@@ -12,6 +12,7 @@ import {
 import CreateScreen from './CreateScreen';
 import GameScreen from './GameScreen';
 import OfflineModal from './OfflineModal';
+import Gallery from './art/Gallery';
 
 const TICK_MS = 250;
 const AUTOSAVE_MS = 5000;
@@ -72,6 +73,14 @@ export default function App() {
     setState(s);
     save(s);
   }, []);
+
+  if (typeof location !== 'undefined' && location.hash === '#gallery') {
+    return (
+      <main className="app">
+        <Gallery />
+      </main>
+    );
+  }
 
   return (
     <main className="app">

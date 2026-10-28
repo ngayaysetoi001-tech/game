@@ -9,6 +9,7 @@
   --good: #7fcf8a;
   --bad: #e47a64;
   --jade: #5fb3a0;
+  --font-display: 'Noto Serif', 'Times New Roman', serif;
   color-scheme: dark;
 }
 
@@ -44,6 +45,12 @@ body {
   padding: 14px;
 }
 
+h1,
+h2,
+.realm {
+  font-family: var(--font-display);
+  text-wrap: balance;
+}
 h1,
 h2 {
   margin: 0 0 8px;
@@ -575,4 +582,21 @@ button.link {
 .path.picked {
   border-color: var(--gold);
   background: #2f2717;
+}
+
+.path {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.path-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+.shop-text {
+  flex: 1;
+  min-width: 0;
 }

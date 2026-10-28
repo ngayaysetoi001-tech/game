@@ -23,6 +23,7 @@ import {
   type Fighter,
 } from '../../engine/engine';
 import type { TabProps } from '../GameScreen';
+import BattleStage from '../scenes/BattleStage';
 
 const ESTIMATE_RUNS = 100;
 
@@ -34,6 +35,7 @@ function estimateWin(p: Fighter, e: Fighter): number {
 
 export default function DungeonTab(props: TabProps) {
   const { state: s, act } = props;
+  const [playing, setPlaying] = useState(false);
   const next = Math.min(s.floor + 1, MAX_FLOOR);
   const cleared = s.floor >= MAX_FLOOR;
   const player = playerStats(s, s.lastTick);
@@ -56,6 +58,7 @@ export default function DungeonTab(props: TabProps) {
         <div className="bar thin">
           <div className="bar-fill" style={{ width: `${(s.floor / MAX_FLOOR) * 100}%` }} />
         </div>
+        <BattleStage s={s} onPlaying={setPlaying} />
 
         {cleared ? (
           <p className="notice">Đã chinh phục toàn bộ bí cảnh. Bí cảnh mới sẽ mở ở bản sau.</p>
@@ -93,7 +96,7 @@ export default function DungeonTab(props: TabProps) {
             </div>
             <button
               className="primary big"
-              disabled={!canChallenge(s)}
+              disabled={!canChallenge(s) || playing}
               onClick={() => act(challengeFloor)}
             >
               Khiêu chiến tầng {next}
