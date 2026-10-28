@@ -23,6 +23,17 @@ npm run build    # bản build tĩnh ở dist/, deploy được lên GitHub Page
 - **Tiến độ offline**: tính bù tối đa 12 giờ khi mở lại game.
 - **Lưu tự động** vào localStorage mỗi 5 giây, có xuất/nhập mã lưu để chuyển máy.
 
+### Giai đoạn 1: chiến đấu & build
+
+- **Giao diện 4 tab**: Tu Luyện / Bí Cảnh / Nhân Vật / Phường Thị, có chấm báo khi có việc cần làm.
+- **Bí Cảnh 40 tầng**, 8 khu vực, thủ lĩnh mỗi 5 tầng. Chiến đấu tự động theo thanh hành động (tốc độ, bạo kích),
+  có ước tính tỉ lệ thắng và chiến báo chi tiết. **Đột phá đại cảnh giới yêu cầu vượt tầng chặn** (Trúc Cơ: 3, Kim Đan: 5, Nguyên Anh: 10…).
+- **Lịch luyện**: treo máy ở tầng đã vượt (kể cả offline) để nhặt linh thạch, tàn quyển, pháp bảo; đổi lại tu luyện ×0.5. Không thể vừa lịch luyện vừa bế quan.
+- **Pháp bảo** 3 ô (Vũ Khí, Hộ Giáp, Linh Bội) × 4 phẩm (Phàm → Tiên). Linh bội tăng tốc độ tu luyện. Túi 30 ô, bán nhanh đồ kém hơn.
+- **Công pháp**: Dẫn Khí Quyết từ đầu; tới Trúc Cơ chọn **Kiếm Tu / Thể Tu / Pháp Tu** (không đổi được), linh căn hợp hệ ×1.25 hiệu quả.
+  Nâng cấp bằng tàn quyển + linh thạch, giới hạn cấp theo cảnh giới.
+- Save bản MVP tự nâng cấp; các tầng chặn của cảnh giới hiện tại được tính là đã vượt.
+
 Nhịp độ dự kiến với linh căn trung bình (không bế quan): Luyện Khí ~10 phút, Trúc Cơ ~30 phút,
 Kim Đan ~1.5 giờ, Nguyên Anh ~4 giờ… hết Độ Kiếp ~10 ngày.
 
@@ -31,8 +42,10 @@ Kim Đan ~1.5 giờ, Nguyên Anh ~4 giờ… hết Độ Kiếp ~10 ngày.
 ```
 src/
   engine/       logic game thuần TypeScript, không phụ thuộc giao diện
-    data.ts       toàn bộ số liệu cân bằng: cảnh giới, linh căn, đan dược, bế quan
-    engine.ts     tick thời gian, đột phá, bế quan, đan dược, offline, lưu/tải
+    data.ts       toàn bộ số liệu cân bằng: cảnh giới, linh căn, đan dược, bế quan, bí cảnh, pháp bảo, công pháp
+    state.ts      kiểu dữ liệu, tra cứu cảnh giới, định dạng số
+    combat.ts     chỉ số chiến đấu, quái, pháp bảo, mô phỏng trận đấu
+    engine.ts     tick thời gian và mọi hành động (đột phá, bế quan, bí cảnh, trang bị, công pháp…), offline, lưu/tải
     engine.test.ts
   ui/           giao diện React
 ```
@@ -42,6 +55,6 @@ Mọi hành động trong engine nhận `now` và `rng` làm tham số nên test
 
 ## Lộ trình tiếp theo
 
-- v2: Luyện đan (công thức + nguyên liệu), Bí cảnh treo máy, Công pháp / hướng tu (Kiếm, Thể, Pháp)
-- v3: Sự kiện kỳ ngộ dạng văn bản có lựa chọn, Chuyển sinh / Phi Thăng (prestige)
-- Sau: Động phủ, linh thú, tông môn NPC
+- Giai đoạn 2: Thọ nguyên + Luân hồi (prestige)
+- Giai đoạn 3: Linh điền + Luyện đan, kỳ ngộ có lựa chọn (Chính/Tà)
+- Giai đoạn 4: Thiên kiếp, tông môn NPC

@@ -3,170 +3,107 @@
 // vào để test được một cách tất định.
 
 import {
+  BAG_LIMIT,
   BASE_RATE,
   BASE_STONE_RATE,
-  BASIC_ELEMENTS,
+  BASE_TECH,
   BREAK_PILL_BONUS,
-  type Element,
+  DEFEAT_INJURY_SECONDS,
   FAIL_BONUS_MAX,
   FAIL_BONUS_STEP,
-  FAIL_CULTIVATION_LOSS,
+  FARM_CULTIVATION_MULT,
+  FARM_FRAGMENT_CHANCE,
+  FARM_ITEM_CHANCE,
+  FARM_STONE_SHARE,
+  FARM_TICK_SECONDS,
   INJURY_RATE_MULT,
   INJURY_SECONDS,
-  LOG_LIMIT,
   MAX_BREAK_CHANCE,
   MAX_BREAK_PILLS,
+  MAX_FLOOR,
   OFFLINE_CAP_HOURS,
+  PATHS,
+  PATH_UNLOCK_LEVEL,
+  type PathId,
   PILLS,
   type PillId,
   REALMS,
   ROOT_TIERS,
   SECLUSIONS,
   type SeclusionId,
-  STAGE_GROWTH,
   STARTING_STONES,
+  TIERS,
   TU_KHI_SECONDS,
-  VARIANT_ELEMENTS,
+  floorStones,
+  pathLevelCap,
+  techCost,
 } from './data';
+import {
+  cultivationBonus,
+  enemyFor,
+  isBossFloor,
+  itemName,
+  itemScore,
+  itemSellPrice,
+  playerStats,
+  rollItem,
+  simulateBattle,
+  zoneOf,
+} from './combat';
+import {
+  MAX_LEVEL,
+  type GameState,
+  type Item,
+  type Rng,
+  type SpiritRoot,
+  addLog,
+  formatNumber,
+  isBottleneck,
+  isInjured,
+  levelInfo,
+  levelName,
+  realmOf,
+  requiredFor,
+  rootName,
+  totalCultivation,
+} from './state';
 
-export type Rng = () => number;
-
-export interface SpiritRoot {
-  tier: number; // chỉ số trong ROOT_TIERS
-  elements: Element[];
-}
-
-export interface Seclusion {
-  id: SeclusionId;
-  start: number;
-  end: number;
-  gained: number;
-}
-
-export interface LogEntry {
-  time: number;
-  text: string;
-  kind: 'info' | 'good' | 'bad';
-}
-
-export interface GameState {
-  version: 1;
-  name: string;
-  root: SpiritRoot;
-  /** Chỉ số tầng đã "trải phẳng" qua mọi cảnh giới */
-  level: number;
-  cultivation: number;
-  stones: number;
-  pills: Record<PillId, number>;
-  /** Tỉ lệ cộng thêm tích lũy từ các lần đột phá thất bại */
-  failBonus: number;
-  injuryUntil: number;
-  seclusion: Seclusion | null;
-  log: LogEntry[];
-  lastTick: number;
-  createdAt: number;
-}
-
-// ---------- Tầng / cảnh giới ----------
-
-interface LevelInfo {
-  realm: number;
-  stage: number;
-}
-
-const LEVELS: LevelInfo[] = REALMS.flatMap((r, realm) =>
-  r.stages.map((_, stage) => ({ realm, stage })),
-);
-
-export const MAX_LEVEL = LEVELS.length - 1;
-
-export function levelInfo(level: number): LevelInfo {
-  return LEVELS[level];
-}
-
-export function levelName(level: number): string {
-  const { realm, stage } = LEVELS[level];
-  return `${REALMS[realm].name} ${REALMS[realm].stages[stage]}`;
-}
-
-export function requiredFor(level: number): number {
-  const { realm, stage } = LEVELS[level];
-  return REALMS[realm].baseReq * STAGE_GROWTH ** stage;
-}
-
-/** Tầng cuối của một cảnh giới: muốn lên tiếp phải đột phá thủ công */
-export function isBottleneck(level: number): boolean {
-  const { realm, stage } = LEVELS[level];
-  return stage === REALMS[realm].stages.length - 1;
-}
-
-/** Tổng tu vi tích lũy từ đầu, dùng để so sánh tiến độ */
-export function totalCultivation(level: number, cultivation: number): number {
-  let sum = cultivation;
-  for (let i = 0; i < level; i++) sum += requiredFor(i);
-  return sum;
-}
-
-// ---------- Linh căn ----------
-
-export function rollRoot(rng: Rng): SpiritRoot {
-  const totalWeight = ROOT_TIERS.reduce((a, t) => a + t.weight, 0);
-  let r = rng() * totalWeight;
-  let tier = ROOT_TIERS.length - 1;
-  for (let i = 0; i < ROOT_TIERS.length; i++) {
-    r -= ROOT_TIERS[i].weight;
-    if (r < 0) {
-      tier = i;
-      break;
-    }
-  }
-  const count = ROOT_TIERS[tier].count;
-  if (count === 0) {
-    return { tier, elements: [VARIANT_ELEMENTS[Math.floor(rng() * VARIANT_ELEMENTS.length)]] };
-  }
-  const pool = [...BASIC_ELEMENTS];
-  const elements: Element[] = [];
-  for (let i = 0; i < count; i++) {
-    elements.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
-  }
-  return { tier, elements };
-}
-
-export function rootName(root: SpiritRoot): string {
-  return ROOT_TIERS[root.tier].name;
-}
+export * from './state';
+export * from './combat';
 
 // ---------- Tốc độ ----------
 
-/** Tốc độ tu luyện gốc (không tính bế quan / thương thế) */
+/** Tốc độ tu luyện gốc (không tính bế quan / lịch luyện / thương thế) */
 export function baseRate(s: GameState): number {
-  return BASE_RATE * REALMS[LEVELS[s.level].realm].rateMult * ROOT_TIERS[s.root.tier].rateMult;
-}
-
-export function isInjured(s: GameState, time: number): boolean {
-  return s.injuryUntil > time;
+  return BASE_RATE * REALMS[realmOf(s)].rateMult * ROOT_TIERS[s.root.tier].rateMult * cultivationBonus(s);
 }
 
 export function cultivationRate(s: GameState, time: number): number {
   let rate = baseRate(s);
   if (s.seclusion && time < s.seclusion.end) rate *= seclusionDef(s.seclusion.id).rateMult;
+  if (s.farming) rate *= FARM_CULTIVATION_MULT;
   if (isInjured(s, time)) rate *= INJURY_RATE_MULT;
   return rate;
 }
 
 export function stoneRate(s: GameState): number {
-  return BASE_STONE_RATE * 2 ** LEVELS[s.level].realm;
+  return BASE_STONE_RATE * 2 ** realmOf(s);
 }
 
 export function seclusionDef(id: SeclusionId) {
   return SECLUSIONS.find((d) => d.id === id)!;
 }
 
+function injure(s: GameState, time: number, seconds: number) {
+  const mult = s.path ? PATHS[s.path].injuryMult : 1;
+  s.injuryUntil = Math.max(s.injuryUntil, time + seconds * mult * 1000);
+}
+
 // ---------- Tạo game ----------
 
 export function newGame(name: string, root: SpiritRoot, now: number): GameState {
   const s: GameState = {
-    version: 1,
+    version: 2,
     name: name.trim() || 'Vô Danh',
     root,
     level: 0,
@@ -179,6 +116,15 @@ export function newGame(name: string, root: SpiritRoot, now: number): GameState 
     log: [],
     lastTick: now,
     createdAt: now,
+    path: null,
+    tech: { base: 0, path: 0 },
+    gear: { weapon: null, armor: null, pendant: null },
+    bag: [],
+    fragments: 0,
+    floor: 0,
+    farming: null,
+    nextItemId: 1,
+    lastBattle: null,
   };
   addLog(s, now, `${s.name} bước lên con đường tu tiên với ${rootName(root)} (${root.elements.join(', ')}).`, 'good');
   return s;
@@ -188,11 +134,6 @@ export function newGame(name: string, root: SpiritRoot, now: number): GameState 
 
 function clone(s: GameState): GameState {
   return structuredClone(s);
-}
-
-function addLog(s: GameState, time: number, text: string, kind: LogEntry['kind'] = 'info') {
-  s.log.unshift({ time, text, kind });
-  if (s.log.length > LOG_LIMIT) s.log.length = LOG_LIMIT;
 }
 
 /** Cộng tu vi, tự lên tầng nhỏ, dừng ở bình cảnh. Trả về lượng thực sự nhận được. */
@@ -228,6 +169,13 @@ function advance(s: GameState, now: number, rng: Rng) {
     const gained = gainCultivation(s, cultivationRate(s, t) * dt, next);
     s.stones += stoneRate(s) * dt;
     if (s.seclusion) s.seclusion.gained += gained;
+    if (s.farming) {
+      s.farming.carry += dt;
+      while (s.farming.carry >= FARM_TICK_SECONDS) {
+        s.farming.carry -= FARM_TICK_SECONDS;
+        farmLoot(s, next, rng);
+      }
+    }
     t = next;
     if (s.seclusion && s.seclusion.end <= t) finishSeclusion(s, t, rng);
   }
@@ -253,6 +201,8 @@ export interface OfflineSummary {
   cultivation: number;
   stones: number;
   levelsGained: number;
+  items: number;
+  fragments: number;
   /** Tu vi đã đầy ở bình cảnh, phần dư bị lãng phí */
   capped: boolean;
 }
@@ -276,7 +226,13 @@ export function applyOffline(
     if (s.injuryUntil > 0) s.injuryUntil += shift;
   }
   const seconds = Math.max(0, (now - s.lastTick) / 1000);
-  const before = { total: totalCultivation(s.level, s.cultivation), stones: s.stones, level: s.level };
+  const before = {
+    total: totalCultivation(s.level, s.cultivation),
+    stones: s.stones,
+    level: s.level,
+    items: s.nextItemId,
+    fragments: s.fragments,
+  };
   advance(s, now, rng);
   return {
     state: s,
@@ -285,6 +241,8 @@ export function applyOffline(
       cultivation: totalCultivation(s.level, s.cultivation) - before.total,
       stones: s.stones - before.stones,
       levelsGained: s.level - before.level,
+      items: s.nextItemId - before.items,
+      fragments: s.fragments - before.fragments,
       capped: isBottleneck(s.level) && s.cultivation >= requiredFor(s.level),
     },
   };
@@ -293,7 +251,7 @@ export function applyOffline(
 // ---------- Đột phá ----------
 
 export function breakthroughChance(s: GameState, pills: number): number {
-  const target = REALMS[LEVELS[Math.min(s.level + 1, MAX_LEVEL)].realm];
+  const target = REALMS[levelInfo(Math.min(s.level + 1, MAX_LEVEL)).realm];
   const chance =
     target.breakChance +
     ROOT_TIERS[s.root.tier].breakBonus +
@@ -302,12 +260,19 @@ export function breakthroughChance(s: GameState, pills: number): number {
   return Math.min(MAX_BREAK_CHANCE, chance);
 }
 
+/** Tầng bí cảnh cần vượt để đột phá lên cảnh giới kế tiếp (0 nếu không cần) */
+export function gateFloorFor(s: GameState): number {
+  if (s.level >= MAX_LEVEL) return 0;
+  return REALMS[levelInfo(s.level + 1).realm].gateFloor;
+}
+
 export function canBreakthrough(s: GameState): boolean {
   return (
     s.level < MAX_LEVEL &&
     isBottleneck(s.level) &&
     s.cultivation >= requiredFor(s.level) &&
-    s.seclusion === null
+    s.seclusion === null &&
+    s.floor >= gateFloorFor(s)
   );
 }
 
@@ -317,20 +282,24 @@ export function breakthrough(prev: GameState, pillsWanted: number, now: number, 
   const pills = Math.max(0, Math.min(pillsWanted, s.pills.phaCanh, MAX_BREAK_PILLS));
   const chance = breakthroughChance(s, pills);
   s.pills.phaCanh -= pills;
-  const targetRealm = REALMS[LEVELS[s.level + 1].realm].name;
+  const targetRealm = REALMS[levelInfo(s.level + 1).realm].name;
   if (rng() < chance) {
     s.cultivation = 0;
     s.level++;
     s.failBonus = 0;
     addLog(s, now, `Thiên địa chấn động! Đột phá thành công, bước vào ${levelName(s.level)}.`, 'good');
+    if (s.level === PATH_UNLOCK_LEVEL && !s.path) {
+      addLog(s, now, 'Đạo cơ đã thành, có thể chọn hướng tu trong mục Nhân Vật.', 'good');
+    }
   } else {
-    s.cultivation *= 1 - FAIL_CULTIVATION_LOSS;
+    const loss = s.path ? PATHS[s.path].failLoss : PATHS.kiem.failLoss;
+    s.cultivation *= 1 - loss;
     s.failBonus = Math.min(FAIL_BONUS_MAX, s.failBonus + FAIL_BONUS_STEP);
-    s.injuryUntil = now + INJURY_SECONDS * 1000;
+    injure(s, now, INJURY_SECONDS);
     addLog(
       s,
       now,
-      `Đột phá ${targetRealm} thất bại, kinh mạch bị tổn thương, mất ${FAIL_CULTIVATION_LOSS * 100}% tu vi. Lần sau +${Math.round(s.failBonus * 100)}% tỉ lệ.`,
+      `Đột phá ${targetRealm} thất bại, kinh mạch bị tổn thương, mất ${Math.round(loss * 100)}% tu vi. Lần sau +${Math.round(s.failBonus * 100)}% tỉ lệ.`,
       'bad',
     );
   }
@@ -341,7 +310,7 @@ export function breakthrough(prev: GameState, pillsWanted: number, now: number, 
 
 export function startSeclusion(prev: GameState, id: SeclusionId, now: number, rng: Rng): GameState {
   const s = begin(prev, now, rng);
-  if (s.seclusion) return s;
+  if (s.seclusion || s.farming) return s;
   const def = seclusionDef(id);
   s.seclusion = { id, start: now, end: now + def.minutes * 60_000, gained: 0 };
   addLog(s, now, `Bắt đầu ${def.name} (${def.minutes} phút, tốc độ ×${def.rateMult}).`);
@@ -367,25 +336,195 @@ function finishSeclusion(s: GameState, time: number, rng: Rng) {
     const loss = Math.min(s.cultivation, sec.gained * 0.1);
     s.cultivation -= loss;
     addLog(s, time, `Tâm ma quấy nhiễu khi xuất quan, hao tổn ${formatNumber(loss)} tu vi.`, 'bad');
-  } else if (r < 0.3) {
+  } else if (r < 0.25) {
     const got = gainCultivation(s, sec.gained * 0.2, time);
     addLog(s, time, `Cơ duyên! Lĩnh ngộ thêm một tầng đạo lý, nhận ${formatNumber(got)} tu vi.`, 'good');
-  } else if (r < 0.45) {
+  } else if (r < 0.37) {
     const stones = def.minutes * 60 * stoneRate(s) * 0.5;
     s.stones += stones;
     addLog(s, time, `Phát hiện mạch khoáng nhỏ trong động phủ, nhận ${formatNumber(stones)} linh thạch.`, 'good');
-  } else if (r < 0.55) {
+  } else if (r < 0.47) {
     s.pills.phaCanh++;
     addLog(s, time, `Nhặt được một viên ${PILLS.phaCanh.name} do tiền bối để lại!`, 'good');
+  } else if (r < 0.57) {
+    const n = Math.max(1, Math.round(def.minutes / 30));
+    s.fragments += n;
+    addLog(s, time, `Trong lúc tĩnh tọa ngộ ra ${n} trang tàn quyển công pháp.`, 'good');
   } else {
     addLog(s, time, 'Xuất quan bình an.');
   }
 }
 
+// ---------- Bí cảnh ----------
+
+export function canChallenge(s: GameState): boolean {
+  return s.floor < MAX_FLOOR && s.seclusion === null;
+}
+
+/** Cất pháp bảo vào túi; túi đầy thì tự bán. Trả về true nếu cất được. */
+function addItem(s: GameState, it: Item): boolean {
+  if (s.bag.length >= BAG_LIMIT) {
+    s.stones += itemSellPrice(it);
+    return false;
+  }
+  s.bag.push(it);
+  return true;
+}
+
+function newItem(s: GameState, floor: number, boss: boolean, rng: Rng): Item {
+  return rollItem(floor, boss, rng, s.nextItemId++);
+}
+
+export function challengeFloor(prev: GameState, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (!canChallenge(s)) return s;
+  const floor = s.floor + 1;
+  const enemy = enemyFor(floor);
+  const result = simulateBattle(playerStats(s, now), enemy, rng);
+  s.lastBattle = { floor, enemy: enemy.name, win: result.win, lines: result.lines, time: now };
+  if (result.win) {
+    const boss = isBossFloor(floor);
+    s.floor = floor;
+    const stones = floorStones(floor);
+    const fragments = boss ? 3 : 1;
+    s.stones += stones;
+    s.fragments += fragments;
+    const it = newItem(s, floor, boss, rng);
+    const kept = addItem(s, it);
+    addLog(
+      s,
+      now,
+      `Vượt tầng ${floor} ${zoneOf(floor).name}, hạ ${enemy.name}. Nhận ${formatNumber(stones)} linh thạch, ${fragments} tàn quyển, ${TIERS[it.tier].name} ${itemName(it)}${kept ? '' : ' (túi đầy, đã bán)'}.`,
+      'good',
+    );
+  } else {
+    injure(s, now, DEFEAT_INJURY_SECONDS);
+    addLog(s, now, `Bại trận trước ${enemy.name} ở tầng ${floor}, bị thương phải rút lui.`, 'bad');
+  }
+  return s;
+}
+
+export function startFarming(prev: GameState, floor: number, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (s.seclusion || s.farming || floor < 1 || floor > s.floor) return s;
+  s.farming = { floor, start: now, carry: 0 };
+  addLog(s, now, `Bắt đầu lịch luyện ở tầng ${floor} ${zoneOf(floor).name}.`);
+  return s;
+}
+
+export function stopFarming(prev: GameState, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (!s.farming) return s;
+  addLog(s, now, `Kết thúc lịch luyện sau ${Math.round((now - s.farming.start) / 60_000)} phút.`);
+  s.farming = null;
+  return s;
+}
+
+function farmLoot(s: GameState, time: number, rng: Rng) {
+  const floor = s.farming!.floor;
+  s.stones += floorStones(floor) * FARM_STONE_SHARE;
+  if (rng() < FARM_FRAGMENT_CHANCE) s.fragments++;
+  if (rng() < FARM_ITEM_CHANCE) {
+    const it = newItem(s, floor, false, rng);
+    const kept = addItem(s, it);
+    // Chỉ ghi nhật ký đồ tốt để không bị spam
+    if (it.tier >= 2) {
+      addLog(s, time, `Lịch luyện nhặt được ${TIERS[it.tier].name} ${itemName(it)}${kept ? '' : ' (túi đầy, đã bán)'}!`, 'good');
+    }
+  }
+}
+
+// ---------- Pháp bảo ----------
+
+export function equipItem(prev: GameState, id: number, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  const idx = s.bag.findIndex((it) => it.id === id);
+  if (idx < 0) return s;
+  const [it] = s.bag.splice(idx, 1);
+  const old = s.gear[it.slot];
+  s.gear[it.slot] = it;
+  if (old) s.bag.push(old);
+  return s;
+}
+
+export function sellItem(prev: GameState, id: number, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  const idx = s.bag.findIndex((it) => it.id === id);
+  if (idx < 0) return s;
+  s.stones += itemSellPrice(s.bag[idx]);
+  s.bag.splice(idx, 1);
+  return s;
+}
+
+/** Pháp bảo trong túi không mạnh hơn đồ đang mặc cùng ô */
+export function isWorse(s: GameState, it: Item): boolean {
+  const eq = s.gear[it.slot];
+  return !!eq && itemScore(it) <= itemScore(eq);
+}
+
+export function sellWorse(prev: GameState, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  const keep: Item[] = [];
+  let total = 0;
+  for (const it of s.bag) {
+    if (isWorse(s, it)) total += itemSellPrice(it);
+    else keep.push(it);
+  }
+  if (keep.length === s.bag.length) return s;
+  addLog(s, now, `Bán ${s.bag.length - keep.length} pháp bảo cũ, thu ${formatNumber(total)} linh thạch.`);
+  s.bag = keep;
+  s.stones += total;
+  return s;
+}
+
+// ---------- Công pháp ----------
+
+export function canChoosePath(s: GameState): boolean {
+  return !s.path && s.level >= PATH_UNLOCK_LEVEL;
+}
+
+export function choosePath(prev: GameState, path: PathId, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (!canChoosePath(s)) return s;
+  s.path = path;
+  s.tech.path = 1;
+  addLog(s, now, `Chọn con đường ${PATHS[path].name}, bắt đầu tu luyện ${PATHS[path].technique}.`, 'good');
+  return s;
+}
+
+export type TechKind = 'base' | 'path';
+
+export function techMaxLevel(s: GameState, kind: TechKind): number {
+  return kind === 'base' ? BASE_TECH.maxLevel : pathLevelCap(realmOf(s));
+}
+
+export function techUpgradeCost(s: GameState, kind: TechKind) {
+  return techCost(s.tech[kind] + 1, realmOf(s));
+}
+
+export function canUpgradeTech(s: GameState, kind: TechKind): boolean {
+  if (kind === 'path' && !s.path) return false;
+  if (s.tech[kind] >= techMaxLevel(s, kind)) return false;
+  const cost = techUpgradeCost(s, kind);
+  return s.fragments >= cost.fragments && s.stones >= cost.stones;
+}
+
+export function upgradeTech(prev: GameState, kind: TechKind, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (!canUpgradeTech(s, kind)) return s;
+  const cost = techUpgradeCost(s, kind);
+  s.fragments -= cost.fragments;
+  s.stones -= cost.stones;
+  s.tech[kind]++;
+  const name = kind === 'base' ? BASE_TECH.name : PATHS[s.path!].technique;
+  addLog(s, now, `${name} đạt tầng ${s.tech[kind]}.`);
+  return s;
+}
+
 // ---------- Đan dược ----------
 
 export function pillPrice(s: GameState, id: PillId): number {
-  return PILLS[id].basePrice * PILLS[id].priceGrowth ** LEVELS[s.level].realm;
+  return PILLS[id].basePrice * PILLS[id].priceGrowth ** realmOf(s);
 }
 
 export function buyPill(prev: GameState, id: PillId, now: number, rng: Rng): GameState {
@@ -426,10 +565,33 @@ export function serialize(s: GameState): string {
   return JSON.stringify(s);
 }
 
+/** Nâng save bản cũ lên bản hiện tại */
+function migrate(raw: Record<string, unknown>): GameState | null {
+  if (raw.version === 1) {
+    // Save MVP: chưa có chiến đấu. Cho vượt sẵn các tầng chặn cảnh giới đã đạt để không bị kẹt.
+    const level = raw.level as number;
+    const realm = levelInfo(level)?.realm ?? 0;
+    return {
+      ...(raw as object),
+      version: 2,
+      path: null,
+      tech: { base: 0, path: 0 },
+      gear: { weapon: null, armor: null, pendant: null },
+      bag: [],
+      fragments: 0,
+      floor: REALMS[realm].gateFloor,
+      farming: null,
+      nextItemId: 1,
+      lastBattle: null,
+    } as unknown as GameState;
+  }
+  return raw.version === 2 ? (raw as unknown as GameState) : null;
+}
+
 export function deserialize(raw: string): GameState | null {
   try {
-    const s = JSON.parse(raw) as GameState;
-    if (s?.version !== 1 || typeof s.level !== 'number' || typeof s.lastTick !== 'number') return null;
+    const s = migrate(JSON.parse(raw));
+    if (!s || typeof s.level !== 'number' || typeof s.lastTick !== 'number') return null;
     if (s.level < 0 || s.level > MAX_LEVEL || !ROOT_TIERS[s.root?.tier]) return null;
     return s;
   } catch {
@@ -440,7 +602,9 @@ export function deserialize(raw: string): GameState | null {
 /** Chuỗi base64 (hỗ trợ tiếng Việt) để sao lưu / chuyển máy */
 export function exportSave(s: GameState): string {
   const bytes = new TextEncoder().encode(serialize(s));
-  return btoa(String.fromCharCode(...bytes));
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin);
 }
 
 export function importSave(code: string): GameState | null {
@@ -451,26 +615,4 @@ export function importSave(code: string): GameState | null {
   } catch {
     return null;
   }
-}
-
-// ---------- Định dạng ----------
-
-const SUFFIXES = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi'];
-
-export function formatNumber(n: number): string {
-  if (!Number.isFinite(n)) return '∞';
-  const abs = Math.abs(n);
-  if (abs < 1000) return abs < 10 ? n.toFixed(1) : Math.floor(n).toString();
-  const tier = Math.floor(Math.log10(abs) / 3);
-  if (tier >= SUFFIXES.length) return n.toExponential(2);
-  return (n / 1000 ** tier).toFixed(2) + SUFFIXES[tier];
-}
-
-export function formatDuration(seconds: number): string {
-  const sec = Math.max(0, Math.ceil(seconds));
-  const h = Math.floor(sec / 3600);
-  const m = Math.floor((sec % 3600) / 60);
-  const ss = sec % 60;
-  const pad = (x: number) => x.toString().padStart(2, '0');
-  return h > 0 ? `${h}g ${pad(m)}p ${pad(ss)}s` : `${m}p ${pad(ss)}s`;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { REALMS, SECLUSIONS } from './data';
+import { BAG_LIMIT, PATH_UNLOCK_LEVEL, REALMS, SECLUSIONS } from './data';
 import {
   MAX_LEVEL,
   applyOffline,
@@ -22,7 +22,22 @@ import {
   tick,
   totalCultivation,
   usePill,
+  challengeFloor,
+  choosePath,
+  cultivationBonus,
+  deserialize,
+  enemyFor,
+  equipItem,
+  gateFloorFor,
+  playerStats,
+  sellWorse,
+  serialize,
+  simulateBattle,
+  startFarming,
+  stopFarming,
+  upgradeTech,
   type GameState,
+  type Item,
 } from './engine';
 
 const T0 = 1_700_000_000_000;
@@ -39,6 +54,7 @@ function atFirstBottleneck(): GameState {
   const s = fresh();
   s.level = REALMS[0].stages.length - 1;
   s.cultivation = requiredFor(s.level);
+  s.floor = REALMS[1].gateFloor;
   return s;
 }
 
@@ -187,5 +203,162 @@ describe('formatNumber', () => {
     expect(formatNumber(5)).toBe('5.0');
     expect(formatNumber(1234)).toBe('1.23K');
     expect(formatNumber(5.7e8)).toBe('570.00M');
+  });
+});
+
+describe('gate floors', () => {
+  it('blocks breakthrough until the required bí cảnh floor is cleared', () => {
+    const s = { ...atFirstBottleneck(), floor: 0 };
+    expect(gateFloorFor(s)).toBe(3);
+    expect(canBreakthrough(s)).toBe(false);
+  });
+});
+
+describe('combat', () => {
+  it('a much stronger fighter always wins, a much weaker one always loses', () => {
+    const e = enemyFor(1);
+    const strong = { ...e, name: 'A', hp: e.hp * 10, atk: e.atk * 10 };
+    const weak = { ...e, name: 'B', hp: e.hp / 10, atk: e.atk / 10 };
+    for (let i = 0; i < 20; i++) {
+      expect(simulateBattle(strong, e, Math.random).win).toBe(true);
+      expect(simulateBattle(weak, e, Math.random).win).toBe(false);
+    }
+  });
+
+  it('every fifth floor is a boss with more HP', () => {
+    expect(enemyFor(5).hp).toBeGreaterThan(enemyFor(6).hp);
+    expect(enemyFor(5).name).toBe('Lang Vương');
+  });
+
+  it('clearing a floor advances progress and grants loot', () => {
+    const s = fresh();
+    s.level = 20; // đủ mạnh để chắc thắng tầng 1
+    const after = challengeFloor(s, T0, Math.random);
+    expect(after.floor).toBe(1);
+    expect(after.bag).toHaveLength(1);
+    expect(after.fragments).toBe(1);
+    expect(after.lastBattle?.win).toBe(true);
+  });
+
+  it('losing injures the player and keeps the floor', () => {
+    const after = challengeFloor({ ...fresh(), floor: 20 }, T0, Math.random);
+    expect(after.floor).toBe(20);
+    expect(after.injuryUntil).toBeGreaterThan(T0);
+  });
+
+  it('cannot fight during seclusion', () => {
+    const s = startSeclusion({ ...fresh(), level: 20 }, 'short', T0, always(0.9));
+    expect(challengeFloor(s, T0, Math.random).lastBattle).toBeNull();
+  });
+});
+
+describe('farming', () => {
+  it('produces loot per minute and halves cultivation speed', () => {
+    let s = { ...fresh(), floor: 3 };
+    s = startFarming(s, 3, T0, always(0));
+    expect(cultivationRate(s, T0)).toBeCloseTo(0.5);
+    s = tick(s, T0 + 10 * 60_000, always(0));
+    expect(s.fragments).toBe(10);
+    expect(s.bag).toHaveLength(10);
+    s = stopFarming(s, T0 + 10 * 60_000, always(0));
+    expect(s.farming).toBeNull();
+  });
+
+  it('auto-sells drops when the bag is full', () => {
+    let s = { ...fresh(), floor: 1 };
+    s.bag = Array.from({ length: BAG_LIMIT }, (_, i): Item => ({ id: 1000 + i, slot: 'weapon', tier: 0, floor: 1 }));
+    s = startFarming(s, 1, T0, always(0));
+    const before = s.stones;
+    s = tick(s, T0 + 60_000, always(0));
+    expect(s.bag).toHaveLength(BAG_LIMIT);
+    expect(s.stones).toBeGreaterThan(before + 12);
+  });
+
+  it('is exclusive with seclusion', () => {
+    const s = startFarming({ ...fresh(), floor: 1 }, 1, T0, always(0));
+    expect(startSeclusion(s, 'short', T0, always(0)).seclusion).toBeNull();
+  });
+});
+
+describe('gear', () => {
+  it('equipping raises stats and swaps the old item back to the bag', () => {
+    let s = fresh();
+    s.bag = [
+      { id: 1, slot: 'weapon', tier: 0, floor: 1 },
+      { id: 2, slot: 'weapon', tier: 3, floor: 1 },
+    ];
+    const base = playerStats(s, T0).atk;
+    s = equipItem(s, 1, T0, always(0));
+    const withPham = playerStats(s, T0).atk;
+    expect(withPham).toBeGreaterThan(base);
+    s = equipItem(s, 2, T0, always(0));
+    expect(playerStats(s, T0).atk).toBeGreaterThan(withPham);
+    expect(s.bag.map((i) => i.id)).toEqual([1]);
+    s = sellWorse(s, T0, always(0));
+    expect(s.bag).toHaveLength(0);
+  });
+
+  it('pendants boost cultivation speed', () => {
+    let s = fresh();
+    s.bag = [{ id: 1, slot: 'pendant', tier: 3, floor: 1 }];
+    s = equipItem(s, 1, T0, always(0));
+    expect(cultivationBonus(s)).toBeCloseTo(1.12);
+  });
+});
+
+describe('techniques', () => {
+  it('path unlocks at Trúc Cơ and affinity boosts its effect', () => {
+    const s = fresh();
+    expect(choosePath(s, 'kiem', T0, always(0)).path).toBeNull();
+    const ready = { ...s, level: PATH_UNLOCK_LEVEL };
+    const kiem = choosePath(ready, 'kiem', T0, always(0)); // có Kim → hợp hệ
+    const noAffinity = choosePath({ ...ready, root: { tier: 1, elements: ['Thủy'] } }, 'kiem', T0, always(0));
+    expect(kiem.path).toBe('kiem');
+    expect(playerStats(kiem, T0).atk / playerStats(noAffinity, T0).atk).toBeCloseTo(1.125 / 1.1);
+  });
+
+  it('upgrading costs fragments and stones', () => {
+    let s = { ...fresh(), fragments: 1, stones: 100 };
+    s = upgradeTech(s, 'base', T0, always(0));
+    expect(s.tech.base).toBe(1);
+    expect(s.fragments).toBe(0);
+    expect(s.stones).toBe(50);
+    expect(upgradeTech(s, 'base', T0, always(0)).tech.base).toBe(1);
+  });
+});
+
+describe('migration', () => {
+  it('upgrades a v1 save and pre-clears gate floors of the current realm', () => {
+    const v2 = { ...fresh(), level: 10 };
+    const v1: Record<string, unknown> = JSON.parse(serialize(v2));
+    for (const k of ['path', 'tech', 'gear', 'bag', 'fragments', 'floor', 'farming', 'nextItemId', 'lastBattle']) delete v1[k];
+    v1.version = 1;
+    const s = deserialize(JSON.stringify(v1))!;
+    expect(s.version).toBe(2);
+    expect(s.floor).toBe(REALMS[1].gateFloor);
+    expect(s.gear.weapon).toBeNull();
+  });
+});
+
+describe('balance guards', () => {
+  // rng 0.5: không bạo kích, không dao động sát thương → kết quả cố định
+  const mk = (level: number, gearFloor: number, tier = 0) => {
+    const s = { ...fresh(), level };
+    if (gearFloor) for (const slot of ['weapon', 'armor', 'pendant'] as const) s.gear[slot] = { id: 1, slot, tier, floor: gearFloor };
+    return s;
+  };
+  const wins = (s: GameState, floor: number) => simulateBattle(playerStats(s, T0), enemyFor(floor), always(0.5)).win;
+
+  it('a fresh Luyện Khí character can clear the first floors and the Trúc Cơ gate', () => {
+    expect(wins(mk(5, 0), 1)).toBe(true);
+    expect(wins(mk(7, 1), 2)).toBe(true);
+    expect(wins(mk(8, 2), 3)).toBe(true);
+  });
+
+  it('the Kim Đan gate boss needs gear plus techniques', () => {
+    expect(wins(mk(12, 0), 5)).toBe(false);
+    expect(wins(mk(12, 4, 1), 5)).toBe(false);
+    const ready = { ...mk(12, 4, 1), path: 'kiem' as const, tech: { base: 3, path: 2 } };
+    expect(wins(ready, 5)).toBe(true);
   });
 });

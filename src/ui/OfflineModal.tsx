@@ -13,6 +13,16 @@ export default function OfflineModal({ summary, onClose }: { summary: OfflineSum
           <li>
             <b>{formatNumber(summary.stones)}</b> linh thạch
           </li>
+          {summary.fragments > 0 && (
+            <li>
+              <b>{summary.fragments}</b> tàn quyển
+            </li>
+          )}
+          {summary.items > 0 && (
+            <li>
+              <b>{summary.items}</b> pháp bảo
+            </li>
+          )}
           {summary.levelsGained > 0 && (
             <li>
               Tinh tiến <b>{summary.levelsGained}</b> tầng

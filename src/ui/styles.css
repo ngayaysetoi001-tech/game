@@ -28,7 +28,8 @@ body {
 .app {
   max-width: 560px;
   margin: 0 auto;
-  padding-block: 12px 40px;
+  /* chừa chỗ cho thanh tab cố định ở đáy */
+  padding-block: 12px calc(84px + env(safe-area-inset-bottom, 0px));
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   display: flex;
@@ -169,9 +170,29 @@ textarea {
 /* Header */
 .header {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.header-top {
+  display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
+}
+.resources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.resources b {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.resources .tag {
+  margin-left: 0;
 }
 .name {
   color: var(--muted);
@@ -326,4 +347,232 @@ textarea {
 .modal {
   max-width: 400px;
   width: 100%;
+}
+
+select {
+  background: #14110e;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font: inherit;
+  min-width: 0;
+  flex: 1;
+}
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+button.link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--gold);
+  text-decoration: underline;
+}
+.row.spread {
+  justify-content: space-between;
+  margin-top: 0;
+}
+.card > * + * {
+  margin-top: 8px;
+}
+.card h2 {
+  margin-bottom: 0;
+}
+.up {
+  color: var(--good);
+}
+.down {
+  color: var(--bad);
+}
+
+/* Thanh tab */
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px))
+    max(8px, env(safe-area-inset-left, 0px));
+  background: rgba(18, 16, 14, 0.96);
+  border-top: 1px solid var(--border);
+}
+.tabbar button {
+  position: relative;
+  padding: 10px 2px;
+  font-size: 14px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+.tabbar button.active {
+  color: var(--gold);
+  border-color: var(--gold-dim);
+  background: #2a251e;
+}
+.tabbar .dot {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bad);
+}
+
+/* Bí cảnh */
+.enemy {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.enemy.boss {
+  border-color: var(--bad);
+  background: #261a16;
+}
+.enemy-name {
+  font-size: 18px;
+  font-weight: 600;
+}
+.chance {
+  text-align: right;
+}
+.chance b {
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+.chance.good b {
+  color: var(--good);
+}
+.chance.mid b {
+  color: var(--gold);
+}
+.chance.bad b {
+  color: var(--bad);
+}
+.versus {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.versus th {
+  text-align: right;
+  font-weight: 500;
+  color: var(--muted);
+  font-size: 12px;
+}
+.versus td {
+  padding: 2px 0;
+  text-align: right;
+}
+.versus td:first-child {
+  text-align: left;
+}
+.battle-lines {
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0;
+  padding-left: 22px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.battle-lines li:last-child {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Nhân vật */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 0;
+}
+.stat-grid div {
+  background: #14110e;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.stat-grid dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+.stat-grid dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.tech-row,
+.item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.tech-row > div,
+.item-row > div:not(.item-actions) {
+  min-width: 0;
+  flex: 1;
+}
+.tech-row button {
+  flex-shrink: 0;
+  max-width: 45%;
+  font-size: 13px;
+}
+.slot-label {
+  width: 56px;
+  flex-shrink: 0;
+}
+.item-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.item-actions button {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+.tier-0 {
+  color: var(--text);
+}
+.tier-1 {
+  color: #7fcf8a;
+}
+.tier-2 {
+  color: #6fb2ff;
+}
+.tier-3 {
+  color: #d39cff;
+}
+.paths {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.path {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+.path.picked {
+  border-color: var(--gold);
+  background: #2f2717;
 }
