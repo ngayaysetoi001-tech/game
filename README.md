@@ -108,6 +108,11 @@ Kim Đan ~1.5 giờ, Nguyên Anh ~4 giờ… hết Độ Kiếp ~10 ngày.
 - **Đan Phòng**: luyện Tụ Khí / Phá Cảnh / Hồi Xuân Đan, ra đan phẩm Hạ / Trung / Thượng; Phá Cảnh Đan phẩm cao tăng tỉ lệ đột phá nhiều hơn.
 - Tụ Linh Trận tăng tốc tu luyện, Linh Mạch tăng linh thạch.
 
+### Vô Cực Tháp
+- Sau tầng 40 của Bí Cảnh là **Vô Cực Tháp**: tầng 41 trở đi (hiện là "tầng 1, 2, …" của tháp), không có đỉnh.
+- Quái mạnh thêm khoảng 10% mỗi tầng; linh thạch tăng tuyến tính; thủ lĩnh cứ 5 tầng, thêm 5 tàn quyển và pháp bảo Linh Phẩm trở lên.
+- Dùng chung tự khiêu chiến, lịch luyện và nhật ký với Bí Cảnh; có 3 nhiệm vụ mới (tầng tháp 5, 15, 30). Không đổi định dạng save.
+
 ## Cấu trúc
 
 ```

@@ -66,6 +66,7 @@ import {
   MAX_BREAK_CHANCE,
   MAX_BREAK_PILLS,
   MAX_FLOOR,
+  TOWER_BOSS_FRAGMENTS,
   OFFLINE_CAP_HOURS,
   PATHS,
   PATH_UNLOCK_LEVEL,
@@ -535,7 +536,7 @@ function finishSeclusion(s: GameState, time: number, rng: Rng) {
 // ---------- Bí cảnh ----------
 
 export function canChallenge(s: GameState): boolean {
-  return s.floor < MAX_FLOOR && s.seclusion === null;
+  return s.seclusion === null;
 }
 
 type Stash = 'kept' | 'equipped' | 'sold' | 'full' | 'devoured';
@@ -630,7 +631,7 @@ function fight(s: GameState, now: number, rng: Rng, auto: boolean) {
     const result = addItem(s, it, now);
     s.stats.battlesWon++;
     if (boss) {
-      const bundle = BOSS_FRAGMENT_BUNDLES[floor] ?? 0;
+      const bundle = (BOSS_FRAGMENT_BUNDLES[floor] ?? 0) + (floor > MAX_FLOOR ? TOWER_BOSS_FRAGMENTS : 0);
       s.fragments += bundle;
       if (bundle) addLog(s, now, `${enemy.name} để lại ${bundle} trang tàn quyển công pháp.`, 'good');
     }
@@ -660,7 +661,7 @@ function fight(s: GameState, now: number, rng: Rng, auto: boolean) {
 }
 
 export type AutoClimbStatus =
-  | { kind: 'off' | 'top' | 'seclusion' | 'ready' }
+  | { kind: 'off' | 'seclusion' | 'ready' }
   | { kind: 'injured'; seconds: number }
   | { kind: 'blocked'; power: number; need: number }
   | { kind: 'waiting'; seconds: number };
@@ -668,7 +669,6 @@ export type AutoClimbStatus =
 /** Tình trạng tự khiêu chiến, để engine quyết định và giao diện hiển thị */
 export function autoClimbStatus(s: GameState, now: number): AutoClimbStatus {
   if (!s.auto.climb) return { kind: 'off' };
-  if (s.floor >= MAX_FLOOR) return { kind: 'top' };
   if (s.seclusion) return { kind: 'seclusion' };
   if (isInjured(s, now)) return { kind: 'injured', seconds: (s.injuryUntil - now) / 1000 };
   const power = combatPower(playerStats(s, now));

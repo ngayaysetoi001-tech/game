@@ -1,7 +1,7 @@
 // Gợi ý "việc nên làm tiếp": đọc trạng thái game và chỉ ra 1–2 việc đáng làm nhất lúc này.
 // Thuần hàm, không đổi trạng thái. Tỉ lệ thắng tầng kế tiếp do giao diện tính (mô phỏng) rồi truyền vào.
 
-import { MAX_FLOOR, REALMS, SLOT_NAMES } from './data';
+import { REALMS, SLOT_NAMES } from './data';
 import {
   PLAYER_SKILLS,
   SKILLS,
@@ -177,7 +177,7 @@ export function advise(s: GameState, winChance: number | null): Advice[] {
   }
 
   // 4. Tận dụng thời gian
-  if (s.floor < MAX_FLOOR && winChance !== null && winChance >= 0.7 && !s.auto.climb && !s.seclusion) {
+  if (winChance !== null && winChance >= 0.7 && !s.auto.climb && !s.seclusion) {
     add({
       tone: 'info',
       text: `Bạn thắng chắc tầng ${nextFloor} (~${pct(winChance)}): bật Tự động khiêu chiến để leo tầng cả khi vắng mặt.`,

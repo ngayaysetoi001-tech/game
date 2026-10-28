@@ -17,6 +17,8 @@ import {
   ZONES,
   floorLevel,
   floorStones,
+  MAX_FLOOR,
+  TOWER_NAME,
 } from './data';
 import { cultivationBonusAt, stoneBonusAt } from './dwelling';
 import { type NatalDef, NATALS, natalSkillLevel, natalStage } from './natal';
@@ -145,6 +147,7 @@ export function isBossFloor(floor: number): boolean {
 }
 
 export function zoneOf(floor: number) {
+  if (floor > MAX_FLOOR) return { ...ZONES[ZONES.length - 1], name: TOWER_NAME };
   return ZONES[Math.min(ZONES.length - 1, Math.floor((floor - 1) / BOSS_EVERY))];
 }
 

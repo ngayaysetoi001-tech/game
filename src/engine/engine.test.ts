@@ -1416,3 +1416,24 @@ describe('động phủ: save', () => {
     expect(s.auto.garden).toBe(false);
   });
 });
+
+describe('Vô Cực Tháp', () => {
+  it('tầng sau 40 vẫn khiêu chiến được và quái mạnh dần', async () => {
+    const { floorStones, MAX_FLOOR, towerFloor } = await import('./data');
+    const s = { ...fresh(), floor: 40 };
+    expect(challengeFloor(s, T0, Math.random).lastBattle?.floor).toBe(41);
+    expect(enemyFor(45).hp).toBeGreaterThan(enemyFor(41).hp);
+    expect(enemyFor(41).hp).toBeGreaterThan(enemyFor(40).hp / 3 * 0.9);
+    expect(towerFloor(MAX_FLOOR + 7)).toBe(7);
+    expect(towerFloor(12)).toBe(0);
+    // linh thạch tăng tuyến tính, không nhân đôi
+    expect(floorStones(60)).toBeCloseTo(floorStones(40) * 3);
+  });
+
+  it('nhiệm vụ tháp theo tầng', async () => {
+    const { QUESTS } = await import('./quests');
+    const q = QUESTS.find((x) => x.id === 'thap_5')!;
+    expect(q.done({ ...fresh(), floor: 44 })).toBe(false);
+    expect(q.done({ ...fresh(), floor: 45 })).toBe(true);
+  });
+});

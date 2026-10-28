@@ -5,7 +5,10 @@ import {
   FARM_ITEM_CHANCE,
   FARM_STONE_SHARE,
   MAX_FLOOR,
+  TOWER_BOSS_FRAGMENTS,
+  TOWER_NAME,
   floorStones,
+  towerFloor,
 } from '../../engine/data';
 import {
   SKILLS,
@@ -43,9 +46,9 @@ export default function DungeonTab(props: TabProps) {
   // Engine đã tính xong trận nên s.floor tăng ngay; trong lúc hoạt ảnh còn phát, giữ nguyên đối thủ đang đánh
   const hold = useBattleHold(s.lastBattle);
   const fought = hold && s.lastBattle ? s.lastBattle.floor : null;
-  const next = fought ?? Math.min(s.floor + 1, MAX_FLOOR);
-  const cleared = fought === null && s.floor >= MAX_FLOOR;
+  const next = fought ?? s.floor + 1;
   const clearedCount = fought !== null ? fought - 1 : s.floor;
+  const inTower = next > MAX_FLOOR;
   const player = playerStats(s, s.lastTick);
   const enemy = enemyFor(next);
   // Chỉ tính lại khi chỉ số thay đổi, không phải mỗi nhịp đồng hồ
@@ -60,22 +63,23 @@ export default function DungeonTab(props: TabProps) {
         <div className="row spread">
           <h2>{zone.name}</h2>
           <span className="muted small">
-            Đã vượt {clearedCount}/{MAX_FLOOR} tầng
+            {inTower || clearedCount > MAX_FLOOR
+              ? `Kỷ lục tháp: tầng ${towerFloor(clearedCount)}`
+              : `Đã vượt ${clearedCount}/${MAX_FLOOR} tầng`}
           </span>
         </div>
         <div className="bar thin">
-          <div className="bar-fill" style={{ width: `${(clearedCount / MAX_FLOOR) * 100}%` }} />
+          <div className="bar-fill" style={{ width: `${(Math.min(clearedCount, MAX_FLOOR) / MAX_FLOOR) * 100}%` }} />
         </div>
         <BattleStage s={s} />
 
-        {cleared ? (
-          <p className="notice">Đã chinh phục toàn bộ bí cảnh. Bí cảnh mới sẽ mở ở bản sau.</p>
-        ) : (
           <>
             <div className={`enemy ${boss ? 'boss' : ''}`}>
               <div className="row spread">
                 <div>
-                  <div className="muted small">Tầng {next}</div>
+                  <div className="muted small">
+                    {inTower ? `${TOWER_NAME} · tầng ${towerFloor(next)}` : `Tầng ${next}`}
+                  </div>
                   <div className="enemy-name">
                     {enemy.name} {boss && <span className="tag bad">Thủ lĩnh</span>}
                   </div>
@@ -132,12 +136,17 @@ export default function DungeonTab(props: TabProps) {
                 pháp, hoặc tu luyện lên cảnh giới cao hơn.
               </p>
             )}
+            {inTower && (
+              <p className="muted small">
+                {TOWER_NAME} không có đỉnh: quái mạnh dần theo từng tầng, phần thưởng tăng theo. Thủ lĩnh cứ 5 tầng.
+              </p>
+            )}
             <p className="muted small">
               Thắng: {formatNumber(floorStones(next))} linh thạch, {boss ? 3 : 1} tàn quyển, 1 pháp bảo
-              {boss ? ' (từ Linh Phẩm trở lên)' : ''}. Thua: bị thương 2 phút.
+              {boss ? ' (từ Linh Phẩm trở lên)' : ''}
+              {inTower && boss ? `, thêm ${TOWER_BOSS_FRAGMENTS} tàn quyển` : ''}. Thua: bị thương 2 phút.
             </p>
           </>
-        )}
       </section>
 
       <section className="card">
@@ -198,7 +207,7 @@ function FarmingPanel({ state: s, act }: TabProps) {
       <section className="card">
         <h2>Đang lịch luyện</h2>
         <p className="small">
-          Tầng {f.floor} · {zoneOf(f.floor).name} · đã {formatDuration((s.lastTick - f.start) / 1000)}
+          Tầng {f.floor > MAX_FLOOR ? `tháp ${towerFloor(f.floor)}` : f.floor} · {zoneOf(f.floor).name} · đã {formatDuration((s.lastTick - f.start) / 1000)}
         </p>
         <FarmRates floor={f.floor} />
         <button onClick={() => act(stopFarming)}>Kết thúc lịch luyện</button>
@@ -222,7 +231,7 @@ function FarmingPanel({ state: s, act }: TabProps) {
             <select id="farm-floor" value={chosen} onChange={(e) => setFloor(Number(e.target.value))}>
               {Array.from({ length: s.floor }, (_, i) => s.floor - i).map((f) => (
                 <option key={f} value={f}>
-                  {f} · {zoneOf(f).name}
+                  {f > MAX_FLOOR ? `Tháp ${towerFloor(f)}` : f} · {zoneOf(f).name}
                 </option>
               ))}
             </select>
@@ -251,13 +260,13 @@ function FarmRates({ floor }: { floor: number }) {
   );
 }
 
+const floorLabel = (f: number) => (f > MAX_FLOOR ? `${towerFloor(f)} của ${TOWER_NAME}` : String(f));
+
 function ClimbStatus({ s }: { s: TabProps['state'] }) {
   const st = autoClimbStatus(s, s.lastTick);
   switch (st.kind) {
     case 'off':
       return <>Tự đánh tầng kế tiếp mỗi 20 giây, kể cả khi offline. Thua thì tạm dừng tới khi chiến lực tăng.</>;
-    case 'top':
-      return <>Đã vượt toàn bộ bí cảnh.</>;
     case 'seclusion':
       return <>Đang bế quan, tạm dừng.</>;
     case 'injured':
@@ -270,8 +279,8 @@ function ClimbStatus({ s }: { s: TabProps['state'] }) {
         </>
       );
     case 'waiting':
-      return <>Khiêu chiến tầng {s.floor + 1} sau {Math.ceil(st.seconds)} giây.</>;
+      return <>Khiêu chiến tầng {floorLabel(s.floor + 1)} sau {Math.ceil(st.seconds)} giây.</>;
     case 'ready':
-      return <>Sắp khiêu chiến tầng {s.floor + 1}.</>;
+      return <>Sắp khiêu chiến tầng {floorLabel(s.floor + 1)}.</>;
   }
 }

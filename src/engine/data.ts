@@ -168,6 +168,15 @@ export const MAX_BATTLE_ACTIONS = 150;
 // --- Bí cảnh ---
 export const MAX_FLOOR = 40;
 export const BOSS_EVERY = 5;
+/** Vô Cực Tháp: các tầng sau MAX_FLOOR, không có đỉnh. Mỗi tầng quái mạnh thêm chừng này "cấp tương đương" */
+/** Tàn quyển thêm khi hạ thủ lĩnh tầng tháp */
+export const TOWER_BOSS_FRAGMENTS = 5;
+export const TOWER_NAME = 'Vô Cực Tháp';
+export const TOWER_LEVEL_STEP = 0.55;
+/** Linh thạch mỗi tầng tháp tăng thêm bấy nhiêu phần của tầng 40 (tăng tuyến tính, không nhân đôi) */
+export const TOWER_STONE_STEP = 0.1;
+/** Tầng tháp (1, 2, …) ứng với tầng bí cảnh f; 0 nếu còn trong bí cảnh */
+export const towerFloor = (floor: number) => Math.max(0, floor - MAX_FLOOR);
 export const BOSS_MULT = { hp: 3, atk: 1.15, def: 1.2 };
 
 /** "Cấp tương đương" của quái ở tầng f, để so với cấp người chơi */
@@ -176,6 +185,7 @@ export const BOSS_MULT = { hp: 3, atk: 1.15, def: 1.2 };
  * Ba tầng đầu được giảm để nhân vật mới có thể lấy món pháp bảo đầu tiên.
  */
 export function floorLevel(floor: number): number {
+  if (floor > MAX_FLOOR) return floorLevel(MAX_FLOOR) + TOWER_LEVEL_STEP * (floor - MAX_FLOOR);
   return 9.5 + (floor >= 4 ? 1 : 0) + 0.8 * floor - Math.max(0, 4 - floor) * 2 + 0.1 * Math.max(0, floor - 5);
 }
 
@@ -198,6 +208,7 @@ export const ZONES: Zone[] = [
 
 /** Linh thạch khi vượt tầng lần đầu; lịch luyện mỗi phút nhận FARM_STONE_SHARE phần này */
 export function floorStones(floor: number): number {
+  if (floor > MAX_FLOOR) return floorStones(MAX_FLOOR) * (1 + TOWER_STONE_STEP * (floor - MAX_FLOOR));
   return 30 * 2 ** (floor / 5);
 }
 export const FARM_TICK_SECONDS = 60;

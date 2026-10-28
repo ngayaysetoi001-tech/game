@@ -2,7 +2,7 @@
 // Điều kiện hoàn thành tính thẳng từ trạng thái game (không cần theo dõi riêng); chỉ lưu những nhiệm vụ đã nhận thưởng.
 
 import type { PillId } from './data';
-import { SLOTS } from './data';
+import { MAX_FLOOR, SLOTS } from './data';
 import { itemPlus, setCounts } from './combat';
 import { type GameState, levelInfo } from './state';
 
@@ -325,6 +325,33 @@ export const QUESTS: QuestDef[] = [
     progress: (s) => ratio(s.floor, 40),
     reward: { stones: 3000, fragments: 30 },
   },
+  {
+    id: 'thap_5',
+    title: 'Bước vào Vô Cực Tháp',
+    desc: 'Leo tới tầng 5 của Vô Cực Tháp (tầng 45). Tháp không có đỉnh, quái mạnh dần theo từng tầng.',
+    go: { tab: 'dungeon' },
+    done: (s) => s.floor >= MAX_FLOOR + 5,
+    progress: (s) => ratio(Math.max(0, s.floor - MAX_FLOOR), 5),
+    reward: { stones: 4000, fragments: 25 },
+  },
+  {
+    id: 'thap_15',
+    title: 'Vấn đỉnh tháp cổ',
+    desc: 'Leo tới tầng 15 của Vô Cực Tháp.',
+    go: { tab: 'dungeon' },
+    done: (s) => s.floor >= MAX_FLOOR + 15,
+    progress: (s) => ratio(Math.max(0, s.floor - MAX_FLOOR), 15),
+    reward: { stones: 8000, fragments: 60 },
+  },
+  {
+    id: 'thap_30',
+    title: 'Vô Cực',
+    desc: 'Leo tới tầng 30 của Vô Cực Tháp.',
+    go: { tab: 'dungeon' },
+    done: (s) => s.floor >= MAX_FLOOR + 30,
+    progress: (s) => ratio(Math.max(0, s.floor - MAX_FLOOR), 30),
+    reward: { stones: 15000, fragments: 120 },
+  },
 ];
 
 /** Cảnh giới mà nhiệm vụ nhắm tới (chỉ số REALMS), quyết định hệ số thưởng linh thạch; mặc định 0 */
@@ -351,6 +378,9 @@ export const QUEST_TIER: Record<string, number> = {
   tang_30: 5,
   do_kiep: 7,
   tang_40: 7,
+  thap_5: 7,
+  thap_15: 7,
+  thap_30: 7,
 };
 
 export const QUEST_BY_ID: Record<string, QuestDef> = Object.fromEntries(QUESTS.map((q) => [q.id, q]));

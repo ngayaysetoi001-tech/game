@@ -66,7 +66,7 @@ export default function BattleStage({ s }: { s: GameState }) {
   }, [phase, battle?.events?.length]);
 
   const showing = phase.kind !== 'idle' && battle?.events?.length ? battle : null;
-  const floor = showing ? showing.floor : Math.min(s.floor + 1, 40);
+  const floor = showing ? showing.floor : s.floor + 1;
   const zoneIdx = Math.min(ZONES.length - 1, Math.floor((floor - 1) / 5));
   const theme = ZONE_THEMES[zoneIdx];
   const enemyName = showing ? showing.enemy : enemyFor(floor).name;
