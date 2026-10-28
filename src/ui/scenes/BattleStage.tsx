@@ -15,30 +15,30 @@ import Monster from '../art/Monster';
 import { prefersReducedMotion } from '../art/Particles';
 import { REALM_AURA, ZONE_THEMES } from '../art/palette';
 import { Art, slugify } from '../art/registry';
+import { FRESH_MS, claim, mountStage, playedTime, release } from './playback';
 import { ZONES } from '../../engine/data';
 
 const STEP_MS = 420;
 /** Trận dài thì phát nhanh hơn, tổng không quá chừng này */
 const MAX_PLAYBACK_MS = 9000;
-/** Chỉ phát lại trận vừa đánh (không phát trận đánh lúc offline) */
-const FRESH_MS = 5000;
 const BANNER_MS = 1800;
 const DARK_FEATURES = new Set(['ghost', 'void']);
 
-// Ghi nhớ trận đã phát để chuyển tab qua lại không phát lại
-let lastPlayed = 0;
-
 type Phase = { kind: 'idle' } | { kind: 'play'; step: number } | { kind: 'done' };
 
-export default function BattleStage({ s, onPlaying }: { s: GameState; onPlaying: (p: boolean) => void }) {
+export default function BattleStage({ s }: { s: GameState }) {
   const battle = s.lastBattle;
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
 
-  // Trận mới (vừa bấm khiêu chiến) → phát lại từng đòn
+  // Báo cho phần còn lại của giao diện biết sân đấu đang hiện; rời đi thì thôi giữ hiển thị
+  useEffect(() => mountStage(), []);
+
+  // Trận mới (vừa bấm khiêu chiến) → phát lại từng đòn. Nhận trận ngay để giao diện khác giữ hiển thị cũ.
   useEffect(() => {
-    if (!battle?.events?.length || battle.time <= lastPlayed) return;
-    lastPlayed = battle.time;
-    if (Date.now() - battle.time > FRESH_MS) return;
+    if (!battle?.events?.length || battle.time <= playedTime()) return;
+    const fresh = Date.now() - battle.time <= FRESH_MS;
+    claim(battle, fresh);
+    if (!fresh) return;
     if (prefersReducedMotion()) {
       setPhase({ kind: 'done' });
       return;
@@ -47,7 +47,6 @@ export default function BattleStage({ s, onPlaying }: { s: GameState; onPlaying:
   }, [battle?.time, battle?.events?.length]);
 
   useEffect(() => {
-    onPlaying(phase.kind === 'play');
     if (phase.kind === 'play') {
       const total = battle?.events?.length ?? 0;
       const t = setTimeout(
@@ -57,10 +56,13 @@ export default function BattleStage({ s, onPlaying }: { s: GameState; onPlaying:
       return () => clearTimeout(t);
     }
     if (phase.kind === 'done') {
-      const t = setTimeout(() => setPhase({ kind: 'idle' }), BANNER_MS);
+      const t = setTimeout(() => {
+        setPhase({ kind: 'idle' });
+        release();
+      }, BANNER_MS);
       return () => clearTimeout(t);
     }
-  }, [phase, battle?.events?.length, onPlaying]);
+  }, [phase, battle?.events?.length]);
 
   const showing = phase.kind !== 'idle' && battle?.events?.length ? battle : null;
   const floor = showing ? showing.floor : Math.min(s.floor + 1, 40);

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { canBreakthrough, type GameState, type LogEntry } from '../engine/engine';
+import { useBattleHold } from './scenes/playback';
 
 interface Toast {
   id: number;
@@ -17,8 +18,11 @@ export default function Toasts({ s }: { s: GameState }) {
   // Mốc nhật ký đã thấy; lần render đầu coi như đã thấy hết (popup offline đã tóm tắt)
   const seen = useRef<LogEntry | undefined>(s.log[0]);
   const couldBreak = useRef(canBreakthrough(s));
+  // Đang phát lại trận thì chưa báo kết quả (vượt tầng, rơi đồ…); báo dồn sau khi hoạt ảnh xong
+  const held = useBattleHold(s.lastBattle);
 
   useEffect(() => {
+    if (held) return;
     const fresh: Toast[] = [];
     for (const entry of s.log) {
       if (entry === seen.current || (seen.current && entry.time === seen.current.time && entry.text === seen.current.text)) break;
@@ -32,7 +36,7 @@ export default function Toasts({ s }: { s: GameState }) {
     couldBreak.current = can;
 
     if (fresh.length) setToasts((t) => [...fresh, ...t].slice(0, MAX_TOASTS));
-  }, [s]);
+  }, [s, held]);
 
   useEffect(() => {
     if (!toasts.length) return;

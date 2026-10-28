@@ -26,6 +26,7 @@ import {
 } from '../../engine/engine';
 import type { TabProps } from '../GameScreen';
 import BattleStage from '../scenes/BattleStage';
+import { useBattleHold } from '../scenes/playback';
 import AutoToggle from '../AutoToggle';
 
 const ESTIMATE_RUNS = 100;
@@ -38,9 +39,12 @@ function estimateWin(p: Fighter, e: Fighter): number {
 
 export default function DungeonTab(props: TabProps) {
   const { state: s, act } = props;
-  const [playing, setPlaying] = useState(false);
-  const next = Math.min(s.floor + 1, MAX_FLOOR);
-  const cleared = s.floor >= MAX_FLOOR;
+  // Engine đã tính xong trận nên s.floor tăng ngay; trong lúc hoạt ảnh còn phát, giữ nguyên đối thủ đang đánh
+  const hold = useBattleHold(s.lastBattle);
+  const fought = hold && s.lastBattle ? s.lastBattle.floor : null;
+  const next = fought ?? Math.min(s.floor + 1, MAX_FLOOR);
+  const cleared = fought === null && s.floor >= MAX_FLOOR;
+  const clearedCount = fought !== null ? fought - 1 : s.floor;
   const player = playerStats(s, s.lastTick);
   const enemy = enemyFor(next);
   // Chỉ tính lại khi chỉ số thay đổi, không phải mỗi nhịp đồng hồ
@@ -55,13 +59,13 @@ export default function DungeonTab(props: TabProps) {
         <div className="row spread">
           <h2>{zone.name}</h2>
           <span className="muted small">
-            Đã vượt {s.floor}/{MAX_FLOOR} tầng
+            Đã vượt {clearedCount}/{MAX_FLOOR} tầng
           </span>
         </div>
         <div className="bar thin">
-          <div className="bar-fill" style={{ width: `${(s.floor / MAX_FLOOR) * 100}%` }} />
+          <div className="bar-fill" style={{ width: `${(clearedCount / MAX_FLOOR) * 100}%` }} />
         </div>
-        <BattleStage s={s} onPlaying={setPlaying} />
+        <BattleStage s={s} />
 
         {cleared ? (
           <p className="notice">Đã chinh phục toàn bộ bí cảnh. Bí cảnh mới sẽ mở ở bản sau.</p>
@@ -75,10 +79,16 @@ export default function DungeonTab(props: TabProps) {
                     {enemy.name} {boss && <span className="tag bad">Thủ lĩnh</span>}
                   </div>
                 </div>
-                <div className={`chance ${chance >= 0.7 ? 'good' : chance >= 0.3 ? 'mid' : 'bad'}`}>
-                  <div className="small muted">Thắng ước tính</div>
-                  <b>{Math.round(chance * 100)}%</b>
-                </div>
+                {hold ? (
+                  <div className="chance">
+                    <div className="small muted">Đang giao chiến…</div>
+                  </div>
+                ) : (
+                  <div className={`chance ${chance >= 0.7 ? 'good' : chance >= 0.3 ? 'mid' : 'bad'}`}>
+                    <div className="small muted">Thắng ước tính</div>
+                    <b>{Math.round(chance * 100)}%</b>
+                  </div>
+                )}
               </div>
               {enemy.skills.length > 0 && (
                 <div className="small">
@@ -109,13 +119,13 @@ export default function DungeonTab(props: TabProps) {
             </div>
             <button
               className="primary big"
-              disabled={!canChallenge(s) || playing}
+              disabled={!canChallenge(s) || hold}
               onClick={() => act(challengeFloor)}
             >
-              Khiêu chiến tầng {next}
+              {hold ? `Đang giao chiến tầng ${next}…` : `Khiêu chiến tầng ${next}`}
             </button>
             {s.seclusion && <p className="muted small">Đang bế quan, không thể chiến đấu.</p>}
-            {chance < 0.3 && (
+            {!hold && chance < 0.3 && (
               <p className="notice">
                 Đối thủ quá mạnh. Hãy lịch luyện ở tầng đã vượt để nhặt pháp bảo, dùng tàn quyển tu luyện công
                 pháp, hoặc tu luyện lên cảnh giới cao hơn.
@@ -134,7 +144,7 @@ export default function DungeonTab(props: TabProps) {
           <ClimbStatus s={s} />
         </AutoToggle>
       </section>
-      {s.lastBattle && <BattleReport {...props} />}
+      {s.lastBattle && !hold && <BattleReport {...props} />}
       <FarmingPanel {...props} />
     </>
   );
