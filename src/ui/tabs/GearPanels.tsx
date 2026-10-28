@@ -3,7 +3,10 @@ import {
   ENHANCE_MAX,
   MOD_LABELS,
   SETS,
+  canDevour,
   canEnhance,
+  devourItem,
+  itemDevourExp,
   describeMods,
   enhanceChance,
   enhanceCost,
@@ -169,6 +172,11 @@ export function BagPanel({ state: s, act }: TabProps) {
                 Bán {formatNumber(itemSellPrice(it))}
               </button>
               <EnhanceButton s={s} it={it} act={act} />
+              {canDevour(s) && (
+                <button onClick={() => act((st, now, rng) => devourItem(st, it.id, now, rng))}>
+                  Luyện hóa +{formatNumber(itemDevourExp(it))}
+                </button>
+              )}
             </div>
           </div>
         );

@@ -4,11 +4,28 @@
 
 import { ENHANCE_COST, ENHANCE_MAX, ENHANCE_RATES } from './gear';
 import {
+  NATALS,
+  NATAL_MAX_LEVEL,
+  NATAL_STAGES,
+  NATAL_UNLOCK_LEVEL,
+  type NatalId,
+  natalExpFromItem,
+  natalExpNeeded,
+  natalStage,
+} from './natal';
+import {
+  GRADE_COST,
+  MAIN_CARRY_OVER,
+  SUB_SLOTS,
+  TECHS,
+  type TechId,
+  mainTechId,
+} from './techniques';
+import {
   AUTO_CLIMB_SECONDS,
   BAG_LIMIT,
   BASE_RATE,
   BASE_STONE_RATE,
-  BASE_TECH,
   BREAK_PILL_BONUS,
   DEFEAT_INJURY_SECONDS,
   FAIL_BONUS_MAX,
@@ -51,6 +68,7 @@ import {
   skillSlots,
 } from './skills';
 import {
+  charMods,
   combatPower,
   cultivationBonus,
   enemyFor,
@@ -89,6 +107,8 @@ export * from './state';
 export * from './combat';
 export * from './skills';
 export * from './gear';
+export * from './techniques';
+export * from './natal';
 
 // ---------- Tốc độ ----------
 
@@ -99,7 +119,7 @@ export function baseRate(s: GameState): number {
 
 export function cultivationRate(s: GameState, time: number): number {
   let rate = baseRate(s);
-  if (s.seclusion && time < s.seclusion.end) rate *= seclusionDef(s.seclusion.id).rateMult;
+  if (s.seclusion && time < s.seclusion.end) rate *= seclusionDef(s.seclusion.id).rateMult * (1 + charMods(s).seclusion);
   if (s.farming) rate *= FARM_CULTIVATION_MULT;
   if (isInjured(s, time)) rate *= INJURY_RATE_MULT;
   return rate;
@@ -126,7 +146,7 @@ function injure(s: GameState, time: number, seconds: number) {
 // ---------- Tạo game ----------
 
 function defaultAuto(): AutoSettings {
-  return { climb: false, equip: false, sell: false, reclusion: false, heal: false };
+  return { climb: false, equip: false, sell: false, reclusion: false, heal: false, devour: false };
 }
 
 function emptyStats(): Stats {
@@ -135,7 +155,7 @@ function emptyStats(): Stats {
 
 export function newGame(name: string, root: SpiritRoot, now: number): GameState {
   const s: GameState = {
-    version: 5,
+    version: 6,
     name: name.trim() || 'Vô Danh',
     root,
     level: 0,
@@ -149,7 +169,6 @@ export function newGame(name: string, root: SpiritRoot, now: number): GameState 
     lastTick: now,
     createdAt: now,
     path: null,
-    tech: { base: 0, path: 0 },
     gear: { weapon: null, armor: null, pendant: null, ring: null, boots: null },
     bag: [],
     fragments: 0,
@@ -163,6 +182,10 @@ export function newGame(name: string, root: SpiritRoot, now: number): GameState 
     nextClimbAt: now,
     skills: {},
     loadout: [],
+    techs: { dan_khi: 0 },
+    mainTech: null,
+    subTechs: ['dan_khi'],
+    natal: null,
   };
   addLog(s, now, `${s.name} bước lên con đường tu tiên với ${rootName(root)} (${root.elements.join(', ')}).`, 'good');
   return s;
@@ -263,7 +286,7 @@ export function applyOffline(
   rng: Rng,
 ): { state: GameState; summary: OfflineSummary } {
   const s = clone(prev);
-  const capStart = now - OFFLINE_CAP_HOURS * 3600_000;
+  const capStart = now - (OFFLINE_CAP_HOURS + charMods(prev).offline) * 3600_000;
   if (s.lastTick < capStart) {
     // Dời mọi mốc thời gian theo để bế quan / thương thế không "trôi" mất phần bị cắt
     const shift = capStart - s.lastTick;
@@ -427,13 +450,14 @@ export function canChallenge(s: GameState): boolean {
   return s.floor < MAX_FLOOR && s.seclusion === null;
 }
 
-type Stash = 'kept' | 'equipped' | 'sold' | 'full';
+type Stash = 'kept' | 'equipped' | 'sold' | 'full' | 'devoured';
 
 const STASH_NOTE: Record<Stash, string> = {
   kept: '',
   equipped: ' (đã tự trang bị)',
   sold: ' (kém hơn, đã tự bán)',
   full: ' (túi đầy, đã bán)',
+  devoured: ' (kém hơn, đã luyện hóa cho bản mệnh)',
 };
 
 function isBetter(s: GameState, it: Item): boolean {
@@ -451,21 +475,31 @@ function stash(s: GameState, it: Item): Stash {
   return 'kept';
 }
 
-/** Xử lý pháp bảo vừa nhặt theo các công tắc tự trang bị / tự bán */
-function addItem(s: GameState, it: Item): Stash {
+/** Món không dùng tới: luyện hóa cho bản mệnh nếu bật, không thì bán nếu bật tự bán. null = không công tắc nào bật */
+function disposeSpare(s: GameState, it: Item, time: number): 'devoured' | 'sold' | null {
+  if (s.auto.devour && canDevour(s)) {
+    gainNatalExp(s, itemDevourExp(it), time);
+    return 'devoured';
+  }
+  if (s.auto.sell) {
+    s.stones += itemSellPrice(it);
+    return 'sold';
+  }
+  return null;
+}
+
+/** Xử lý pháp bảo vừa nhặt theo các công tắc tự trang bị / tự bán / tự luyện hóa */
+function addItem(s: GameState, it: Item, time: number): Stash {
   s.stats.itemsFound++;
   if (s.auto.equip && isBetter(s, it)) {
     const old = s.gear[it.slot];
     s.gear[it.slot] = it;
-    if (old) {
-      if (s.auto.sell) s.stones += itemSellPrice(old);
-      else stash(s, old);
-    }
+    if (old && !disposeSpare(s, old, time)) stash(s, old);
     return 'equipped';
   }
-  if (s.auto.sell && isWorse(s, it)) {
-    s.stones += itemSellPrice(it);
-    return 'sold';
+  if (isWorse(s, it)) {
+    const how = disposeSpare(s, it, time);
+    if (how) return how;
   }
   return stash(s, it);
 }
@@ -505,7 +539,7 @@ function fight(s: GameState, now: number, rng: Rng, auto: boolean) {
     s.stones += stones;
     s.fragments += fragments;
     const it = newItem(s, floor, boss, rng);
-    const result = addItem(s, it);
+    const result = addItem(s, it, now);
     s.stats.battlesWon++;
     if (boss) {
       const bundle = BOSS_FRAGMENT_BUNDLES[floor] ?? 0;
@@ -519,7 +553,10 @@ function fight(s: GameState, now: number, rng: Rng, auto: boolean) {
       `${auto ? '[Tự động] ' : ''}Vượt tầng ${floor} ${zoneOf(floor).name}, hạ ${enemy.name}. Nhận ${formatNumber(stones)} linh thạch, ${fragments} tàn quyển, ${TIERS[it.tier].name} ${itemName(it)}${STASH_NOTE[result]}.`,
       'good',
     );
-    if (boss) grantEarnedSkills(s, now);
+    if (boss) {
+      grantEarnedSkills(s, now);
+      grantEarnedTechs(s, now);
+    }
   } else {
     s.stats.battlesLost++;
     // Không thử lại cho tới khi mạnh hơn lúc thua
@@ -585,7 +622,7 @@ function farmLoot(s: GameState, time: number, rng: Rng) {
   if (rng() < FARM_ITEM_CHANCE) {
     // Lịch luyện ở tầng thủ lĩnh rơi đồ tốt như thủ lĩnh
     const it = newItem(s, floor, isBossFloor(floor), rng);
-    const result = addItem(s, it);
+    const result = addItem(s, it, time);
     // Chỉ ghi nhật ký đồ tốt hoặc vừa tự trang bị, để không bị spam
     if (it.tier >= 2 || result === 'equipped') {
       addLog(s, time, `Lịch luyện nhặt được ${TIERS[it.tier].name} ${itemName(it)}${STASH_NOTE[result]}!`, it.tier >= 2 ? 'good' : 'info');
@@ -680,38 +717,183 @@ export function choosePath(prev: GameState, path: PathId, now: number, rng: Rng)
   const s = begin(prev, now, rng);
   if (!canChoosePath(s)) return s;
   s.path = path;
-  s.tech.path = 1;
-  addLog(s, now, `Chọn con đường ${PATHS[path].name}, bắt đầu tu luyện ${PATHS[path].technique}.`, 'good');
+  addLog(s, now, `Chọn con đường ${PATHS[path].name}.`, 'good');
   grantEarnedSkills(s, now);
+  grantEarnedTechs(s, now);
   return s;
 }
 
-export type TechKind = 'base' | 'path';
-
-export function techMaxLevel(s: GameState, kind: TechKind): number {
-  return kind === 'base' ? BASE_TECH.maxLevel : pathLevelCap(realmOf(s));
+export function techLevel(s: GameState, id: TechId): number {
+  return s.techs[id] ?? 0;
 }
 
-export function techUpgradeCost(s: GameState, kind: TechKind) {
-  return techCost(s.tech[kind] + 1, realmOf(s));
+export function hasTech(s: GameState, id: TechId): boolean {
+  return s.techs[id] !== undefined;
 }
 
-export function canUpgradeTech(s: GameState, kind: TechKind): boolean {
-  if (kind === 'path' && !s.path) return false;
-  if (s.tech[kind] >= techMaxLevel(s, kind)) return false;
-  const cost = techUpgradeCost(s, kind);
+/** Công pháp chính giới hạn tầng theo cảnh giới; công pháp phụ theo từng công pháp */
+export function techCap(s: GameState, id: TechId): number {
+  const def = TECHS[id];
+  return def.kind === 'main' ? pathLevelCap(realmOf(s)) : def.maxLevel!;
+}
+
+export function techUpgradeCost(s: GameState, id: TechId) {
+  const c = techCost(techLevel(s, id) + 1, realmOf(s));
+  const k = GRADE_COST[TECHS[id].grade];
+  return { fragments: Math.ceil(c.fragments * k), stones: Math.ceil(c.stones * k) };
+}
+
+export function canUpgradeTech(s: GameState, id: TechId): boolean {
+  if (!hasTech(s, id) || techLevel(s, id) >= techCap(s, id)) return false;
+  const cost = techUpgradeCost(s, id);
   return s.fragments >= cost.fragments && s.stones >= cost.stones;
 }
 
-export function upgradeTech(prev: GameState, kind: TechKind, now: number, rng: Rng): GameState {
+export function upgradeTech(prev: GameState, id: TechId, now: number, rng: Rng): GameState {
   const s = begin(prev, now, rng);
-  if (!canUpgradeTech(s, kind)) return s;
-  const cost = techUpgradeCost(s, kind);
+  if (!canUpgradeTech(s, id)) return s;
+  const cost = techUpgradeCost(s, id);
   s.fragments -= cost.fragments;
   s.stones -= cost.stones;
-  s.tech[kind]++;
-  const name = kind === 'base' ? BASE_TECH.name : PATHS[s.path!].technique;
-  addLog(s, now, `${name} đạt tầng ${s.tech[kind]}.`);
+  s.techs[id] = techLevel(s, id) + 1;
+  addLog(s, now, `${TECHS[id].name} đạt tầng ${s.techs[id]}.`);
+  return s;
+}
+
+/** Học công pháp. Công pháp chính mới thay thế công pháp chính cũ và kế thừa một nửa số tầng. */
+function learnTech(s: GameState, id: TechId, time: number, how: string) {
+  const def = TECHS[id];
+  if (def.kind === 'main') {
+    const cur = s.mainTech ? techLevel(s, s.mainTech) : 0;
+    s.techs[id] = Math.max(1, Math.min(techCap(s, id), Math.floor(cur * MAIN_CARRY_OVER)));
+    s.mainTech = id;
+  } else {
+    s.techs[id] = def.source.kind === 'start' ? 0 : 1;
+    if (s.subTechs.length < SUB_SLOTS) s.subTechs.push(id);
+  }
+  addLog(s, time, `${how} công pháp 【${def.name}】.`, 'good');
+}
+
+function earnedTech(s: GameState, id: TechId): boolean {
+  const def = TECHS[id];
+  if (def.path && def.path !== s.path) return false;
+  if (def.source.kind === 'path') return true;
+  if (def.source.kind === 'boss') return s.floor >= def.source.floor;
+  return false;
+}
+
+/** Học mọi công pháp đã đủ điều kiện (chọn hướng tu, hạ thủ lĩnh, nâng save) mà chưa học */
+function grantEarnedTechs(s: GameState, time: number) {
+  for (const id of Object.keys(TECHS) as TechId[]) {
+    if (hasTech(s, id) || !earnedTech(s, id)) continue;
+    learnTech(s, id, time, TECHS[id].source.kind === 'boss' ? 'Thu được bí kíp' : 'Lĩnh ngộ');
+  }
+}
+
+export function setMainTech(prev: GameState, id: TechId, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  const def = TECHS[id];
+  if (!hasTech(s, id) || def.kind !== 'main' || def.path !== s.path || s.mainTech === id) return s;
+  s.mainTech = id;
+  addLog(s, now, `Đổi công pháp chính sang 【${def.name}】 (tầng ${techLevel(s, id)}).`);
+  return s;
+}
+
+/** Cất công pháp phụ đang dùng, hoặc mang vào ô trống (tối đa SUB_SLOTS) */
+export function toggleSubTech(prev: GameState, id: TechId, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (!hasTech(s, id) || TECHS[id].kind !== 'sub') return s;
+  const i = s.subTechs.indexOf(id);
+  if (i >= 0) s.subTechs.splice(i, 1);
+  else if (s.subTechs.length < SUB_SLOTS) s.subTechs.push(id);
+  return s;
+}
+
+export function canBuyTech(s: GameState, id: TechId): boolean {
+  const def = TECHS[id];
+  if (def.source.kind !== 'shop' || hasTech(s, id)) return false;
+  if (def.path && def.path !== s.path) return false;
+  return realmOf(s) >= def.source.realm && s.stones >= def.source.price;
+}
+
+export function buyTech(prev: GameState, id: TechId, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (!canBuyTech(s, id)) return s;
+  s.stones -= (TECHS[id].source as { price: number }).price;
+  learnTech(s, id, now, 'Mua bí kíp, học được');
+  return s;
+}
+
+// ---------- Bản mệnh pháp bảo ----------
+
+export function canForgeNatal(s: GameState): boolean {
+  return !s.natal && s.level >= NATAL_UNLOCK_LEVEL;
+}
+
+export function forgeNatal(prev: GameState, id: NatalId, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (!canForgeNatal(s)) return s;
+  s.natal = { id, level: 1, exp: 0 };
+  addLog(s, now, `Luyện thành bản mệnh pháp bảo 【${NATALS[id].name}】.`, 'good');
+  return s;
+}
+
+export function canDevour(s: GameState): boolean {
+  return !!s.natal && s.natal.level < NATAL_MAX_LEVEL;
+}
+
+export function itemDevourExp(it: Item): number {
+  return natalExpFromItem(TIERS[it.tier].mult, it.floor, itemPlus(it));
+}
+
+/** Cộng kinh nghiệm bản mệnh, tự lên cấp; chỉ ghi nhật ký khi lên cấp */
+function gainNatalExp(s: GameState, amount: number, time: number) {
+  const n = s.natal;
+  if (!n) return;
+  n.exp += amount;
+  while (n.level < NATAL_MAX_LEVEL && n.exp >= natalExpNeeded(n.level)) {
+    n.exp -= natalExpNeeded(n.level);
+    n.level++;
+    const evolved = natalStage(n.level) > natalStage(n.level - 1);
+    addLog(
+      s,
+      time,
+      evolved
+        ? `${NATALS[n.id].name} tiến hóa thành ${NATAL_STAGES[natalStage(n.level)]} (cấp ${n.level})!`
+        : `${NATALS[n.id].name} đạt cấp ${n.level}.`,
+      evolved ? 'good' : 'info',
+    );
+  }
+  if (n.level >= NATAL_MAX_LEVEL) n.exp = 0;
+}
+
+export function devourItem(prev: GameState, id: number, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  const idx = s.bag.findIndex((it) => it.id === id);
+  if (idx < 0 || !canDevour(s)) return s;
+  const [it] = s.bag.splice(idx, 1);
+  gainNatalExp(s, itemDevourExp(it), now);
+  return s;
+}
+
+/** Luyện hóa mọi pháp bảo trong túi kém hơn đồ đang dùng */
+export function devourWorse(prev: GameState, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (!canDevour(s)) return s;
+  const keep: Item[] = [];
+  let total = 0;
+  let count = 0;
+  for (const it of s.bag) {
+    if (canDevour(s) && isWorse(s, it)) {
+      const exp = itemDevourExp(it);
+      total += exp;
+      count++;
+      gainNatalExp(s, exp, now);
+    } else keep.push(it);
+  }
+  if (!count) return s;
+  addLog(s, now, `Luyện hóa ${count} pháp bảo kém hơn, bản mệnh nhận ${formatNumber(total)} kinh nghiệm.`);
+  s.bag = keep;
   return s;
 }
 
@@ -882,7 +1064,32 @@ function migrate(raw: Record<string, unknown>): GameState | null {
   if (s.version === 4) {
     s = { ...s, version: 5, gear: { ...(s.gear as object), ring: null, boots: null } };
   }
-  return s.version === 5 ? (s as unknown as GameState) : null;
+  if (s.version === 5) {
+    // Công pháp cũ: tech.base → Dẫn Khí Quyết, tech.path → công pháp chính Hoàng Cấp của hướng tu
+    const old = (s.tech as { base: number; path: number } | undefined) ?? { base: 0, path: 0 };
+    const path = s.path as PathId | null;
+    const techs: GameState['techs'] = { dan_khi: old.base };
+    let mainTech: TechId | null = null;
+    if (path) {
+      mainTech = mainTechId(path, 0);
+      techs[mainTech] = Math.max(1, old.path);
+    }
+    const { tech: _old, ...rest } = s;
+    void _old;
+    const g = {
+      ...rest,
+      version: 6,
+      techs,
+      mainTech,
+      subTechs: ['dan_khi'],
+      natal: null,
+      auto: { ...(s.auto as object), devour: false },
+      log: [...(s.log as GameState['log'])],
+    } as unknown as GameState;
+    grantEarnedTechs(g, g.lastTick);
+    s = g as unknown as Record<string, unknown>;
+  }
+  return s.version === 6 ? (s as unknown as GameState) : null;
 }
 
 export function deserialize(raw: string): GameState | null {

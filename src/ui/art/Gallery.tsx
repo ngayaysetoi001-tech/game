@@ -1,6 +1,8 @@
 import { PATHS, ZONES, type PathId, type PillId, SLOTS } from '../../engine/data';
+import { NATAL_IDS } from '../../engine/natal';
 import Cultivator from './Cultivator';
 import { ItemIcon, PillIcon } from './Icons';
+import NatalIcon from './NatalIcon';
 import Landscape from './Landscape';
 import Monster from './Monster';
 import { CAVE_THEME, HOME_THEME, REALM_AURA, ZONE_THEMES } from './palette';
@@ -49,6 +51,18 @@ export default function Gallery() {
           {(['tuKhi', 'phaCanh', 'hoiXuan'] as PillId[]).map((id) => (
             <PillIcon key={id} id={id} />
           ))}
+        </div>
+      </section>
+      <section className="card">
+        <h2>Bản mệnh pháp bảo</h2>
+        <div className="row">
+          {NATAL_IDS.flatMap((id) =>
+            [0, 1, 2, 3].map((st) => (
+              <span key={`${id}${st}`} className="natal-thumb">
+                <NatalIcon id={id} stage={st} />
+              </span>
+            )),
+          )}
         </div>
       </section>
     </>

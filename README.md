@@ -72,6 +72,21 @@ npm run build    # bản build tĩnh ở dist/, deploy được lên GitHub Page
 - **Cường hóa +1 đến +10** bằng linh thạch, mỗi cấp +8% chỉ số gốc; tỉ lệ thành công giảm dần (100% → 15%). Thất bại chỉ mất linh thạch.
 - Chiến đấu hỗ trợ hút máu, phản đòn, né tránh, choáng và thiêu đốt từ pháp bảo. Save v4 tự nâng lên v5 (đồ cũ giữ nguyên, thêm ô Giới Chỉ và Hài).
 
+### Công pháp theo phẩm cấp (đợt C)
+
+- **1 công pháp chính + 2 công pháp phụ.** Mỗi hướng tu có 4 công pháp chính từ Hoàng đến Thiên Cấp
+  (Kiếm: Thanh Liên Kiếm Quyết → Tử Điện Kiếm Điển → Ngự Kiếm Chân Kinh → Hỗn Nguyên Kiếm Kinh; Thể và Pháp tương tự). Phẩm càng cao càng mạnh và có thêm chỉ số riêng.
+- **10 công pháp phụ** dùng chung: Dẫn Khí Quyết, Quy Tức Công (offline tới 16 giờ), Tụ Linh Trận Pháp (bế quan nhanh hơn), Thần Thức Quyết, Liễm Tức Thuật, Kim Chung Tráo, Phản Chấn Quyết, Phệ Huyết Công, Thiên Cơ Diễn Toán, Càn Khôn Đại Pháp.
+- Học từ Tàng Kinh Các (Phường Thị) hoặc bí kíp rơi từ thủ lĩnh. Học công pháp chính mới sẽ kế thừa một nửa số tầng của công pháp cũ; công pháp cũ giữ nguyên tầng để đổi lại.
+- Save v5 tự nâng lên v6: tầng công pháp cũ được giữ, và được học lại các bí kíp ứng với thủ lĩnh đã hạ.
+
+### Bản mệnh pháp bảo (đợt D)
+
+- Mở ở Trúc Cơ, chọn 1 trong 3: **Thanh Hồng Phi Kiếm** (công kích), **Càn Khôn Hồ Lô** (bền bỉ), **Trấn Hồn Linh Chung** (khống chế). Không đổi được.
+- **Luyện hóa pháp bảo thừa** (theo phẩm, tầng, cấp cường hóa) để bản mệnh lên cấp 30. Có công tắc tự luyện hóa đồ kém hơn thay cho tự bán.
+- Tiến hóa 4 giai đoạn (Phàm, Linh, Bảo, Tiên Khí) với thưởng thêm mỗi giai đoạn; có **chiêu bản mệnh riêng** luôn ưu tiên dùng trước trong trận, mạnh lên theo cấp. Bản mệnh lơ lửng cạnh nhân vật trong cảnh tu luyện.
+- Sức quái từ tầng 6 trở đi tăng thêm để bù cho các nguồn sức mạnh mới.
+
 Nhịp độ dự kiến với linh căn trung bình (không bế quan): Luyện Khí ~10 phút, Trúc Cơ ~30 phút,
 Kim Đan ~1.5 giờ, Nguyên Anh ~4 giờ… hết Độ Kiếp ~10 ngày.
 

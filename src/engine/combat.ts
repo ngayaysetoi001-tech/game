@@ -3,7 +3,6 @@
 import {
   AFFINITY_MULT,
   BASE_STATS,
-  BASE_TECH,
   BOSS_EVERY,
   BOSS_MULT,
   CRIT_DAMAGE,
@@ -19,6 +18,8 @@ import {
   floorLevel,
   floorStones,
 } from './data';
+import { type NatalDef, NATALS, natalSkillLevel, natalStage } from './natal';
+import { type TechDef, TECHS, techEffect } from './techniques';
 import {
   AFFIXES,
   AFFIX_COUNTS,
@@ -69,29 +70,21 @@ export function hasAffinity(s: GameState): boolean {
   return s.root.elements.some((e) => els.includes(e));
 }
 
-/** Phần trăm cộng thêm từ công pháp hướng tu cho một chỉ số */
-export function pathBonus(s: GameState, key: 'hp' | 'atk' | 'def' | 'rate' | 'crit'): number {
-  if (!s.path) return 0;
-  const per = PATHS[s.path].perLevel[key] ?? 0;
-  return per * s.tech.path * (hasAffinity(s) ? AFFINITY_MULT : 1);
-}
-
 /** Hệ số tốc độ tu luyện từ linh bội + công pháp + thuộc tính phụ / bộ trang bị */
 export function cultivationBonus(s: GameState): number {
   const pendant = s.gear.pendant ? itemStats(s.gear.pendant).cultivation : 0;
-  return 1 + pendant + pathBonus(s, 'rate') + gearMods(s).cultivation;
+  return 1 + pendant + charMods(s).cultivation;
 }
 
 /** Hệ số linh thạch kiếm được */
 export function stoneBonus(s: GameState): number {
-  return 1 + gearMods(s).stones;
+  return 1 + charMods(s).stones;
 }
 
 // ---------- Nhân vật ----------
 
 export function playerStats(s: GameState, time: number): Fighter {
   const b = POWER_SCALE ** s.level;
-  const base = 1 + BASE_TECH.perLevel * s.tech.base;
   const gear = { hp: 0, atk: 0, def: 0, crit: 0, spd: 0 };
   for (const slot of SLOTS) {
     const it = s.gear[slot];
@@ -103,16 +96,16 @@ export function playerStats(s: GameState, time: number): Fighter {
     gear.crit += st.crit;
     gear.spd += st.spd;
   }
-  const m = gearMods(s);
+  const m = charMods(s);
   const injured = isInjured(s, time) ? INJURY_COMBAT_MULT : 1;
   const path = s.path ? PATHS[s.path] : null;
   return {
     name: s.name,
-    hp: (BASE_STATS.hp * b + gear.hp) * base * (1 + pathBonus(s, 'hp') + m.hpPct) * injured,
-    atk: (BASE_STATS.atk * b + gear.atk) * base * (1 + pathBonus(s, 'atk') + m.atkPct) * injured,
-    def: (BASE_STATS.def * b + gear.def) * base * (1 + pathBonus(s, 'def') + m.defPct) * injured,
+    hp: (BASE_STATS.hp * b + gear.hp) * (1 + m.hpPct) * injured,
+    atk: (BASE_STATS.atk * b + gear.atk) * (1 + m.atkPct) * injured,
+    def: (BASE_STATS.def * b + gear.def) * (1 + m.defPct) * injured,
     spd: BASE_STATS.spd + (path?.spd ?? 0) + gear.spd + m.spd,
-    crit: (path?.baseCrit ?? 0.05) + pathBonus(s, 'crit') + gear.crit + m.crit,
+    crit: (path?.baseCrit ?? 0.05) + gear.crit + m.crit,
     skills: equippedSkills(s),
     lifesteal: m.lifesteal,
     thorns: m.thorns,
@@ -124,10 +117,13 @@ export function playerStats(s: GameState, time: number): Fighter {
 
 /** Võ kỹ đang dùng (đã cắt theo số ô mở được ở cảnh giới hiện tại) */
 export function equippedSkills(s: GameState): { id: SkillId; level: number }[] {
-  return s.loadout
+  const list = s.loadout
     .slice(0, skillSlots(levelInfo(s.level).realm))
     .filter((id) => (s.skills[id] ?? 0) > 0)
     .map((id) => ({ id, level: s.skills[id]! }));
+  // Chiêu bản mệnh có ô riêng và được ưu tiên dùng trước
+  if (s.natal) list.unshift({ id: NATALS[s.natal.id].skillId, level: natalSkillLevel(s.natal.level) });
+  return list;
 }
 
 /** Một con số tóm tắt sức mạnh, chỉ để hiển thị */
@@ -461,7 +457,7 @@ export type FullMods = Required<Mods>;
 
 /** Tổng cộng thêm từ thuộc tính phụ của đồ đang mặc và các bộ đã đủ 2 / 4 món */
 export function gearMods(s: GameState): FullMods {
-  const m = Object.fromEntries(MOD_KEYS.map((k) => [k, 0])) as FullMods;
+  const m = zeroMods();
   for (const slot of SLOTS) {
     for (const a of s.gear[slot]?.affixes ?? []) m[a.id] += a.v;
   }
@@ -470,6 +466,48 @@ export function gearMods(s: GameState): FullMods {
     if (n >= 4) for (const k of MOD_KEYS) m[k] += SETS[i].four[k] ?? 0;
   });
   return m;
+}
+
+/** Công pháp chính của hướng tu hợp linh căn thì hiệu quả ×AFFINITY_MULT */
+function techAffinity(s: GameState, def: TechDef): number {
+  return def.kind === 'main' && hasAffinity(s) ? AFFINITY_MULT : 1;
+}
+
+/** Tổng cộng thêm từ công pháp chính và các công pháp phụ đang dùng */
+export function techMods(s: GameState): FullMods {
+  const m = zeroMods();
+  const apply = (id: keyof typeof TECHS | null) => {
+    const lv = id ? (s.techs[id] ?? 0) : 0;
+    if (!id || lv <= 0) return;
+    const e = techEffect(TECHS[id], lv, techAffinity(s, TECHS[id]));
+    for (const k of MOD_KEYS) m[k] += e[k] ?? 0;
+  };
+  apply(s.mainTech);
+  s.subTechs.forEach(apply);
+  return m;
+}
+
+/** Tổng cộng thêm từ bản mệnh pháp bảo: theo cấp + thưởng mỗi lần tiến hóa */
+export function natalMods(s: GameState): FullMods {
+  const m = zeroMods();
+  if (!s.natal) return m;
+  const def: NatalDef = NATALS[s.natal.id];
+  for (const k of MOD_KEYS) m[k] += (def.perLevel[k] ?? 0) * s.natal.level;
+  for (let i = 0; i < natalStage(s.natal.level); i++) {
+    for (const k of MOD_KEYS) m[k] += def.stageBonus[i][k] ?? 0;
+  }
+  return m;
+}
+
+/** Tổng mọi nguồn cộng thêm cho nhân vật: pháp bảo + bộ trang bị, công pháp, bản mệnh */
+export function charMods(s: GameState): FullMods {
+  const m = gearMods(s);
+  for (const part of [techMods(s), natalMods(s)]) for (const k of MOD_KEYS) m[k] += part[k];
+  return m;
+}
+
+function zeroMods(): FullMods {
+  return Object.fromEntries(MOD_KEYS.map((k) => [k, 0])) as FullMods;
 }
 
 /** Điểm so sánh giữa các pháp bảo cùng ô */

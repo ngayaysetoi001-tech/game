@@ -1,7 +1,9 @@
 // Kiểu dữ liệu, tra cứu cảnh giới và các hàm tiện ích dùng chung cho toàn engine.
 
 import type { AffixId } from './gear';
+import type { NatalState } from './natal';
 import type { SkillId } from './skills';
+import type { TechId } from './techniques';
 import {
   BASIC_ELEMENTS,
   type Element,
@@ -100,6 +102,8 @@ export interface AutoSettings {
   sell: boolean;
   /** Bế quan xong tự bế quan lại cùng loại */
   reclusion: boolean;
+  /** Pháp bảo kém hơn nhặt được thì luyện hóa cho bản mệnh (ưu tiên hơn tự bán) */
+  devour: boolean;
   /** Bị thương thì tự dùng Hồi Xuân Đan */
   heal: boolean;
 }
@@ -114,7 +118,7 @@ export interface Stats {
 }
 
 export interface GameState {
-  version: 5;
+  version: 6;
   name: string;
   root: SpiritRoot;
   /** Chỉ số tầng đã "trải phẳng" qua mọi cảnh giới */
@@ -131,7 +135,6 @@ export interface GameState {
   createdAt: number;
   // --- giai đoạn 1 ---
   path: PathId | null;
-  tech: { base: number; path: number };
   gear: Record<Slot, Item | null>;
   bag: Item[];
   fragments: number;
@@ -152,6 +155,15 @@ export interface GameState {
   skills: Partial<Record<SkillId, number>>;
   /** Võ kỹ mang theo, theo thứ tự ưu tiên */
   loadout: SkillId[];
+  // --- thư viện công pháp ---
+  /** Công pháp đã học và tầng (có mặt trong bảng = đã học, kể cả tầng 0) */
+  techs: Partial<Record<TechId, number>>;
+  /** Công pháp chính đang dùng */
+  mainTech: TechId | null;
+  /** Công pháp phụ đang dùng (tối đa 2) */
+  subTechs: TechId[];
+  // --- bản mệnh pháp bảo ---
+  natal: NatalState | null;
 }
 
 // ---------- Tầng / cảnh giới ----------

@@ -12,6 +12,7 @@ import {
   usePill,
 } from '../../engine/engine';
 import { REALMS } from '../../engine/data';
+import { GRADE_NAMES, TECHS, buyTech, canBuyTech, describeMods, hasTech, type TechDef } from '../../engine/engine';
 import type { TabProps } from '../GameScreen';
 import { PillIcon } from '../art/Icons';
 import AutoToggle from '../AutoToggle';
@@ -21,6 +22,7 @@ export default function ShopTab(props: TabProps) {
     <>
       <PillShop {...props} />
       <SkillShop {...props} />
+      <TechShop {...props} />
     </>
   );
 }
@@ -44,6 +46,41 @@ function SkillShop({ state: s, act }: TabProps) {
             </div>
             <div className="shop-actions">
               <button disabled={!canLearnFromShop(s, d.id)} onClick={() => act((st, now, rng) => buySkill(st, d.id, now, rng))}>
+                {owned ? 'Đã học' : `Học ${formatNumber(src.price)}`}
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+function TechShop({ state: s, act }: TabProps) {
+  const items = Object.values(TECHS).filter(
+    (d: TechDef) => d.source.kind === 'shop' && (!d.path || d.path === s.path),
+  );
+  return (
+    <section className="card">
+      <h2>Công Pháp Bí Kíp</h2>
+      <p className="muted small">
+        Công pháp chính cùng hướng tu và công pháp phụ dùng chung. Học xong vào mục Công Pháp để mang theo và tu luyện.
+      </p>
+      {items.map((d) => {
+        const src = d.source as { price: number; realm: number };
+        const owned = hasTech(s, d.id);
+        const lockedRealm = realmOf(s) < src.realm;
+        return (
+          <div key={d.id} className="shop-item">
+            <div className="shop-text">
+              <b>{d.name}</b> <span className={`grade grade-${d.grade}`}>{GRADE_NAMES[d.grade]}</span>
+              <div className="muted small">
+                {d.kind === 'main' ? 'Công pháp chính · ' : 'Công pháp phụ · '}mỗi tầng: {describeMods(d.perLevel)}
+              </div>
+              {lockedRealm && <div className="small">Cần đạt {REALMS[src.realm].name}</div>}
+            </div>
+            <div className="shop-actions">
+              <button disabled={!canBuyTech(s, d.id)} onClick={() => act((st, now, rng) => buyTech(st, d.id, now, rng))}>
                 {owned ? 'Đã học' : `Học ${formatNumber(src.price)}`}
               </button>
             </div>

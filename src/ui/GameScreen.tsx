@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   canBreakthrough,
   canChoosePath,
+  canForgeNatal,
   isInjured,
   itemScore,
   levelName,
@@ -48,7 +49,7 @@ export default function GameScreen({ state: s, act, replace }: Omit<TabProps, 'g
   const badges: Record<Tab, boolean> = {
     cultivate: canBreakthrough(s),
     dungeon: false,
-    character: canChoosePath(s) || hasUpgrade(s),
+    character: canChoosePath(s) || canForgeNatal(s) || hasUpgrade(s),
     shop: false,
   };
   const props: TabProps = { state: s, act, replace, goTo: setTab };

@@ -165,7 +165,7 @@ export const BOSS_MULT = { hp: 3, atk: 1.15, def: 1.2 };
  * Ba tầng đầu được giảm để nhân vật mới có thể lấy món pháp bảo đầu tiên.
  */
 export function floorLevel(floor: number): number {
-  return 9.5 + (floor >= 4 ? 1 : 0) + 0.8 * floor - Math.max(0, 4 - floor) * 2;
+  return 9.5 + (floor >= 4 ? 1 : 0) + 0.8 * floor - Math.max(0, 4 - floor) * 2 + 0.1 * Math.max(0, floor - 5);
 }
 
 export interface Zone {
@@ -256,7 +256,6 @@ export const ITEM_NAMES: Record<Slot, string[]> = {
 export const BAG_LIMIT = 30;
 
 // --- Công pháp ---
-export const BASE_TECH = { name: 'Dẫn Khí Quyết', perLevel: 0.04, maxLevel: 5 };
 /** Chọn hướng tu khi đạt cấp này (Trúc Cơ Sơ Kỳ) */
 export const PATH_UNLOCK_LEVEL = 9;
 /** Linh căn hợp hệ thì hiệu quả mỗi cấp ×AFFINITY_MULT */
@@ -267,11 +266,8 @@ export type PathId = 'kiem' | 'the' | 'phap';
 export interface PathDef {
   id: PathId;
   name: string;
-  technique: string;
   desc: string;
   elements: Element[];
-  /** Tăng mỗi cấp công pháp (cộng dồn, tính theo %) */
-  perLevel: { hp?: number; atk?: number; def?: number; rate?: number; crit?: number };
   baseCrit: number;
   spd: number;
   /** Thể tu: giảm thời gian bị thương và tu vi mất khi đột phá hỏng */
@@ -283,10 +279,8 @@ export const PATHS: Record<PathId, PathDef> = {
   kiem: {
     id: 'kiem',
     name: 'Kiếm Tu',
-    technique: 'Thanh Liên Kiếm Quyết',
     desc: 'Công cao, ra đòn nhanh, dễ bạo kích. Vượt bí cảnh nhanh nhất.',
     elements: ['Kim', 'Phong'],
-    perLevel: { atk: 0.08, crit: 0.01 },
     baseCrit: 0.1,
     spd: 15,
     injuryMult: 1,
@@ -295,10 +289,8 @@ export const PATHS: Record<PathId, PathDef> = {
   the: {
     id: 'the',
     name: 'Thể Tu',
-    technique: 'Kim Cương Bất Hoại Thể',
     desc: 'Khí huyết và phòng thủ dày. Bị thương nhẹ hơn, đột phá hỏng chỉ mất 15% tu vi.',
     elements: ['Thổ', 'Băng'],
-    perLevel: { hp: 0.1, def: 0.08, atk: 0.03 },
     baseCrit: 0.05,
     spd: 0,
     injuryMult: 0.5,
@@ -307,10 +299,8 @@ export const PATHS: Record<PathId, PathDef> = {
   phap: {
     id: 'phap',
     name: 'Pháp Tu',
-    technique: 'Ngũ Hành Linh Quyết',
     desc: 'Tu luyện nhanh hơn, pháp thuật uy lực. Lên cảnh giới nhanh nhất.',
     elements: ['Hỏa', 'Thủy', 'Mộc', 'Lôi'],
-    perLevel: { rate: 0.06, atk: 0.04 },
     baseCrit: 0.05,
     spd: 0,
     injuryMult: 1,

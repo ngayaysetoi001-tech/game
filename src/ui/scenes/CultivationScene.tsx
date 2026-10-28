@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { REALMS } from '../../engine/data';
-import { formatDuration, isInjured, levelInfo, seclusionDef, type GameState } from '../../engine/engine';
+import { formatDuration, isInjured, levelInfo, natalStage, seclusionDef, type GameState } from '../../engine/engine';
 import Cultivator from '../art/Cultivator';
+import NatalIcon from '../art/NatalIcon';
 import Landscape from '../art/Landscape';
 import Particles, { prefersReducedMotion } from '../art/Particles';
 import { CAVE_THEME, HOME_THEME, REALM_AURA } from '../art/palette';
@@ -35,6 +36,11 @@ export default function CultivationScene({ s }: { s: GameState }) {
           <Cultivator pose="sit" path={s.path} aura={injured ? '#e47a64' : aura} power={realm / 8} />
         </Art>
       </div>
+      {s.natal && (
+        <div className="scene-natal">
+          <NatalIcon id={s.natal.id} stage={natalStage(s.natal.level)} className="natal-float" />
+        </div>
+      )}
       {secluded && (
         <div className="scene-chip">
           {seclusionDef(s.seclusion!.id).name} · còn {formatDuration((s.seclusion!.end - now) / 1000)}

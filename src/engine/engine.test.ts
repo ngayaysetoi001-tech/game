@@ -37,6 +37,26 @@ import {
   stopFarming,
   upgradeTech,
   applyOffline as offline,
+  NATALS,
+  NATAL_MAX_LEVEL,
+  TECHS,
+  buyTech,
+  canBuyTech,
+  canDevour,
+  charMods,
+  devourItem,
+  devourWorse,
+  forgeNatal,
+  hasTech,
+  itemDevourExp,
+  natalExpFromItem,
+  natalExpNeeded,
+  natalMods,
+  natalSkillLevel,
+  natalStage,
+  setMainTech,
+  techMods,
+  toggleSubTech,
   AFFIXES,
   AFFIX_COUNTS,
   ENHANCE_MAX,
@@ -342,11 +362,11 @@ describe('techniques', () => {
 
   it('upgrading costs fragments and stones', () => {
     let s = { ...fresh(), fragments: 1, stones: 100 };
-    s = upgradeTech(s, 'base', T0, always(0));
-    expect(s.tech.base).toBe(1);
+    s = upgradeTech(s, 'dan_khi', T0, always(0));
+    expect(s.techs.dan_khi).toBe(1);
     expect(s.fragments).toBe(0);
     expect(s.stones).toBe(50);
-    expect(upgradeTech(s, 'base', T0, always(0)).tech.base).toBe(1);
+    expect(upgradeTech(s, 'dan_khi', T0, always(0)).techs.dan_khi).toBe(1);
   });
 });
 
@@ -357,7 +377,7 @@ describe('migration', () => {
     for (const k of ['path', 'tech', 'gear', 'bag', 'fragments', 'floor', 'farming', 'nextItemId', 'lastBattle']) delete v1[k];
     v1.version = 1;
     const s = deserialize(JSON.stringify(v1))!;
-    expect(s.version).toBe(5);
+    expect(s.version).toBe(6);
     expect(s.floor).toBe(REALMS[1].gateFloor);
     expect(s.gear.weapon).toBeNull();
     expect(s.auto.climb).toBe(false);
@@ -386,7 +406,8 @@ describe('balance guards', () => {
     const ready: GameState = {
       ...mk(12, 4, 1),
       path: 'kiem',
-      tech: { base: 5, path: 4 },
+      techs: { dan_khi: 5, kiem_0: 4 },
+      mainTech: 'kiem_0',
       skills: { kiem_pha_thien: 3 },
       loadout: ['kiem_pha_thien'],
     };
@@ -751,7 +772,7 @@ describe('gear farming and migration', () => {
     delete g.ring;
     delete g.boots;
     const s = deserialize(JSON.stringify(v4))!;
-    expect(s.version).toBe(5);
+    expect(s.version).toBe(6);
     expect(s.gear.ring).toBeNull();
     expect(s.gear.boots).toBeNull();
     expect(s.gear.weapon?.id).toBe(1);
@@ -766,7 +787,8 @@ describe('balance guards: full gear sets', () => {
       level: 12,
       floor: 4,
       path: 'kiem',
-      tech: { base: Math.round(5 * techFrac), path: Math.max(1, Math.round(4 * techFrac)) },
+      techs: { dan_khi: Math.round(5 * techFrac), kiem_0: Math.max(1, Math.round(4 * techFrac)) },
+      mainTech: 'kiem_0',
       skills: { kiem_pha_thien: skillLv, kiem_phan_quang: skillLv },
       loadout: ['kiem_pha_thien', 'kiem_phan_quang'],
     };
@@ -781,5 +803,217 @@ describe('balance guards: full gear sets', () => {
 
   it('five Bảo Phẩm pieces with well-built techniques beat it', () => {
     expect(wins(geared(2, 1, 3))).toBe(true);
+  });
+});
+
+describe('technique library', () => {
+  const kiem = (extra: Partial<GameState> = {}): GameState => {
+    const s = choosePath({ ...fresh(), level: PATH_UNLOCK_LEVEL }, 'kiem', T0, always(0));
+    return { ...s, ...extra };
+  };
+
+  it('new characters start with Dẫn Khí Quyết (tầng 0) in a sub slot and no main technique', () => {
+    const s = fresh();
+    expect(s.techs).toEqual({ dan_khi: 0 });
+    expect(s.subTechs).toEqual(['dan_khi']);
+    expect(s.mainTech).toBeNull();
+  });
+
+  it('choosing a path teaches the Hoàng Cấp main technique at tầng 1', () => {
+    const s = kiem();
+    expect(s.mainTech).toBe('kiem_0');
+    expect(s.techs.kiem_0).toBe(1);
+    expect(TECHS.kiem_0.name).toBe('Thanh Liên Kiếm Quyết');
+  });
+
+  it('main techniques scale with grade and keep the affinity bonus', () => {
+    const lv = (id: 'kiem_0' | 'kiem_1' | 'kiem_2' | 'kiem_3') => {
+      const s = kiem({ techs: { dan_khi: 0, [id]: 6 }, mainTech: id });
+      return techMods(s).atkPct;
+    };
+    expect(lv('kiem_1')).toBeGreaterThan(lv('kiem_0'));
+    expect(lv('kiem_2')).toBeGreaterThan(lv('kiem_1'));
+    expect(lv('kiem_3')).toBeGreaterThan(lv('kiem_2'));
+    expect(lv('kiem_0')).toBeCloseTo(0.08 * 6 * 1.25);
+  });
+
+  it('sub techniques apply their effects and respect the 2 slot limit', () => {
+    let s = kiem({ techs: { dan_khi: 5, than_thuc: 5, liem_tuc: 5 }, subTechs: ['dan_khi'] });
+    s = toggleSubTech(s, 'than_thuc', T0, always(0));
+    expect(s.subTechs).toEqual(['dan_khi', 'than_thuc']);
+    s = toggleSubTech(s, 'liem_tuc', T0, always(0));
+    expect(s.subTechs).toEqual(['dan_khi', 'than_thuc']);
+    const m = techMods(s);
+    expect(m.crit).toBeCloseTo(0.06);
+    expect(m.spd).toBeCloseTo(4);
+    expect(m.hpPct).toBeCloseTo(0.2);
+    s = toggleSubTech(s, 'dan_khi', T0, always(0));
+    expect(s.subTechs).toEqual(['than_thuc']);
+  });
+
+  it('Quy Tức Công extends the offline limit', () => {
+    const s = kiem({ techs: { dan_khi: 0, quy_tuc: 8 }, subTechs: ['quy_tuc'] });
+    expect(charMods(s).offline).toBe(4);
+    const { summary } = offline(s, T0 + 48 * 3600_000, always(0.9));
+    expect(summary.seconds).toBe(16 * 3600);
+  });
+
+  it('Tụ Linh Trận Pháp speeds up seclusion only', () => {
+    const base = startSeclusion(kiem({ techs: { dan_khi: 0, tu_linh: 0 }, subTechs: [] }), 'short', T0, always(0.9));
+    const boosted = startSeclusion(kiem({ techs: { dan_khi: 0, tu_linh: 5 }, subTechs: ['tu_linh'] }), 'short', T0, always(0.9));
+    expect(cultivationRate(boosted, T0) / cultivationRate(base, T0)).toBeCloseTo(1.2);
+    expect(cultivationRate({ ...boosted, seclusion: null }, T0)).toBeCloseTo(cultivationRate({ ...base, seclusion: null }, T0));
+  });
+
+  it('boss bí kíp are learned and auto-equipped while slots are free', () => {
+    let s = kiem({ floor: 9, level: 36 }); // cảnh giới cao để chắc thắng thủ lĩnh
+    s = challengeFloor(s, T0, always(0.5)); // thủ lĩnh tầng 10
+    expect(s.floor).toBe(10);
+    expect(hasTech(s, 'kim_chung')).toBe(true);
+    expect(s.subTechs).toContain('kim_chung');
+    // ô đã đầy: học được nhưng không tự mang
+    s = { ...s, floor: 19 };
+    s = challengeFloor(s, T0, always(0.5));
+    expect(hasTech(s, 'phan_chan')).toBe(true);
+    expect(s.subTechs).toEqual(['dan_khi', 'kim_chung']);
+  });
+
+  it('a new main technique keeps half the old levels and the old one can be switched back to', () => {
+    let s = kiem({ level: 17, stones: 1e6, techs: { dan_khi: 0, kiem_0: 10 }, mainTech: 'kiem_0' });
+    expect(canBuyTech(s, 'kiem_1')).toBe(true);
+    s = buyTech(s, 'kiem_1', T0, always(0));
+    expect(s.mainTech).toBe('kiem_1');
+    expect(s.techs.kiem_1).toBe(5);
+    s = setMainTech(s, 'kiem_0', T0, always(0));
+    expect(s.mainTech).toBe('kiem_0');
+    expect(s.techs.kiem_0).toBe(10);
+  });
+
+  it('shop techniques need the realm, the stones and a matching path', () => {
+    const rich = { ...kiem(), stones: 1e6 };
+    expect(canBuyTech({ ...rich, level: 0 }, 'quy_tuc')).toBe(false);
+    expect(canBuyTech(rich, 'quy_tuc')).toBe(true);
+    expect(canBuyTech({ ...rich, stones: 10 }, 'quy_tuc')).toBe(false);
+    expect(canBuyTech({ ...rich, level: 17 }, 'the_1')).toBe(false);
+    expect(canBuyTech(buyTech(rich, 'quy_tuc', T0, always(0)), 'quy_tuc')).toBe(false);
+  });
+
+  it('upgrade caps: sub techs by their own limit, main by realm; higher grades cost more', () => {
+    const rich = kiem({ fragments: 999, stones: 1e9 });
+    expect(upgradeTech({ ...rich, techs: { dan_khi: 5 } }, 'dan_khi', T0, always(0)).techs.dan_khi).toBe(5);
+    expect(upgradeTech({ ...rich, techs: { dan_khi: 0, kiem_0: 3 } }, 'kiem_0', T0, always(0)).techs.kiem_0).toBe(4);
+    expect(upgradeTech({ ...rich, techs: { dan_khi: 0, kiem_0: 4 } }, 'kiem_0', T0, always(0)).techs.kiem_0).toBe(4);
+  });
+
+  it('v5 saves keep their technique levels and earn techniques for the bosses already beaten', () => {
+    const v6 = choosePath({ ...fresh(), level: 12, floor: 25 }, 'the', T0, always(0));
+    const v5: Record<string, unknown> = JSON.parse(serialize(v6));
+    for (const k of ['techs', 'mainTech', 'subTechs', 'natal']) delete v5[k];
+    v5.version = 5;
+    v5.tech = { base: 3, path: 6 };
+    const s = deserialize(JSON.stringify(v5))!;
+    expect(s.version).toBe(6);
+    expect(s.techs.dan_khi).toBe(3);
+    expect(s.techs.the_0).toBe(6);
+    expect(s.mainTech).toBe('the_0');
+    expect(hasTech(s, 'kim_chung')).toBe(true);
+    expect(hasTech(s, 'phe_huyet')).toBe(true);
+    expect(s.natal).toBeNull();
+    expect((s.auto as { devour: boolean }).devour).toBe(false);
+  });
+});
+
+describe('natal artifact', () => {
+  const ready = (): GameState => ({ ...fresh(), level: PATH_UNLOCK_LEVEL });
+  const forged = (id: 'phi_kiem' | 'ho_lo' | 'linh_chung' = 'phi_kiem'): GameState => forgeNatal(ready(), id, T0, always(0));
+
+  it('unlocks at Trúc Cơ and can only be forged once', () => {
+    expect(forgeNatal(fresh(), 'phi_kiem', T0, always(0)).natal).toBeNull();
+    const s = forged();
+    expect(s.natal).toEqual({ id: 'phi_kiem', level: 1, exp: 0 });
+    expect(forgeNatal(s, 'ho_lo', T0, always(0)).natal?.id).toBe('phi_kiem');
+  });
+
+  it('devouring a bag item grants exp and levels up, removing the item', () => {
+    let s = forged();
+    s.bag = [{ id: 1, slot: 'weapon', tier: 0, floor: 10, affixes: [], plus: 0 }];
+    const gain = itemDevourExp(s.bag[0]);
+    expect(gain).toBe(natalExpFromItem(1, 10, 0));
+    s = devourItem(s, 1, T0, always(0));
+    expect(s.bag).toHaveLength(0);
+    // 37 kinh nghiệm chưa đủ 60 để lên cấp 2
+    expect(gain).toBeLessThan(natalExpNeeded(1));
+    expect(s.natal).toMatchObject({ level: 1, exp: gain });
+  });
+
+  it('exp carries over multiple levels and enhanced or higher tier items give more', () => {
+    let s = forged();
+    s.bag = [{ id: 1, slot: 'weapon', tier: 3, floor: 30, affixes: [], plus: 4 }];
+    s = devourItem(s, 1, T0, always(0));
+    expect(s.natal!.level).toBeGreaterThan(3);
+    const phàm = itemDevourExp({ id: 1, slot: 'weapon', tier: 0, floor: 30 });
+    expect(itemDevourExp({ id: 2, slot: 'weapon', tier: 3, floor: 30, plus: 4 })).toBeGreaterThan(phàm * 5);
+  });
+
+  it('stages unlock bonuses and the natal skill levels up with the artifact', () => {
+    expect([1, 9, 10, 19, 20, 29, 30].map(natalStage)).toEqual([0, 0, 1, 1, 2, 2, 3]);
+    expect([1, 3, 4, 28, 30].map(natalSkillLevel)).toEqual([1, 1, 2, 10, 10]);
+    const at = (level: number): GameState => ({ ...forged(), natal: { id: 'phi_kiem', level, exp: 0 } });
+    expect(natalMods(at(9)).atkPct).toBeCloseTo(0.008 * 9);
+    expect(natalMods(at(10)).crit).toBeCloseTo(0.03);
+    expect(natalMods(at(20)).atkPct).toBeCloseTo(0.008 * 20 + 0.05);
+    expect(natalMods(at(30)).spd).toBe(4);
+    expect(charMods(at(10)).atkPct).toBeGreaterThan(charMods(forged()).atkPct);
+  });
+
+  it('the natal skill is always in the fighter loadout and fires first', () => {
+    const s = forged('linh_chung');
+    const p = playerStats(s, T0);
+    expect(p.skills[0]).toEqual({ id: NATALS.linh_chung.skillId, level: 1 });
+    const r = simulateBattle(p, enemyFor(1), always(0.5));
+    expect(r.events.find((e) => e.by === 'p')?.skill).toBe('Chung Âm Chấn Hồn');
+    expect(playerStats(fresh(), T0).skills).toHaveLength(0);
+  });
+
+  it('devourWorse only eats items weaker than the worn one', () => {
+    let s = forged();
+    s.gear.weapon = { id: 9, slot: 'weapon', tier: 3, floor: 20, affixes: [], plus: 0 };
+    s.bag = [
+      { id: 1, slot: 'weapon', tier: 0, floor: 5, affixes: [], plus: 0 },
+      { id: 2, slot: 'weapon', tier: 4, floor: 30, affixes: [], plus: 0 },
+    ];
+    s = devourWorse(s, T0, always(0));
+    expect(s.bag.map((i) => i.id)).toEqual([2]);
+    expect(s.natal!.exp).toBe(itemDevourExp({ id: 1, slot: 'weapon', tier: 0, floor: 5 }));
+  });
+
+  it('auto-devour feeds spare drops to the natal artifact instead of selling them', () => {
+    let s = forged();
+    s.auto = { ...s.auto, devour: true, sell: true };
+    s.level = 20;
+    s.gear.weapon = { id: 9, slot: 'weapon', tier: 4, floor: 40, affixes: [], plus: 0 };
+    s.gear.armor = { id: 10, slot: 'armor', tier: 4, floor: 40, affixes: [], plus: 0 };
+    s.gear.pendant = { id: 11, slot: 'pendant', tier: 4, floor: 40, affixes: [], plus: 0 };
+    s.gear.ring = { id: 12, slot: 'ring', tier: 4, floor: 40, affixes: [], plus: 0 };
+    s.gear.boots = { id: 13, slot: 'boots', tier: 4, floor: 40, affixes: [], plus: 0 };
+    const stones = s.stones;
+    const total = (st: GameState) => st.natal!.level * 1e6 + st.natal!.exp;
+    const after = challengeFloor(s, T0, always(0));
+    expect(after.bag).toHaveLength(0);
+    expect(total(after)).toBeGreaterThan(total(s));
+    expect(after.stones - stones).toBeLessThan(500); // chỉ thưởng tầng, đồ không bị bán
+    // tắt tự luyện hóa thì quay về tự bán
+    const sold = challengeFloor({ ...s, auto: { ...s.auto, devour: false } }, T0, always(0));
+    expect(total(sold)).toBe(total(s));
+  });
+
+  it('stops at the max level and refuses more food', () => {
+    let s: GameState = { ...forged(), natal: { id: 'ho_lo', level: NATAL_MAX_LEVEL - 1, exp: 0 } };
+    s.bag = [{ id: 1, slot: 'weapon', tier: 4, floor: 40, affixes: [], plus: 10 }, { id: 2, slot: 'weapon', tier: 0, floor: 1 }];
+    s = devourItem(s, 1, T0, always(0));
+    expect(s.natal!.level).toBe(NATAL_MAX_LEVEL);
+    expect(s.natal!.exp).toBe(0);
+    expect(canDevour(s)).toBe(false);
+    expect(devourItem(s, 2, T0, always(0)).bag).toHaveLength(1);
   });
 });

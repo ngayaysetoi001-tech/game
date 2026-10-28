@@ -21,6 +21,10 @@ export interface Mods {
   stunHit?: number;
   /** Mỗi đòn trúng thiêu đốt: sát thương mỗi lượt = công × giá trị này, 2 lượt */
   burnHit?: number;
+  /** Cộng thêm số giờ offline được tính (chỉ từ công pháp) */
+  offline?: number;
+  /** Tăng tốc độ tu luyện khi bế quan (chỉ từ công pháp) */
+  seclusion?: number;
 }
 
 export type ModKey = keyof Mods;
@@ -38,6 +42,8 @@ export const MOD_KEYS: ModKey[] = [
   'stones',
   'stunHit',
   'burnHit',
+  'offline',
+  'seclusion',
 ];
 
 export const MOD_LABELS: Record<ModKey, string> = {
@@ -53,10 +59,13 @@ export const MOD_LABELS: Record<ModKey, string> = {
   stones: 'Linh thạch',
   stunHit: 'Choáng mỗi đòn',
   burnHit: 'Thiêu đốt mỗi đòn',
+  offline: 'Giờ offline tối đa',
+  seclusion: 'Tốc độ bế quan',
 };
 
 export function formatMod(key: ModKey, v: number): string {
-  if (key === 'spd') return `+${Math.round(v)}`;
+  if (key === 'spd') return `+${Number.isInteger(v) ? v : v.toFixed(1)}`;
+  if (key === 'offline') return `+${Number.isInteger(v) ? v : v.toFixed(1)}g`;
   const pct = v * 100;
   return `+${Number.isInteger(pct) ? pct : pct.toFixed(1)}%`;
 }

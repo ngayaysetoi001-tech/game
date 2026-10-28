@@ -29,7 +29,10 @@ export type SkillId =
   | 'm_cau_hon'
   | 'm_kiem_khi'
   | 'm_hon_don'
-  | 'm_phe_hu';
+  | 'm_phe_hu'
+  | 'n_phi_kiem'
+  | 'n_ho_lo'
+  | 'n_linh_chung';
 
 /**
  * Hiệu ứng của một chiêu ở cấp 1. Các con số (trừ thời gian, số đòn, hồi chiêu) tăng
@@ -67,7 +70,8 @@ export type SkillSource =
   | { kind: 'path' } // học ngay khi chọn hướng tu
   | { kind: 'boss'; floor: number } // thủ lĩnh tầng này rơi bí tịch
   | { kind: 'shop'; price: number; realm: number } // Tàng Kinh Các
-  | { kind: 'monster' };
+  | { kind: 'monster' }
+  | { kind: 'natal' }; // chiêu của bản mệnh pháp bảo
 
 export interface SkillDef {
   id: SkillId;
@@ -135,10 +139,14 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   m_kiem_khi: S({ id: 'm_kiem_khi', name: 'Kiếm Khí Tung Hoành', path: null, cooldown: 4, effect: { dmg: 0.8, hits: 3 }, source: { kind: 'monster' } }),
   m_hon_don: S({ id: 'm_hon_don', name: 'Hỗn Độn Chi Nhãn', path: null, cooldown: 4, effect: { dmg: 1.8, stun: 0.3 }, source: { kind: 'monster' } }),
   m_phe_hu: S({ id: 'm_phe_hu', name: 'Phệ Hư', path: null, cooldown: 4, effect: { dmg: 1.3, lifesteal: 0.5 }, source: { kind: 'monster' } }),
+  // --- Chiêu của bản mệnh pháp bảo ---
+  n_phi_kiem: S({ id: 'n_phi_kiem', name: 'Phi Kiếm Trảm', path: null, cooldown: 4, effect: { dmg: 1.4, crit: 0.12 }, source: { kind: 'natal' } }),
+  n_ho_lo: S({ id: 'n_ho_lo', name: 'Hồ Lô Thu Hồn', path: null, cooldown: 4, effect: { dmg: 1, lifesteal: 0.6 }, source: { kind: 'natal' } }),
+  n_linh_chung: S({ id: 'n_linh_chung', name: 'Chung Âm Chấn Hồn', path: null, cooldown: 5, effect: { dmg: 1, stun: 0.35, slow: { pct: 0.25, turns: 2 } }, source: { kind: 'natal' } }),
 };
 
 /** Võ kỹ người chơi có thể học (không gồm chiêu của quái) */
-export const PLAYER_SKILLS: SkillDef[] = Object.values(SKILLS).filter((s) => s.source.kind !== 'monster');
+export const PLAYER_SKILLS: SkillDef[] = Object.values(SKILLS).filter((s) => s.source.kind !== 'monster' && s.source.kind !== 'natal');
 
 /**
  * Chiêu thức của quái theo tên. Bốn tầng đầu không có chiêu để người mới làm quen;

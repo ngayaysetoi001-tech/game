@@ -1,27 +1,16 @@
 import { useState } from 'react';
-import { BASE_TECH, PATHS, PATH_UNLOCK_LEVEL, type PathId } from '../../engine/data';
 import {
   applyOffline,
-  canUpgradeTech,
-  choosePath,
   combatPower,
   cultivationBonus,
   MOD_LABELS,
+  charMods,
   formatMod,
-  gearMods,
   exportSave,
   formatNumber,
-  hasAffinity,
   importSave,
   levelInfo,
-  levelName,
-  pathBonus,
   playerStats,
-  techMaxLevel,
-  techUpgradeCost,
-  upgradeTech,
-  type GameState,
-  type TechKind,
 } from '../../engine/engine';
 import type { TabProps } from '../GameScreen';
 import Cultivator from '../art/Cultivator';
@@ -29,6 +18,8 @@ import Landscape from '../art/Landscape';
 import { HOME_THEME, REALM_AURA } from '../art/palette';
 import { Art } from '../art/registry';
 import SkillsPanel from './SkillsPanel';
+import NatalPanel from './NatalPanel';
+import TechniquesPanel from './TechPanels';
 import { BagPanel, GearPanel, SetPanel } from './GearPanels';
 
 type Sub = 'overview' | 'technique' | 'skills' | 'gear';
@@ -62,10 +53,11 @@ export default function CharacterTab(props: TabProps) {
           <SettingsPanel {...props} />
         </>
       )}
-      {sub === 'technique' && <TechniquePanel {...props} />}
+      {sub === 'technique' && <TechniquesPanel {...props} />}
       {sub === 'skills' && <SkillsPanel {...props} />}
       {sub === 'gear' && (
         <>
+          <NatalPanel {...props} />
           <GearPanel {...props} />
           <SetPanel {...props} />
           <BagPanel {...props} />
@@ -86,8 +78,8 @@ function StatsPanel({ state: s }: TabProps) {
     ['Tu luyện', `+${Math.round((cultivationBonus(s) - 1) * 100)}%`],
   ];
   // Hiệu ứng từ pháp bảo và bộ trang bị, chỉ hiện khi có
-  const m = gearMods(s);
-  for (const k of ['lifesteal', 'thorns', 'dodge', 'stunHit', 'burnHit', 'stones'] as const) {
+  const m = charMods(s);
+  for (const k of ['lifesteal', 'thorns', 'dodge', 'stunHit', 'burnHit', 'stones', 'seclusion', 'offline'] as const) {
     if (m[k] > 0) rows.push([MOD_LABELS[k], formatMod(k, m[k])]);
   }
   const realm = levelInfo(s.level).realm;
@@ -113,97 +105,6 @@ function StatsPanel({ state: s }: TabProps) {
         ))}
       </dl>
     </section>
-  );
-}
-
-function TechRow({ s, kind, act }: { s: GameState; kind: TechKind; act: TabProps['act'] }) {
-  const level = s.tech[kind];
-  const max = techMaxLevel(s, kind);
-  const cost = techUpgradeCost(s, kind);
-  const name = kind === 'base' ? BASE_TECH.name : PATHS[s.path!].technique;
-  const effect =
-    kind === 'base'
-      ? `Khí huyết, Công, Thủ +${Math.round(BASE_TECH.perLevel * level * 100)}%`
-      : describePath(s);
-  return (
-    <div className="tech-row">
-      <div>
-        <div>
-          <b>{name}</b> <span className="muted small">tầng {level}/{max}</span>
-        </div>
-        <div className="small muted">{effect}</div>
-      </div>
-      <button
-        disabled={!canUpgradeTech(s, kind)}
-        onClick={() => act((st, now, rng) => upgradeTech(st, kind, now, rng))}
-      >
-        {level >= max ? 'Tối đa' : `Tu luyện · ${cost.fragments} quyển, ${formatNumber(cost.stones)} LT`}
-      </button>
-    </div>
-  );
-}
-
-function describePath(s: GameState): string {
-  const parts: string[] = [];
-  const pct = (v: number) => `+${Math.round(v * 100)}%`;
-  if (pathBonus(s, 'atk')) parts.push(`Công ${pct(pathBonus(s, 'atk'))}`);
-  if (pathBonus(s, 'hp')) parts.push(`Khí huyết ${pct(pathBonus(s, 'hp'))}`);
-  if (pathBonus(s, 'def')) parts.push(`Thủ ${pct(pathBonus(s, 'def'))}`);
-  if (pathBonus(s, 'rate')) parts.push(`Tu luyện ${pct(pathBonus(s, 'rate'))}`);
-  if (pathBonus(s, 'crit')) parts.push(`Bạo kích ${pct(pathBonus(s, 'crit'))}`);
-  if (hasAffinity(s)) parts.push('hợp linh căn ×1.25');
-  return parts.join(' · ');
-}
-
-function TechniquePanel({ state: s, act }: TabProps) {
-  return (
-    <section className="card">
-      <h2>Công Pháp</h2>
-      <p className="muted small">Dùng tàn quyển (rơi từ Bí Cảnh, bế quan) và linh thạch để tu luyện công pháp.</p>
-      <TechRow s={s} kind="base" act={act} />
-      {s.path ? (
-        <TechRow s={s} kind="path" act={act} />
-      ) : s.level >= PATH_UNLOCK_LEVEL ? (
-        <PathChooser s={s} act={act} />
-      ) : (
-        <p className="notice">Đạt {levelName(PATH_UNLOCK_LEVEL)} để chọn hướng tu: Kiếm Tu, Thể Tu hoặc Pháp Tu.</p>
-      )}
-    </section>
-  );
-}
-
-function PathChooser({ s, act }: { s: GameState; act: TabProps['act'] }) {
-  const [pick, setPick] = useState<PathId | null>(null);
-  return (
-    <div className="paths">
-      <p className="small">Chọn hướng tu. Lựa chọn này không thể thay đổi.</p>
-      {(Object.keys(PATHS) as PathId[]).map((id) => {
-        const p = PATHS[id];
-        const affinity = s.root.elements.some((e) => p.elements.includes(e));
-        return (
-          <button key={id} className={`path ${pick === id ? 'picked' : ''}`} onClick={() => setPick(id)}>
-            <span className="path-figure">
-              <Cultivator pose="stand" path={id} aura={REALM_AURA[1]} power={0.1} />
-            </span>
-            <span className="path-text">
-              <span className="row spread">
-                <b>{p.name}</b>
-                {affinity && <span className="tag good">Hợp linh căn</span>}
-              </span>
-              <span className="small">{p.desc}</span>
-              <span className="small muted">
-                {p.technique} · hệ {p.elements.join('/')}
-              </span>
-            </span>
-          </button>
-        );
-      })}
-      {pick && (
-        <button className="primary" onClick={() => act((st, now, rng) => choosePath(st, pick, now, rng))}>
-          Xác nhận tu {PATHS[pick].name}
-        </button>
-      )}
-    </div>
   );
 }
 
