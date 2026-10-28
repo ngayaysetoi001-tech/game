@@ -93,6 +93,12 @@ npm run build    # bản build tĩnh ở dist/, deploy được lên GitHub Page
 - Hiện ở mục Võ Kỹ, Công Pháp, Phường Thị, chiêu thức của đối thủ, chiêu bản mệnh và khi hô tên chiêu trong trận. Thẻ **Đang Trang Bị** ở mục Tổng quan gom công pháp, võ kỹ và bản mệnh đang dùng, chạm vào để mở mục tương ứng.
 - Thay bằng ảnh thật: `src/assets/art/skills/<mã võ kỹ>`, `techs/<mã công pháp>`, `natal/<mã>` (xem README trong thư mục đó). Xem tất cả ở trang `#gallery`.
 
+### Nhiệm vụ và gợi ý
+
+- **Việc Nên Làm** (tab Tu Luyện): đọc trạng thái game và chỉ ra 1–2 việc đáng làm nhất, có nút dẫn thẳng tới đúng tab và mục con. Dùng cả tỉ lệ thắng ước tính tầng kế tiếp (đột phá bị chặn thì khuyên lịch luyện hay khiêu chiến, thắng chắc thì khuyên bật tự động…).
+- **25 nhiệm vụ chủ tuyến** dạy dần từng hệ thống (bế quan, bí cảnh, trang bị, công pháp, hướng tu, bản mệnh, cường hóa, bộ trang bị…), mỗi nhiệm vụ có thưởng linh thạch, tàn quyển hoặc đan dược. Thưởng linh thạch cố định theo cảnh giới nhắm tới của nhiệm vụ, để dành không có lợi. Điều kiện tính thẳng từ trạng thái game.
+- Chấm báo ở tab Tu Luyện và thông báo nổi khi có nhiệm vụ xong; nút "Nhận thưởng tất cả". Save v6 tự nâng lên v7 (nhiệm vụ đã đạt được nhận ngay).
+
 Nhịp độ dự kiến với linh căn trung bình (không bế quan): Luyện Khí ~10 phút, Trúc Cơ ~30 phút,
 Kim Đan ~1.5 giờ, Nguyên Anh ~4 giờ… hết Độ Kiếp ~10 ngày.
 

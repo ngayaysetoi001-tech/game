@@ -20,6 +20,7 @@ import {
 import type { TabProps } from '../GameScreen';
 import CultivationScene from '../scenes/CultivationScene';
 import AutoToggle from '../AutoToggle';
+import QuestPanel from '../QuestPanel';
 
 export default function CultivateTab(props: TabProps) {
   const { state: s } = props;
@@ -47,6 +48,7 @@ export default function CultivateTab(props: TabProps) {
         </div>
         <BreakthroughPanel {...props} />
       </section>
+      <QuestPanel {...props} />
       <SeclusionPanel {...props} />
       <LogPanel {...props} />
     </>

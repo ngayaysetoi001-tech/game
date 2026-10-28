@@ -2,6 +2,7 @@
 
 import type { AffixId } from './gear';
 import type { NatalState } from './natal';
+import type { QuestState } from './quests';
 import type { SkillId } from './skills';
 import type { TechId } from './techniques';
 import {
@@ -118,7 +119,7 @@ export interface Stats {
 }
 
 export interface GameState {
-  version: 6;
+  version: 7;
   name: string;
   root: SpiritRoot;
   /** Chỉ số tầng đã "trải phẳng" qua mọi cảnh giới */
@@ -164,6 +165,8 @@ export interface GameState {
   subTechs: TechId[];
   // --- bản mệnh pháp bảo ---
   natal: NatalState | null;
+  // --- nhiệm vụ chủ tuyến ---
+  quests: QuestState;
 }
 
 // ---------- Tầng / cảnh giới ----------

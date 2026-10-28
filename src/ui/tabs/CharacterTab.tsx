@@ -37,6 +37,11 @@ const SUBS: { id: Sub; label: string }[] = [
 // Giữ mục con đang xem khi chuyển tab qua lại
 let lastSub: Sub = 'overview';
 
+/** Mở tab Nhân Vật ở một mục con cụ thể (dùng cho nút "Đi tới" của nhiệm vụ và gợi ý) */
+export function openCharacterSub(sub: Sub) {
+  lastSub = sub;
+}
+
 export default function CharacterTab(props: TabProps) {
   const [sub, setSub] = useState<Sub>(lastSub);
   lastSub = sub;

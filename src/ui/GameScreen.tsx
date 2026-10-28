@@ -3,6 +3,7 @@ import {
   canBreakthrough,
   canChoosePath,
   canForgeNatal,
+  claimableQuests,
   isInjured,
   itemScore,
   levelName,
@@ -47,7 +48,7 @@ export default function GameScreen({ state: s, act, replace }: Omit<TabProps, 'g
   const [tab, setTab] = useState<Tab>('cultivate');
   const now = s.lastTick;
   const badges: Record<Tab, boolean> = {
-    cultivate: canBreakthrough(s),
+    cultivate: canBreakthrough(s) || claimableQuests(s).length > 0,
     dungeon: false,
     character: canChoosePath(s) || canForgeNatal(s) || hasUpgrade(s),
     shop: false,

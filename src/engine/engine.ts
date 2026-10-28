@@ -3,6 +3,7 @@
 // vào để test được một cách tất định.
 
 import { ENHANCE_COST, ENHANCE_MAX, ENHANCE_RATES } from './gear';
+import { QUESTS, QUEST_BY_ID, QUEST_TIER, type QuestDef } from './quests';
 import {
   NATALS,
   NATAL_MAX_LEVEL,
@@ -109,6 +110,7 @@ export * from './skills';
 export * from './gear';
 export * from './techniques';
 export * from './natal';
+export * from './quests';
 
 // ---------- Tốc độ ----------
 
@@ -155,7 +157,7 @@ function emptyStats(): Stats {
 
 export function newGame(name: string, root: SpiritRoot, now: number): GameState {
   const s: GameState = {
-    version: 6,
+    version: 7,
     name: name.trim() || 'Vô Danh',
     root,
     level: 0,
@@ -186,6 +188,7 @@ export function newGame(name: string, root: SpiritRoot, now: number): GameState 
     mainTech: null,
     subTechs: ['dan_khi'],
     natal: null,
+    quests: { claimed: [] },
   };
   addLog(s, now, `${s.name} bước lên con đường tu tiên với ${rootName(root)} (${root.elements.join(', ')}).`, 'good');
   return s;
@@ -707,6 +710,60 @@ export function enhanceItem(prev: GameState, id: number, now: number, rng: Rng):
   return s;
 }
 
+// ---------- Nhiệm vụ ----------
+
+export function isQuestClaimed(s: GameState, id: string): boolean {
+  return s.quests.claimed.includes(id);
+}
+
+/** Nhiệm vụ đã hoàn thành nhưng chưa nhận thưởng */
+export function claimableQuests(s: GameState): QuestDef[] {
+  return QUESTS.filter((q) => !isQuestClaimed(s, q.id) && q.done(s));
+}
+
+/** Nhiệm vụ kế tiếp chưa xong (theo thứ tự chuỗi), để làm mục tiêu hiện tại */
+export function currentQuest(s: GameState): QuestDef | null {
+  return QUESTS.find((q) => !isQuestClaimed(s, q.id) && !q.done(s)) ?? null;
+}
+
+/** Thưởng thực nhận: linh thạch nhân theo cảnh giới của nhiệm vụ (không đổi dù nhận sớm hay muộn) */
+export function questReward(_s: GameState, q: QuestDef) {
+  return {
+    stones: Math.round((q.reward.stones ?? 0) * 2 ** (QUEST_TIER[q.id] ?? 0)),
+    fragments: q.reward.fragments ?? 0,
+    pills: q.reward.pills ?? {},
+  };
+}
+
+function applyQuest(s: GameState, q: QuestDef, now: number) {
+  const r = questReward(s, q);
+  s.stones += r.stones;
+  s.fragments += r.fragments;
+  const parts: string[] = [];
+  if (r.stones) parts.push(`${formatNumber(r.stones)} linh thạch`);
+  if (r.fragments) parts.push(`${r.fragments} tàn quyển`);
+  for (const [id, n] of Object.entries(r.pills) as [PillId, number][]) {
+    s.pills[id] += n;
+    parts.push(`${n} ${PILLS[id].name}`);
+  }
+  s.quests.claimed.push(q.id);
+  addLog(s, now, `Hoàn thành nhiệm vụ 【${q.title}】: nhận ${parts.join(', ')}.`, 'good');
+}
+
+export function claimQuest(prev: GameState, id: string, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  const q = QUEST_BY_ID[id];
+  if (!q || isQuestClaimed(s, id) || !q.done(s)) return s;
+  applyQuest(s, q, now);
+  return s;
+}
+
+export function claimAllQuests(prev: GameState, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  for (const q of claimableQuests(s)) applyQuest(s, q, now);
+  return s;
+}
+
 // ---------- Công pháp ----------
 
 export function canChoosePath(s: GameState): boolean {
@@ -1089,7 +1146,10 @@ function migrate(raw: Record<string, unknown>): GameState | null {
     grantEarnedTechs(g, g.lastTick);
     s = g as unknown as Record<string, unknown>;
   }
-  return s.version === 6 ? (s as unknown as GameState) : null;
+  if (s.version === 6) {
+    s = { ...s, version: 7, quests: { claimed: [] } };
+  }
+  return s.version === 7 ? (s as unknown as GameState) : null;
 }
 
 export function deserialize(raw: string): GameState | null {

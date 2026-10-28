@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { canBreakthrough, type GameState, type LogEntry } from '../engine/engine';
+import { canBreakthrough, claimableQuests, type GameState, type LogEntry } from '../engine/engine';
 import { useBattleHold } from './scenes/playback';
 
 interface Toast {
@@ -18,6 +18,8 @@ export default function Toasts({ s }: { s: GameState }) {
   // Mốc nhật ký đã thấy; lần render đầu coi như đã thấy hết (popup offline đã tóm tắt)
   const seen = useRef<LogEntry | undefined>(s.log[0]);
   const couldBreak = useRef(canBreakthrough(s));
+  // Nhiệm vụ đã hoàn thành (chờ nhận) ở lần xét trước, để chỉ báo khi có nhiệm vụ mới xong
+  const readyQuests = useRef(new Set(claimableQuests(s).map((q) => q.id)));
   // Đang phát lại trận thì chưa báo kết quả (vượt tầng, rơi đồ…); báo dồn sau khi hoạt ảnh xong
   const held = useBattleHold(s.lastBattle);
 
@@ -34,6 +36,12 @@ export default function Toasts({ s }: { s: GameState }) {
     const can = canBreakthrough(s);
     if (can && !couldBreak.current) fresh.unshift({ id: nextId++, text: 'Tu vi đã đầy, có thể đột phá!', kind: 'good' });
     couldBreak.current = can;
+
+    const ready = claimableQuests(s);
+    for (const q of ready) {
+      if (!readyQuests.current.has(q.id)) fresh.push({ id: nextId++, text: `Hoàn thành nhiệm vụ 【${q.title}】: nhận thưởng ở tab Tu Luyện.`, kind: 'good' });
+    }
+    readyQuests.current = new Set(ready.map((q) => q.id));
 
     if (fresh.length) setToasts((t) => [...fresh, ...t].slice(0, MAX_TOASTS));
   }, [s, held]);

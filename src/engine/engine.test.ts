@@ -37,6 +37,10 @@ import {
   stopFarming,
   upgradeTech,
   applyOffline as offline,
+  claimAllQuests,
+  claimQuest,
+  claimableQuests,
+  currentQuest,
   NATALS,
   NATAL_MAX_LEVEL,
   TECHS,
@@ -82,6 +86,7 @@ import {
   type GameState,
   type Item,
 } from './engine';
+import { advise } from './guide';
 
 const T0 = 1_700_000_000_000;
 const always = (v: number) => () => v;
@@ -377,7 +382,7 @@ describe('migration', () => {
     for (const k of ['path', 'tech', 'gear', 'bag', 'fragments', 'floor', 'farming', 'nextItemId', 'lastBattle']) delete v1[k];
     v1.version = 1;
     const s = deserialize(JSON.stringify(v1))!;
-    expect(s.version).toBe(6);
+    expect(s.version).toBe(7);
     expect(s.floor).toBe(REALMS[1].gateFloor);
     expect(s.gear.weapon).toBeNull();
     expect(s.auto.climb).toBe(false);
@@ -772,7 +777,7 @@ describe('gear farming and migration', () => {
     delete g.ring;
     delete g.boots;
     const s = deserialize(JSON.stringify(v4))!;
-    expect(s.version).toBe(6);
+    expect(s.version).toBe(7);
     expect(s.gear.ring).toBeNull();
     expect(s.gear.boots).toBeNull();
     expect(s.gear.weapon?.id).toBe(1);
@@ -912,7 +917,7 @@ describe('technique library', () => {
     v5.version = 5;
     v5.tech = { base: 3, path: 6 };
     const s = deserialize(JSON.stringify(v5))!;
-    expect(s.version).toBe(6);
+    expect(s.version).toBe(7);
     expect(s.techs.dan_khi).toBe(3);
     expect(s.techs.the_0).toBe(6);
     expect(s.mainTech).toBe('the_0');
@@ -1015,5 +1020,116 @@ describe('natal artifact', () => {
     expect(s.natal!.exp).toBe(0);
     expect(canDevour(s)).toBe(false);
     expect(devourItem(s, 2, T0, always(0)).bag).toHaveLength(1);
+  });
+});
+
+describe('quests', () => {
+  const claimIds = (s: GameState) => s.quests.claimed;
+
+  it('a new character has nothing to claim and its first quest is the current goal', () => {
+    const s = fresh();
+    expect(claimableQuests(s)).toHaveLength(0);
+    expect(currentQuest(s)?.id).toBe('nhap_mon');
+  });
+
+  it('quests complete from state; stone rewards scale with the quest tier, not with when it is claimed', () => {
+    const s = { ...fresh(), level: 2 };
+    expect(claimableQuests(s).map((q) => q.id)).toEqual(['nhap_mon']);
+    const early = claimQuest(s, 'nhap_mon', T0, always(0));
+    expect(early.stones).toBe(s.stones + 60);
+    expect(claimIds(early)).toEqual(['nhap_mon']);
+    // để dành đến Hóa Thần mới nhận vẫn chỉ được đúng 60
+    const late = { ...s, level: 21 };
+    expect(claimQuest(late, 'nhap_mon', T0, always(0)).stones).toBe(late.stones + 60);
+    // nhiệm vụ nhắm tới Kim Đan (tier 2) thưởng ×4
+    expect(claimQuest({ ...s, level: 13 }, 'kim_dan', T0, always(0)).stones).toBe(s.stones + 400 * 4);
+  });
+
+  it('a quest can only be claimed once and only when done', () => {
+    let s = { ...fresh(), level: 2 };
+    s = claimQuest(s, 'nhap_mon', T0, always(0));
+    expect(claimQuest(s, 'nhap_mon', T0, always(0)).stones).toBe(s.stones);
+    expect(claimQuest(fresh(), 'tang_1', T0, always(0)).quests.claimed).toEqual([]);
+    expect(claimQuest(fresh(), 'khong_co', T0, always(0)).quests.claimed).toEqual([]);
+  });
+
+  it('rewards can include fragments and pills; claim-all takes everything that is done', () => {
+    let s = { ...fresh(), level: 9, floor: 3, stats: { ...fresh().stats, seclusions: 1 } };
+    const ids = claimableQuests(s).map((q) => q.id);
+    expect(ids).toEqual(expect.arrayContaining(['nhap_mon', 'be_quan', 'tang_1', 'tang_3', 'truc_co']));
+    s = claimAllQuests(s, T0, always(0));
+    expect(claimableQuests(s)).toHaveLength(0);
+    expect(s.pills.tuKhi).toBe(1);
+    expect(s.pills.phaCanh).toBe(1);
+    expect(s.fragments).toBeGreaterThanOrEqual(2 + 4);
+    expect(s.log[0].kind).toBe('good');
+  });
+
+  it('the current goal skips finished quests and moves on after claiming', () => {
+    const s = { ...fresh(), level: 2, floor: 1 };
+    expect(currentQuest(s)?.id).toBe('be_quan');
+    expect(currentQuest(claimAllQuests(s, T0, always(0)))?.id).toBe('be_quan');
+  });
+
+  it('conditions read the right state: gear, techniques, sets, natal, floors', () => {
+    const base = { ...fresh(), level: 9 };
+    const has = (s: GameState, id: string) => claimableQuests(s).some((q) => q.id === id);
+    expect(has(base, 'mac_do')).toBe(false);
+    expect(has({ ...base, gear: { ...base.gear, weapon: { id: 1, slot: 'weapon', tier: 0, floor: 1 } } }, 'mac_do')).toBe(true);
+    expect(has({ ...base, techs: { dan_khi: 1 } }, 'dan_khi')).toBe(true);
+    expect(has({ ...base, bag: [{ id: 1, slot: 'ring', tier: 0, floor: 1, plus: 3 }] }, 'cuong_hoa')).toBe(true);
+    const pair = { ...base, gear: { ...base.gear, weapon: { id: 1, slot: 'weapon', tier: 0, floor: 1 }, armor: { id: 2, slot: 'armor', tier: 0, floor: 2 } } };
+    expect(has(pair as GameState, 'hop_bo')).toBe(true);
+    expect(has(forgeNatal(base, 'ho_lo', T0, always(0)), 'ban_menh')).toBe(true);
+  });
+
+  it('v6 saves get an empty quest log and can claim what they already earned', () => {
+    const v7 = { ...fresh(), level: 10, floor: 3 };
+    const v6: Record<string, unknown> = JSON.parse(serialize(v7));
+    delete v6.quests;
+    v6.version = 6;
+    const s = deserialize(JSON.stringify(v6))!;
+    expect(s.version).toBe(7);
+    expect(s.quests.claimed).toEqual([]);
+    expect(claimableQuests(s).length).toBeGreaterThan(3);
+  });
+});
+
+describe('advice', () => {
+  const kinds = (s: GameState, chance: number | null = null) => advise(s, chance).map((a) => a.text);
+
+  it('says to break through when the bar is full, and to xuất quan when in seclusion', () => {
+    expect(kinds(atFirstBottleneck())[0]).toContain('đột phá Trúc Cơ');
+    const secluded = { ...atFirstBottleneck(), seclusion: { id: 'short' as const, start: T0, end: T0 + 1e6, gained: 0 } };
+    expect(advise(secluded, null)[0].go?.tab).toBe('cultivate');
+    expect(kinds(secluded)[0]).toContain('xuất quan');
+  });
+
+  it('explains a blocked breakthrough and uses the win chance to choose the advice', () => {
+    const blocked = { ...atFirstBottleneck(), floor: 1 };
+    expect(kinds(blocked, 0.1)[0]).toContain('quá mạnh');
+    expect(kinds(blocked, 0.9)[0]).toContain('Khiêu chiến tầng 2');
+    expect(advise(blocked, 0.5)[0].go?.tab).toBe('dungeon');
+  });
+
+  it('points at choices and resources: path, natal, better gear, upgrades', () => {
+    const t9 = { ...fresh(), level: 9 };
+    expect(kinds(t9).join(' ')).toContain('hướng tu');
+    expect(kinds(t9).join(' ')).toContain('bản mệnh');
+    const upgrade = { ...fresh(), level: 3, bag: [{ id: 1, slot: 'weapon' as const, tier: 1, floor: 2 }] };
+    expect(advise(upgrade, null)[0].go).toEqual({ tab: 'character', sub: 'gear' });
+    const rich = choosePath({ ...fresh(), level: 12, stones: 1e6, fragments: 99 }, 'kiem', T0, always(0));
+    expect(advise({ ...rich, seclusion: { id: 'short', start: T0, end: T0 + 1e6, gained: 0 } }, null).some((a) => a.go?.sub === 'skills' || a.go?.sub === 'technique' || a.go?.tab === 'shop')).toBe(true);
+  });
+
+  it('nudges idle characters and automation, never returns more than two lines, never empty', () => {
+    const idle = { ...fresh(), floor: 2 };
+    expect(kinds(idle, 0.95).join(' ')).toContain('Tự động khiêu chiến');
+    expect(kinds(idle, null).join(' ')).toContain('rảnh');
+    for (const s of [fresh(), idle, atFirstBottleneck(), { ...fresh(), level: 20, floor: 40 }]) {
+      const a = advise(s, 0.5);
+      expect(a.length).toBeGreaterThan(0);
+      expect(a.length).toBeLessThanOrEqual(2);
+    }
   });
 });

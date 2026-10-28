@@ -1011,3 +1011,87 @@ button.link {
   width: 40px;
   height: 40px;
 }
+
+/* Việc nên làm + nhiệm vụ */
+.card .sub-h {
+  margin-top: 6px;
+  font-size: 15px;
+}
+.advice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--gold-dim);
+  background: #24201a;
+  font-size: 14px;
+}
+.advice.good {
+  border-left-color: var(--good);
+}
+.advice.warn {
+  border-left-color: var(--bad);
+}
+.advice span {
+  min-width: 0;
+}
+.advice button {
+  flex-shrink: 0;
+}
+.quest {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.quest.done {
+  border-top-color: var(--good);
+}
+.quest-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.quest button {
+  flex-shrink: 0;
+}
+.reward-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.reward-chip {
+  font-size: 12px;
+  color: var(--gold);
+  border: 1px solid var(--gold-dim);
+  border-radius: 999px;
+  padding: 0 8px;
+}
+.quest-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+.quest-list li {
+  display: flex;
+  gap: 8px;
+  color: var(--muted);
+}
+.quest-list li.claimed {
+  opacity: 0.55;
+}
+.quest-list li.ready {
+  color: var(--good);
+}
+.quest-list .mark {
+  width: 14px;
+  flex-shrink: 0;
+}
