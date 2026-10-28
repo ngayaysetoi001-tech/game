@@ -23,6 +23,16 @@ export default function OfflineModal({ summary, onClose }: { summary: OfflineSum
               <b>{summary.items}</b> pháp bảo
             </li>
           )}
+          {summary.herbs > 0 && (
+            <li>
+              Thu hoạch <b>{summary.herbs}</b> thảo dược
+            </li>
+          )}
+          {summary.pillsMade > 0 && (
+            <li>
+              Luyện xong <b>{summary.pillsMade}</b> viên đan
+            </li>
+          )}
           {summary.floors > 0 && (
             <li>
               Vượt thêm <b>{summary.floors}</b> tầng bí cảnh

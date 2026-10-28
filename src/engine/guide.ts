@@ -14,6 +14,14 @@ import {
   canLearnFromShop,
   canUpgradeSkill,
   canUpgradeTech,
+  breakPillTotal,
+  buildingLevel,
+  canUpgradeBuilding,
+  maxCraftable,
+  plotCount,
+  readyPlots,
+  seedCost,
+  plantableHerbs,
   gateFloorFor,
   isBottleneck,
   itemScore,
@@ -133,6 +141,39 @@ export function advise(s: GameState, winChance: number | null): Advice[] {
       go: { tab: 'character', sub: 'skills' },
       goLabel: 'Mang võ kỹ',
     });
+  }
+
+  // 3b. Động phủ
+  const ripe = readyPlots(s, s.lastTick);
+  if (!s.auto.garden && ripe > 0) {
+    add({
+      tone: 'info',
+      text: `Linh điền có ${ripe} ô đã chín: thu hoạch thảo dược (hoặc bật Tự thu hoạch để khỏi phải bấm).`,
+      go: { tab: 'dwelling' },
+      goLabel: 'Thu hoạch',
+    });
+  }
+  const planted = s.dwelling.plots.filter((p, i) => p && i < plotCount(s)).length;
+  if (planted < plotCount(s) && s.stones >= seedCost(plantableHerbs(s)[0])) {
+    add({
+      tone: 'info',
+      text: `Linh điền còn ${plotCount(s) - planted} ô trống: gieo hạt để có thảo dược luyện đan.`,
+      go: { tab: 'dwelling' },
+      goLabel: 'Gieo hạt',
+    });
+  }
+  if (isBottleneck(s.level) && breakPillTotal(s) < 3 && !s.dwelling.job && maxCraftable(s, 'phaCanh') >= 1) {
+    add({
+      tone: 'info',
+      text: 'Đủ thảo dược để luyện Phá Cảnh Đan, giúp đột phá dễ hơn.',
+      go: { tab: 'dwelling' },
+      goLabel: 'Luyện đan',
+    });
+  }
+  const unbuilt = (['dan_phong', 'tu_linh', 'linh_mach'] as const).find((id) => buildingLevel(s, id) === 0 && canUpgradeBuilding(s, id));
+  if (unbuilt) {
+    const names = { dan_phong: 'Đan Phòng để luyện đan', tu_linh: 'Tụ Linh Trận để tu luyện nhanh hơn', linh_mach: 'Linh Mạch để kiếm thêm linh thạch' };
+    add({ tone: 'info', text: `Đủ linh thạch xây ${names[unbuilt]}.`, go: { tab: 'dwelling' }, goLabel: 'Xây dựng' });
   }
 
   // 4. Tận dụng thời gian

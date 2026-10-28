@@ -18,6 +18,7 @@ import {
   floorLevel,
   floorStones,
 } from './data';
+import { cultivationBonusAt, stoneBonusAt } from './dwelling';
 import { type NatalDef, NATALS, natalSkillLevel, natalStage } from './natal';
 import { type TechDef, TECHS, techEffect } from './techniques';
 import {
@@ -499,10 +500,18 @@ export function natalMods(s: GameState): FullMods {
   return m;
 }
 
-/** Tổng mọi nguồn cộng thêm cho nhân vật: pháp bảo + bộ trang bị, công pháp, bản mệnh */
+/** Tụ Linh Trận tăng tu luyện, Linh Mạch tăng linh thạch */
+export function dwellingMods(s: GameState): FullMods {
+  const m = zeroMods();
+  m.cultivation = cultivationBonusAt(s.dwelling.levels.tu_linh);
+  m.stones = stoneBonusAt(s.dwelling.levels.linh_mach);
+  return m;
+}
+
+/** Tổng mọi nguồn cộng thêm cho nhân vật: pháp bảo + bộ trang bị, công pháp, bản mệnh, động phủ */
 export function charMods(s: GameState): FullMods {
   const m = gearMods(s);
-  for (const part of [techMods(s), natalMods(s)]) for (const k of MOD_KEYS) m[k] += part[k];
+  for (const part of [techMods(s), natalMods(s), dwellingMods(s)]) for (const k of MOD_KEYS) m[k] += part[k];
   return m;
 }
 

@@ -102,6 +102,12 @@ npm run build    # bản build tĩnh ở dist/, deploy được lên GitHub Page
 Nhịp độ dự kiến với linh căn trung bình (không bế quan): Luyện Khí ~10 phút, Trúc Cơ ~30 phút,
 Kim Đan ~1.5 giờ, Nguyên Anh ~4 giờ… hết Độ Kiếp ~10 ngày.
 
+### Động phủ và đan dược
+- Tab **Động Phủ**: 4 công trình (Linh Điền, Đan Phòng, Tụ Linh Trận, Linh Mạch), cấp tối đa tăng theo cảnh giới.
+- **Linh Điền**: trồng 10 loại thảo dược theo 5 bậc cảnh giới; có chế độ tự thu hoạch và gieo lại, chạy cả khi offline.
+- **Đan Phòng**: luyện Tụ Khí / Phá Cảnh / Hồi Xuân Đan, ra đan phẩm Hạ / Trung / Thượng; Phá Cảnh Đan phẩm cao tăng tỉ lệ đột phá nhiều hơn.
+- Tụ Linh Trận tăng tốc tu luyện, Linh Mạch tăng linh thạch.
+
 ## Cấu trúc
 
 ```

@@ -2,6 +2,8 @@ import { PATHS, ZONES, type PathId, type PillId, SLOTS } from '../../engine/data
 import { NATAL_IDS } from '../../engine/natal';
 import { PLAYER_SKILLS, SKILLS, SUB_TECHS, MAIN_TECHS, type SkillId } from '../../engine/engine';
 import { SkillIcon, TechIcon } from './SkillIcons';
+import { BuildingIcon, HerbPlant } from './DwellingIcons';
+import { BUILDING_IDS, HERB_IDS } from '../../engine/engine';
 import Cultivator from './Cultivator';
 import { ItemIcon, PillIcon } from './Icons';
 import NatalIcon from './NatalIcon';
@@ -100,6 +102,29 @@ export default function Gallery() {
               <figcaption>{d.name}</figcaption>
             </figure>
           ))}
+        </div>
+      </section>
+      <section className="card">
+        <h2>Động phủ</h2>
+        <div className="icon-grid">
+          {BUILDING_IDS.map((id) => (
+            <figure key={id}>
+              <BuildingIcon id={id} level={3} size={48} />
+              <figcaption>{id}</figcaption>
+            </figure>
+          ))}
+        </div>
+        <div className="icon-grid">
+          {HERB_IDS.flatMap((id) =>
+            ([0, 1, 2] as const).map((st) => (
+              <figure key={`${id}${st}`}>
+                <HerbPlant id={id} stage={st} size={56} />
+                <figcaption>
+                  {id} {st}
+                </figcaption>
+              </figure>
+            )),
+          )}
         </div>
       </section>
     </>

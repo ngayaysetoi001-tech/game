@@ -3,6 +3,7 @@ import {
   canBreakthrough,
   canChoosePath,
   canForgeNatal,
+  readyPlots,
   claimableQuests,
   isInjured,
   itemScore,
@@ -11,6 +12,7 @@ import {
   formatDuration,
   formatNumber,
   type GameState,
+  type TabId,
 } from '../engine/engine';
 import type { Action } from './App';
 import { Elements } from './Elements';
@@ -18,9 +20,10 @@ import CultivateTab from './tabs/CultivateTab';
 import DungeonTab from './tabs/DungeonTab';
 import CharacterTab from './tabs/CharacterTab';
 import ShopTab from './tabs/ShopTab';
+import DwellingTab from './tabs/DwellingTab';
 import Toasts from './Toasts';
 
-export type Tab = 'cultivate' | 'dungeon' | 'character' | 'shop';
+export type Tab = TabId;
 
 export interface TabProps {
   state: GameState;
@@ -32,6 +35,7 @@ export interface TabProps {
 const TABS: { id: Tab; label: string }[] = [
   { id: 'cultivate', label: 'Tu Luyện' },
   { id: 'dungeon', label: 'Bí Cảnh' },
+  { id: 'dwelling', label: 'Động Phủ' },
   { id: 'character', label: 'Nhân Vật' },
   { id: 'shop', label: 'Phường Thị' },
 ];
@@ -50,6 +54,7 @@ export default function GameScreen({ state: s, act, replace }: Omit<TabProps, 'g
   const badges: Record<Tab, boolean> = {
     cultivate: canBreakthrough(s) || claimableQuests(s).length > 0,
     dungeon: false,
+    dwelling: !s.auto.garden && readyPlots(s, now) > 0,
     character: canChoosePath(s) || canForgeNatal(s) || hasUpgrade(s),
     shop: false,
   };
@@ -86,6 +91,7 @@ export default function GameScreen({ state: s, act, replace }: Omit<TabProps, 'g
       <Toasts s={s} />
       {tab === 'cultivate' && <CultivateTab {...props} />}
       {tab === 'dungeon' && <DungeonTab {...props} />}
+      {tab === 'dwelling' && <DwellingTab {...props} />}
       {tab === 'character' && <CharacterTab {...props} />}
       {tab === 'shop' && <ShopTab {...props} />}
 

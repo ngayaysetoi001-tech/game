@@ -3,6 +3,31 @@
 // vào để test được một cách tất định.
 
 import { ENHANCE_COST, ENHANCE_MAX, ENHANCE_RATES } from './gear';
+import {
+  BUILDINGS,
+  HERBS,
+  RECIPES,
+  YIELD,
+  type BuildingId,
+  type HerbId,
+  type Job,
+  type Plot,
+  type RecipeId,
+  bandOfRealm,
+  buildingCap,
+  buildingCost,
+  craftTimeMultAt,
+  gradeChancesAt,
+  growSeconds,
+  growthMultAt,
+  herbsOfBand,
+  maxBatchAt,
+  newDwelling,
+  plotCountAt,
+  seedCost,
+  sellPrice,
+  yieldBonusAt,
+} from './dwelling';
 import { QUESTS, QUEST_BY_ID, QUEST_TIER, type QuestDef } from './quests';
 import {
   NATALS,
@@ -27,7 +52,7 @@ import {
   BAG_LIMIT,
   BASE_RATE,
   BASE_STONE_RATE,
-  BREAK_PILL_BONUS,
+  BREAK_PILL_BONUS_BY_GRADE,
   DEFEAT_INJURY_SECONDS,
   FAIL_BONUS_MAX,
   FAIL_BONUS_STEP,
@@ -54,7 +79,9 @@ import {
   type SeclusionId,
   STARTING_STONES,
   TIERS,
-  TU_KHI_SECONDS,
+  TU_KHI_SECONDS_BY_GRADE,
+  emptyPills,
+  pillLabel,
   floorStones,
   pathLevelCap,
   techCost,
@@ -111,6 +138,7 @@ export * from './gear';
 export * from './techniques';
 export * from './natal';
 export * from './quests';
+export * from './dwelling';
 
 // ---------- Tốc độ ----------
 
@@ -148,22 +176,34 @@ function injure(s: GameState, time: number, seconds: number) {
 // ---------- Tạo game ----------
 
 function defaultAuto(): AutoSettings {
-  return { climb: false, equip: false, sell: false, reclusion: false, heal: false, devour: false };
+  return { climb: false, equip: false, sell: false, reclusion: false, heal: false, devour: false, garden: false };
 }
 
 function emptyStats(): Stats {
-  return { battlesWon: 0, battlesLost: 0, breakthroughs: 0, breakthroughFails: 0, seclusions: 0, itemsFound: 0 };
+  return {
+    battlesWon: 0,
+    battlesLost: 0,
+    breakthroughs: 0,
+    breakthroughFails: 0,
+    seclusions: 0,
+    itemsFound: 0,
+    planted: 0,
+    harvested: 0,
+    crafted: 0,
+    crafted3: 0,
+    craftedBreak: 0,
+  };
 }
 
 export function newGame(name: string, root: SpiritRoot, now: number): GameState {
   const s: GameState = {
-    version: 7,
+    version: 8,
     name: name.trim() || 'Vô Danh',
     root,
     level: 0,
     cultivation: 0,
     stones: STARTING_STONES,
-    pills: { tuKhi: 0, phaCanh: 0, hoiXuan: 0 },
+    pills: emptyPills(),
     failBonus: 0,
     injuryUntil: 0,
     seclusion: null,
@@ -189,6 +229,7 @@ export function newGame(name: string, root: SpiritRoot, now: number): GameState 
     subTechs: ['dan_khi'],
     natal: null,
     quests: { claimed: [] },
+    dwelling: newDwelling(),
   };
   addLog(s, now, `${s.name} bước lên con đường tu tiên với ${rootName(root)} (${root.elements.join(', ')}).`, 'good');
   return s;
@@ -236,6 +277,10 @@ function advance(s: GameState, now: number, rng: Rng) {
     if (s.seclusion && s.seclusion.end > t) next = Math.min(next, s.seclusion.end);
     if (s.injuryUntil > t) next = Math.min(next, s.injuryUntil);
     if (s.auto.climb && s.nextClimbAt > t) next = Math.min(next, s.nextClimbAt);
+    if (s.dwelling.job && s.dwelling.job.end > t) next = Math.min(next, s.dwelling.job.end);
+    if (s.auto.garden) {
+      for (const plot of s.dwelling.plots) if (plot && plot.end > t) next = Math.min(next, plot.end);
+    }
     const dt = (next - t) / 1000;
     const gained = gainCultivation(s, cultivationRate(s, t) * dt, next);
     s.stones += stoneRate(s) * dt;
@@ -249,6 +294,7 @@ function advance(s: GameState, now: number, rng: Rng) {
     }
     t = next;
     if (s.seclusion && s.seclusion.end <= t) finishSeclusion(s, t, rng);
+    dwellingStep(s, t, rng);
   }
   s.lastTick = Math.max(s.lastTick, now);
 }
@@ -274,6 +320,8 @@ export interface OfflineSummary {
   levelsGained: number;
   items: number;
   fragments: number;
+  herbs: number;
+  pillsMade: number;
   floors: number;
   battlesWon: number;
   battlesLost: number;
@@ -299,6 +347,16 @@ export function applyOffline(
       s.seclusion.end += shift;
     }
     if (s.injuryUntil > 0) s.injuryUntil += shift;
+    for (const plot of s.dwelling.plots) {
+      if (plot) {
+        plot.start += shift;
+        plot.end += shift;
+      }
+    }
+    if (s.dwelling.job) {
+      s.dwelling.job.start += shift;
+      s.dwelling.job.end += shift;
+    }
   }
   const seconds = Math.max(0, (now - s.lastTick) / 1000);
   const before = {
@@ -320,6 +378,8 @@ export function applyOffline(
       levelsGained: s.level - before.level,
       items: s.nextItemId - before.items,
       fragments: s.fragments - before.fragments,
+      herbs: s.stats.harvested - before.stats.harvested,
+      pillsMade: s.stats.crafted - before.stats.crafted,
       floors: s.floor - before.floor,
       battlesWon: s.stats.battlesWon - before.stats.battlesWon,
       battlesLost: s.stats.battlesLost - before.stats.battlesLost,
@@ -337,8 +397,33 @@ export function breakthroughChance(s: GameState, pills: number): number {
     target.breakChance +
     ROOT_TIERS[s.root.tier].breakBonus +
     s.failBonus +
-    Math.min(pills, MAX_BREAK_PILLS) * BREAK_PILL_BONUS;
+    breakPillBonus(s, pills);
   return Math.min(MAX_BREAK_CHANCE, chance);
+}
+
+/** Phá Cảnh Đan dùng khi đột phá: phẩm cao trước */
+const BREAK_PILLS: PillId[] = ['phaCanh3', 'phaCanh2', 'phaCanh'];
+
+export function breakPillTotal(s: GameState): number {
+  return BREAK_PILLS.reduce((a, id) => a + s.pills[id], 0);
+}
+
+/** Chọn n viên (tối đa MAX_BREAK_PILLS) từ kho, phẩm cao trước */
+export function breakPillPlan(s: GameState, n: number): { id: PillId; count: number }[] {
+  let left = Math.max(0, Math.min(n, MAX_BREAK_PILLS));
+  const plan: { id: PillId; count: number }[] = [];
+  for (const id of BREAK_PILLS) {
+    const take = Math.min(left, s.pills[id]);
+    if (take > 0) {
+      plan.push({ id, count: take });
+      left -= take;
+    }
+  }
+  return plan;
+}
+
+export function breakPillBonus(s: GameState, n: number): number {
+  return breakPillPlan(s, n).reduce((a, p) => a + p.count * BREAK_PILL_BONUS_BY_GRADE[PILLS[p.id].grade], 0);
 }
 
 /** Tầng bí cảnh cần vượt để đột phá lên cảnh giới kế tiếp (0 nếu không cần) */
@@ -360,9 +445,9 @@ export function canBreakthrough(s: GameState): boolean {
 export function breakthrough(prev: GameState, pillsWanted: number, now: number, rng: Rng): GameState {
   const s = begin(prev, now, rng);
   if (!canBreakthrough(s)) return s;
-  const pills = Math.max(0, Math.min(pillsWanted, s.pills.phaCanh, MAX_BREAK_PILLS));
+  const pills = Math.max(0, Math.min(pillsWanted, breakPillTotal(s), MAX_BREAK_PILLS));
   const chance = breakthroughChance(s, pills);
-  s.pills.phaCanh -= pills;
+  for (const p of breakPillPlan(s, pills)) s.pills[p.id] -= p.count;
   const targetRealm = REALMS[levelInfo(s.level + 1).realm].name;
   if (rng() < chance) {
     s.cultivation = 0;
@@ -710,6 +795,215 @@ export function enhanceItem(prev: GameState, id: number, now: number, rng: Rng):
   return s;
 }
 
+// ---------- Động phủ ----------
+
+export function buildingLevel(s: GameState, id: BuildingId): number {
+  return s.dwelling.levels[id];
+}
+
+export function buildingLevelCap(s: GameState): number {
+  return buildingCap(realmOf(s));
+}
+
+export function buildingUnlocked(s: GameState, id: BuildingId): boolean {
+  return realmOf(s) >= BUILDINGS[id].unlockRealm;
+}
+
+export function buildingNextCost(s: GameState, id: BuildingId): number {
+  return buildingCost(id, buildingLevel(s, id) + 1);
+}
+
+export function canUpgradeBuilding(s: GameState, id: BuildingId): boolean {
+  return (
+    buildingUnlocked(s, id) && buildingLevel(s, id) < buildingLevelCap(s) && s.stones >= buildingNextCost(s, id)
+  );
+}
+
+export function upgradeBuilding(prev: GameState, id: BuildingId, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (!canUpgradeBuilding(s, id)) return s;
+  s.stones -= buildingNextCost(s, id);
+  s.dwelling.levels[id]++;
+  addLog(s, now, `${BUILDINGS[id].name} lên cấp ${s.dwelling.levels[id]}.`, 'good');
+  return s;
+}
+
+export function plotCount(s: GameState): number {
+  return plotCountAt(s.dwelling.levels.linh_dien);
+}
+
+/** Hai loại thảo dược trồng được ở cảnh giới hiện tại: phổ thông và hiếm */
+export function plantableHerbs(s: GameState): HerbId[] {
+  const h = herbsOfBand(bandOfRealm(realmOf(s)));
+  return [h.common, h.rare];
+}
+
+export function growMs(s: GameState, herb: HerbId): number {
+  return growSeconds(herb) * growthMultAt(s.dwelling.levels.linh_dien) * 1000;
+}
+
+export function herbCount(s: GameState, id: HerbId): number {
+  return s.dwelling.herbs[id] ?? 0;
+}
+
+export function canPlant(s: GameState, idx: number, herb: HerbId): boolean {
+  return (
+    idx >= 0 && idx < plotCount(s) && !s.dwelling.plots[idx] && plantableHerbs(s).includes(herb) && s.stones >= seedCost(herb)
+  );
+}
+
+function plantInto(s: GameState, idx: number, herb: HerbId, time: number) {
+  s.stones -= seedCost(herb);
+  s.dwelling.plots[idx] = { herb, start: time, end: time + growMs(s, herb) };
+  s.stats.planted++;
+}
+
+export function plantHerb(prev: GameState, idx: number, herb: HerbId, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (!canPlant(s, idx, herb)) return s;
+  plantInto(s, idx, herb, now);
+  return s;
+}
+
+/** Gieo cùng một loại vào mọi ô trống, tới khi hết linh thạch */
+export function plantAll(prev: GameState, herb: HerbId, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  for (let i = 0; i < plotCount(s); i++) if (canPlant(s, i, herb)) plantInto(s, i, herb, now);
+  return s;
+}
+
+export function plotReady(s: GameState, idx: number, time: number): boolean {
+  const p = s.dwelling.plots[idx];
+  return !!p && time >= p.end;
+}
+
+export function readyPlots(s: GameState, time: number): number {
+  return s.dwelling.plots.filter((p, i) => i < plotCount(s) && p && time >= p.end).length;
+}
+
+/** Thu hoạch một ô đã chín; trả số thảo dược nhận được */
+function harvestInto(s: GameState, plot: Plot, rng: Rng): number {
+  let n = YIELD[0] + Math.floor(rng() * (YIELD[1] - YIELD[0] + 1));
+  if (rng() < yieldBonusAt(s.dwelling.levels.linh_dien)) n++;
+  s.dwelling.herbs[plot.herb] = herbCount(s, plot.herb) + n;
+  s.stats.harvested += n;
+  return n;
+}
+
+export function harvestPlot(prev: GameState, idx: number, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  const plot = s.dwelling.plots[idx];
+  if (!plot || now < plot.end) return s;
+  harvestInto(s, plot, rng);
+  s.dwelling.plots[idx] = null;
+  return s;
+}
+
+export function harvestAll(prev: GameState, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  const total: Partial<Record<HerbId, number>> = {};
+  for (let i = 0; i < s.dwelling.plots.length; i++) {
+    const plot = s.dwelling.plots[i];
+    if (!plot || now < plot.end) continue;
+    total[plot.herb] = (total[plot.herb] ?? 0) + harvestInto(s, plot, rng);
+    s.dwelling.plots[i] = null;
+  }
+  const parts = (Object.entries(total) as [HerbId, number][]).map(([id, n]) => `${n} ${HERBS[id].name}`);
+  if (parts.length) addLog(s, now, `Thu hoạch linh điền: ${parts.join(', ')}.`);
+  return s;
+}
+
+/** Cây chín thì tự thu hoạch và gieo lại (nếu đủ linh thạch mua hạt) */
+function dwellingStep(s: GameState, t: number, rng: Rng) {
+  const d = s.dwelling;
+  if (d.job && d.job.end <= t) finishJob(s, t, rng);
+  if (!s.auto.garden) return;
+  for (let i = 0; i < d.plots.length; i++) {
+    let plot = d.plots[i];
+    while (plot && plot.end <= t) {
+      const herb = plot.herb;
+      const at = plot.end;
+      harvestInto(s, plot, rng);
+      d.plots[i] = null;
+      if (i < plotCount(s) && s.stones >= seedCost(herb)) {
+        // gieo lại ngay lúc cây chín để chu kỳ không bị trôi
+        s.stones -= seedCost(herb);
+        d.plots[i] = { herb, start: at, end: at + growMs(s, herb) };
+        s.stats.planted++;
+      }
+      plot = d.plots[i];
+    }
+  }
+}
+
+// ---- Luyện đan ----
+
+export function recipeNeeds(s: GameState, id: RecipeId) {
+  const band = herbsOfBand(bandOfRealm(realmOf(s)));
+  const r = RECIPES[id];
+  return { common: band.common, rare: band.rare, nCommon: r.common, nRare: r.rare };
+}
+
+export function maxBatch(s: GameState): number {
+  return maxBatchAt(s.dwelling.levels.dan_phong);
+}
+
+/** Số viên tối đa luyện được một lần theo thảo dược đang có và giới hạn Đan Phòng */
+export function maxCraftable(s: GameState, id: RecipeId): number {
+  const need = recipeNeeds(s, id);
+  const byCommon = need.nCommon ? Math.floor(herbCount(s, need.common) / need.nCommon) : Infinity;
+  const byRare = need.nRare ? Math.floor(herbCount(s, need.rare) / need.nRare) : Infinity;
+  return Math.max(0, Math.min(maxBatch(s), byCommon, byRare));
+}
+
+export function jobSeconds(s: GameState, id: RecipeId, count: number): number {
+  return RECIPES[id].seconds * count * craftTimeMultAt(s.dwelling.levels.dan_phong);
+}
+
+export function canStartJob(s: GameState, id: RecipeId, count: number): boolean {
+  return !s.dwelling.job && count >= 1 && count <= maxCraftable(s, id);
+}
+
+export function startJob(prev: GameState, id: RecipeId, count: number, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (!canStartJob(s, id, count)) return s;
+  const need = recipeNeeds(s, id);
+  s.dwelling.herbs[need.common] = herbCount(s, need.common) - need.nCommon * count;
+  if (need.nRare) s.dwelling.herbs[need.rare] = herbCount(s, need.rare) - need.nRare * count;
+  s.dwelling.job = { recipe: id, count, start: now, end: now + jobSeconds(s, id, count) * 1000 };
+  addLog(s, now, `Bắt đầu luyện ${count} viên ${RECIPES[id].name}.`);
+  return s;
+}
+
+function finishJob(s: GameState, time: number, rng: Rng) {
+  const job = s.dwelling.job as Job;
+  s.dwelling.job = null;
+  const chances = gradeChancesAt(s.dwelling.levels.dan_phong);
+  const made = [0, 0, 0];
+  for (let i = 0; i < job.count; i++) {
+    const r = rng();
+    const grade = r < chances.top ? 2 : r < chances.top + chances.mid ? 1 : 0;
+    s.pills[RECIPES[job.recipe].pills[grade]]++;
+    made[job.recipe === 'hoiXuan' ? 0 : grade]++;
+    s.stats.crafted++;
+    if (grade === 2 && job.recipe !== 'hoiXuan') s.stats.crafted3++;
+    if (job.recipe === 'phaCanh') s.stats.craftedBreak++;
+  }
+  const detail =
+    job.recipe === 'hoiXuan' ? '' : ` (Hạ ${made[0]}, Trung ${made[1]}, Thượng ${made[2]})`;
+  addLog(s, time, `Luyện xong ${job.count} viên ${RECIPES[job.recipe].name}${detail}.`, 'good');
+}
+
+export function sellHerb(prev: GameState, id: HerbId, n: number, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  const have = herbCount(s, id);
+  const sold = Math.max(0, Math.min(n, have));
+  if (!sold) return s;
+  s.dwelling.herbs[id] = have - sold;
+  s.stones += sold * sellPrice(id);
+  return s;
+}
+
 // ---------- Nhiệm vụ ----------
 
 export function isQuestClaimed(s: GameState, id: string): boolean {
@@ -1042,13 +1336,14 @@ export function moveSkill(prev: GameState, id: SkillId, dir: -1 | 1, now: number
 // ---------- Đan dược ----------
 
 export function pillPrice(s: GameState, id: PillId): number {
-  return PILLS[id].basePrice * PILLS[id].priceGrowth ** realmOf(s);
+  const base = PILLS[id].basePrice;
+  return base === null ? Infinity : base * PILLS[id].priceGrowth ** realmOf(s);
 }
 
 export function buyPill(prev: GameState, id: PillId, now: number, rng: Rng): GameState {
   const s = begin(prev, now, rng);
   const price = pillPrice(s, id);
-  if (s.stones < price) return s;
+  if (!Number.isFinite(price) || s.stones < price) return s;
   s.stones -= price;
   s.pills[id]++;
   return s;
@@ -1056,8 +1351,9 @@ export function buyPill(prev: GameState, id: PillId, now: number, rng: Rng): Gam
 
 export function canUsePill(s: GameState, id: PillId, now: number): boolean {
   if (s.pills[id] <= 0) return false;
-  if (id === 'tuKhi') return !(isBottleneck(s.level) && s.cultivation >= requiredFor(s.level));
-  if (id === 'hoiXuan') return isInjured(s, now);
+  const family = PILLS[id].family;
+  if (family === 'tuKhi') return !(isBottleneck(s.level) && s.cultivation >= requiredFor(s.level));
+  if (family === 'hoiXuan') return isInjured(s, now);
   return false; // Phá Cảnh Đan dùng qua nút đột phá
 }
 
@@ -1065,10 +1361,10 @@ export function usePill(prev: GameState, id: PillId, now: number, rng: Rng): Gam
   const s = begin(prev, now, rng);
   if (!canUsePill(s, id, now)) return s;
   s.pills[id]--;
-  if (id === 'tuKhi') {
-    const got = gainCultivation(s, baseRate(s) * TU_KHI_SECONDS, now);
-    addLog(s, now, `Phục dụng ${PILLS.tuKhi.name}, nhận ${formatNumber(got)} tu vi.`);
-  } else if (id === 'hoiXuan') {
+  if (PILLS[id].family === 'tuKhi') {
+    const got = gainCultivation(s, baseRate(s) * TU_KHI_SECONDS_BY_GRADE[PILLS[id].grade], now);
+    addLog(s, now, `Phục dụng ${pillLabel(id)}, nhận ${formatNumber(got)} tu vi.`);
+  } else if (PILLS[id].family === 'hoiXuan') {
     s.injuryUntil = 0;
     addLog(s, now, `Phục dụng ${PILLS.hoiXuan.name}, thương thế lành hẳn.`, 'good');
   }
@@ -1149,7 +1445,17 @@ function migrate(raw: Record<string, unknown>): GameState | null {
   if (s.version === 6) {
     s = { ...s, version: 7, quests: { claimed: [] } };
   }
-  return s.version === 7 ? (s as unknown as GameState) : null;
+  if (s.version === 7) {
+    s = {
+      ...s,
+      version: 8,
+      dwelling: newDwelling(),
+      pills: { ...emptyPills(), ...(s.pills as object) },
+      stats: { ...emptyStats(), ...(s.stats as object) },
+      auto: { ...(s.auto as object), garden: false },
+    };
+  }
+  return s.version === 8 ? (s as unknown as GameState) : null;
 }
 
 export function deserialize(raw: string): GameState | null {

@@ -1,4 +1,4 @@
-import { PILLS, type PillId } from '../../engine/data';
+import { PILLS, PILL_IDS, PILL_GRADE_NAMES } from '../../engine/data';
 import {
   PLAYER_SKILLS,
   buyPill,
@@ -95,30 +95,40 @@ function TechShop({ state: s, act }: TabProps) {
 }
 
 function PillShop({ state: s, act }: TabProps) {
-  const ids = Object.keys(PILLS) as PillId[];
+  // Chỉ hiện đan có bán, hoặc đan đang có trong kho (đan phẩm cao chỉ luyện được ở Đan Phòng)
+  const ids = PILL_IDS.filter((id) => PILLS[id].basePrice !== null || s.pills[id] > 0);
   return (
     <section className="card">
       <h2>Phường Thị</h2>
-      <p className="muted small">Giá đan dược tăng theo cảnh giới.</p>
+      <p className="muted small">
+        Giá đan dược tăng theo cảnh giới. Đan Trung và Thượng Phẩm chỉ luyện được ở Đan Phòng (tab Động Phủ).
+      </p>
       {ids.map((id) => {
         const price = pillPrice(s, id);
+        const buyable = Number.isFinite(price);
         return (
           <div key={id} className="shop-item">
             <PillIcon id={id} />
             <div className="shop-text">
               <div>
-                <b>{PILLS[id].name}</b> <span className="muted small">× {s.pills[id]}</span>
+                <b>{PILLS[id].name}</b>{' '}
+                {PILLS[id].family !== 'hoiXuan' && (
+                  <span className={`grade grade-${PILLS[id].grade}`}>{PILL_GRADE_NAMES[PILLS[id].grade]}</span>
+                )}{' '}
+                <span className="muted small">× {s.pills[id]}</span>
               </div>
               <div className="muted small">{PILLS[id].desc}</div>
             </div>
             <div className="shop-actions">
-              <button
-                disabled={s.stones < price}
-                onClick={() => act((st, now, rng) => buyPill(st, id, now, rng))}
-              >
-                Mua {formatNumber(price)}
-              </button>
-              {id !== 'phaCanh' && (
+              {buyable && (
+                <button
+                  disabled={s.stones < price}
+                  onClick={() => act((st, now, rng) => buyPill(st, id, now, rng))}
+                >
+                  Mua {formatNumber(price)}
+                </button>
+              )}
+              {PILLS[id].family !== 'phaCanh' && (
                 <button
                   disabled={!canUsePill(s, id, s.lastTick)}
                   onClick={() => act((st, now, rng) => usePill(st, id, now, rng))}

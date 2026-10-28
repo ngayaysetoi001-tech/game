@@ -83,42 +83,53 @@ export const ROOT_TIERS: RootTier[] = [
 export const ROOT_REROLLS = 3;
 
 // --- Đan dược ---
-export type PillId = 'tuKhi' | 'phaCanh' | 'hoiXuan';
+export type PillFamily = 'tuKhi' | 'phaCanh' | 'hoiXuan';
+export type PillId = 'tuKhi' | 'tuKhi2' | 'tuKhi3' | 'phaCanh' | 'phaCanh2' | 'phaCanh3' | 'hoiXuan';
+
+export const PILL_GRADE_NAMES = ['Hạ Phẩm', 'Trung Phẩm', 'Thượng Phẩm'];
+/** Tụ Khí Đan: số giây tu luyện nhận được theo phẩm */
+export const TU_KHI_SECONDS_BY_GRADE = [300, 480, 720];
+/** Phá Cảnh Đan: tỉ lệ đột phá cộng thêm theo phẩm */
+export const BREAK_PILL_BONUS_BY_GRADE = [BREAK_PILL_BONUS, 0.22, 0.3];
 
 export interface PillDef {
   id: PillId;
+  family: PillFamily;
+  grade: 0 | 1 | 2;
   name: string;
   desc: string;
-  /** Giá = basePrice × priceGrowth^(chỉ số cảnh giới); linh thạch kiếm được chỉ tăng ×2 mỗi cảnh giới */
-  basePrice: number;
+  /** Giá = basePrice × priceGrowth^(chỉ số cảnh giới); null = không bán, chỉ luyện được */
+  basePrice: number | null;
   priceGrowth: number;
 }
 
+const tuKhiDesc = (sec: number) => `Dùng ngay: nhận lượng tu vi bằng ${sec / 60} phút tu luyện.`;
+const phaCanhDesc = (bonus: number) =>
+  `Dùng khi đột phá đại cảnh giới: +${Math.round(bonus * 100)}% tỉ lệ (tối đa ${MAX_BREAK_PILLS} viên, phẩm cao dùng trước).`;
+
 export const PILLS: Record<PillId, PillDef> = {
-  tuKhi: {
-    id: 'tuKhi',
-    name: 'Tụ Khí Đan',
-    desc: 'Dùng ngay: nhận lượng tu vi bằng 5 phút tu luyện.',
-    basePrice: 50,
-    priceGrowth: 2,
-  },
-  phaCanh: {
-    id: 'phaCanh',
-    name: 'Phá Cảnh Đan',
-    desc: `Dùng khi đột phá đại cảnh giới: +${BREAK_PILL_BONUS * 100}% tỉ lệ (tối đa ${MAX_BREAK_PILLS} viên).`,
-    basePrice: 120,
-    priceGrowth: 5,
-  },
-  hoiXuan: {
-    id: 'hoiXuan',
-    name: 'Hồi Xuân Đan',
-    desc: 'Chữa khỏi thương thế ngay lập tức.',
-    basePrice: 30,
-    priceGrowth: 2,
-  },
+  tuKhi: { id: 'tuKhi', family: 'tuKhi', grade: 0, name: 'Tụ Khí Đan', desc: tuKhiDesc(TU_KHI_SECONDS_BY_GRADE[0]), basePrice: 50, priceGrowth: 2 },
+  tuKhi2: { id: 'tuKhi2', family: 'tuKhi', grade: 1, name: 'Tụ Khí Đan', desc: tuKhiDesc(TU_KHI_SECONDS_BY_GRADE[1]), basePrice: null, priceGrowth: 2 },
+  tuKhi3: { id: 'tuKhi3', family: 'tuKhi', grade: 2, name: 'Tụ Khí Đan', desc: tuKhiDesc(TU_KHI_SECONDS_BY_GRADE[2]), basePrice: null, priceGrowth: 2 },
+  phaCanh: { id: 'phaCanh', family: 'phaCanh', grade: 0, name: 'Phá Cảnh Đan', desc: phaCanhDesc(BREAK_PILL_BONUS_BY_GRADE[0]), basePrice: 120, priceGrowth: 5 },
+  phaCanh2: { id: 'phaCanh2', family: 'phaCanh', grade: 1, name: 'Phá Cảnh Đan', desc: phaCanhDesc(BREAK_PILL_BONUS_BY_GRADE[1]), basePrice: null, priceGrowth: 5 },
+  phaCanh3: { id: 'phaCanh3', family: 'phaCanh', grade: 2, name: 'Phá Cảnh Đan', desc: phaCanhDesc(BREAK_PILL_BONUS_BY_GRADE[2]), basePrice: null, priceGrowth: 5 },
+  hoiXuan: { id: 'hoiXuan', family: 'hoiXuan', grade: 0, name: 'Hồi Xuân Đan', desc: 'Chữa khỏi thương thế ngay lập tức.', basePrice: 30, priceGrowth: 2 },
 };
 
-export const TU_KHI_SECONDS = 300;
+export const PILL_IDS = Object.keys(PILLS) as PillId[];
+
+export function emptyPills(): Record<PillId, number> {
+  return Object.fromEntries(PILL_IDS.map((id) => [id, 0])) as Record<PillId, number>;
+}
+
+/** Tên đan kèm phẩm: "Tụ Khí Đan · Trung Phẩm" (Hồi Xuân Đan không chia phẩm) */
+export function pillLabel(id: PillId): string {
+  const p = PILLS[id];
+  return p.family === 'hoiXuan' ? p.name : `${p.name} · ${PILL_GRADE_NAMES[p.grade]}`;
+}
+
+export const TU_KHI_SECONDS = TU_KHI_SECONDS_BY_GRADE[0];
 
 // --- Bế quan ---
 export type SeclusionId = 'short' | 'medium' | 'long';

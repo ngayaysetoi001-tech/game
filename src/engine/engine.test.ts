@@ -37,6 +37,31 @@ import {
   stopFarming,
   upgradeTech,
   applyOffline as offline,
+  BUILDINGS,
+  HERBS,
+  RECIPES,
+  breakPillBonus,
+  breakPillPlan,
+  buildingCost,
+  canPlant,
+  canStartJob,
+  canUpgradeBuilding,
+  dwellingMods,
+  growMs,
+  harvestAll,
+  harvestPlot,
+  jobSeconds,
+  herbCount,
+  maxCraftable,
+  plantAll,
+  plantHerb,
+  plantableHerbs,
+  plotCount,
+  readyPlots,
+  sellHerb,
+  startJob,
+  upgradeBuilding,
+  canUsePill,
   claimAllQuests,
   claimQuest,
   claimableQuests,
@@ -382,7 +407,7 @@ describe('migration', () => {
     for (const k of ['path', 'tech', 'gear', 'bag', 'fragments', 'floor', 'farming', 'nextItemId', 'lastBattle']) delete v1[k];
     v1.version = 1;
     const s = deserialize(JSON.stringify(v1))!;
-    expect(s.version).toBe(7);
+    expect(s.version).toBe(8);
     expect(s.floor).toBe(REALMS[1].gateFloor);
     expect(s.gear.weapon).toBeNull();
     expect(s.auto.climb).toBe(false);
@@ -777,7 +802,7 @@ describe('gear farming and migration', () => {
     delete g.ring;
     delete g.boots;
     const s = deserialize(JSON.stringify(v4))!;
-    expect(s.version).toBe(7);
+    expect(s.version).toBe(8);
     expect(s.gear.ring).toBeNull();
     expect(s.gear.boots).toBeNull();
     expect(s.gear.weapon?.id).toBe(1);
@@ -917,7 +942,7 @@ describe('technique library', () => {
     v5.version = 5;
     v5.tech = { base: 3, path: 6 };
     const s = deserialize(JSON.stringify(v5))!;
-    expect(s.version).toBe(7);
+    expect(s.version).toBe(8);
     expect(s.techs.dan_khi).toBe(3);
     expect(s.techs.the_0).toBe(6);
     expect(s.mainTech).toBe('the_0');
@@ -1089,7 +1114,7 @@ describe('quests', () => {
     delete v6.quests;
     v6.version = 6;
     const s = deserialize(JSON.stringify(v6))!;
-    expect(s.version).toBe(7);
+    expect(s.version).toBe(8);
     expect(s.quests.claimed).toEqual([]);
     expect(claimableQuests(s).length).toBeGreaterThan(3);
   });
@@ -1131,5 +1156,263 @@ describe('advice', () => {
       expect(a.length).toBeGreaterThan(0);
       expect(a.length).toBeLessThanOrEqual(2);
     }
+  });
+});
+
+describe('động phủ: công trình', () => {
+  it('a new character starts with Linh Điền cấp 1 (2 ô), nothing else built, and empty stores', () => {
+    const s = fresh();
+    expect(s.dwelling.levels).toEqual({ linh_dien: 1, dan_phong: 0, tu_linh: 0, linh_mach: 0 });
+    expect(plotCount(s)).toBe(2);
+    expect(s.dwelling.plots).toHaveLength(7);
+    expect(Object.keys(s.pills)).toHaveLength(7);
+    expect(s.auto.garden).toBe(false);
+  });
+
+  it('upgrades cost stones, are capped by the realm and gated by unlock realm', () => {
+    let s = { ...fresh(), stones: 1e9 };
+    expect(canUpgradeBuilding(s, 'linh_mach')).toBe(false); // cần Trúc Cơ
+    s = upgradeBuilding(s, 'tu_linh', T0, always(0));
+    expect(s.dwelling.levels.tu_linh).toBe(1);
+    expect(s.stones).toBe(1e9 - buildingCost('tu_linh', 1));
+    s = upgradeBuilding(s, 'tu_linh', T0, always(0));
+    expect(s.dwelling.levels.tu_linh).toBe(2);
+    expect(canUpgradeBuilding(s, 'tu_linh')).toBe(false); // Luyện Khí: tối đa cấp 2
+    const trucCo = { ...s, level: 9 };
+    expect(canUpgradeBuilding(trucCo, 'tu_linh')).toBe(true);
+    expect(canUpgradeBuilding(trucCo, 'linh_mach')).toBe(true);
+    expect(canUpgradeBuilding({ ...s, stones: 1 }, 'dan_phong')).toBe(false);
+    expect(buildingCost('dan_phong', 3)).toBeGreaterThan(buildingCost('dan_phong', 2));
+    expect(BUILDINGS.linh_dien.unlockRealm).toBe(0);
+  });
+
+  it('Tụ Linh Trận and Linh Mạch raise cultivation and stone income', () => {
+    const s = fresh();
+    s.dwelling.levels.tu_linh = 3;
+    s.dwelling.levels.linh_mach = 2;
+    const m = dwellingMods(s);
+    expect(m.cultivation).toBeCloseTo(0.18);
+    expect(m.stones).toBeCloseTo(0.16);
+    expect(cultivationBonus(s)).toBeCloseTo(1.18);
+    expect(stoneRate(s) / stoneRate(fresh())).toBeCloseTo(1.16);
+  });
+});
+
+describe('động phủ: linh điền', () => {
+  const herb = (s: GameState) => plantableHerbs(s)[0];
+
+  it('only herbs of the current band can be planted, in unlocked plots, with enough stones', () => {
+    const s = { ...fresh(), stones: 100 };
+    expect(plantableHerbs(s)).toEqual(['linh_thao', 'thanh_tam']);
+    expect(plantableHerbs({ ...s, level: 13 })).toEqual(['huyet_sam', 'ket_dan']); // Kim Đan: bậc 1
+    expect(canPlant(s, 0, 'linh_thao')).toBe(true);
+    expect(canPlant(s, 2, 'linh_thao')).toBe(false); // chỉ 2 ô
+    expect(canPlant(s, 0, 'huyet_sam')).toBe(false);
+    expect(canPlant({ ...s, stones: 1 }, 0, 'linh_thao')).toBe(false);
+  });
+
+  it('planting costs seeds; the crop is not harvestable until it is ripe', () => {
+    let s = { ...fresh(), stones: 100 };
+    s = plantHerb(s, 0, herb(s), T0, always(0));
+    expect(s.stones).toBe(100 - 12);
+    expect(s.dwelling.plots[0]?.herb).toBe('linh_thao');
+    expect(readyPlots(s, T0 + 60_000)).toBe(0);
+    expect(harvestPlot(s, 0, T0 + 60_000, always(0)).dwelling.plots[0]).not.toBeNull();
+    expect(canPlant(s, 0, herb(s))).toBe(false); // ô đã có cây
+  });
+
+  it('harvesting adds herbs (more at higher Linh Điền level) and frees the plot', () => {
+    let s = { ...fresh(), stones: 100 };
+    s = plantHerb(s, 0, herb(s), T0, always(0));
+    const ripe = T0 + growMs(s, 'linh_thao') + 1;
+    const h = harvestPlot(s, 0, ripe, always(0));
+    expect(h.dwelling.plots[0]).toBeNull();
+    expect(herbCount(h, 'linh_thao')).toBe(1); // rng 0: số thấp nhất, cấp 1 chưa có thưởng
+    expect(h.stats.harvested).toBe(1);
+    // Linh Điền cấp 10 có thưởng +1 thảo dược (rng 0 luôn trúng xác suất thưởng)
+    let high = { ...fresh(), stones: 100 };
+    high.dwelling.levels.linh_dien = 10;
+    high = plantHerb(high, 0, herb(high), T0, always(0));
+    expect(herbCount(harvestPlot(high, 0, T0 + growMs(high, 'linh_thao') + 1, always(0)), 'linh_thao')).toBe(2);
+  });
+
+  it('growth gets faster with Linh Điền level and slower for higher bands', () => {
+    const s = fresh();
+    const base = growMs(s, 'linh_thao');
+    expect(base).toBe(12 * 60 * 1000);
+    const l10 = { ...s, dwelling: { ...s.dwelling, levels: { ...s.dwelling.levels, linh_dien: 10 } } };
+    expect(growMs(l10, 'linh_thao')).toBeCloseTo(base * 0.64);
+    expect(growMs(s, 'huyet_sam')).toBeCloseTo(base * 1.25);
+    expect(growMs(s, 'thanh_tam')).toBeGreaterThan(growMs(s, 'linh_thao') * 3);
+  });
+
+  it('plantAll fills every free plot and harvestAll collects every ripe one', () => {
+    let s = { ...fresh(), stones: 1000 };
+    s.dwelling.levels.linh_dien = 6; // 5 ô
+    s = plantAll(s, 'linh_thao', T0, always(0));
+    expect(s.dwelling.plots.filter(Boolean)).toHaveLength(5);
+    expect(s.stones).toBe(1000 - 5 * 12);
+    s = harvestAll(s, T0 + 3600_000, always(0));
+    expect(s.dwelling.plots.filter(Boolean)).toHaveLength(0);
+    expect(herbCount(s, 'linh_thao')).toBeGreaterThanOrEqual(5);
+    expect(s.log[0].text).toContain('Thu hoạch linh điền');
+  });
+
+  it('auto garden harvests and replants every cycle, offline too', () => {
+    let s = { ...fresh(), stones: 1e5, auto: { ...fresh().auto, garden: true } };
+    s = plantAll(s, 'linh_thao', T0, always(0.5));
+    const { state } = offline(s, T0 + 3 * 3600_000, always(0.5));
+    // mỗi ô chín 15 lần trong 3 giờ (12 phút/vòng), 2 ô
+    expect(state.stats.harvested).toBeGreaterThanOrEqual(25);
+    expect(state.stats.planted).toBeGreaterThanOrEqual(28);
+    expect(state.dwelling.plots.filter(Boolean)).toHaveLength(2);
+    expect(state.stones).toBeLessThan(1e5 + 3 * 3600 * stoneRate(s));
+  });
+
+  it('without auto garden ripe crops just wait, and auto garden stops replanting when seeds are unaffordable', () => {
+    let s = { ...fresh(), stones: 100 };
+    s = plantAll(s, 'linh_thao', T0, always(0));
+    const idle = tick(s, T0 + 3600_000, always(0));
+    expect(idle.stats.harvested).toBe(0);
+    expect(readyPlots(idle, idle.lastTick)).toBe(2);
+    const broke = { ...s, stones: 0, auto: { ...s.auto, garden: true } };
+    broke.stats.harvested = 0;
+    const after = tick(broke, T0 + 15 * 60_000, always(0));
+    expect(after.stats.harvested).toBeGreaterThan(0);
+    expect(after.dwelling.plots.filter(Boolean).length).toBeLessThanOrEqual(2);
+  });
+
+  it('long absences do not lose growth time: timers are shifted with the offline cap', () => {
+    let s = { ...fresh(), stones: 1e5, auto: { ...fresh().auto, garden: true } };
+    s = plantAll(s, 'linh_thao', T0, always(0.5));
+    const { state } = offline(s, T0 + 30 * 3600_000, always(0.5));
+    // chỉ tính 12 giờ: tối đa 2 ô × 60 vòng, không phải 150 vòng
+    expect(state.stats.harvested).toBeGreaterThan(100);
+    expect(state.stats.harvested).toBeLessThan(2 * 60 * 3);
+  });
+
+  it('herbs can be sold for stones', () => {
+    let s = fresh();
+    s.dwelling.herbs.linh_thao = 10;
+    s = sellHerb(s, 'linh_thao', 4, T0, always(0));
+    expect(herbCount(s, 'linh_thao')).toBe(6);
+    expect(s.stones).toBe(fresh().stones + 4 * Math.round(12 * 0.6));
+    expect(sellHerb(s, 'linh_thao', 99, T0, always(0)).dwelling.herbs.linh_thao).toBe(0);
+    expect(HERBS.linh_thao.band).toBe(0);
+  });
+});
+
+describe('động phủ: đan phòng', () => {
+  const lab = (extra: Partial<GameState> = {}): GameState => {
+    const s = { ...fresh(), ...extra };
+    s.dwelling.levels.dan_phong = 1;
+    s.dwelling.herbs = { linh_thao: 40, thanh_tam: 20 };
+    return s;
+  };
+
+  it('needs the building and enough herbs of the current band, and respects the batch limit', () => {
+    expect(canStartJob(fresh(), 'tuKhi', 1)).toBe(false);
+    const s = lab();
+    expect(maxCraftable(s, 'tuKhi')).toBe(4); // 40/8=5 nhưng Đan Phòng cấp 1 tối đa 4 viên
+    expect(maxCraftable(s, 'phaCanh')).toBe(4); // 40/4=10, 20/3=6, trần 4
+    expect(canStartJob(s, 'tuKhi', 5)).toBe(false);
+    expect(canStartJob({ ...lab(), dwelling: { ...lab().dwelling, herbs: { linh_thao: 7 } } }, 'tuKhi', 1)).toBe(false);
+    expect(RECIPES.phaCanh.rare).toBe(3);
+  });
+
+  it('starting a job consumes herbs and blocks a second one', () => {
+    let s = startJob(lab(), 'phaCanh', 2, T0, always(0));
+    expect(herbCount(s, 'linh_thao')).toBe(40 - 8);
+    expect(herbCount(s, 'thanh_tam')).toBe(20 - 6);
+    expect(s.dwelling.job?.count).toBe(2);
+    expect(canStartJob(s, 'tuKhi', 1)).toBe(false);
+    s = startJob(s, 'tuKhi', 1, T0, always(0));
+    expect(s.dwelling.job?.recipe).toBe('phaCanh');
+  });
+
+  it('the pills are delivered when the job finishes, even offline, with quality from the roll', () => {
+    let s = startJob(lab(), 'tuKhi', 3, T0, always(0)); // rng 0 → mọi viên Thượng Phẩm
+    expect(s.pills.tuKhi3).toBe(0);
+    s = tick(s, T0 + 60_000, always(0));
+    expect(s.dwelling.job).not.toBeNull();
+    const done = offline(s, T0 + 3600_000, always(0)).state;
+    expect(done.dwelling.job).toBeNull();
+    expect(done.pills.tuKhi3).toBe(3);
+    expect(done.stats.crafted).toBe(3);
+    expect(done.stats.crafted3).toBe(3);
+    const low = offline(startJob(lab(), 'tuKhi', 3, T0, always(0.99)), T0 + 3600_000, always(0.99)).state;
+    expect(low.pills.tuKhi).toBe(3);
+    expect(low.pills.tuKhi3).toBe(0);
+    expect(low.log.find((l) => l.text.includes('Luyện xong'))?.text).toContain('Hạ 3, Trung 0, Thượng 0');
+  });
+
+  it('higher Đan Phòng levels craft faster and make better pills more often', () => {
+    const a = lab();
+    const b = lab();
+    b.dwelling.levels.dan_phong = 10;
+    expect(jobSeconds(b, 'tuKhi', 2)).toBeLessThan(jobSeconds(a, 'tuKhi', 2) * 0.6);
+    expect(maxCraftable({ ...b, dwelling: { ...b.dwelling, herbs: { linh_thao: 999 } } }, 'tuKhi')).toBe(13);
+    // cấp 10: Thượng 33.5%, Trung 51% → rng 0.5 rơi vào Trung Phẩm
+    const mid = startJob(b, 'tuKhi', 1, T0, always(0.5));
+    expect(offline(mid, T0 + 3600_000, always(0.5)).state.pills.tuKhi2).toBe(1);
+  });
+
+  it('Hồi Xuân Đan has a single grade', () => {
+    const done = offline(startJob(lab(), 'hoiXuan', 2, T0, always(0)), T0 + 3600_000, always(0)).state;
+    expect(done.pills.hoiXuan).toBe(2);
+  });
+});
+
+describe('đan phẩm chất', () => {
+  it('Phá Cảnh Đan: best grades first, bonuses add up, capped at 95% overall', () => {
+    const s = atFirstBottleneck();
+    s.pills = { ...s.pills, phaCanh: 2, phaCanh2: 1, phaCanh3: 1 };
+    expect(breakPillPlan(s, 3)).toEqual([
+      { id: 'phaCanh3', count: 1 },
+      { id: 'phaCanh2', count: 1 },
+      { id: 'phaCanh', count: 1 },
+    ]);
+    expect(breakPillBonus(s, 3)).toBeCloseTo(0.3 + 0.22 + 0.15);
+    expect(breakPillBonus(s, 1)).toBeCloseTo(0.3);
+    expect(breakthroughChance(s, 3)).toBeCloseTo(0.95); // 0.6 + 0.67 vượt trần
+  });
+
+  it('breakthrough consumes the best pills first', () => {
+    const s = atFirstBottleneck();
+    s.pills = { ...s.pills, phaCanh: 2, phaCanh3: 1 };
+    const after = breakthrough(s, 2, T0, always(0));
+    expect(after.pills.phaCanh3).toBe(0);
+    expect(after.pills.phaCanh).toBe(1);
+  });
+
+  it('Tụ Khí Đan gives more tu vi at higher grades; Phá Cảnh Đan cannot be eaten; crafted-only pills are not for sale', () => {
+    const base = { ...fresh(), level: 3 };
+    base.pills = { ...base.pills, tuKhi: 1, tuKhi3: 1, phaCanh2: 1 };
+    const t = (id: 'tuKhi' | 'tuKhi3') => totalCultivation(usePill(base, id, T0, always(0)).level, usePill(base, id, T0, always(0)).cultivation) - totalCultivation(base.level, base.cultivation);
+    expect(t('tuKhi3') / t('tuKhi')).toBeCloseTo(720 / 300, 3);
+    expect(canUsePill(base, 'phaCanh2', T0)).toBe(false);
+    expect(pillPrice(base, 'tuKhi3')).toBe(Infinity);
+    expect(buyPill({ ...base, stones: 1e9 }, 'phaCanh3', T0, always(0)).pills.phaCanh3).toBe(0);
+    expect(buyPill({ ...base, stones: 1e9 }, 'phaCanh', T0, always(0)).pills.phaCanh).toBe(1);
+    expect(pillPrice(base, 'tuKhi')).toBe(50 * 2 ** 0);
+  });
+});
+
+describe('động phủ: save', () => {
+  it('v7 saves gain a default dwelling, all pill keys, new stats and the garden switch', () => {
+    const v8 = fresh();
+    const v7: Record<string, unknown> = JSON.parse(serialize(v8));
+    for (const k of ['dwelling']) delete v7[k];
+    v7.version = 7;
+    v7.pills = { tuKhi: 2, phaCanh: 1, hoiXuan: 0 };
+    delete (v7.stats as Record<string, unknown>).planted;
+    delete (v7.auto as Record<string, unknown>).garden;
+    const s = deserialize(JSON.stringify(v7))!;
+    expect(s.version).toBe(8);
+    expect(s.dwelling.levels.linh_dien).toBe(1);
+    expect(s.pills.tuKhi).toBe(2);
+    expect(s.pills.phaCanh3).toBe(0);
+    expect(s.stats.planted).toBe(0);
+    expect(s.auto.garden).toBe(false);
   });
 });

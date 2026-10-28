@@ -1,6 +1,7 @@
 // Kiểu dữ liệu, tra cứu cảnh giới và các hàm tiện ích dùng chung cho toàn engine.
 
 import type { AffixId } from './gear';
+import type { DwellingState } from './dwelling';
 import type { NatalState } from './natal';
 import type { QuestState } from './quests';
 import type { SkillId } from './skills';
@@ -105,6 +106,8 @@ export interface AutoSettings {
   reclusion: boolean;
   /** Pháp bảo kém hơn nhặt được thì luyện hóa cho bản mệnh (ưu tiên hơn tự bán) */
   devour: boolean;
+  /** Linh điền: cây chín thì tự thu hoạch và gieo lại cùng loại */
+  garden: boolean;
   /** Bị thương thì tự dùng Hồi Xuân Đan */
   heal: boolean;
 }
@@ -116,10 +119,18 @@ export interface Stats {
   breakthroughFails: number;
   seclusions: number;
   itemsFound: number;
+  /** Động phủ */
+  planted: number;
+  harvested: number;
+  crafted: number;
+  /** Số đan Thượng Phẩm đã luyện */
+  crafted3: number;
+  /** Số Phá Cảnh Đan đã luyện */
+  craftedBreak: number;
 }
 
 export interface GameState {
-  version: 7;
+  version: 8;
   name: string;
   root: SpiritRoot;
   /** Chỉ số tầng đã "trải phẳng" qua mọi cảnh giới */
@@ -167,6 +178,8 @@ export interface GameState {
   natal: NatalState | null;
   // --- nhiệm vụ chủ tuyến ---
   quests: QuestState;
+  // --- động phủ ---
+  dwelling: DwellingState;
 }
 
 // ---------- Tầng / cảnh giới ----------

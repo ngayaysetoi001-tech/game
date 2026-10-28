@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { PillId, Slot } from '../../engine/data';
+import { PILLS, type PillFamily, type PillId, type Slot } from '../../engine/data';
 import { INK, TIER_COLORS } from './palette';
 import { Art } from './registry';
 
@@ -60,20 +60,25 @@ export function ItemIcon({ slot, tier }: { slot: Slot; tier: number }) {
   );
 }
 
-const PILL_COLORS: Record<PillId, string> = {
+const PILL_COLORS: Record<PillFamily, string> = {
   tuKhi: '#7fcf8a',
   phaCanh: '#f0c35a',
   hoiXuan: '#f08aa8',
 };
 
+/** Đan dược: màu theo loại, số chấm ở đáy = phẩm (Hạ không chấm, Trung 1 chấm, Thượng 2 chấm) */
 export function PillIcon({ id }: { id: PillId }) {
-  const c = PILL_COLORS[id];
+  const def = PILLS[id];
+  const c = PILL_COLORS[def.family];
   return (
     <Art k={`pills/${id}`} alt="" className="art-icon">
-      <Frame color={c} glow={id === 'phaCanh'}>
-        <circle cx={20} cy={21} r={10} fill={c} />
-        <circle cx={20} cy={21} r={10} fill="none" stroke={INK.dark} strokeOpacity={0.4} strokeDasharray="2 3" />
-        <ellipse cx={16.5} cy={17} rx={3.5} ry={2.2} fill="#fff" opacity={0.7} />
+      <Frame color={c} glow={def.family === 'phaCanh' || def.grade >= 1}>
+        <circle cx={20} cy={20} r={10} fill={c} />
+        <circle cx={20} cy={20} r={10} fill="none" stroke={INK.dark} strokeOpacity={0.4} strokeDasharray="2 3" />
+        <ellipse cx={16.5} cy={16} rx={3.5} ry={2.2} fill="#fff" opacity={0.7} />
+        {Array.from({ length: def.grade }, (_, i) => (
+          <circle key={i} cx={20 - (def.grade - 1) * 3 + i * 6} cy={34} r={1.8} fill={c} />
+        ))}
       </Frame>
     </Art>
   );

@@ -405,8 +405,8 @@ button.link {
   bottom: 0;
   z-index: 5;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
   max-width: 560px;
   margin: 0 auto;
   padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px))
@@ -416,8 +416,8 @@ button.link {
 }
 .tabbar button {
   position: relative;
-  padding: 10px 2px;
-  font-size: 14px;
+  padding: 10px 1px;
+  font-size: 13px;
   border-color: transparent;
   background: transparent;
   color: var(--muted);
@@ -1094,4 +1094,122 @@ button.link {
 .quest-list .mark {
   width: 14px;
   flex-shrink: 0;
+}
+
+/* Động phủ */
+.dwelling-banner {
+  aspect-ratio: 5 / 2;
+}
+.dwelling-banner .banner-text {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 10px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dwelling-banner h2 {
+  margin: 0;
+  color: #1b1815;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.dwelling-banner .reward-chip {
+  background: rgba(27, 24, 21, 0.78);
+}
+.shop-item.building .shop-actions button {
+  white-space: normal;
+}
+.herb-pick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.herb-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  padding: 6px 8px;
+}
+.herb-opt.picked {
+  border-color: var(--gold);
+  background: #2f2717;
+}
+.herb-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.plots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+}
+.plot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 132px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #19150f;
+  text-align: center;
+}
+.plot > .art-icon,
+.plot > svg {
+  flex-shrink: 0;
+}
+.plot .bar {
+  width: 100%;
+}
+.plot.locked {
+  opacity: 0.45;
+  border-style: dashed;
+}
+.plot.ready {
+  border-color: var(--good);
+  box-shadow: 0 0 10px rgba(127, 207, 138, 0.25);
+}
+.plot button {
+  font-size: 13px;
+  padding: 4px 8px;
+}
+.recipe {
+  display: flex;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.recipe-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.stepper {
+  align-items: center;
+}
+.stock-h {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.stock-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.stock-main {
+  flex: 1;
+  min-width: 0;
+}
+.stock-row .item-actions {
+  flex-direction: column;
 }

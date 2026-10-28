@@ -6,7 +6,7 @@ import { SLOTS } from './data';
 import { itemPlus, setCounts } from './combat';
 import { type GameState, levelInfo } from './state';
 
-export type TabId = 'cultivate' | 'dungeon' | 'character' | 'shop';
+export type TabId = 'cultivate' | 'dungeon' | 'dwelling' | 'character' | 'shop';
 export type CharSub = 'overview' | 'technique' | 'skills' | 'gear';
 
 /** Nơi dẫn người chơi tới để làm nhiệm vụ / gợi ý */
@@ -89,6 +89,23 @@ export const QUESTS: QuestDef[] = [
     reward: { fragments: 3 },
   },
   {
+    id: 'gieo_hat',
+    title: 'Gieo hạt giống',
+    desc: 'Gieo cây đầu tiên ở Linh Điền (tab Động Phủ). Cây chín cả khi bạn vắng mặt.',
+    go: { tab: 'dwelling' },
+    done: (s) => s.stats.planted >= 1,
+    reward: { stones: 60 },
+  },
+  {
+    id: 'thu_hoach',
+    title: 'Thu hoạch',
+    desc: 'Thu hoạch 10 thảo dược. Bật Tự thu hoạch để cây tự chín rồi tự gieo lại.',
+    go: { tab: 'dwelling' },
+    done: (s) => s.stats.harvested >= 10,
+    progress: (s) => ratio(s.stats.harvested, 10),
+    reward: { stones: 100 },
+  },
+  {
     id: 'tang_3',
     title: 'Cửa ải Trúc Cơ',
     desc: 'Vượt Bí Cảnh tầng 3, điều kiện để đột phá Trúc Cơ.',
@@ -130,6 +147,22 @@ export const QUESTS: QuestDef[] = [
     reward: { stones: 150, fragments: 3 },
   },
   {
+    id: 'xay_dan_phong',
+    title: 'Đan Phòng',
+    desc: 'Xây Đan Phòng để luyện đan từ thảo dược.',
+    go: { tab: 'dwelling' },
+    done: (s) => s.dwelling.levels.dan_phong >= 1,
+    reward: { stones: 150 },
+  },
+  {
+    id: 'luyen_dan',
+    title: 'Viên đan đầu tiên',
+    desc: 'Luyện xong một viên đan.',
+    go: { tab: 'dwelling' },
+    done: (s) => s.stats.crafted >= 1,
+    reward: { fragments: 3 },
+  },
+  {
     id: 'nhat_do',
     title: 'Nhặt nhạnh',
     desc: 'Nhặt được 15 pháp bảo (lịch luyện treo máy ở tầng đã vượt rất hiệu quả).',
@@ -157,6 +190,14 @@ export const QUESTS: QuestDef[] = [
     reward: { fragments: 6, pills: { phaCanh: 1 } },
   },
   {
+    id: 'pha_canh_dan',
+    title: 'Tự tay luyện Phá Cảnh Đan',
+    desc: 'Luyện một viên Phá Cảnh Đan (cần cả thảo dược hiếm).',
+    go: { tab: 'dwelling' },
+    done: (s) => s.stats.craftedBreak >= 1,
+    reward: { stones: 300 },
+  },
+  {
     id: 'kim_dan',
     title: 'Kết đan',
     desc: 'Đột phá lên Kim Đan.',
@@ -173,12 +214,28 @@ export const QUESTS: QuestDef[] = [
     reward: { stones: 400 },
   },
   {
+    id: 'tu_linh_tran',
+    title: 'Tụ Linh Trận',
+    desc: 'Xây Tụ Linh Trận để tu luyện nhanh hơn mọi lúc.',
+    go: { tab: 'dwelling' },
+    done: (s) => s.dwelling.levels.tu_linh >= 1,
+    reward: { stones: 200 },
+  },
+  {
     id: 'hai_phu',
     title: 'Hai công pháp phụ',
     desc: 'Mang theo 2 công pháp phụ.',
     go: { tab: 'character', sub: 'technique' },
     done: (s) => s.subTechs.length >= 2,
     progress: (s) => ratio(s.subTechs.length, 2),
+    reward: { fragments: 6 },
+  },
+  {
+    id: 'dan_thuong_pham',
+    title: 'Thượng Phẩm',
+    desc: 'Luyện được một viên đan Thượng Phẩm (nâng Đan Phòng để dễ ra phẩm cao).',
+    go: { tab: 'dwelling' },
+    done: (s) => s.stats.crafted3 >= 1,
     reward: { fragments: 6 },
   },
   {
@@ -198,6 +255,15 @@ export const QUESTS: QuestDef[] = [
     done: (s) => s.floor >= 10,
     progress: (s) => ratio(s.floor, 10),
     reward: { stones: 500, pills: { phaCanh: 1 } },
+  },
+  {
+    id: 'dong_phu_hung_thinh',
+    title: 'Động phủ hưng thịnh',
+    desc: 'Nâng tổng cấp các công trình động phủ lên 12.',
+    go: { tab: 'dwelling' },
+    done: (s) => Object.values(s.dwelling.levels).reduce((a, b) => a + b, 0) >= 12,
+    progress: (s) => ratio(Object.values(s.dwelling.levels).reduce((a, b) => a + b, 0), 12),
+    reward: { stones: 500 },
   },
   {
     id: 'nguyen_anh',
@@ -264,6 +330,9 @@ export const QUESTS: QuestDef[] = [
 /** Cảnh giới mà nhiệm vụ nhắm tới (chỉ số REALMS), quyết định hệ số thưởng linh thạch; mặc định 0 */
 export const QUEST_TIER: Record<string, number> = {
   truc_co: 1,
+  pha_canh_dan: 1,
+  tu_linh_tran: 1,
+  dong_phu_hung_thinh: 3,
   huong_tu: 1,
   vo_ky: 1,
   ban_menh: 1,

@@ -3,6 +3,7 @@ import { MAX_BREAK_PILLS, PILLS, REALMS, SECLUSIONS } from '../../engine/data';
 import {
   MAX_LEVEL,
   breakthrough,
+  breakPillTotal,
   breakthroughChance,
   canBreakthrough,
   cancelSeclusion,
@@ -89,7 +90,8 @@ function BreakthroughPanel({ state: s, act, goTo }: TabProps) {
   if (gateMsg) return gateMsg;
   if (s.seclusion) return <p className="notice">Đang bế quan, xuất quan rồi mới đột phá {next} được.</p>;
 
-  const usable = Math.min(pills, s.pills.phaCanh, MAX_BREAK_PILLS);
+  const total = breakPillTotal(s);
+  const usable = Math.min(pills, total, MAX_BREAK_PILLS);
   const chance = breakthroughChance(s, usable);
   return (
     <div className="breakthrough">
@@ -101,12 +103,12 @@ function BreakthroughPanel({ state: s, act, goTo }: TabProps) {
         <b>{usable}</b>
         <button
           className="small-btn"
-          disabled={usable >= Math.min(s.pills.phaCanh, MAX_BREAK_PILLS)}
+          disabled={usable >= Math.min(total, MAX_BREAK_PILLS)}
           onClick={() => setPills(usable + 1)}
         >
           +
         </button>
-        <span className="muted small">(có {s.pills.phaCanh})</span>
+        <span className="muted small">(có {total}, phẩm cao dùng trước)</span>
       </div>
       <button
         className="primary big"
