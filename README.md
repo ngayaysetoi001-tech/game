@@ -53,6 +53,16 @@ npm run build    # bản build tĩnh ở dist/, deploy được lên GitHub Page
 - **Tự dùng Hồi Xuân Đan** khi bị thương (tab Phường Thị).
 - Thông báo nổi cho sự kiện quan trọng và khi có thể đột phá; thẻ **Thống Kê**; popup offline tóm tắt cả tầng vượt, trận đấu, số lần bế quan.
 
+### Võ kỹ (đợt A)
+
+- **15 võ kỹ**: 4 cho mỗi hướng tu + 3 dùng chung. Hiệu ứng: sát thương lớn, nhiều đòn, bạo kích, hút máu, choáng, thiêu đốt,
+  giảm tốc, phá giáp, tăng công, né tránh, khiên, hồi máu, giải hiệu ứng xấu.
+- **3 ô võ kỹ** mở ở Trúc Cơ / Kim Đan / Nguyên Anh. Trong trận tự dùng chiêu đầu tiên đã hồi chiêu theo thứ tự ưu tiên người chơi xếp.
+- Học: chiêu đầu khi chọn hướng tu, **bí tịch rơi từ thủ lĩnh** (tầng 5, 10, 15, 20, 25), Tàng Kinh Các ở Phường Thị. Nâng cấp tới cấp 10 bằng tàn quyển + linh thạch.
+- **Quái từ tầng 5 có chiêu thức**, thủ lĩnh có 2 chiêu; xem trước chiêu của đối thủ trong tab Bí Cảnh. Thủ lĩnh tầng 30/35/40 rơi gói tàn quyển.
+- Sân đấu hô tên chiêu, hiện hồi máu, khiên, né, choáng, thiêu đốt. Tab Nhân Vật chia mục con: Tổng quan / Công Pháp / Võ Kỹ / Pháp Bảo.
+- Save cũ tự nâng lên v4 và được trao lại các võ kỹ tương ứng với những thủ lĩnh đã hạ.
+
 Nhịp độ dự kiến với linh căn trung bình (không bế quan): Luyện Khí ~10 phút, Trúc Cơ ~30 phút,
 Kim Đan ~1.5 giờ, Nguyên Anh ~4 giờ… hết Độ Kiếp ~10 ngày.
 

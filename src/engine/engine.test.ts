@@ -37,6 +37,12 @@ import {
   stopFarming,
   upgradeTech,
   applyOffline as offline,
+  buySkill,
+  equippedSkills,
+  moveSkill,
+  toggleSkill,
+  upgradeSkill,
+  type Fighter,
   autoClimbStatus,
   setAuto,
   type GameState,
@@ -337,7 +343,7 @@ describe('migration', () => {
     for (const k of ['path', 'tech', 'gear', 'bag', 'fragments', 'floor', 'farming', 'nextItemId', 'lastBattle']) delete v1[k];
     v1.version = 1;
     const s = deserialize(JSON.stringify(v1))!;
-    expect(s.version).toBe(3);
+    expect(s.version).toBe(4);
     expect(s.floor).toBe(REALMS[1].gateFloor);
     expect(s.gear.weapon).toBeNull();
     expect(s.auto.climb).toBe(false);
@@ -360,10 +366,16 @@ describe('balance guards', () => {
     expect(wins(mk(8, 2), 3)).toBe(true);
   });
 
-  it('the Kim Đan gate boss needs gear plus techniques', () => {
+  it('the Kim Đan gate boss needs more than gear: techniques and a võ kỹ get it done', () => {
     expect(wins(mk(12, 0), 5)).toBe(false);
     expect(wins(mk(12, 4, 1), 5)).toBe(false);
-    const ready = { ...mk(12, 4, 1), path: 'kiem' as const, tech: { base: 3, path: 2 } };
+    const ready: GameState = {
+      ...mk(12, 4, 1),
+      path: 'kiem',
+      tech: { base: 5, path: 4 },
+      skills: { kiem_pha_thien: 3 },
+      loadout: ['kiem_pha_thien'],
+    };
     expect(wins(ready, 5)).toBe(true);
   });
 });
@@ -431,5 +443,103 @@ describe('automation', () => {
     s = breakthrough(s, 0, T0, always(0.99));
     expect(s.injuryUntil).toBe(0);
     expect(s.pills.hoiXuan).toBe(0);
+  });
+});
+
+describe('skills', () => {
+  const kiemAt = (level: number, floor = 0): GameState =>
+    choosePath({ ...fresh(), level: Math.max(level, PATH_UNLOCK_LEVEL), floor }, 'kiem', T0, always(0.5));
+
+  it('choosing a path teaches its first skill and equips it', () => {
+    const s = kiemAt(PATH_UNLOCK_LEVEL);
+    expect(s.skills.kiem_pha_thien).toBe(1);
+    expect(s.loadout).toEqual(['kiem_pha_thien']);
+  });
+
+  it('skills already earned from bosses are granted on path choice', () => {
+    const s = kiemAt(PATH_UNLOCK_LEVEL, 15);
+    expect(Object.keys(s.skills).sort()).toEqual(['chung_thanh_tam', 'kiem_pha_thien', 'kiem_phan_quang', 'kiem_y'].sort());
+    expect(s.loadout).toHaveLength(3);
+  });
+
+  it('beating a boss drops its bí tịch', () => {
+    let s = kiemAt(30, 4);
+    s.loadout = [];
+    s = challengeFloor(s, T0, always(0.5));
+    expect(s.floor).toBe(5);
+    expect(s.skills.kiem_phan_quang).toBe(1);
+  });
+
+  it('only as many skills as unlocked slots take effect', () => {
+    const s = kiemAt(PATH_UNLOCK_LEVEL, 15); // Trúc Cơ: 1 ô
+    expect(equippedSkills(s)).toHaveLength(1);
+    expect(equippedSkills({ ...s, level: 17 })).toHaveLength(3); // Nguyên Anh
+  });
+
+  it('loadout can be reordered and toggled', () => {
+    let s = kiemAt(PATH_UNLOCK_LEVEL, 15);
+    const [a, b] = s.loadout;
+    s = moveSkill(s, b, -1, T0, always(0));
+    expect(s.loadout.slice(0, 2)).toEqual([b, a]);
+    s = toggleSkill(s, a, T0, always(0));
+    expect(s.loadout).not.toContain(a);
+    s = toggleSkill(s, a, T0, always(0));
+    expect(s.loadout[s.loadout.length - 1]).toBe(a);
+  });
+
+  it('shop skills need the realm and stones; upgrades cost fragments', () => {
+    let s = { ...fresh(), stones: 10_000 };
+    expect(buySkill(s, 'chung_lang_ba', T0, always(0)).skills.chung_lang_ba).toBeUndefined();
+    s = buySkill({ ...s, level: PATH_UNLOCK_LEVEL }, 'chung_lang_ba', T0, always(0));
+    expect(s.skills.chung_lang_ba).toBe(1);
+    s = upgradeSkill({ ...s, fragments: 2 }, 'chung_lang_ba', T0, always(0));
+    expect(s.skills.chung_lang_ba).toBe(2);
+    expect(s.fragments).toBe(0);
+  });
+
+  it('v3 saves get the skills their cleared bosses would have dropped', () => {
+    const v4 = choosePath({ ...fresh(), level: 12, floor: 10 }, 'the', T0, always(0));
+    const v3: Record<string, unknown> = JSON.parse(serialize(v4));
+    delete v3.skills;
+    delete v3.loadout;
+    v3.version = 3;
+    const s = deserialize(JSON.stringify(v3))!;
+    expect(s.skills).toEqual({ the_ba_vuong: 1, the_kim_cuong: 1, chung_thanh_tam: 1 });
+  });
+
+  describe('battle effects', () => {
+    const dummy = (over: Partial<Fighter> = {}): Fighter => ({
+      name: 'X', hp: 1000, atk: 50, def: 10, spd: 100, crit: 0, skills: [], ...over,
+    });
+
+    it('heals when low and shields absorb damage', () => {
+      const healer = dummy({ name: 'H', hp: 1000, skills: [{ id: 'the_huyet_khi', level: 1 }] });
+      const r = simulateBattle(healer, dummy({ atk: 120 }), always(0.5));
+      expect(r.events.some((e) => e.fx === 'heal' && (e.amount ?? 0) > 0)).toBe(true);
+      const shielded = dummy({ skills: [{ id: 'the_kim_cuong', level: 1 }] });
+      const r2 = simulateBattle(shielded, dummy(), always(0.5));
+      const first = r2.events.find((e) => e.fx === 'shield');
+      expect(first?.amount).toBeCloseTo(300);
+    });
+
+    it('a guaranteed stun makes the enemy lose its next turn', () => {
+      const r = simulateBattle(dummy({ skills: [{ id: 'the_ba_vuong', level: 1 }] }), dummy(), always(0));
+      expect(r.events.some((e) => e.fx === 'stun' && e.by === 'e')).toBe(true);
+    });
+
+    it('burn ticks and cleanse removes it', () => {
+      const burner = dummy({ skills: [{ id: 'phap_liet_hoa', level: 1 }] });
+      const r = simulateBattle(burner, dummy(), always(0.5));
+      expect(r.events.some((e) => e.fx === 'burn' && e.target === 'e')).toBe(true);
+      const r2 = simulateBattle(burner, dummy({ skills: [{ id: 'chung_thanh_tam', level: 1 }] }), always(0.5));
+      expect(r2.events.some((e) => e.fx === 'cleanse' && e.by === 'e')).toBe(true);
+    });
+
+    it('skills make an otherwise even fight winnable', () => {
+      const even = simulateBattle(dummy({ spd: 99 }), dummy(), always(0.5));
+      expect(even.win).toBe(false);
+      const skilled = simulateBattle(dummy({ spd: 99, skills: [{ id: 'kiem_pha_thien', level: 1 }] }), dummy(), always(0.5));
+      expect(skilled.win).toBe(true);
+    });
   });
 });

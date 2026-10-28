@@ -8,6 +8,7 @@ import {
   floorStones,
 } from '../../engine/data';
 import {
+  SKILLS,
   autoClimbStatus,
   canChallenge,
   challengeFloor,
@@ -79,6 +80,16 @@ export default function DungeonTab(props: TabProps) {
                   <b>{Math.round(chance * 100)}%</b>
                 </div>
               </div>
+              {enemy.skills.length > 0 && (
+                <div className="small">
+                  Chiêu thức:{' '}
+                  {enemy.skills.map((sk) => (
+                    <span key={sk.id} className="tag bad">
+                      {SKILLS[sk.id].name} {sk.level}
+                    </span>
+                  ))}
+                </div>
+              )}
               <table className="versus">
                 <thead>
                   <tr>

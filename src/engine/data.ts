@@ -152,12 +152,12 @@ export const INJURY_COMBAT_MULT = 0.8;
 export const DEFEAT_INJURY_SECONDS = 120;
 export const CRIT_DAMAGE = 1.8;
 /** Quá số lượt này mà chưa phân thắng bại thì tính là thua */
-export const MAX_BATTLE_ACTIONS = 60;
+export const MAX_BATTLE_ACTIONS = 150;
 
 // --- Bí cảnh ---
 export const MAX_FLOOR = 40;
 export const BOSS_EVERY = 5;
-export const BOSS_MULT = { hp: 3, atk: 1.25, def: 1.2 };
+export const BOSS_MULT = { hp: 3, atk: 1.15, def: 1.2 };
 
 /** "Cấp tương đương" của quái ở tầng f, để so với cấp người chơi */
 /**
@@ -276,7 +276,7 @@ export const PATHS: Record<PathId, PathDef> = {
     technique: 'Kim Cương Bất Hoại Thể',
     desc: 'Khí huyết và phòng thủ dày. Bị thương nhẹ hơn, đột phá hỏng chỉ mất 15% tu vi.',
     elements: ['Thổ', 'Băng'],
-    perLevel: { hp: 0.1, def: 0.08 },
+    perLevel: { hp: 0.1, def: 0.08, atk: 0.03 },
     baseCrit: 0.05,
     spd: 0,
     injuryMult: 0.5,

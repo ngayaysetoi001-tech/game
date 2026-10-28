@@ -1,5 +1,6 @@
 // Kiểu dữ liệu, tra cứu cảnh giới và các hàm tiện ích dùng chung cho toàn engine.
 
+import type { SkillId } from './skills';
 import {
   BASIC_ELEMENTS,
   type Element,
@@ -53,8 +54,15 @@ export interface Farming {
 export interface BattleEvent {
   /** 'p' = người chơi ra đòn, 'e' = đối thủ ra đòn */
   by: 'p' | 'e';
+  /** Bên chịu tác dụng; save cũ không có (mặc định là bên kia) */
+  target?: 'p' | 'e';
   dmg: number;
   crit: boolean;
+  /** Tên võ kỹ nếu đòn này là chiêu thức */
+  skill?: string;
+  fx?: 'hit' | 'miss' | 'burn' | 'stun' | 'heal' | 'shield' | 'buff' | 'cleanse';
+  /** Lượng hồi máu / khiên */
+  amount?: number;
   /** Khí huyết còn lại của hai bên sau đòn này */
   hpP: number;
   hpE: number;
@@ -96,7 +104,7 @@ export interface Stats {
 }
 
 export interface GameState {
-  version: 3;
+  version: 4;
   name: string;
   root: SpiritRoot;
   /** Chỉ số tầng đã "trải phẳng" qua mọi cảnh giới */
@@ -129,6 +137,11 @@ export interface GameState {
   climbBlockedPower: number;
   /** Thời điểm (ms) lần tự khiêu chiến kế tiếp */
   nextClimbAt: number;
+  // --- võ kỹ ---
+  /** Võ kỹ đã học và cấp */
+  skills: Partial<Record<SkillId, number>>;
+  /** Võ kỹ mang theo, theo thứ tự ưu tiên */
+  loadout: SkillId[];
 }
 
 // ---------- Tầng / cảnh giới ----------

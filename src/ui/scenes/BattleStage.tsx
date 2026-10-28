@@ -76,9 +76,17 @@ export default function BattleStage({ s, onPlaying }: { s: GameState; onPlaying:
 
   const playerCls = ['fighter', 'hero'];
   const enemyCls = ['fighter', 'foe'];
+  const cls = (side: 'p' | 'e') => (side === 'p' ? playerCls : enemyCls);
+  // Save cũ không có target/fx: coi như đòn đánh vào bên kia
+  const fx = ev?.fx ?? 'hit';
+  const target = ev ? (ev.target ?? (ev.by === 'p' ? 'e' : 'p')) : 'e';
   if (ev) {
-    (ev.by === 'p' ? playerCls : enemyCls).push('lunge');
-    (ev.by === 'p' ? enemyCls : playerCls).push(ev.crit ? 'hit crit' : 'hit');
+    if (fx === 'hit' || fx === 'miss') cls(ev.by).push('lunge');
+    if (fx === 'hit') cls(target).push(ev.crit ? 'hit crit' : 'hit');
+    if (fx === 'miss') cls(target).push('dodge');
+    if (fx === 'burn') cls(target).push('hit burn');
+    if (fx === 'stun') cls(target).push('stunned');
+    if (fx === 'heal' || fx === 'shield' || fx === 'buff' || fx === 'cleanse') cls(ev.by).push(`cast cast-${fx}`);
   }
   if (phase.kind === 'done' && showing) (showing.win ? enemyCls : playerCls).push('defeated');
 
@@ -105,8 +113,24 @@ export default function BattleStage({ s, onPlaying }: { s: GameState; onPlaying:
       </div>
 
       {ev && (
-        <div key={view!.key} className={`dmg ${ev.by === 'p' ? 'on-enemy' : 'on-player'} ${ev.crit ? 'crit' : ''}`}>
-          {ev.crit && <small>Bạo kích </small>}−{formatNumber(ev.dmg)}
+        <div key={view!.key} className={`dmg ${target === 'e' ? 'on-enemy' : 'on-player'} fx-${fx} ${ev.crit ? 'crit' : ''}`}>
+          {fx === 'hit' && (
+            <>
+              {ev.crit && <small>Bạo kích </small>}−{formatNumber(ev.dmg)}
+            </>
+          )}
+          {fx === 'burn' && <>−{formatNumber(ev.dmg)}</>}
+          {fx === 'miss' && 'Né!'}
+          {fx === 'stun' && 'Choáng'}
+          {fx === 'heal' && <>+{formatNumber(ev.amount ?? 0)}</>}
+          {fx === 'shield' && <>Khiên {formatNumber(ev.amount ?? 0)}</>}
+          {fx === 'buff' && 'Tăng lực'}
+          {fx === 'cleanse' && 'Thanh tâm'}
+        </div>
+      )}
+      {view?.shout && (
+        <div key={`s-${view.key}`} className={`skill-shout ${view.shout.side === 'p' ? 'left' : 'right'}`}>
+          {view.shout.name}
         </div>
       )}
 
@@ -126,7 +150,13 @@ function frameOf(b: BattleReport, phase: Phase) {
   const events = b.events!;
   const i = phase.kind === 'play' ? phase.step : events.length - 1;
   const e = events[i];
-  return { hpP: e.hpP, hpE: e.hpE, event: phase.kind === 'play' ? e : undefined, key: `${b.time}-${i}` };
+  const prev = events[i - 1];
+  // Hô tên chiêu ở đòn đầu tiên của mỗi lần thi triển
+  const shout =
+    phase.kind === 'play' && e.skill && !(prev && prev.skill === e.skill && prev.by === e.by)
+      ? { name: e.skill, side: e.by }
+      : undefined;
+  return { hpP: e.hpP, hpE: e.hpE, event: phase.kind === 'play' ? e : undefined, key: `${b.time}-${i}`, shout };
 }
 
 function HpBar({ label, ratio, side }: { label: string; ratio: number; side: 'left' | 'right' }) {

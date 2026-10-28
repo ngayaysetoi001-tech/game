@@ -40,6 +40,15 @@ import {
   techCost,
 } from './data';
 import {
+  BOSS_FRAGMENT_BUNDLES,
+  PLAYER_SKILLS,
+  SKILLS,
+  SKILL_MAX_LEVEL,
+  type SkillId,
+  skillCost,
+  skillSlots,
+} from './skills';
+import {
   combatPower,
   cultivationBonus,
   enemyFor,
@@ -74,6 +83,7 @@ import {
 
 export * from './state';
 export * from './combat';
+export * from './skills';
 
 // ---------- Tốc độ ----------
 
@@ -120,7 +130,7 @@ function emptyStats(): Stats {
 
 export function newGame(name: string, root: SpiritRoot, now: number): GameState {
   const s: GameState = {
-    version: 3,
+    version: 4,
     name: name.trim() || 'Vô Danh',
     root,
     level: 0,
@@ -146,6 +156,8 @@ export function newGame(name: string, root: SpiritRoot, now: number): GameState 
     stats: emptyStats(),
     climbBlockedPower: 0,
     nextClimbAt: now,
+    skills: {},
+    loadout: [],
   };
   addLog(s, now, `${s.name} bước lên con đường tu tiên với ${rootName(root)} (${root.elements.join(', ')}).`, 'good');
   return s;
@@ -490,6 +502,11 @@ function fight(s: GameState, now: number, rng: Rng, auto: boolean) {
     const it = newItem(s, floor, boss, rng);
     const result = addItem(s, it);
     s.stats.battlesWon++;
+    if (boss) {
+      const bundle = BOSS_FRAGMENT_BUNDLES[floor] ?? 0;
+      s.fragments += bundle;
+      if (bundle) addLog(s, now, `${enemy.name} để lại ${bundle} trang tàn quyển công pháp.`, 'good');
+    }
     s.climbBlockedPower = 0;
     addLog(
       s,
@@ -497,6 +514,7 @@ function fight(s: GameState, now: number, rng: Rng, auto: boolean) {
       `${auto ? '[Tự động] ' : ''}Vượt tầng ${floor} ${zoneOf(floor).name}, hạ ${enemy.name}. Nhận ${formatNumber(stones)} linh thạch, ${fragments} tàn quyển, ${TIERS[it.tier].name} ${itemName(it)}${STASH_NOTE[result]}.`,
       'good',
     );
+    if (boss) grantEarnedSkills(s, now);
   } else {
     s.stats.battlesLost++;
     // Không thử lại cho tới khi mạnh hơn lúc thua
@@ -624,6 +642,7 @@ export function choosePath(prev: GameState, path: PathId, now: number, rng: Rng)
   s.path = path;
   s.tech.path = 1;
   addLog(s, now, `Chọn con đường ${PATHS[path].name}, bắt đầu tu luyện ${PATHS[path].technique}.`, 'good');
+  grantEarnedSkills(s, now);
   return s;
 }
 
@@ -653,6 +672,91 @@ export function upgradeTech(prev: GameState, kind: TechKind, now: number, rng: R
   s.tech[kind]++;
   const name = kind === 'base' ? BASE_TECH.name : PATHS[s.path!].technique;
   addLog(s, now, `${name} đạt tầng ${s.tech[kind]}.`);
+  return s;
+}
+
+// ---------- Võ kỹ ----------
+
+/** Võ kỹ đáng lẽ đã có: của hướng tu, hoặc bí tịch từ thủ lĩnh đã hạ */
+function earned(s: GameState, id: SkillId): boolean {
+  const def = SKILLS[id];
+  if (def.path && def.path !== s.path) return false;
+  if (def.source.kind === 'path') return true;
+  if (def.source.kind === 'boss') return s.floor >= def.source.floor;
+  return false;
+}
+
+/** Học mọi võ kỹ đã đủ điều kiện mà chưa học (sau khi hạ thủ lĩnh, chọn hướng tu, nâng save) */
+function grantEarnedSkills(s: GameState, time: number) {
+  for (const def of PLAYER_SKILLS) {
+    if (s.skills[def.id] || !earned(s, def.id)) continue;
+    learn(s, def.id, time, def.source.kind === 'boss' ? 'Thu được bí tịch' : 'Lĩnh ngộ');
+  }
+}
+
+function learn(s: GameState, id: SkillId, time: number, how: string) {
+  s.skills[id] = 1;
+  if (s.loadout.length < 3) s.loadout.push(id);
+  addLog(s, time, `${how} võ kỹ 【${SKILLS[id].name}】.`, 'good');
+}
+
+export function skillSlotCount(s: GameState): number {
+  return skillSlots(realmOf(s));
+}
+
+export function canLearnFromShop(s: GameState, id: SkillId): boolean {
+  const src = SKILLS[id].source;
+  return src.kind === 'shop' && !s.skills[id] && realmOf(s) >= src.realm && s.stones >= src.price;
+}
+
+export function buySkill(prev: GameState, id: SkillId, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (!canLearnFromShop(s, id)) return s;
+  const src = SKILLS[id].source as { price: number };
+  s.stones -= src.price;
+  learn(s, id, now, 'Mua bí tịch, học được');
+  return s;
+}
+
+export function skillUpgradeCost(s: GameState, id: SkillId) {
+  return skillCost(s.skills[id] ?? 1, realmOf(s));
+}
+
+export function canUpgradeSkill(s: GameState, id: SkillId): boolean {
+  const lv = s.skills[id] ?? 0;
+  if (lv <= 0 || lv >= SKILL_MAX_LEVEL) return false;
+  const cost = skillUpgradeCost(s, id);
+  return s.fragments >= cost.fragments && s.stones >= cost.stones;
+}
+
+export function upgradeSkill(prev: GameState, id: SkillId, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (!canUpgradeSkill(s, id)) return s;
+  const cost = skillUpgradeCost(s, id);
+  s.fragments -= cost.fragments;
+  s.stones -= cost.stones;
+  s.skills[id] = (s.skills[id] ?? 1) + 1;
+  addLog(s, now, `【${SKILLS[id].name}】 đạt cấp ${s.skills[id]}.`);
+  return s;
+}
+
+/** Mang võ kỹ vào ô cuối, hoặc cất ra; tối đa 3 (ô chưa mở thì chưa có tác dụng) */
+export function toggleSkill(prev: GameState, id: SkillId, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (!s.skills[id]) return s;
+  const i = s.loadout.indexOf(id);
+  if (i >= 0) s.loadout.splice(i, 1);
+  else if (s.loadout.length < 3) s.loadout.push(id);
+  return s;
+}
+
+/** Đổi thứ tự ưu tiên: dir = −1 lên trước, +1 xuống sau */
+export function moveSkill(prev: GameState, id: SkillId, dir: -1 | 1, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  const i = s.loadout.indexOf(id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= s.loadout.length) return s;
+  [s.loadout[i], s.loadout[j]] = [s.loadout[j], s.loadout[i]];
   return s;
 }
 
@@ -730,7 +834,12 @@ function migrate(raw: Record<string, unknown>): GameState | null {
       nextClimbAt: s.lastTick,
     };
   }
-  return s.version === 3 ? (s as unknown as GameState) : null;
+  if (s.version === 3) {
+    const g = { ...s, version: 4, skills: {}, loadout: [], log: [...(s.log as GameState['log'])] } as unknown as GameState;
+    grantEarnedSkills(g, g.lastTick);
+    s = g as unknown as Record<string, unknown>;
+  }
+  return s.version === 4 ? (s as unknown as GameState) : null;
 }
 
 export function deserialize(raw: string): GameState | null {

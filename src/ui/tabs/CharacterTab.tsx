@@ -36,16 +36,47 @@ import Landscape from '../art/Landscape';
 import { HOME_THEME, REALM_AURA } from '../art/palette';
 import { Art } from '../art/registry';
 import AutoToggle from '../AutoToggle';
+import SkillsPanel from './SkillsPanel';
+
+type Sub = 'overview' | 'technique' | 'skills' | 'gear';
+
+const SUBS: { id: Sub; label: string }[] = [
+  { id: 'overview', label: 'Tổng quan' },
+  { id: 'technique', label: 'Công Pháp' },
+  { id: 'skills', label: 'Võ Kỹ' },
+  { id: 'gear', label: 'Pháp Bảo' },
+];
+
+// Giữ mục con đang xem khi chuyển tab qua lại
+let lastSub: Sub = 'overview';
 
 export default function CharacterTab(props: TabProps) {
+  const [sub, setSub] = useState<Sub>(lastSub);
+  lastSub = sub;
   return (
     <>
-      <StatsPanel {...props} />
-      <TechniquePanel {...props} />
-      <GearPanel {...props} />
-      <BagPanel {...props} />
-      <StatsSummary {...props} />
-      <SettingsPanel {...props} />
+      <div className="subtabs" role="tablist">
+        {SUBS.map((t) => (
+          <button key={t.id} role="tab" aria-selected={sub === t.id} className={sub === t.id ? 'active' : ''} onClick={() => setSub(t.id)}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {sub === 'overview' && (
+        <>
+          <StatsPanel {...props} />
+          <StatsSummary {...props} />
+          <SettingsPanel {...props} />
+        </>
+      )}
+      {sub === 'technique' && <TechniquePanel {...props} />}
+      {sub === 'skills' && <SkillsPanel {...props} />}
+      {sub === 'gear' && (
+        <>
+          <GearPanel {...props} />
+          <BagPanel {...props} />
+        </>
+      )}
     </>
   );
 }

@@ -1,10 +1,60 @@
 import { PILLS, type PillId } from '../../engine/data';
-import { buyPill, canUsePill, formatNumber, pillPrice, usePill } from '../../engine/engine';
+import {
+  PLAYER_SKILLS,
+  buyPill,
+  buySkill,
+  canLearnFromShop,
+  canUsePill,
+  describeSkill,
+  formatNumber,
+  pillPrice,
+  realmOf,
+  usePill,
+} from '../../engine/engine';
+import { REALMS } from '../../engine/data';
 import type { TabProps } from '../GameScreen';
 import { PillIcon } from '../art/Icons';
 import AutoToggle from '../AutoToggle';
 
-export default function ShopTab({ state: s, act }: TabProps) {
+export default function ShopTab(props: TabProps) {
+  return (
+    <>
+      <PillShop {...props} />
+      <SkillShop {...props} />
+    </>
+  );
+}
+
+function SkillShop({ state: s, act }: TabProps) {
+  const items = PLAYER_SKILLS.filter((d) => d.source.kind === 'shop');
+  return (
+    <section className="card">
+      <h2>Tàng Kinh Các</h2>
+      <p className="muted small">Bí tịch võ kỹ dùng chung cho mọi hướng tu.</p>
+      {items.map((d) => {
+        const src = d.source as { price: number; realm: number };
+        const owned = !!s.skills[d.id];
+        const lockedRealm = realmOf(s) < src.realm;
+        return (
+          <div key={d.id} className="shop-item">
+            <div className="shop-text">
+              <b>{d.name}</b>
+              <div className="muted small">{describeSkill(d, 1)}</div>
+              {lockedRealm && <div className="small">Cần đạt {REALMS[src.realm].name}</div>}
+            </div>
+            <div className="shop-actions">
+              <button disabled={!canLearnFromShop(s, d.id)} onClick={() => act((st, now, rng) => buySkill(st, d.id, now, rng))}>
+                {owned ? 'Đã học' : `Học ${formatNumber(src.price)}`}
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
+function PillShop({ state: s, act }: TabProps) {
   const ids = Object.keys(PILLS) as PillId[];
   return (
     <section className="card">
