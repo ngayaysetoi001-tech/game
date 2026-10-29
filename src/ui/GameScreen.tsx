@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useBattleHold } from './scenes/playback';
 import {
   canBreakthrough,
   canChoosePath,
@@ -50,6 +51,10 @@ function hasUpgrade(s: GameState): boolean {
 
 export default function GameScreen({ state: s, act, replace }: Omit<TabProps, 'goTo'>) {
   const [tab, setTab] = useState<Tab>('cultivate');
+  // Trận đang phát lại thì giữ nguyên số linh thạch và tàn quyển, kẻo lộ phần thưởng trước khi hoạt ảnh xong
+  const held = useBattleHold(s.lastBattle);
+  const shown = useRef({ stones: s.stones, fragments: s.fragments });
+  if (!held) shown.current = { stones: s.stones, fragments: s.fragments };
   const now = s.lastTick;
   const badges: Record<Tab, boolean> = {
     cultivate: canBreakthrough(s) || claimableQuests(s).length > 0,
@@ -75,10 +80,10 @@ export default function GameScreen({ state: s, act, replace }: Omit<TabProps, 'g
         </div>
         <div className="resources">
           <span>
-            Linh thạch <b>{formatNumber(s.stones)}</b>
+            Linh thạch <b>{formatNumber(shown.current.stones)}</b>
           </span>
           <span>
-            Tàn quyển <b>{s.fragments}</b>
+            Tàn quyển <b>{shown.current.fragments}</b>
           </span>
           {s.seclusion && <span className="tag good">Bế quan</span>}
           {s.farming && <span className="tag good">Lịch luyện tầng {s.farming.floor}</span>}
