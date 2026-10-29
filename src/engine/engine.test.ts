@@ -407,7 +407,7 @@ describe('migration', () => {
     for (const k of ['path', 'tech', 'gear', 'bag', 'fragments', 'floor', 'farming', 'nextItemId', 'lastBattle']) delete v1[k];
     v1.version = 1;
     const s = deserialize(JSON.stringify(v1))!;
-    expect(s.version).toBe(10);
+    expect(s.version).toBe(11);
     expect(s.floor).toBe(REALMS[1].gateFloor);
     expect(s.gear.weapon).toBeNull();
     expect(s.auto.climb).toBe(false);
@@ -802,7 +802,7 @@ describe('gear farming and migration', () => {
     delete g.ring;
     delete g.boots;
     const s = deserialize(JSON.stringify(v4))!;
-    expect(s.version).toBe(10);
+    expect(s.version).toBe(11);
     expect(s.gear.ring).toBeNull();
     expect(s.gear.boots).toBeNull();
     expect(s.gear.weapon?.id).toBe(1);
@@ -942,7 +942,7 @@ describe('technique library', () => {
     v5.version = 5;
     v5.tech = { base: 3, path: 6 };
     const s = deserialize(JSON.stringify(v5))!;
-    expect(s.version).toBe(10);
+    expect(s.version).toBe(11);
     expect(s.techs.dan_khi).toBe(3);
     expect(s.techs.the_0).toBe(6);
     expect(s.mainTech).toBe('the_0');
@@ -1114,7 +1114,7 @@ describe('quests', () => {
     delete v6.quests;
     v6.version = 6;
     const s = deserialize(JSON.stringify(v6))!;
-    expect(s.version).toBe(10);
+    expect(s.version).toBe(11);
     expect(s.quests.claimed).toEqual([]);
     expect(claimableQuests(s).length).toBeGreaterThan(3);
   });
@@ -1408,7 +1408,7 @@ describe('động phủ: save', () => {
     delete (v7.stats as Record<string, unknown>).planted;
     delete (v7.auto as Record<string, unknown>).garden;
     const s = deserialize(JSON.stringify(v7))!;
-    expect(s.version).toBe(10);
+    expect(s.version).toBe(11);
     expect(s.dwelling.levels.linh_dien).toBe(1);
     expect(s.pills.tuKhi).toBe(2);
     expect(s.pills.phaCanh3).toBe(0);
@@ -1560,5 +1560,37 @@ describe('pháp bảo phụ', () => {
     const s = deserialize(JSON.stringify(v9))!;
     expect(s.treasures).toEqual([]);
     expect(s.feed).toBe(0);
+  });
+});
+
+describe('tế luyện pháp bảo', () => {
+  const base = (level: number, mats: number): GameState => ({
+    ...fresh(),
+    level: 12,
+    natal: { id: 'phi_kiem', level, exp: 0 },
+    materials: mats,
+  });
+
+  it('cần đủ cấp và Linh Tài, tốn Linh Tài, tăng chỉ số và nâng cấp chiêu ở lần 3', async () => {
+    const { canRefine, refineTreasure, natalMods, refineCost, natalSkillLevel } = await import('./engine');
+    expect(canRefine(base(4, 99), 0)).toBe(false); // chưa đủ cấp
+    expect(canRefine(base(5, refineCost(0) - 1), 0)).toBe(false); // thiếu Linh Tài
+    const s0 = base(30, 100);
+    const s1 = refineTreasure(s0, 0, T0, always(0));
+    expect(s1.natal!.refine).toBe(1);
+    expect(s1.materials).toBe(100 - refineCost(0));
+    expect(natalMods(s1).atkPct).toBeCloseTo(natalMods(s0).atkPct * 1.15, 5);
+    expect(natalSkillLevel(10, 3)).toBe(natalSkillLevel(10, 0) + 1);
+  });
+
+  it('thủ lĩnh rơi Linh Tài, tối đa 5 lần tế luyện, save v10 có materials', async () => {
+    const { bossMaterials, canRefine } = await import('./engine');
+    expect(bossMaterials(5)).toBe(1);
+    expect(bossMaterials(40)).toBe(5);
+    expect(canRefine({ ...base(30, 999), natal: { id: 'phi_kiem', level: 30, exp: 0, refine: 5 } }, 0)).toBe(false);
+    const v10: Record<string, unknown> = JSON.parse(serialize(fresh()));
+    delete v10.materials;
+    v10.version = 10;
+    expect(deserialize(JSON.stringify(v10))!.materials).toBe(0);
   });
 });

@@ -9,6 +9,8 @@ export interface NatalState {
   id: NatalId;
   level: number;
   exp: number;
+  /** Số lần tế luyện (0..REFINE_MAX); save cũ không có */
+  refine?: number;
 }
 
 export interface NatalDef {
@@ -108,9 +110,25 @@ export function natalExpFromItem(tierMult: number, floor: number, plus: number):
 }
 
 /** Chiêu bản mệnh mạnh lên theo cấp: tối đa cấp chiêu 10 */
-export function natalSkillLevel(level: number): number {
-  return Math.min(10, 1 + Math.floor((level - 1) / 3));
+export function natalSkillLevel(level: number, refine = 0): number {
+  return Math.min(10, 1 + Math.floor((level - 1) / 3) + (refine >= 3 ? 1 : 0) + (refine >= 5 ? 1 : 0));
 }
+
+// ---------- Tế luyện: dùng Linh Tài rơi từ thủ lĩnh để nâng phẩm chất ----------
+
+export const REFINE_MAX = 5;
+export const REFINE_NAMES = ['Chưa tế luyện', 'Sơ Luyện', 'Tinh Luyện', 'Thượng Luyện', 'Đại Thành', 'Viên Mãn'];
+/** Mỗi lần tế luyện tăng chừng này phần chỉ số của chính pháp bảo đó */
+export const REFINE_BONUS = 0.15;
+/** Linh Tài để tế luyện từ lần thứ r lên r+1 */
+export const refineCost = (r: number) => [3, 6, 10, 15, 22][r] ?? Infinity;
+/** Cấp pháp bảo tối thiểu để tế luyện từ lần thứ r lên r+1 */
+export const refineLevelReq = (r: number) => 5 * (r + 1);
+export const refineOf = (n: { refine?: number }) => n.refine ?? 0;
+/** Linh Tài thủ lĩnh tầng f rơi ra */
+export const bossMaterials = (floor: number) => 1 + Math.floor(floor / 10);
+/** Xác suất mỗi phút lịch luyện nhặt được Linh Tài (số lượng như thủ lĩnh) */
+export const FARM_MATERIAL_CHANCE = 0.06;
 
 // ---------- Pháp bảo phụ và cộng hưởng ----------
 

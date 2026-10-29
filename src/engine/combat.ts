@@ -22,7 +22,7 @@ import {
   TOWER_NAME,
 } from './data';
 import { cultivationBonusAt, stoneBonusAt } from './dwelling';
-import { type NatalDef, type NatalState, NATALS, RESONANCES, TREASURE_SCALE, natalSkillLevel, natalStage } from './natal';
+import { type NatalDef, type NatalState, NATALS, REFINE_BONUS, RESONANCES, TREASURE_SCALE, natalSkillLevel, natalStage } from './natal';
 import { type TechDef, TECHS, techEffect } from './techniques';
 import {
   AFFIXES,
@@ -126,7 +126,7 @@ export function equippedSkills(s: GameState): { id: SkillId; level: number }[] {
     .filter((id) => (s.skills[id] ?? 0) > 0)
     .map((id) => ({ id, level: s.skills[id]! }));
   // Chiêu pháp bảo có ô riêng và được ưu tiên dùng trước: bản mệnh đứng đầu, rồi tới pháp bảo phụ
-  list.unshift(...ownedTreasures(s).map((n) => ({ id: NATALS[n.id].skillId, level: natalSkillLevel(n.level) })));
+  list.unshift(...ownedTreasures(s).map((n) => ({ id: NATALS[n.id].skillId, level: natalSkillLevel(n.level, n.refine ?? 0) })));
   return list;
 }
 
@@ -499,6 +499,7 @@ export function ownedTreasures(s: GameState): NatalState[] {
 
 function treasureMods(n: NatalState, scale: number, m: FullMods) {
   const def: NatalDef = NATALS[n.id];
+  scale *= 1 + REFINE_BONUS * (n.refine ?? 0);
   for (const k of MOD_KEYS) m[k] += (def.perLevel[k] ?? 0) * n.level * scale;
   for (let i = 0; i < natalStage(n.level); i++) {
     for (const k of MOD_KEYS) m[k] += (def.stageBonus[i][k] ?? 0) * scale;

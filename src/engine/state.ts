@@ -131,7 +131,7 @@ export interface Stats {
 }
 
 export interface GameState {
-  version: 10;
+  version: 11;
   name: string;
   root: SpiritRoot;
   /** Chỉ số tầng đã "trải phẳng" qua mọi cảnh giới */
@@ -181,6 +181,8 @@ export interface GameState {
   treasures: NatalState[];
   /** Trang bị luyện hóa nuôi pháp bảo nào: 0 = bản mệnh, 1.. = pháp bảo phụ thứ n */
   feed: number;
+  /** Linh Tài (tế luyện pháp bảo), rơi từ thủ lĩnh */
+  materials: number;
   // --- nhiệm vụ chủ tuyến ---
   quests: QuestState;
   // --- động phủ ---

@@ -35,12 +35,19 @@ import {
   NATAL_MAX_LEVEL,
   NATAL_STAGES,
   NATAL_UNLOCK_LEVEL,
+  FARM_MATERIAL_CHANCE,
+  REFINE_MAX,
+  REFINE_NAMES,
   TREASURE_COST_FRAGMENTS,
   TREASURE_COST_HOURS,
   TREASURE_UNLOCK_REALMS,
   type NatalId,
   type NatalState,
+  bossMaterials,
   natalExpFromItem,
+  refineCost,
+  refineLevelReq,
+  refineOf,
   natalExpNeeded,
   natalStage,
 } from './natal';
@@ -206,7 +213,7 @@ function emptyStats(): Stats {
 
 export function newGame(name: string, root: SpiritRoot, now: number): GameState {
   const s: GameState = {
-    version: 10,
+    version: 11,
     name: name.trim() || 'Vô Danh',
     root,
     level: 0,
@@ -239,6 +246,7 @@ export function newGame(name: string, root: SpiritRoot, now: number): GameState 
     natal: null,
     treasures: [],
     feed: 0,
+    materials: 0,
     quests: { claimed: [] },
     dwelling: newDwelling(),
     kiep: {},
@@ -673,6 +681,9 @@ function fight(s: GameState, now: number, rng: Rng, auto: boolean) {
     const result = addItem(s, it, now);
     s.stats.battlesWon++;
     if (boss) {
+      const mats = bossMaterials(floor);
+      s.materials += mats;
+      addLog(s, now, `${enemy.name} để lại ${mats} Linh Tài, dùng để tế luyện pháp bảo.`, 'good');
       const bundle = (BOSS_FRAGMENT_BUNDLES[floor] ?? 0) + (floor > MAX_FLOOR ? TOWER_BOSS_FRAGMENTS : 0);
       s.fragments += bundle;
       if (bundle) addLog(s, now, `${enemy.name} để lại ${bundle} trang tàn quyển công pháp.`, 'good');
@@ -749,6 +760,7 @@ function farmLoot(s: GameState, time: number, rng: Rng) {
   const floor = s.farming!.floor;
   s.stones += floorStones(floor) * FARM_STONE_SHARE * stoneBonus(s);
   if (rng() < FARM_FRAGMENT_CHANCE) s.fragments++;
+  if (rng() < FARM_MATERIAL_CHANCE) s.materials += bossMaterials(floor);
   if (rng() < FARM_ITEM_CHANCE) {
     // Lịch luyện ở tầng thủ lĩnh rơi đồ tốt như thủ lĩnh
     const it = newItem(s, floor, isBossFloor(floor), rng);
@@ -1261,6 +1273,25 @@ export function forgeTreasure(prev: GameState, id: NatalId, now: number, rng: Rn
   return s;
 }
 
+/** Tế luyện pháp bảo thứ index (0 = bản mệnh): cần đủ cấp và Linh Tài */
+export function canRefine(s: GameState, index: number): boolean {
+  const n = ownedTreasures(s)[index];
+  if (!n) return false;
+  const r = refineOf(n);
+  return r < REFINE_MAX && n.level >= refineLevelReq(r) && s.materials >= refineCost(r);
+}
+
+export function refineTreasure(prev: GameState, index: number, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (!canRefine(s, index)) return s;
+  const n = ownedTreasures(s)[index];
+  const r = refineOf(n);
+  s.materials -= refineCost(r);
+  n.refine = r + 1;
+  addLog(s, now, `Tế luyện ${NATALS[n.id].name} lên ${REFINE_NAMES[n.refine]}: chỉ số riêng tăng thêm, linh tính mạnh hơn.`, 'good');
+  return s;
+}
+
 /** Chọn pháp bảo nhận kinh nghiệm khi luyện hóa trang bị (0 = bản mệnh) */
 export function setFeed(prev: GameState, index: number, now: number, rng: Rng): GameState {
   const s = begin(prev, now, rng);
@@ -1549,7 +1580,10 @@ function migrate(raw: Record<string, unknown>): GameState | null {
   if (s.version === 9) {
     s = { ...s, version: 10, treasures: [], feed: 0 };
   }
-  return s.version === 10 ? (s as unknown as GameState) : null;
+  if (s.version === 10) {
+    s = { ...s, version: 11, materials: 0 };
+  }
+  return s.version === 11 ? (s as unknown as GameState) : null;
 }
 
 export function deserialize(raw: string): GameState | null {

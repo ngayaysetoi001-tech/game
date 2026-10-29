@@ -3,7 +3,7 @@
 
 import type { PillId } from './data';
 import { MAX_FLOOR, SLOTS } from './data';
-import { activeResonances, itemPlus, setCounts } from './combat';
+import { activeResonances, itemPlus, ownedTreasures, setCounts } from './combat';
 import { type GameState, levelInfo } from './state';
 
 export type TabId = 'cultivate' | 'dungeon' | 'dwelling' | 'character' | 'shop';
@@ -341,6 +341,14 @@ export const QUESTS: QuestDef[] = [
     reward: { stones: 1200, fragments: 12 },
   },
   {
+    id: 'te_luyen',
+    title: 'Tế luyện pháp bảo',
+    desc: 'Dùng Linh Tài (thủ lĩnh rơi) tế luyện một pháp bảo lên Sơ Luyện; pháp bảo cần đạt cấp 5.',
+    go: { tab: 'character', sub: 'treasure' },
+    done: (s) => ownedTreasures(s).some((n) => (n.refine ?? 0) >= 1),
+    reward: { stones: 600, fragments: 6 },
+  },
+  {
     id: 'cong_huong',
     title: 'Cộng hưởng',
     desc: 'Có đủ một cặp pháp bảo hợp nhau để kích hoạt cộng hưởng (kiếm + quạt, hồ lô + chuông, ấn + phiên).',
@@ -411,6 +419,7 @@ export const QUEST_TIER: Record<string, number> = {
   do_kiep: 7,
   thien_kiep: 2,
   kiep_thuong: 4,
+  te_luyen: 3,
   phap_bao_phu: 4,
   cong_huong: 5,
   tang_40: 7,

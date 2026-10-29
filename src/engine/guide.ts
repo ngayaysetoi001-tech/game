@@ -15,6 +15,9 @@ import {
   canChoosePath,
   canForgeNatal,
   canForgeTreasure,
+  canRefine,
+  ownedTreasures,
+  NATALS,
   canLearnFromShop,
   canUpgradeSkill,
   canUpgradeTech,
@@ -106,6 +109,15 @@ export function advise(s: GameState, winChance: number | null): Advice[] {
     });
   }
 
+  const refinable = ownedTreasures(s).findIndex((_, i) => canRefine(s, i));
+  if (refinable >= 0) {
+    add({
+      tone: 'good',
+      text: `Đủ Linh Tài để tế luyện ${NATALS[ownedTreasures(s)[refinable].id].name}: chỉ số riêng mạnh thêm.`,
+      go: { tab: 'character', sub: 'treasure' },
+      goLabel: 'Tế luyện',
+    });
+  }
   if (canForgeTreasure(s)) {
     add({
       tone: 'good',

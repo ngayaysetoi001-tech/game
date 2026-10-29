@@ -6,6 +6,14 @@ import {
   NATAL_STAGES,
   NATAL_STAGE_LEVELS,
   NATAL_UNLOCK_LEVEL,
+  REFINE_BONUS,
+  REFINE_MAX,
+  REFINE_NAMES,
+  refineCost,
+  refineLevelReq,
+  refineOf,
+  canRefine,
+  refineTreasure,
   RESONANCES,
   SKILLS,
   TREASURE_UNLOCK_REALMS,
@@ -66,7 +74,26 @@ function NatalChoices({ ids, pick, setPick }: { ids: NatalId[]; pick: NatalId | 
   );
 }
 
-function TreasureCard({ n, label, feeding, onFeed, canFeed }: { n: NatalState; label: string; feeding: boolean; onFeed: () => void; canFeed: boolean }) {
+function TreasureCard({
+  n,
+  label,
+  feeding,
+  onFeed,
+  canFeed,
+  materials,
+  canRefineNow,
+  onRefine,
+}: {
+  n: NatalState;
+  label: string;
+  feeding: boolean;
+  onFeed: () => void;
+  canFeed: boolean;
+  materials: number;
+  canRefineNow: boolean;
+  onRefine: () => void;
+}) {
+  const refine = refineOf(n);
   const def = NATALS[n.id];
   const stage = natalStage(n.level);
   const max = n.level >= NATAL_MAX_LEVEL;
@@ -98,10 +125,10 @@ function TreasureCard({ n, label, feeding, onFeed, canFeed }: { n: NatalState; l
       </div>
 
       <div className="natal-skill-row">
-        <SkillIcon id={def.skillId} level={natalSkillLevel(n.level)} />
+        <SkillIcon id={def.skillId} level={natalSkillLevel(n.level, refine)} />
         <div className="natal-skill">
-          <b>Chiêu 【{skill.name}】</b> <span className="muted small">cấp {natalSkillLevel(n.level)}/10</span>
-          <div className="small muted">{describeSkill(skill, natalSkillLevel(n.level))}</div>
+          <b>Chiêu 【{skill.name}】</b> <span className="muted small">cấp {natalSkillLevel(n.level, refine)}/10</span>
+          <div className="small muted">{describeSkill(skill, natalSkillLevel(n.level, refine))}</div>
         </div>
       </div>
 
@@ -115,6 +142,16 @@ function TreasureCard({ n, label, feeding, onFeed, canFeed }: { n: NatalState; l
           );
         })}
       </div>
+      <div className="small">
+        <b>Tế luyện:</b> {REFINE_NAMES[refine]} ({refine}/{REFINE_MAX}) · chỉ số riêng +{Math.round(REFINE_BONUS * refine * 100)}%
+        {refine >= 3 ? ' · chiêu mạnh thêm' : ''}
+      </div>
+      {refine < REFINE_MAX && (
+        <button disabled={!canRefineNow} onClick={onRefine}>
+          Tế luyện lên {REFINE_NAMES[refine + 1]} · {refineCost(refine)} Linh Tài (có {materials})
+          {n.level < refineLevelReq(refine) ? ` · cần cấp ${refineLevelReq(refine)}` : ''}
+        </button>
+      )}
       {canFeed && (
         <button className={feeding ? 'primary' : ''} disabled={feeding || max} onClick={onFeed}>
           {feeding ? 'Đang nhận kinh nghiệm luyện hóa' : max ? 'Đã đầy cấp' : 'Nuôi pháp bảo này'}
@@ -172,6 +209,9 @@ export default function NatalPanel({ state: s, act }: TabProps) {
           label={i === 0 ? 'Bản mệnh pháp bảo · đủ chỉ số, chiêu ưu tiên trước' : `Pháp bảo phụ ${i} · ${Math.round(0.6 * 100)}% chỉ số`}
           feeding={feedIdx === i}
           canFeed={owned.length > 1}
+          materials={s.materials}
+          canRefineNow={canRefine(s, i)}
+          onRefine={() => act((st, now, rng) => refineTreasure(st, i, now, rng))}
           onFeed={() => act((st, now, rng) => setFeed(st, i, now, rng))}
         />
       ))}
@@ -224,6 +264,7 @@ export default function NatalPanel({ state: s, act }: TabProps) {
 
       <section className="card">
         <h2>Luyện Hóa</h2>
+        <p className="small">Linh Tài: <b>{s.materials}</b> (thủ lĩnh bí cảnh và tháp rơi, lịch luyện thỉnh thoảng nhặt được)</p>
         <AutoToggle s={s} act={act} k="devour" label="Tự luyện hóa trang bị kém hơn khi nhặt được">
           Thay cho tự bán: trang bị kém hơn đồ đang dùng được nuốt để {owned.length > 1 ? 'pháp bảo đang nuôi' : 'bản mệnh'} lên cấp.
         </AutoToggle>

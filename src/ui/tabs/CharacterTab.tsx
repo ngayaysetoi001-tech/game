@@ -259,7 +259,7 @@ function LoadoutStrip({ s, onGo }: { s: TabProps['state']; onGo: (sub: Sub) => v
                   <span className="slot-cap">{NATALS[s.natal.id].name}</span>
                 </span>
                 <span className="slot">
-                  <SkillIcon id={NATALS[s.natal.id].skillId} level={natalSkillLevel(s.natal.level)} />
+                  <SkillIcon id={NATALS[s.natal.id].skillId} level={natalSkillLevel(s.natal.level, s.natal.refine ?? 0)} />
                   <span className="slot-cap">{SKILLS[NATALS[s.natal.id].skillId].name}</span>
                 </span>
               </>

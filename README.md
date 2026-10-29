@@ -123,6 +123,7 @@ Kim Đan ~1.5 giờ, Nguyên Anh ~4 giờ… hết Độ Kiếp ~10 ngày.
 - **Bản mệnh** (từ Trúc Cơ) đủ chỉ số. **Pháp bảo phụ** mở ở Hóa Thần (ô 1) và Hợp Thể (ô 2): 60% chỉ số, thêm chiêu riêng vào trận, tốn linh thạch (vài giờ thu nhập) và 20 tàn quyển.
 - **Cộng hưởng**: kiếm + quạt, hồ lô + chuông, ấn + phiên nhận thêm chỉ số.
 - Chọn pháp bảo nào nhận kinh nghiệm khi luyện hóa trang bị thừa ("Nuôi pháp bảo này"). Save lên phiên bản 10.
+- **Tế luyện**: thủ lĩnh bí cảnh và tháp rơi **Linh Tài** (lịch luyện thỉnh thoảng nhặt được). Mỗi pháp bảo tế luyện tối đa 5 lần (cần cấp 5, 10, 15, 20, 25 và 3, 6, 10, 15, 22 Linh Tài): +15% chỉ số riêng mỗi lần, lần 3 và 5 mạnh thêm cấp chiêu. Save lên phiên bản 11.
 
 ## Cấu trúc
 
