@@ -131,7 +131,7 @@ export interface Stats {
 }
 
 export interface GameState {
-  version: 9;
+  version: 10;
   name: string;
   root: SpiritRoot;
   /** Chỉ số tầng đã "trải phẳng" qua mọi cảnh giới */
@@ -177,6 +177,10 @@ export interface GameState {
   subTechs: TechId[];
   // --- bản mệnh pháp bảo ---
   natal: NatalState | null;
+  /** Pháp bảo phụ (mở từ Hóa Thần) */
+  treasures: NatalState[];
+  /** Trang bị luyện hóa nuôi pháp bảo nào: 0 = bản mệnh, 1.. = pháp bảo phụ thứ n */
+  feed: number;
   // --- nhiệm vụ chủ tuyến ---
   quests: QuestState;
   // --- động phủ ---
@@ -200,6 +204,9 @@ const LEVELS: LevelInfo[] = REALMS.flatMap((r, realm) =>
 );
 
 export const MAX_LEVEL = LEVELS.length - 1;
+
+/** Cấp (level) đầu tiên của một đại cảnh giới */
+export const realmStartLevel = (realm: number) => LEVELS.findIndex((l) => l.realm === realm);
 
 export function levelInfo(level: number): LevelInfo {
   return LEVELS[level];

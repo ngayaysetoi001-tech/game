@@ -367,6 +367,9 @@ const SKILL_ICONS: Record<SkillId, { m: Motif; c: string }> = {
   n_phi_kiem: { m: 'slash', c: '#7fc8ff' },
   n_ho_lo: { m: 'gourd', c: '#e0a050' },
   n_linh_chung: { m: 'bell', c: '#ffd66b' },
+  n_tran_an: { m: 'quake', c: '#d9a640' },
+  n_hon_phan: { m: 'ghost', c: '#b58cff' },
+  n_phong_quat: { m: 'fan', c: '#9fe6d0' },
 };
 
 const TECH_ICONS: Record<TechId, { m: Motif; c: string }> = {

@@ -5,7 +5,7 @@ import { Art } from './registry';
 /** Màu theo giai đoạn tiến hóa: Phàm, Linh, Bảo, Tiên Khí */
 export const NATAL_STAGE_COLORS = ['#cfc6b4', '#7fcf8a', '#6fb2ff', '#ffb04a'];
 
-/** Bản mệnh pháp bảo vẽ bằng SVG; có ảnh thật tại natal/<id> thì dùng ảnh */
+/** Pháp bảo vẽ bằng SVG; có ảnh thật tại natal/<id> thì dùng ảnh */
 export default function NatalIcon({ id, stage, className = '' }: { id: NatalId; stage: number; className?: string }) {
   const c = NATAL_STAGE_COLORS[stage];
   return (
@@ -46,6 +46,35 @@ export default function NatalIcon({ id, stage, className = '' }: { id: NatalId; 
             <path d="M14,58 Q40,66 66,58 L66,62 Q40,70 14,62 Z" fill={INK.dark} opacity={0.65} />
             <path d="M28,30 Q40,26 52,30" fill="none" stroke="#fff" strokeWidth={1.2} opacity={0.5} />
             <circle cx={40} cy={64} r={4} fill={INK.dark} />
+          </g>
+        )}
+        {id === 'tran_an' && (
+          <g>
+            <path d="M20,60 L60,60 L60,66 L20,66 Z" fill={INK.dark} opacity={0.7} />
+            <path d="M22,44 L58,44 L62,60 L18,60 Z" fill="currentColor" opacity={0.92} />
+            <path d="M28,30 L52,30 L58,44 L22,44 Z" fill="currentColor" opacity={0.75} />
+            <path d="M34,16 L46,16 L52,30 L28,30 Z" fill="currentColor" />
+            <path d="M34,16 L46,16" stroke={INK.dark} strokeWidth={1.4} opacity={0.5} />
+            <path d="M32,52 L48,52 M30,37 L50,37" stroke={INK.dark} strokeWidth={1.3} opacity={0.5} />
+            <circle cx={40} cy={22} r={2.2} fill="#fff" opacity={0.6} />
+          </g>
+        )}
+        {id === 'hon_phan' && (
+          <g>
+            <path d="M24,10 L26,70" stroke={INK.mid} strokeWidth={2.6} strokeLinecap="round" />
+            <path d="M26,14 Q48,10 62,20 Q54,28 62,38 Q48,34 26,42 Z" fill="currentColor" opacity={0.92} />
+            <path d="M32,22 Q44,20 52,24 M32,32 Q44,30 52,32" fill="none" stroke={INK.dark} strokeWidth={1.2} opacity={0.5} />
+            <path d="M44,56 Q48,48 44,44 Q56,48 52,58 Q50,64 44,62 Q40,60 44,56 Z" fill="#9fffd0" opacity={0.75} />
+            <circle cx={38} cy={50} r={2} fill="#fff" opacity={0.6} />
+          </g>
+        )}
+        {id === 'phong_quat' && (
+          <g>
+            <path d="M40,64 L16,26 Q40,8 64,26 Z" fill="currentColor" opacity={0.9} />
+            <path d="M40,64 L26,24 M40,64 L40,18 M40,64 L54,24" stroke={INK.dark} strokeWidth={1.2} opacity={0.5} />
+            <path d="M16,26 Q40,8 64,26" fill="none" stroke="#fff" strokeWidth={1.4} opacity={0.6} />
+            <path d="M38,62 L42,62 L41,72 L39,72 Z" fill={INK.mid} />
+            <path d="M10,48 Q18,44 24,48 M56,44 Q64,40 72,44" fill="none" stroke="currentColor" strokeWidth={1.4} opacity={0.6} />
           </g>
         )}
       </svg>

@@ -118,6 +118,12 @@ Kim Đan ~1.5 giờ, Nguyên Anh ~4 giờ… hết Độ Kiếp ~10 ngày.
 - Sống sót thì đột phá thành công; khí huyết còn lại quyết định phẩm kiếp (Hạ → Cực) và bonus vĩnh viễn khí huyết, phòng thủ, công. Ngã xuống thì mất 40% tu vi và trọng thương.
 - Tab Tu Luyện hiện ước tính tỉ lệ vượt kiếp trước khi đột phá, và biểu đồ khí huyết sau từng đạo lôi ở lần gần nhất. Save lên phiên bản 9.
 
+### Pháp Bảo nhiều ô (bước 2)
+- Mục **Pháp Bảo** (tab Nhân Vật) tách riêng khỏi **Trang Bị**. Có 6 pháp bảo: kiếm, hồ lô, chuông, ấn, phiên, quạt, mỗi loại một vai trò và một chiêu riêng.
+- **Bản mệnh** (từ Trúc Cơ) đủ chỉ số. **Pháp bảo phụ** mở ở Hóa Thần (ô 1) và Hợp Thể (ô 2): 60% chỉ số, thêm chiêu riêng vào trận, tốn linh thạch (vài giờ thu nhập) và 20 tàn quyển.
+- **Cộng hưởng**: kiếm + quạt, hồ lô + chuông, ấn + phiên nhận thêm chỉ số.
+- Chọn pháp bảo nào nhận kinh nghiệm khi luyện hóa trang bị thừa ("Nuôi pháp bảo này"). Save lên phiên bản 10.
+
 ## Cấu trúc
 
 ```

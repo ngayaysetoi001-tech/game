@@ -3,7 +3,7 @@
 // vào để test được một cách tất định.
 
 import { KIEP_FAIL_LOSS, KIEP_GRADE_NAMES, hasKiep, runKiep } from './kiep';
-import { ENHANCE_COST, ENHANCE_MAX, ENHANCE_RATES } from './gear';
+import { ENHANCE_COST, ENHANCE_MAX, ENHANCE_RATES, describeMods } from './gear';
 import {
   BUILDINGS,
   HERBS,
@@ -35,7 +35,11 @@ import {
   NATAL_MAX_LEVEL,
   NATAL_STAGES,
   NATAL_UNLOCK_LEVEL,
+  TREASURE_COST_FRAGMENTS,
+  TREASURE_COST_HOURS,
+  TREASURE_UNLOCK_REALMS,
   type NatalId,
+  type NatalState,
   natalExpFromItem,
   natalExpNeeded,
   natalStage,
@@ -112,6 +116,8 @@ import {
   simulateBattle,
   stoneBonus,
   zoneOf,
+  activeResonances,
+  ownedTreasures,
 } from './combat';
 import {
   MAX_LEVEL,
@@ -200,7 +206,7 @@ function emptyStats(): Stats {
 
 export function newGame(name: string, root: SpiritRoot, now: number): GameState {
   const s: GameState = {
-    version: 9,
+    version: 10,
     name: name.trim() || 'Vô Danh',
     root,
     level: 0,
@@ -231,6 +237,8 @@ export function newGame(name: string, root: SpiritRoot, now: number): GameState 
     mainTech: null,
     subTechs: ['dan_khi'],
     natal: null,
+    treasures: [],
+    feed: 0,
     quests: { claimed: [] },
     dwelling: newDwelling(),
     kiep: {},
@@ -1223,17 +1231,63 @@ export function forgeNatal(prev: GameState, id: NatalId, now: number, rng: Rng):
   return s;
 }
 
+/** Số ô pháp bảo phụ đã mở ở cảnh giới hiện tại */
+export function treasureSlots(s: GameState): number {
+  const realm = levelInfo(s.level).realm;
+  return TREASURE_UNLOCK_REALMS.filter((r) => realm >= r).length;
+}
+
+/** Linh thạch để luyện một pháp bảo phụ: vài giờ thu nhập hiện tại */
+export function treasureCost(s: GameState): { stones: number; fragments: number } {
+  return { stones: Math.round(stoneRate(s) * 3600 * TREASURE_COST_HOURS), fragments: TREASURE_COST_FRAGMENTS };
+}
+
+export function canForgeTreasure(s: GameState): boolean {
+  const c = treasureCost(s);
+  return !!s.natal && s.treasures.length < treasureSlots(s) && s.stones >= c.stones && s.fragments >= c.fragments;
+}
+
+export function forgeTreasure(prev: GameState, id: NatalId, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (!canForgeTreasure(s) || ownedTreasures(s).some((n) => n.id === id)) return s;
+  const c = treasureCost(s);
+  s.stones -= c.stones;
+  s.fragments -= c.fragments;
+  s.treasures.push({ id, level: 1, exp: 0 });
+  addLog(s, now, `Luyện thành pháp bảo phụ 【${NATALS[id].name}】, hợp với bản mệnh hộ thân.`, 'good');
+  for (const r of activeResonances(s)) {
+    if (r.ids.includes(id)) addLog(s, now, `Cộng hưởng 【${r.name}】: ${describeMods(r.mods)}.`, 'good');
+  }
+  return s;
+}
+
+/** Chọn pháp bảo nhận kinh nghiệm khi luyện hóa trang bị (0 = bản mệnh) */
+export function setFeed(prev: GameState, index: number, now: number, rng: Rng): GameState {
+  const s = begin(prev, now, rng);
+  if (index < 0 || index >= ownedTreasures(s).length) return s;
+  s.feed = index;
+  return s;
+}
+
+/** Pháp bảo đang nhận kinh nghiệm: ô đã chọn nếu chưa đầy cấp, không thì ô đầu tiên chưa đầy */
+function feedTarget(s: GameState): NatalState | null {
+  const list = ownedTreasures(s);
+  const pick = list[s.feed];
+  if (pick && pick.level < NATAL_MAX_LEVEL) return pick;
+  return list.find((n) => n.level < NATAL_MAX_LEVEL) ?? null;
+}
+
 export function canDevour(s: GameState): boolean {
-  return !!s.natal && s.natal.level < NATAL_MAX_LEVEL;
+  return feedTarget(s) !== null;
 }
 
 export function itemDevourExp(it: Item): number {
   return natalExpFromItem(TIERS[it.tier].mult, it.floor, itemPlus(it));
 }
 
-/** Cộng kinh nghiệm bản mệnh, tự lên cấp; chỉ ghi nhật ký khi lên cấp */
+/** Cộng kinh nghiệm cho pháp bảo đang nuôi, tự lên cấp; chỉ ghi nhật ký khi lên cấp */
 function gainNatalExp(s: GameState, amount: number, time: number) {
-  const n = s.natal;
+  const n = feedTarget(s);
   if (!n) return;
   n.exp += amount;
   while (n.level < NATAL_MAX_LEVEL && n.exp >= natalExpNeeded(n.level)) {
@@ -1277,7 +1331,7 @@ export function devourWorse(prev: GameState, now: number, rng: Rng): GameState {
     } else keep.push(it);
   }
   if (!count) return s;
-  addLog(s, now, `Luyện hóa ${count} trang bị kém hơn, bản mệnh nhận ${formatNumber(total)} kinh nghiệm.`);
+  addLog(s, now, `Luyện hóa ${count} trang bị kém hơn, pháp bảo nhận ${formatNumber(total)} kinh nghiệm.`);
   s.bag = keep;
   return s;
 }
@@ -1492,7 +1546,10 @@ function migrate(raw: Record<string, unknown>): GameState | null {
   if (s.version === 8) {
     s = { ...s, version: 9, kiep: {}, lastKiep: null };
   }
-  return s.version === 9 ? (s as unknown as GameState) : null;
+  if (s.version === 9) {
+    s = { ...s, version: 10, treasures: [], feed: 0 };
+  }
+  return s.version === 10 ? (s as unknown as GameState) : null;
 }
 
 export function deserialize(raw: string): GameState | null {

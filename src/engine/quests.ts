@@ -3,7 +3,7 @@
 
 import type { PillId } from './data';
 import { MAX_FLOOR, SLOTS } from './data';
-import { itemPlus, setCounts } from './combat';
+import { activeResonances, itemPlus, setCounts } from './combat';
 import { type GameState, levelInfo } from './state';
 
 export type TabId = 'cultivate' | 'dungeon' | 'dwelling' | 'character' | 'shop';
@@ -333,6 +333,22 @@ export const QUESTS: QuestDef[] = [
     reward: { stones: 2500, fragments: 20 },
   },
   {
+    id: 'phap_bao_phu',
+    title: 'Song bảo hộ thân',
+    desc: 'Luyện một pháp bảo phụ (ô mở ở Hóa Thần).',
+    go: { tab: 'character', sub: 'treasure' },
+    done: (s) => s.treasures.length >= 1,
+    reward: { stones: 1200, fragments: 12 },
+  },
+  {
+    id: 'cong_huong',
+    title: 'Cộng hưởng',
+    desc: 'Có đủ một cặp pháp bảo hợp nhau để kích hoạt cộng hưởng (kiếm + quạt, hồ lô + chuông, ấn + phiên).',
+    go: { tab: 'character', sub: 'treasure' },
+    done: (s) => s.treasures.length >= 1 && activeResonances(s).length >= 1,
+    reward: { stones: 2000, fragments: 20 },
+  },
+  {
     id: 'tang_40',
     title: 'Chinh phục bí cảnh',
     desc: 'Vượt Bí Cảnh tầng 40.',
@@ -395,6 +411,8 @@ export const QUEST_TIER: Record<string, number> = {
   do_kiep: 7,
   thien_kiep: 2,
   kiep_thuong: 4,
+  phap_bao_phu: 4,
+  cong_huong: 5,
   tang_40: 7,
   thap_5: 7,
   thap_15: 7,

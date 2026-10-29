@@ -22,7 +22,7 @@ import {
   TOWER_NAME,
 } from './data';
 import { cultivationBonusAt, stoneBonusAt } from './dwelling';
-import { type NatalDef, NATALS, natalSkillLevel, natalStage } from './natal';
+import { type NatalDef, type NatalState, NATALS, RESONANCES, TREASURE_SCALE, natalSkillLevel, natalStage } from './natal';
 import { type TechDef, TECHS, techEffect } from './techniques';
 import {
   AFFIXES,
@@ -125,8 +125,8 @@ export function equippedSkills(s: GameState): { id: SkillId; level: number }[] {
     .slice(0, skillSlots(levelInfo(s.level).realm))
     .filter((id) => (s.skills[id] ?? 0) > 0)
     .map((id) => ({ id, level: s.skills[id]! }));
-  // Chiêu bản mệnh có ô riêng và được ưu tiên dùng trước
-  if (s.natal) list.unshift({ id: NATALS[s.natal.id].skillId, level: natalSkillLevel(s.natal.level) });
+  // Chiêu pháp bảo có ô riêng và được ưu tiên dùng trước: bản mệnh đứng đầu, rồi tới pháp bảo phụ
+  list.unshift(...ownedTreasures(s).map((n) => ({ id: NATALS[n.id].skillId, level: natalSkillLevel(n.level) })));
   return list;
 }
 
@@ -492,15 +492,31 @@ export function techMods(s: GameState): FullMods {
   return m;
 }
 
-/** Tổng cộng thêm từ bản mệnh pháp bảo: theo cấp + thưởng mỗi lần tiến hóa */
+/** Pháp bảo đang có: bản mệnh trước, rồi pháp bảo phụ */
+export function ownedTreasures(s: GameState): NatalState[] {
+  return s.natal ? [s.natal, ...s.treasures] : [];
+}
+
+function treasureMods(n: NatalState, scale: number, m: FullMods) {
+  const def: NatalDef = NATALS[n.id];
+  for (const k of MOD_KEYS) m[k] += (def.perLevel[k] ?? 0) * n.level * scale;
+  for (let i = 0; i < natalStage(n.level); i++) {
+    for (const k of MOD_KEYS) m[k] += (def.stageBonus[i][k] ?? 0) * scale;
+  }
+}
+
+/** Các cặp cộng hưởng đang có hiệu lực */
+export function activeResonances(s: GameState) {
+  const have = new Set(ownedTreasures(s).map((n) => n.id));
+  return RESONANCES.filter((r) => r.ids.every((id) => have.has(id)));
+}
+
+/** Tổng cộng thêm từ mọi pháp bảo: bản mệnh đủ chỉ số, pháp bảo phụ giảm, cộng thêm cộng hưởng */
 export function natalMods(s: GameState): FullMods {
   const m = zeroMods();
-  if (!s.natal) return m;
-  const def: NatalDef = NATALS[s.natal.id];
-  for (const k of MOD_KEYS) m[k] += (def.perLevel[k] ?? 0) * s.natal.level;
-  for (let i = 0; i < natalStage(s.natal.level); i++) {
-    for (const k of MOD_KEYS) m[k] += def.stageBonus[i][k] ?? 0;
-  }
+  if (s.natal) treasureMods(s.natal, 1, m);
+  for (const n of s.treasures) treasureMods(n, TREASURE_SCALE, m);
+  for (const r of activeResonances(s)) for (const k of MOD_KEYS) m[k] += r.mods[k] ?? 0;
   return m;
 }
 

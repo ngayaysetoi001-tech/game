@@ -407,7 +407,7 @@ describe('migration', () => {
     for (const k of ['path', 'tech', 'gear', 'bag', 'fragments', 'floor', 'farming', 'nextItemId', 'lastBattle']) delete v1[k];
     v1.version = 1;
     const s = deserialize(JSON.stringify(v1))!;
-    expect(s.version).toBe(9);
+    expect(s.version).toBe(10);
     expect(s.floor).toBe(REALMS[1].gateFloor);
     expect(s.gear.weapon).toBeNull();
     expect(s.auto.climb).toBe(false);
@@ -802,7 +802,7 @@ describe('gear farming and migration', () => {
     delete g.ring;
     delete g.boots;
     const s = deserialize(JSON.stringify(v4))!;
-    expect(s.version).toBe(9);
+    expect(s.version).toBe(10);
     expect(s.gear.ring).toBeNull();
     expect(s.gear.boots).toBeNull();
     expect(s.gear.weapon?.id).toBe(1);
@@ -942,7 +942,7 @@ describe('technique library', () => {
     v5.version = 5;
     v5.tech = { base: 3, path: 6 };
     const s = deserialize(JSON.stringify(v5))!;
-    expect(s.version).toBe(9);
+    expect(s.version).toBe(10);
     expect(s.techs.dan_khi).toBe(3);
     expect(s.techs.the_0).toBe(6);
     expect(s.mainTech).toBe('the_0');
@@ -1114,7 +1114,7 @@ describe('quests', () => {
     delete v6.quests;
     v6.version = 6;
     const s = deserialize(JSON.stringify(v6))!;
-    expect(s.version).toBe(9);
+    expect(s.version).toBe(10);
     expect(s.quests.claimed).toEqual([]);
     expect(claimableQuests(s).length).toBeGreaterThan(3);
   });
@@ -1408,7 +1408,7 @@ describe('động phủ: save', () => {
     delete (v7.stats as Record<string, unknown>).planted;
     delete (v7.auto as Record<string, unknown>).garden;
     const s = deserialize(JSON.stringify(v7))!;
-    expect(s.version).toBe(9);
+    expect(s.version).toBe(10);
     expect(s.dwelling.levels.linh_dien).toBe(1);
     expect(s.pills.tuKhi).toBe(2);
     expect(s.pills.phaCanh3).toBe(0);
@@ -1497,5 +1497,68 @@ describe('Thiên Kiếp', () => {
     const s = deserialize(JSON.stringify(v8))!;
     expect(s.kiep).toEqual({});
     expect(s.lastKiep).toBeNull();
+  });
+});
+
+describe('pháp bảo phụ', () => {
+  const withNatal = (level: number): GameState => {
+    const s = { ...fresh(), level, natal: { id: 'phi_kiem' as const, level: 5, exp: 0 } };
+    s.stones = 1e12;
+    s.fragments = 100;
+    return s;
+  };
+  const hoaThan = REALMS.slice(0, 4).reduce((a, r) => a + r.stages.length, 0);
+
+  it('ô phụ mở từ Hóa Thần và cần bản mệnh trước', async () => {
+    const { treasureSlots, canForgeTreasure } = await import('./engine');
+    expect(treasureSlots(withNatal(hoaThan - 1))).toBe(0);
+    expect(treasureSlots(withNatal(hoaThan))).toBe(1);
+    expect(canForgeTreasure(withNatal(hoaThan))).toBe(true);
+    expect(canForgeTreasure({ ...withNatal(hoaThan), natal: null })).toBe(false);
+  });
+
+  it('luyện pháp bảo phụ tốn linh thạch và tàn quyển, không trùng loại, không vượt số ô', async () => {
+    const { forgeTreasure, treasureCost } = await import('./engine');
+    const s = withNatal(hoaThan);
+    const c = treasureCost(s);
+    const a = forgeTreasure(s, 'phong_quat', T0, always(0));
+    expect(a.treasures).toHaveLength(1);
+    expect(a.stones).toBe(s.stones - c.stones);
+    expect(a.fragments).toBe(s.fragments - c.fragments);
+    expect(forgeTreasure(a, 'ho_lo', T0, always(0)).treasures).toHaveLength(1); // hết ô
+    expect(forgeTreasure(s, 'phi_kiem', T0, always(0)).treasures).toHaveLength(0); // trùng bản mệnh
+  });
+
+  it('pháp bảo phụ cộng chỉ số giảm, cộng hưởng khi đủ cặp', async () => {
+    const { natalMods, activeResonances, forgeTreasure } = await import('./engine');
+    const solo = withNatal(hoaThan);
+    const duo = forgeTreasure(solo, 'phong_quat', T0, always(0));
+    expect(activeResonances(solo)).toHaveLength(0);
+    expect(activeResonances(duo).map((r) => r.name)).toEqual(['Phong Kiếm Hợp Bích']);
+    expect(natalMods(duo).crit).toBeGreaterThan(natalMods(solo).crit + 0.04);
+    const other = forgeTreasure(solo, 'ho_lo', T0, always(0));
+    expect(activeResonances(other)).toHaveLength(0);
+  });
+
+  it('chiêu của pháp bảo phụ vào trận sau chiêu bản mệnh; kinh nghiệm theo ô được chọn', async () => {
+    const { forgeTreasure, equippedSkills, setFeed, devourWorse } = await import('./engine');
+    let s = forgeTreasure(withNatal(hoaThan), 'ho_lo', T0, always(0));
+    expect(equippedSkills(s).map((k) => k.id).slice(0, 2)).toEqual(['n_phi_kiem', 'n_ho_lo']);
+    s.bag = [{ id: 1, slot: 'weapon', tier: 0, floor: 10, affixes: [], plus: 0 }];
+    s.gear.weapon = { id: 2, slot: 'weapon', tier: TIERS.length - 1, floor: 30, affixes: [], plus: 0 };
+    s = setFeed(s, 1, T0, always(0));
+    s = devourWorse(s, T0, always(0));
+    expect(s.treasures[0].exp + s.treasures[0].level).toBeGreaterThan(1);
+    expect(s.natal!.level).toBe(5);
+  });
+
+  it('v9 saves gain an empty treasure list', () => {
+    const v9: Record<string, unknown> = JSON.parse(serialize(fresh()));
+    delete v9.treasures;
+    delete v9.feed;
+    v9.version = 9;
+    const s = deserialize(JSON.stringify(v9))!;
+    expect(s.treasures).toEqual([]);
+    expect(s.feed).toBe(0);
   });
 });

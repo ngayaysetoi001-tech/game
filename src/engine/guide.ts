@@ -14,6 +14,7 @@ import {
   canBuyTech,
   canChoosePath,
   canForgeNatal,
+  canForgeTreasure,
   canLearnFromShop,
   canUpgradeSkill,
   canUpgradeTech,
@@ -102,6 +103,15 @@ export function advise(s: GameState, winChance: number | null): Advice[] {
       text: 'Có thể luyện bản mệnh pháp bảo: một pháp bảo lớn lên cùng bạn và có chiêu riêng trong trận.',
       go: { tab: 'character', sub: 'treasure' },
       goLabel: 'Luyện bản mệnh',
+    });
+  }
+
+  if (canForgeTreasure(s)) {
+    add({
+      tone: 'good',
+      text: 'Ô pháp bảo phụ đang trống và bạn đủ linh thạch, tàn quyển: luyện thêm một pháp bảo để có chiêu mới và cộng hưởng.',
+      go: { tab: 'character', sub: 'treasure' },
+      goLabel: 'Luyện pháp bảo phụ',
     });
   }
 
