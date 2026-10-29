@@ -113,6 +113,11 @@ Kim Đan ~1.5 giờ, Nguyên Anh ~4 giờ… hết Độ Kiếp ~10 ngày.
 - Quái mạnh thêm khoảng 10% mỗi tầng; linh thạch tăng tuyến tính; thủ lĩnh cứ 5 tầng, thêm 5 tàn quyển và pháp bảo Linh Phẩm trở lên.
 - Dùng chung tự khiêu chiến, lịch luyện và nhật ký với Bí Cảnh; có 3 nhiệm vụ mới (tầng tháp 5, 15, 30). Không đổi định dạng save.
 
+### Thiên Kiếp
+- Đột phá lên Kim Đan trở đi: sau khi vượt tỉ lệ đột phá, sét đánh xuống 4–7 đạo lôi (sức mạnh theo thủ lĩnh cổng của cảnh giới đó), trừ dần khí huyết của bạn.
+- Sống sót thì đột phá thành công; khí huyết còn lại quyết định phẩm kiếp (Hạ → Cực) và bonus vĩnh viễn khí huyết, phòng thủ, công. Ngã xuống thì mất 40% tu vi và trọng thương.
+- Tab Tu Luyện hiện ước tính tỉ lệ vượt kiếp trước khi đột phá, và biểu đồ khí huyết sau từng đạo lôi ở lần gần nhất. Save lên phiên bản 9.
+
 ## Cấu trúc
 
 ```

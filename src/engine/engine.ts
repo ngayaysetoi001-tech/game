@@ -2,6 +2,7 @@
 // và trả về state mới; thời gian (`now`, ms) và hàm ngẫu nhiên (`rng`) được truyền
 // vào để test được một cách tất định.
 
+import { KIEP_FAIL_LOSS, KIEP_GRADE_NAMES, hasKiep, runKiep } from './kiep';
 import { ENHANCE_COST, ENHANCE_MAX, ENHANCE_RATES } from './gear';
 import {
   BUILDINGS,
@@ -140,6 +141,7 @@ export * from './techniques';
 export * from './natal';
 export * from './quests';
 export * from './dwelling';
+export * from './kiep';
 
 // ---------- Tốc độ ----------
 
@@ -198,7 +200,7 @@ function emptyStats(): Stats {
 
 export function newGame(name: string, root: SpiritRoot, now: number): GameState {
   const s: GameState = {
-    version: 8,
+    version: 9,
     name: name.trim() || 'Vô Danh',
     root,
     level: 0,
@@ -231,6 +233,8 @@ export function newGame(name: string, root: SpiritRoot, now: number): GameState 
     natal: null,
     quests: { claimed: [] },
     dwelling: newDwelling(),
+    kiep: {},
+    lastKiep: null,
   };
   addLog(s, now, `${s.name} bước lên con đường tu tiên với ${rootName(root)} (${root.elements.join(', ')}).`, 'good');
   return s;
@@ -443,21 +447,51 @@ export function canBreakthrough(s: GameState): boolean {
   );
 }
 
+function succeedBreakthrough(s: GameState, now: number) {
+  s.cultivation = 0;
+  s.level++;
+  s.failBonus = 0;
+  s.stats.breakthroughs++;
+  addLog(s, now, `Thiên địa chấn động! Đột phá thành công, bước vào ${levelName(s.level)}.`, 'good');
+  if (s.level === PATH_UNLOCK_LEVEL && !s.path) {
+    addLog(s, now, 'Đạo cơ đã thành, có thể chọn hướng tu trong mục Nhân Vật.', 'good');
+  }
+}
+
 export function breakthrough(prev: GameState, pillsWanted: number, now: number, rng: Rng): GameState {
   const s = begin(prev, now, rng);
   if (!canBreakthrough(s)) return s;
   const pills = Math.max(0, Math.min(pillsWanted, breakPillTotal(s), MAX_BREAK_PILLS));
   const chance = breakthroughChance(s, pills);
   for (const p of breakPillPlan(s, pills)) s.pills[p.id] -= p.count;
-  const targetRealm = REALMS[levelInfo(s.level + 1).realm].name;
+  const realmIdx = levelInfo(s.level + 1).realm;
+  const targetRealm = REALMS[realmIdx].name;
   if (rng() < chance) {
-    s.cultivation = 0;
-    s.level++;
-    s.failBonus = 0;
-    s.stats.breakthroughs++;
-    addLog(s, now, `Thiên địa chấn động! Đột phá thành công, bước vào ${levelName(s.level)}.`, 'good');
-    if (s.level === PATH_UNLOCK_LEVEL && !s.path) {
-      addLog(s, now, 'Đạo cơ đã thành, có thể chọn hướng tu trong mục Nhân Vật.', 'good');
+    if (!hasKiep(realmIdx)) {
+      succeedBreakthrough(s, now);
+    } else {
+      const k = runKiep(s, realmIdx, now, rng);
+      s.lastKiep = k;
+      if (k.pass) {
+        s.kiep[realmIdx] = Math.max(s.kiep[realmIdx] ?? 0, k.grade!);
+        addLog(
+          s,
+          now,
+          `Thiên Kiếp giáng ${k.bolts} đạo lôi, ${s.name} vượt qua với ${Math.round(k.hp[k.hp.length - 1] * 100)}% khí huyết: kiếp ${KIEP_GRADE_NAMES[k.grade!]}, thể chất tăng vĩnh viễn.`,
+          'good',
+        );
+        succeedBreakthrough(s, now);
+      } else {
+        s.cultivation *= 1 - KIEP_FAIL_LOSS;
+        s.stats.breakthroughFails++;
+        injure(s, now, INJURY_SECONDS * 2);
+        addLog(
+          s,
+          now,
+          `Thiên Kiếp quá mạnh: ngã xuống ở đạo lôi thứ ${k.hp.length}/${k.bolts}, trọng thương, mất ${KIEP_FAIL_LOSS * 100}% tu vi. Hãy tăng khí huyết, phòng thủ rồi thử lại.`,
+          'bad',
+        );
+      }
     }
   } else {
     const loss = s.path ? PATHS[s.path].failLoss : PATHS.kiem.failLoss;
@@ -1455,7 +1489,10 @@ function migrate(raw: Record<string, unknown>): GameState | null {
       auto: { ...(s.auto as object), garden: false },
     };
   }
-  return s.version === 8 ? (s as unknown as GameState) : null;
+  if (s.version === 8) {
+    s = { ...s, version: 9, kiep: {}, lastKiep: null };
+  }
+  return s.version === 9 ? (s as unknown as GameState) : null;
 }
 
 export function deserialize(raw: string): GameState | null {

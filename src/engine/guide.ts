@@ -7,6 +7,9 @@ import {
   SKILLS,
   TECHS,
   breakthroughChance,
+  MAX_LEVEL,
+  estimateKiep,
+  hasKiep,
   canBreakthrough,
   canBuyTech,
   canChoosePath,
@@ -54,10 +57,20 @@ export function advise(s: GameState, winChance: number | null): Advice[] {
   const pct = (v: number) => `${Math.round(v * 100)}%`;
 
   // 1. Đột phá
+  const kiepRealm = isBottleneck(s.level) && s.level < MAX_LEVEL ? levelInfo(s.level + 1).realm : 0;
+  const kiep = canBreakthrough(s) && hasKiep(kiepRealm) ? estimateKiep(s, kiepRealm, s.lastTick) : null;
+  if (kiep && kiep.pass < 0.5) {
+    add({
+      tone: 'warn',
+      text: `Đột phá ${nextRealm} có Thiên Kiếp ${kiep.bolts} đạo lôi, bạn chỉ vượt được ~${pct(kiep.pass)}. Nên tăng khí huyết, phòng thủ (pháp bảo, công pháp, bản mệnh) trước.`,
+      go: { tab: 'character' },
+      goLabel: 'Tăng chỉ số',
+    });
+  }
   if (canBreakthrough(s)) {
     add({
       tone: 'good',
-      text: `Tu vi đã đầy bình cảnh: có thể đột phá ${nextRealm} (tỉ lệ ${pct(breakthroughChance(s, 0))}).`,
+      text: `Tu vi đã đầy bình cảnh: có thể đột phá ${nextRealm} (tỉ lệ ${pct(breakthroughChance(s, 0))}${kiep ? `, Thiên Kiếp vượt ~${pct(kiep.pass)}` : ''}).`,
       go: { tab: 'cultivate' },
       goLabel: 'Đột phá',
     });

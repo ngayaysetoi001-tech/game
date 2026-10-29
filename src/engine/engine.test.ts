@@ -407,7 +407,7 @@ describe('migration', () => {
     for (const k of ['path', 'tech', 'gear', 'bag', 'fragments', 'floor', 'farming', 'nextItemId', 'lastBattle']) delete v1[k];
     v1.version = 1;
     const s = deserialize(JSON.stringify(v1))!;
-    expect(s.version).toBe(8);
+    expect(s.version).toBe(9);
     expect(s.floor).toBe(REALMS[1].gateFloor);
     expect(s.gear.weapon).toBeNull();
     expect(s.auto.climb).toBe(false);
@@ -802,7 +802,7 @@ describe('gear farming and migration', () => {
     delete g.ring;
     delete g.boots;
     const s = deserialize(JSON.stringify(v4))!;
-    expect(s.version).toBe(8);
+    expect(s.version).toBe(9);
     expect(s.gear.ring).toBeNull();
     expect(s.gear.boots).toBeNull();
     expect(s.gear.weapon?.id).toBe(1);
@@ -942,7 +942,7 @@ describe('technique library', () => {
     v5.version = 5;
     v5.tech = { base: 3, path: 6 };
     const s = deserialize(JSON.stringify(v5))!;
-    expect(s.version).toBe(8);
+    expect(s.version).toBe(9);
     expect(s.techs.dan_khi).toBe(3);
     expect(s.techs.the_0).toBe(6);
     expect(s.mainTech).toBe('the_0');
@@ -1114,7 +1114,7 @@ describe('quests', () => {
     delete v6.quests;
     v6.version = 6;
     const s = deserialize(JSON.stringify(v6))!;
-    expect(s.version).toBe(8);
+    expect(s.version).toBe(9);
     expect(s.quests.claimed).toEqual([]);
     expect(claimableQuests(s).length).toBeGreaterThan(3);
   });
@@ -1408,7 +1408,7 @@ describe('động phủ: save', () => {
     delete (v7.stats as Record<string, unknown>).planted;
     delete (v7.auto as Record<string, unknown>).garden;
     const s = deserialize(JSON.stringify(v7))!;
-    expect(s.version).toBe(8);
+    expect(s.version).toBe(9);
     expect(s.dwelling.levels.linh_dien).toBe(1);
     expect(s.pills.tuKhi).toBe(2);
     expect(s.pills.phaCanh3).toBe(0);
@@ -1435,5 +1435,67 @@ describe('Vô Cực Tháp', () => {
     const q = QUESTS.find((x) => x.id === 'thap_5')!;
     expect(q.done({ ...fresh(), floor: 44 })).toBe(false);
     expect(q.done({ ...fresh(), floor: 45 })).toBe(true);
+  });
+});
+
+describe('Thiên Kiếp', () => {
+  const geared = (tier: number): GameState => {
+    const s: GameState = {
+      ...fresh(),
+      level: 12,
+      floor: 5,
+      path: 'kiem',
+      techs: { dan_khi: 5, kiem_0: 4 },
+      mainTech: 'kiem_0',
+      skills: { kiem_pha_thien: 3, kiem_phan_quang: 3 },
+      loadout: ['kiem_pha_thien', 'kiem_phan_quang'],
+    };
+    for (const slot of SLOTS) s.gear[slot] = { id: 1, slot, tier, floor: 3, affixes: [], plus: 0 };
+    s.cultivation = requiredFor(s.level);
+    return s;
+  };
+
+  it('Luyện Khí → Trúc Cơ không có thiên kiếp; Kim Đan trở đi thì có', async () => {
+    const { hasKiep } = await import('./kiep');
+    expect(hasKiep(1)).toBe(false);
+    expect(hasKiep(2)).toBe(true);
+  });
+
+  it('an under-geared character falls to the lightning and loses cultivation without ranking up', () => {
+    const s = geared(0);
+    s.gear.weapon = null;
+    s.gear.armor = null;
+    const after = breakthrough(s, 0, T0, always(0));
+    expect(after.level).toBe(12);
+    expect(after.lastKiep?.pass).toBe(false);
+    expect(after.cultivation).toBeLessThan(s.cultivation);
+    expect(after.log[0].text).toContain('Thiên Kiếp');
+  });
+
+  it('a well-built character passes, ranks up and keeps a permanent bonus', () => {
+    const s = geared(2);
+    const before = playerStats(s, T0).hp;
+    const after = breakthrough(s, 0, T0, always(0.1));
+    expect(after.level).toBe(13);
+    expect(after.lastKiep?.pass).toBe(true);
+    expect(after.kiep[2]).toBeGreaterThanOrEqual(0);
+    const hp = playerStats({ ...after, level: 12, injuryUntil: 0 }, T0).hp;
+    expect(hp).toBeGreaterThan(before);
+  });
+
+  it('the breakthrough roll still has to succeed before the lightning falls', () => {
+    const after = breakthrough(geared(2), 0, T0, always(0.99));
+    expect(after.lastKiep).toBeNull();
+    expect(after.level).toBe(12);
+  });
+
+  it('v8 saves gain an empty tribulation record', () => {
+    const v8: Record<string, unknown> = JSON.parse(serialize(fresh()));
+    delete v8.kiep;
+    delete v8.lastKiep;
+    v8.version = 8;
+    const s = deserialize(JSON.stringify(v8))!;
+    expect(s.kiep).toEqual({});
+    expect(s.lastKiep).toBeNull();
   });
 });

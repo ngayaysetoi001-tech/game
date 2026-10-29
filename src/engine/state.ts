@@ -2,6 +2,7 @@
 
 import type { AffixId } from './gear';
 import type { DwellingState } from './dwelling';
+import type { KiepReport } from './kiep';
 import type { NatalState } from './natal';
 import type { QuestState } from './quests';
 import type { SkillId } from './skills';
@@ -130,7 +131,7 @@ export interface Stats {
 }
 
 export interface GameState {
-  version: 8;
+  version: 9;
   name: string;
   root: SpiritRoot;
   /** Chỉ số tầng đã "trải phẳng" qua mọi cảnh giới */
@@ -180,6 +181,11 @@ export interface GameState {
   quests: QuestState;
   // --- động phủ ---
   dwelling: DwellingState;
+  // --- thiên kiếp ---
+  /** Phẩm độ kiếp (0..3) theo cảnh giới đã vượt; có mặt = đã qua */
+  kiep: Record<number, number>;
+  /** Lần độ kiếp gần nhất (thành hay bại) */
+  lastKiep: KiepReport | null;
 }
 
 // ---------- Tầng / cảnh giới ----------

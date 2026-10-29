@@ -1,8 +1,14 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { MAX_BREAK_PILLS, PILLS, REALMS, SECLUSIONS } from '../../engine/data';
 import {
+  KIEP_BONUS_BY_GRADE,
+  KIEP_GRADE_NAMES,
   MAX_LEVEL,
   breakthrough,
+  estimateKiep,
+  hasKiep,
+  kiepMods,
+  playerStats,
   breakPillTotal,
   breakthroughChance,
   canBreakthrough,
@@ -16,6 +22,7 @@ import {
   requiredFor,
   seclusionDef,
   startSeclusion,
+  type GameState,
   stoneRate,
 } from '../../engine/engine';
 import type { TabProps } from '../GameScreen';
@@ -49,6 +56,7 @@ export default function CultivateTab(props: TabProps) {
         </div>
         <BreakthroughPanel {...props} />
       </section>
+      <TribulationCard s={s} />
       <QuestPanel {...props} />
       <SeclusionPanel {...props} />
       <LogPanel {...props} />
@@ -110,6 +118,7 @@ function BreakthroughPanel({ state: s, act, goTo }: TabProps) {
         </button>
         <span className="muted small">(có {total}, phẩm cao dùng trước)</span>
       </div>
+      {hasKiep(levelInfo(s.level + 1).realm) && <KiepPreview s={s} realm={levelInfo(s.level + 1).realm} />}
       <button
         className="primary big"
         disabled={!canBreakthrough(s)}
@@ -189,6 +198,77 @@ function LogPanel({ state: s }: TabProps) {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+function KiepPreview({ s, realm }: { s: GameState; realm: number }) {
+  const p = playerStats(s, s.lastTick);
+  const key = `${Math.round(p.hp)}|${Math.round(p.def)}|${p.dodge ?? 0}|${realm}`;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const e = useMemo(() => estimateKiep(s, realm, s.lastTick), [key]);
+  const tone = e.pass >= 0.85 ? 'good' : e.pass >= 0.4 ? 'mid' : 'bad';
+  return (
+    <div className="kiep-preview">
+      <div className="row spread">
+        <span>
+          ⚡ Thiên Kiếp: <b>{e.bolts}</b> đạo lôi
+        </span>
+        <span className={`chance ${tone}`}>
+          Vượt kiếp ~<b>{Math.round(e.pass * 100)}%</b>
+        </span>
+      </div>
+      <p className="muted small">
+        Sau khi đột phá thành công, sét đánh xuống từng đạo. Khí huyết và phòng thủ càng cao càng dễ sống; còn nhiều khí
+        huyết thì kiếp phẩm cao, thể chất tăng vĩnh viễn nhiều hơn. Ngã xuống thì mất 40% tu vi và trọng thương.
+        {s.injuryUntil > s.lastTick && ' Đang bị thương nên chỉ số giảm, nên dưỡng thương trước.'}
+      </p>
+    </div>
+  );
+}
+
+function TribulationCard({ s }: { s: GameState }) {
+  const done = Object.entries(s.kiep).sort((a, b) => Number(a[0]) - Number(b[0]));
+  const k = s.lastKiep;
+  if (!done.length && !k) return null;
+  const bonus = kiepMods(s);
+  return (
+    <section className="card">
+      <h2>Thiên Kiếp</h2>
+      {k && (
+        <div className="kiep-report">
+          <div className="small">
+            {REALMS[k.realm].name}: {k.pass ? `vượt qua · kiếp ${KIEP_GRADE_NAMES[k.grade!]}` : 'ngã xuống'}
+          </div>
+          <div className="kiep-bolts">
+            {Array.from({ length: k.bolts }, (_, i) => {
+              const v = k.hp[i];
+              return (
+                <div key={i} className={`kiep-bolt ${v === undefined ? 'unreached' : v <= 0 ? 'dead' : ''}`}>
+                  <div className="kiep-hp" style={{ height: `${Math.round((v ?? 0) * 100)}%` }} />
+                  <span>⚡{i + 1}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {done.length > 0 && (
+        <>
+          <p className="small">
+            Đã độ kiếp:{' '}
+            {done.map(([r, g]) => (
+              <span key={r} className="tag good" style={{ marginRight: 4 }}>
+                {REALMS[Number(r)].name} · {KIEP_GRADE_NAMES[g]} (+{Math.round(KIEP_BONUS_BY_GRADE[g] * 100)}%)
+              </span>
+            ))}
+          </p>
+          <p className="muted small">
+            Thể chất vĩnh viễn: khí huyết và phòng thủ +{Math.round(bonus.hpPct * 100)}%, công +
+            {Math.round(bonus.atkPct * 100)}%.
+          </p>
+        </>
+      )}
     </section>
   );
 }

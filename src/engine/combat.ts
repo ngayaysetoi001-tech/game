@@ -1,5 +1,6 @@
 // Chỉ số chiến đấu, quái bí cảnh, pháp bảo và mô phỏng trận đấu.
 
+import { kiepMods } from './kiep';
 import {
   AFFINITY_MULT,
   BASE_STATS,
@@ -514,8 +515,12 @@ export function dwellingMods(s: GameState): FullMods {
 /** Tổng mọi nguồn cộng thêm cho nhân vật: pháp bảo + bộ trang bị, công pháp, bản mệnh, động phủ */
 export function charMods(s: GameState): FullMods {
   const m = gearMods(s);
-  for (const part of [techMods(s), natalMods(s), dwellingMods(s)]) for (const k of MOD_KEYS) m[k] += part[k];
+  for (const part of [techMods(s), natalMods(s), dwellingMods(s), kiepFullMods(s)]) for (const k of MOD_KEYS) m[k] += part[k];
   return m;
+}
+
+function kiepFullMods(s: GameState): FullMods {
+  return { ...zeroMods(), ...kiepMods(s) };
 }
 
 function zeroMods(): FullMods {
