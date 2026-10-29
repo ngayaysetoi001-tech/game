@@ -38,7 +38,7 @@ export default function NatalPanel({ state: s, act }: TabProps) {
           <h2>Bản Mệnh Pháp Bảo</h2>
           <p className="notice">
             Đạt {levelName(NATAL_UNLOCK_LEVEL)} để luyện bản mệnh pháp bảo: một pháp bảo lớn lên cùng bạn, có chiêu riêng trong
-            trận và nuốt pháp bảo thừa để mạnh lên.
+            trận và nuốt trang bị thừa để mạnh lên.
           </p>
         </section>
       );
@@ -109,7 +109,7 @@ export default function NatalPanel({ state: s, act }: TabProps) {
         <div className="bar-fill" style={{ width: `${max ? 100 : Math.min(100, (n.exp / need) * 100)}%` }} />
       </div>
       <div className="small muted">
-        {max ? 'Đã đạt cấp tối đa.' : `Kinh nghiệm ${formatNumber(n.exp)} / ${formatNumber(need)}. Luyện hóa pháp bảo thừa để tăng.`}
+        {max ? 'Đã đạt cấp tối đa.' : `Kinh nghiệm ${formatNumber(n.exp)} / ${formatNumber(need)}. Luyện hóa trang bị thừa để tăng.`}
       </div>
       <div className="small">Đang cộng thêm: {describeMods(natalMods(s))}</div>
 
@@ -133,8 +133,8 @@ export default function NatalPanel({ state: s, act }: TabProps) {
         })}
       </div>
 
-      <AutoToggle s={s} act={act} k="devour" label="Tự luyện hóa pháp bảo kém hơn khi nhặt được">
-        Thay cho tự bán: pháp bảo kém hơn đồ đang dùng được nuốt để bản mệnh lên cấp.
+      <AutoToggle s={s} act={act} k="devour" label="Tự luyện hóa trang bị kém hơn khi nhặt được">
+        Thay cho tự bán: trang bị kém hơn đồ đang dùng được nuốt để bản mệnh lên cấp.
       </AutoToggle>
       <button disabled={!canDevour(s) || worse.length === 0} onClick={() => act(devourWorse)}>
         Luyện hóa {worse.length} món kém hơn · +{formatNumber(worseExp)} kinh nghiệm

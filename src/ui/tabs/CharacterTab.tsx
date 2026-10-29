@@ -25,13 +25,14 @@ import NatalPanel from './NatalPanel';
 import TechniquesPanel from './TechPanels';
 import { BagPanel, GearPanel, SetPanel } from './GearPanels';
 
-type Sub = 'overview' | 'technique' | 'skills' | 'gear';
+type Sub = 'overview' | 'technique' | 'skills' | 'gear' | 'treasure';
 
 const SUBS: { id: Sub; label: string }[] = [
   { id: 'overview', label: 'Tổng quan' },
   { id: 'technique', label: 'Công Pháp' },
   { id: 'skills', label: 'Võ Kỹ' },
-  { id: 'gear', label: 'Pháp Bảo' },
+  { id: 'gear', label: 'Trang Bị' },
+  { id: 'treasure', label: 'Pháp Bảo' },
 ];
 
 // Giữ mục con đang xem khi chuyển tab qua lại
@@ -64,9 +65,9 @@ export default function CharacterTab(props: TabProps) {
       )}
       {sub === 'technique' && <TechniquesPanel {...props} />}
       {sub === 'skills' && <SkillsPanel {...props} />}
+      {sub === 'treasure' && <NatalPanel {...props} />}
       {sub === 'gear' && (
         <>
-          <NatalPanel {...props} />
           <GearPanel {...props} />
           <SetPanel {...props} />
           <BagPanel {...props} />
@@ -86,7 +87,7 @@ function StatsPanel({ state: s }: TabProps) {
     ['Bạo kích', `${Math.round(p.crit * 100)}%`],
     ['Tu luyện', `+${Math.round((cultivationBonus(s) - 1) * 100)}%`],
   ];
-  // Hiệu ứng từ pháp bảo và bộ trang bị, chỉ hiện khi có
+  // Hiệu ứng từ trang bị và bộ trang bị, chỉ hiện khi có
   const m = charMods(s);
   for (const k of ['lifesteal', 'thorns', 'dodge', 'stunHit', 'burnHit', 'stones', 'seclusion', 'offline'] as const) {
     if (m[k] > 0) rows.push([MOD_LABELS[k], formatMod(k, m[k])]);
@@ -183,7 +184,7 @@ function StatsSummary({ state: s }: TabProps) {
     ['Trận thắng / thua', `${st.battlesWon} / ${st.battlesLost}`],
     ['Đột phá thành / bại', `${st.breakthroughs} / ${st.breakthroughFails}`],
     ['Lần bế quan', `${st.seclusions}`],
-    ['Pháp bảo nhặt được', `${st.itemsFound}`],
+    ['Trang bị nhặt được', `${st.itemsFound}`],
   ];
   return (
     <section className="card">
@@ -246,8 +247,8 @@ function LoadoutStrip({ s, onGo }: { s: TabProps['state']; onGo: (sub: Sub) => v
             })}
           </span>
         </button>
-        <button className="loadout-group" onClick={() => onGo('gear')} aria-label="Mở mục Pháp Bảo">
-          <span className="label">Bản mệnh</span>
+        <button className="loadout-group" onClick={() => onGo('treasure')} aria-label="Mở mục Pháp Bảo">
+          <span className="label">Pháp bảo</span>
           <span className="loadout-icons">
             {s.natal ? (
               <>

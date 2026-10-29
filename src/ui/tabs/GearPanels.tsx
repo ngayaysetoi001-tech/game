@@ -88,9 +88,9 @@ export function GearPanel({ state: s, act }: TabProps) {
   const worn = setCounts(s);
   return (
     <section className="card">
-      <h2>Pháp Bảo Đang Dùng</h2>
+      <h2>Trang Bị Đang Dùng</h2>
       <p className="muted small">
-        Cường hóa tối đa +{ENHANCE_MAX}: mỗi cấp +8% chỉ số gốc. Thất bại chỉ mất linh thạch, pháp bảo giữ nguyên cấp.
+        Cường hóa tối đa +{ENHANCE_MAX}: mỗi cấp +8% chỉ số gốc. Thất bại chỉ mất linh thạch, trang bị giữ nguyên cấp.
       </p>
       {SLOTS.map((slot) => {
         const it = s.gear[slot];
@@ -121,10 +121,10 @@ export function SetPanel({ state: s }: TabProps) {
     <section className="card">
       <h2>Bộ Trang Bị</h2>
       <p className="muted small">
-        Pháp bảo rơi ở cùng một khu bí cảnh hợp thành một bộ. Mặc 2 món hoặc 4 món cùng bộ để nhận thêm thuộc tính. Lịch
+        Trang bị rơi ở cùng một khu bí cảnh hợp thành một bộ. Mặc 2 món hoặc 4 món cùng bộ để nhận thêm thuộc tính. Lịch
         luyện đúng khu để gom đủ bộ.
       </p>
-      {present.length === 0 && <p className="muted small">Chưa mặc pháp bảo nào.</p>}
+      {present.length === 0 && <p className="muted small">Chưa mặc trang bị nào.</p>}
       {present.map(({ set, i, n }) => (
         <div key={set.name} className="set-block">
           <div>
@@ -155,10 +155,10 @@ export function BagPanel({ state: s, act }: TabProps) {
           Bán {worse} món kém hơn
         </button>
       </div>
-      <AutoToggle s={s} act={act} k="equip" label="Tự dùng pháp bảo tốt hơn khi nhặt được" />
-      <AutoToggle s={s} act={act} k="sell" label="Tự bán pháp bảo kém hơn khi nhặt được" />
-      {items.length === 0 && <p className="muted small">Túi trống. Vượt Bí Cảnh hoặc lịch luyện để nhặt pháp bảo.</p>}
-      {s.bag.length >= BAG_LIMIT && <p className="notice">Túi đã đầy, pháp bảo nhặt thêm sẽ tự động bán.</p>}
+      <AutoToggle s={s} act={act} k="equip" label="Tự dùng trang bị tốt hơn khi nhặt được" />
+      <AutoToggle s={s} act={act} k="sell" label="Tự bán trang bị kém hơn khi nhặt được" />
+      {items.length === 0 && <p className="muted small">Túi trống. Vượt Bí Cảnh hoặc lịch luyện để nhặt trang bị.</p>}
+      {s.bag.length >= BAG_LIMIT && <p className="notice">Túi đã đầy, trang bị nhặt thêm sẽ tự động bán.</p>}
       {items.map((it) => {
         const eq = s.gear[it.slot];
         const better = !eq || itemScore(it) > itemScore(eq);

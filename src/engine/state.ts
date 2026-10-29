@@ -99,13 +99,13 @@ export interface BattleReport {
 export interface AutoSettings {
   /** Tự khiêu chiến tầng kế tiếp */
   climb: boolean;
-  /** Tự dùng pháp bảo mới nhặt nếu mạnh hơn */
+  /** Tự dùng trang bị mới nhặt nếu mạnh hơn */
   equip: boolean;
-  /** Tự bán pháp bảo mới nhặt nếu kém hơn đồ đang dùng */
+  /** Tự bán trang bị mới nhặt nếu kém hơn đồ đang dùng */
   sell: boolean;
   /** Bế quan xong tự bế quan lại cùng loại */
   reclusion: boolean;
-  /** Pháp bảo kém hơn nhặt được thì luyện hóa cho bản mệnh (ưu tiên hơn tự bán) */
+  /** Trang bị kém hơn nhặt được thì luyện hóa cho bản mệnh (ưu tiên hơn tự bán) */
   devour: boolean;
   /** Linh điền: cây chín thì tự thu hoạch và gieo lại cùng loại */
   garden: boolean;

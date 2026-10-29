@@ -611,7 +611,7 @@ function disposeSpare(s: GameState, it: Item, time: number): 'devoured' | 'sold'
   return null;
 }
 
-/** Xử lý pháp bảo vừa nhặt theo các công tắc tự trang bị / tự bán / tự luyện hóa */
+/** Xử lý trang bị vừa nhặt theo các công tắc tự trang bị / tự bán / tự luyện hóa */
 function addItem(s: GameState, it: Item, time: number): Stash {
   s.stats.itemsFound++;
   if (s.auto.equip && isBetter(s, it)) {
@@ -752,7 +752,7 @@ function farmLoot(s: GameState, time: number, rng: Rng) {
   }
 }
 
-// ---------- Pháp bảo ----------
+// ---------- Trang bị ----------
 
 export function equipItem(prev: GameState, id: number, now: number, rng: Rng): GameState {
   const s = begin(prev, now, rng);
@@ -774,7 +774,7 @@ export function sellItem(prev: GameState, id: number, now: number, rng: Rng): Ga
   return s;
 }
 
-/** Pháp bảo trong túi không mạnh hơn đồ đang mặc cùng ô */
+/** Trang bị trong túi không mạnh hơn đồ đang mặc cùng ô */
 export function isWorse(s: GameState, it: Item): boolean {
   const eq = s.gear[it.slot];
   return !!eq && itemScore(it) <= itemScore(eq);
@@ -789,7 +789,7 @@ export function sellWorse(prev: GameState, now: number, rng: Rng): GameState {
     else keep.push(it);
   }
   if (keep.length === s.bag.length) return s;
-  addLog(s, now, `Bán ${s.bag.length - keep.length} pháp bảo cũ, thu ${formatNumber(total)} linh thạch.`);
+  addLog(s, now, `Bán ${s.bag.length - keep.length} trang bị cũ, thu ${formatNumber(total)} linh thạch.`);
   s.bag = keep;
   s.stones += total;
   return s;
@@ -813,7 +813,7 @@ export function canEnhance(s: GameState, it: Item): boolean {
   return itemPlus(it) < ENHANCE_MAX && s.stones >= enhanceCost(it);
 }
 
-/** Thất bại chỉ mất linh thạch, pháp bảo giữ nguyên cấp */
+/** Thất bại chỉ mất linh thạch, trang bị giữ nguyên cấp */
 export function enhanceItem(prev: GameState, id: number, now: number, rng: Rng): GameState {
   const s = begin(prev, now, rng);
   const it = findItem(s, id);
@@ -824,7 +824,7 @@ export function enhanceItem(prev: GameState, id: number, now: number, rng: Rng):
     it.plus = itemPlus(it) + 1;
     addLog(s, now, `Cường hóa thành công! ${name} lên +${it.plus}.`, 'good');
   } else {
-    addLog(s, now, `Cường hóa ${name} thất bại, mất linh thạch nhưng pháp bảo vẫn giữ +${itemPlus(it)}.`, 'bad');
+    addLog(s, now, `Cường hóa ${name} thất bại, mất linh thạch nhưng trang bị vẫn giữ +${itemPlus(it)}.`, 'bad');
   }
   return s;
 }
@@ -1261,7 +1261,7 @@ export function devourItem(prev: GameState, id: number, now: number, rng: Rng): 
   return s;
 }
 
-/** Luyện hóa mọi pháp bảo trong túi kém hơn đồ đang dùng */
+/** Luyện hóa mọi trang bị trong túi kém hơn đồ đang dùng */
 export function devourWorse(prev: GameState, now: number, rng: Rng): GameState {
   const s = begin(prev, now, rng);
   if (!canDevour(s)) return s;
@@ -1277,7 +1277,7 @@ export function devourWorse(prev: GameState, now: number, rng: Rng): GameState {
     } else keep.push(it);
   }
   if (!count) return s;
-  addLog(s, now, `Luyện hóa ${count} pháp bảo kém hơn, bản mệnh nhận ${formatNumber(total)} kinh nghiệm.`);
+  addLog(s, now, `Luyện hóa ${count} trang bị kém hơn, bản mệnh nhận ${formatNumber(total)} kinh nghiệm.`);
   s.bag = keep;
   return s;
 }

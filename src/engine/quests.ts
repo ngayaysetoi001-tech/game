@@ -7,7 +7,7 @@ import { itemPlus, setCounts } from './combat';
 import { type GameState, levelInfo } from './state';
 
 export type TabId = 'cultivate' | 'dungeon' | 'dwelling' | 'character' | 'shop';
-export type CharSub = 'overview' | 'technique' | 'skills' | 'gear';
+export type CharSub = 'overview' | 'technique' | 'skills' | 'gear' | 'treasure';
 
 /** Nơi dẫn người chơi tới để làm nhiệm vụ / gợi ý */
 export interface GoTo {
@@ -74,8 +74,8 @@ export const QUESTS: QuestDef[] = [
   },
   {
     id: 'mac_do',
-    title: 'Khoác pháp bảo',
-    desc: 'Mặc món pháp bảo đầu tiên (nhặt được khi vượt Bí Cảnh).',
+    title: 'Khoác trang bị',
+    desc: 'Mặc món trang bị đầu tiên (nhặt được khi vượt Bí Cảnh).',
     go: { tab: 'character', sub: 'gear' },
     done: hasGear,
     reward: { stones: 100 },
@@ -142,7 +142,7 @@ export const QUESTS: QuestDef[] = [
     id: 'ban_menh',
     title: 'Bản mệnh',
     desc: 'Luyện một bản mệnh pháp bảo (mở ở Trúc Cơ).',
-    go: { tab: 'character', sub: 'gear' },
+    go: { tab: 'character', sub: 'treasure' },
     done: (s) => s.natal !== null,
     reward: { stones: 150, fragments: 3 },
   },
@@ -165,7 +165,7 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'nhat_do',
     title: 'Nhặt nhạnh',
-    desc: 'Nhặt được 15 pháp bảo (lịch luyện treo máy ở tầng đã vượt rất hiệu quả).',
+    desc: 'Nhặt được 15 trang bị (lịch luyện treo máy ở tầng đã vượt rất hiệu quả).',
     go: { tab: 'dungeon' },
     done: (s) => s.stats.itemsFound >= 15,
     progress: (s) => ratio(s.stats.itemsFound, 15),
@@ -174,7 +174,7 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'cuong_hoa',
     title: 'Tôi luyện',
-    desc: 'Cường hóa một pháp bảo lên +3.',
+    desc: 'Cường hóa một trang bị lên +3.',
     go: { tab: 'character', sub: 'gear' },
     done: (s) => anyPlus(s) >= 3,
     progress: (s) => `+${Math.min(anyPlus(s), 3)}/+3`,
@@ -208,7 +208,7 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'hop_bo',
     title: 'Hợp bộ',
-    desc: 'Mặc 2 món pháp bảo cùng bộ (cùng khu bí cảnh) để nhận thêm thuộc tính.',
+    desc: 'Mặc 2 món trang bị cùng bộ (cùng khu bí cảnh) để nhận thêm thuộc tính.',
     go: { tab: 'character', sub: 'gear' },
     done: (s) => Math.max(...setCounts(s)) >= 2,
     reward: { stones: 400 },
@@ -241,8 +241,8 @@ export const QUESTS: QuestDef[] = [
   {
     id: 'ban_menh_10',
     title: 'Bản mệnh lớn dần',
-    desc: 'Luyện hóa pháp bảo thừa để bản mệnh đạt cấp 10 (tiến hóa lên Linh Khí).',
-    go: { tab: 'character', sub: 'gear' },
+    desc: 'Luyện hóa trang bị thừa để bản mệnh đạt cấp 10 (tiến hóa lên Linh Khí).',
+    go: { tab: 'character', sub: 'treasure' },
     done: (s) => (s.natal?.level ?? 0) >= 10,
     progress: (s) => ratio(s.natal?.level ?? 0, 10),
     reward: { stones: 500, fragments: 8 },

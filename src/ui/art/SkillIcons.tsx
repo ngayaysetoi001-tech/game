@@ -3,7 +3,7 @@ import { SKILLS, type SkillId, type TechId } from '../../engine/engine';
 import { INK } from './palette';
 import { Art } from './registry';
 
-// Biểu tượng võ kỹ và công pháp: cùng kiểu khung vuông bo góc với biểu tượng pháp bảo.
+// Biểu tượng võ kỹ và công pháp: cùng kiểu khung vuông bo góc với biểu tượng trang bị.
 // - Võ kỹ: khung màu theo hệ chiêu thức, vòng tròn bên trong, số cấp ở góc dưới phải, số thứ tự ưu tiên ở góc trên trái.
 // - Công pháp: khung màu theo phẩm cấp (Hoàng, Huyền, Địa, Thiên), số chấm ở đáy = phẩm cấp, số tầng ở góc trên phải.
 // Có ảnh thật tại skills/<id> hoặc techs/<id> trong src/assets/art thì dùng ảnh.

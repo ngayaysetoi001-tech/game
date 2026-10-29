@@ -1,4 +1,4 @@
-// Bản mệnh pháp bảo: một pháp bảo lớn lên cùng nhân vật. Luyện hóa pháp bảo thừa để lên cấp.
+// Bản mệnh pháp bảo: một pháp bảo lớn lên cùng nhân vật. Luyện hóa trang bị thừa để lên cấp.
 
 import type { Mods } from './gear';
 import type { SkillId } from './skills';
@@ -75,7 +75,7 @@ export function natalExpNeeded(level: number): number {
   return Math.round(60 * 1.22 ** (level - 1));
 }
 
-/** Kinh nghiệm bản mệnh nhận được khi luyện hóa một pháp bảo */
+/** Kinh nghiệm bản mệnh nhận được khi luyện hóa một trang bị */
 export function natalExpFromItem(tierMult: number, floor: number, plus: number): number {
   return Math.round(12 * tierMult ** 1.6 * 1.12 ** floor * (1 + 0.5 * plus));
 }

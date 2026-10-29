@@ -20,7 +20,7 @@ export default function OfflineModal({ summary, onClose }: { summary: OfflineSum
           )}
           {summary.items > 0 && (
             <li>
-              <b>{summary.items}</b> pháp bảo
+              <b>{summary.items}</b> trang bị
             </li>
           )}
           {summary.herbs > 0 && (

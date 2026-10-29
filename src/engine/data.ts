@@ -150,10 +150,10 @@ export const SECLUSIONS: SeclusionDef[] = [
 export const LOG_LIMIT = 60;
 
 // =====================================================================
-// Giai đoạn 1: chiến đấu, bí cảnh, pháp bảo, công pháp
+// Giai đoạn 1: chiến đấu, bí cảnh, trang bị, công pháp
 // =====================================================================
 
-/** Chỉ số gốc nhân với SCALE^cấp — dùng chung cho người chơi, quái và pháp bảo */
+/** Chỉ số gốc nhân với SCALE^cấp — dùng chung cho người chơi, quái và trang bị */
 export const POWER_SCALE = 1.2;
 export const BASE_STATS = { hp: 100, atk: 15, def: 5, spd: 100 };
 
@@ -182,7 +182,7 @@ export const BOSS_MULT = { hp: 3, atk: 1.15, def: 1.2 };
 /** "Cấp tương đương" của quái ở tầng f, để so với cấp người chơi */
 /**
  * "Cấp tương đương" của quái ở tầng f, để so với cấp người chơi.
- * Ba tầng đầu được giảm để nhân vật mới có thể lấy món pháp bảo đầu tiên.
+ * Ba tầng đầu được giảm để nhân vật mới có thể lấy món trang bị đầu tiên.
  */
 export function floorLevel(floor: number): number {
   if (floor > MAX_FLOOR) return floorLevel(MAX_FLOOR) + TOWER_LEVEL_STEP * (floor - MAX_FLOOR);
@@ -218,7 +218,7 @@ export const FARM_FRAGMENT_CHANCE = 0.25;
 /** Lịch luyện thì tu luyện chậm lại */
 export const FARM_CULTIVATION_MULT = 0.5;
 
-// --- Pháp bảo ---
+// --- Trang bị ---
 export type Slot = 'weapon' | 'armor' | 'pendant' | 'ring' | 'boots';
 export const SLOTS: Slot[] = ['weapon', 'armor', 'pendant', 'ring', 'boots'];
 export const SLOT_NAMES: Record<Slot, string> = {

@@ -773,7 +773,7 @@ button.link {
   font-size: 13px;
 }
 
-/* Pháp bảo: thuộc tính phụ, bộ trang bị */
+/* Trang bị: thuộc tính phụ, bộ trang bị */
 .item-line {
   min-width: 0;
 }
@@ -797,7 +797,7 @@ button.link {
   color: var(--good);
 }
 
-/* Hàng pháp bảo: biểu tượng + nội dung, các nút xuống dưới để tên không bị bóp */
+/* Hàng trang bị: biểu tượng + nội dung, các nút xuống dưới để tên không bị bóp */
 .item-row {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr);

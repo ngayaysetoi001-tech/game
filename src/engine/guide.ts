@@ -62,7 +62,7 @@ export function advise(s: GameState, winChance: number | null): Advice[] {
   if (kiep && kiep.pass < 0.5) {
     add({
       tone: 'warn',
-      text: `Đột phá ${nextRealm} có Thiên Kiếp ${kiep.bolts} đạo lôi, bạn chỉ vượt được ~${pct(kiep.pass)}. Nên tăng khí huyết, phòng thủ (pháp bảo, công pháp, bản mệnh) trước.`,
+      text: `Đột phá ${nextRealm} có Thiên Kiếp ${kiep.bolts} đạo lôi, bạn chỉ vượt được ~${pct(kiep.pass)}. Nên tăng khí huyết, phòng thủ (trang bị, công pháp, bản mệnh) trước.`,
       go: { tab: 'character' },
       goLabel: 'Tăng chỉ số',
     });
@@ -81,7 +81,7 @@ export function advise(s: GameState, winChance: number | null): Advice[] {
     if (winChance !== null) {
       text +=
         winChance < 0.3
-          ? ` Tầng ${nextFloor} còn quá mạnh (thắng ~${pct(winChance)}): lịch luyện ở tầng đã vượt để nhặt pháp bảo, nâng công pháp và võ kỹ.`
+          ? ` Tầng ${nextFloor} còn quá mạnh (thắng ~${pct(winChance)}): lịch luyện ở tầng đã vượt để nhặt trang bị, nâng công pháp và võ kỹ.`
           : ` Khiêu chiến tầng ${nextFloor} (thắng ~${pct(winChance)}).`;
     }
     add({ tone: 'warn', text, go: { tab: 'dungeon' }, goLabel: 'Tới Bí Cảnh' });
@@ -100,7 +100,7 @@ export function advise(s: GameState, winChance: number | null): Advice[] {
     add({
       tone: 'good',
       text: 'Có thể luyện bản mệnh pháp bảo: một pháp bảo lớn lên cùng bạn và có chiêu riêng trong trận.',
-      go: { tab: 'character', sub: 'gear' },
+      go: { tab: 'character', sub: 'treasure' },
       goLabel: 'Luyện bản mệnh',
     });
   }
@@ -115,7 +115,7 @@ export function advise(s: GameState, winChance: number | null): Advice[] {
       tone: 'info',
       text: `Trong túi có ${SLOT_NAMES[better.slot]} tốt hơn đồ đang dùng${s.gear[better.slot] ? '' : ' (ô đang trống)'}.`,
       go: { tab: 'character', sub: 'gear' },
-      goLabel: 'Xem pháp bảo',
+      goLabel: 'Xem trang bị',
     });
   }
   const skillUp = s.loadout.find((id) => canUpgradeSkill(s, id));
@@ -203,7 +203,7 @@ export function advise(s: GameState, winChance: number | null): Advice[] {
       tone: 'info',
       text:
         s.floor > 0
-          ? 'Nhân vật đang rảnh: bế quan để tu vi tăng nhanh, hoặc lịch luyện để nhặt pháp bảo và tàn quyển (cả hai chạy khi offline).'
+          ? 'Nhân vật đang rảnh: bế quan để tu vi tăng nhanh, hoặc lịch luyện để nhặt trang bị và tàn quyển (cả hai chạy khi offline).'
           : 'Nhân vật đang rảnh: bế quan để tu vi tăng nhanh (chạy cả khi offline).',
       go: { tab: 'cultivate' },
       goLabel: 'Bế quan',
@@ -211,7 +211,7 @@ export function advise(s: GameState, winChance: number | null): Advice[] {
   }
 
   if (!out.length) {
-    add({ tone: 'info', text: 'Mọi thứ đang ổn. Cứ để game chạy: tu vi, linh thạch và pháp bảo sẽ tự tăng.' });
+    add({ tone: 'info', text: 'Mọi thứ đang ổn. Cứ để game chạy: tu vi, linh thạch và trang bị sẽ tự tăng.' });
   }
   return out;
 }

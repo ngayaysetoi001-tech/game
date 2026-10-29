@@ -1,4 +1,4 @@
-// Chỉ số chiến đấu, quái bí cảnh, pháp bảo và mô phỏng trận đấu.
+// Chỉ số chiến đấu, quái bí cảnh, trang bị và mô phỏng trận đấu.
 
 import { kiepMods } from './kiep';
 import {
@@ -57,7 +57,7 @@ export interface Fighter {
   crit: number;
   /** Võ kỹ theo thứ tự ưu tiên */
   skills: { id: SkillId; level: number }[];
-  // Từ pháp bảo và bộ trang bị
+  // Từ trang bị và bộ trang bị
   lifesteal?: number;
   thorns?: number;
   dodge?: number;
@@ -401,7 +401,7 @@ export function simulateBattle(pf: Fighter, ef: Fighter, rng: Rng): BattleResult
   return { win: false, lines, events };
 }
 
-// ---------- Pháp bảo ----------
+// ---------- Trang bị ----------
 
 export function rollItem(floor: number, boss: boolean, rng: Rng, id: number): Item {
   const slot = SLOTS[Math.floor(rng() * SLOTS.length)];
@@ -443,7 +443,7 @@ export function itemName(it: Item): string {
   return ITEM_NAMES[it.slot][it.tier];
 }
 
-/** Bộ trang bị (chỉ số trong SETS) của một pháp bảo, theo khu bí cảnh nơi nó rơi */
+/** Bộ trang bị (chỉ số trong SETS) của một trang bị, theo khu bí cảnh nơi nó rơi */
 export function itemSetIndex(it: Item): number {
   return Math.min(SETS.length - 1, Math.floor((Math.max(1, it.floor) - 1) / BOSS_EVERY));
 }
@@ -512,7 +512,7 @@ export function dwellingMods(s: GameState): FullMods {
   return m;
 }
 
-/** Tổng mọi nguồn cộng thêm cho nhân vật: pháp bảo + bộ trang bị, công pháp, bản mệnh, động phủ */
+/** Tổng mọi nguồn cộng thêm cho nhân vật: trang bị + bộ trang bị, công pháp, bản mệnh, động phủ */
 export function charMods(s: GameState): FullMods {
   const m = gearMods(s);
   for (const part of [techMods(s), natalMods(s), dwellingMods(s), kiepFullMods(s)]) for (const k of MOD_KEYS) m[k] += part[k];
@@ -527,7 +527,7 @@ function zeroMods(): FullMods {
   return Object.fromEntries(MOD_KEYS.map((k) => [k, 0])) as FullMods;
 }
 
-/** Điểm so sánh giữa các pháp bảo cùng ô */
+/** Điểm so sánh giữa các trang bị cùng ô */
 export function itemScore(it: Item): number {
   const st = itemStats(it);
   let score =

@@ -132,7 +132,7 @@ export default function DungeonTab(props: TabProps) {
             {s.seclusion && <p className="muted small">Đang bế quan, không thể chiến đấu.</p>}
             {!hold && chance < 0.3 && (
               <p className="notice">
-                Đối thủ quá mạnh. Hãy lịch luyện ở tầng đã vượt để nhặt pháp bảo, dùng tàn quyển tu luyện công
+                Đối thủ quá mạnh. Hãy lịch luyện ở tầng đã vượt để nhặt trang bị, dùng tàn quyển tu luyện công
                 pháp, hoặc tu luyện lên cảnh giới cao hơn.
               </p>
             )}
@@ -142,7 +142,7 @@ export default function DungeonTab(props: TabProps) {
               </p>
             )}
             <p className="muted small">
-              Thắng: {formatNumber(floorStones(next))} linh thạch, {boss ? 3 : 1} tàn quyển, 1 pháp bảo
+              Thắng: {formatNumber(floorStones(next))} linh thạch, {boss ? 3 : 1} tàn quyển, 1 trang bị
               {boss ? ' (từ Linh Phẩm trở lên)' : ''}
               {inTower && boss ? `, thêm ${TOWER_BOSS_FRAGMENTS} tàn quyển` : ''}. Thua: bị thương 2 phút.
             </p>
@@ -219,7 +219,7 @@ function FarmingPanel({ state: s, act }: TabProps) {
     <section className="card">
       <h2>Lịch Luyện</h2>
       <p className="muted small">
-        Treo máy ở một tầng đã vượt để kiếm linh thạch, tàn quyển và pháp bảo, kể cả khi offline. Trong lúc lịch
+        Treo máy ở một tầng đã vượt để kiếm linh thạch, tàn quyển và trang bị, kể cả khi offline. Trong lúc lịch
         luyện, tốc độ tu luyện ×{FARM_CULTIVATION_MULT}.
       </p>
       {s.floor === 0 ? (
@@ -255,7 +255,7 @@ function FarmRates({ floor }: { floor: number }) {
   return (
     <p className="small">
       Mỗi phút: {formatNumber(floorStones(floor) * FARM_STONE_SHARE)} linh thạch · {FARM_FRAGMENT_CHANCE * 100}%
-      tàn quyển · {FARM_ITEM_CHANCE * 100}% pháp bảo
+      tàn quyển · {FARM_ITEM_CHANCE * 100}% trang bị
     </p>
   );
 }

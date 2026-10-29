@@ -49,7 +49,7 @@ export default function Gallery() {
         </section>
       ))}
       <section className="card">
-        <h2>Pháp bảo & đan dược</h2>
+        <h2>Trang bị & đan dược</h2>
         <div className="row">
           {SLOTS.flatMap((slot) => [0, 1, 2, 3, 4].map((t) => <ItemIcon key={`${slot}${t}`} slot={slot} tier={t} />))}
           {(['tuKhi', 'phaCanh', 'hoiXuan'] as PillId[]).map((id) => (

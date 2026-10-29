@@ -28,8 +28,8 @@ npm run build    # bản build tĩnh ở dist/, deploy được lên GitHub Page
 - **Giao diện 4 tab**: Tu Luyện / Bí Cảnh / Nhân Vật / Phường Thị, có chấm báo khi có việc cần làm.
 - **Bí Cảnh 40 tầng**, 8 khu vực, thủ lĩnh mỗi 5 tầng. Chiến đấu tự động theo thanh hành động (tốc độ, bạo kích),
   có ước tính tỉ lệ thắng và chiến báo chi tiết. **Đột phá đại cảnh giới yêu cầu vượt tầng chặn** (Trúc Cơ: 3, Kim Đan: 5, Nguyên Anh: 10…).
-- **Lịch luyện**: treo máy ở tầng đã vượt (kể cả offline) để nhặt linh thạch, tàn quyển, pháp bảo; đổi lại tu luyện ×0.5. Không thể vừa lịch luyện vừa bế quan.
-- **Pháp bảo** 3 ô (Vũ Khí, Hộ Giáp, Linh Bội) × 4 phẩm (Phàm → Tiên). Linh bội tăng tốc độ tu luyện. Túi 30 ô, bán nhanh đồ kém hơn.
+- **Lịch luyện**: treo máy ở tầng đã vượt (kể cả offline) để nhặt linh thạch, tàn quyển, trang bị; đổi lại tu luyện ×0.5. Không thể vừa lịch luyện vừa bế quan.
+- **Trang bị** 3 ô (Vũ Khí, Hộ Giáp, Linh Bội) × 4 phẩm (Phàm → Tiên). Linh bội tăng tốc độ tu luyện. Túi 30 ô, bán nhanh đồ kém hơn.
 - **Công pháp**: Dẫn Khí Quyết từ đầu; tới Trúc Cơ chọn **Kiếm Tu / Thể Tu / Pháp Tu** (không đổi được), linh căn hợp hệ ×1.25 hiệu quả.
   Nâng cấp bằng tàn quyển + linh thạch, giới hạn cấp theo cảnh giới.
 - Save bản MVP tự nâng cấp; các tầng chặn của cảnh giới hiện tại được tính là đã vượt.
@@ -40,7 +40,7 @@ npm run build    # bản build tĩnh ở dist/, deploy được lên GitHub Page
   8 bối cảnh bí cảnh + động phủ + hang bế quan, tu sĩ ngồi thiền / chiến đấu theo hướng tu, 40 quái vật từ 9 dạng cơ thể.
 - **Tu Luyện**: linh khí xoáy vào người, hào quang đổi màu theo cảnh giới; hiệu ứng lên tầng, sấm sét khi đột phá, vết nứt khi thất bại.
 - **Bí Cảnh**: sân đấu phát lại từng đòn (lao vào, trúng đòn, số sát thương, bạo kích, thanh máu, Thắng/Bại), có nút Bỏ qua.
-- Biểu tượng pháp bảo theo phẩm, đan dược. Tắt mọi chuyển động khi hệ điều hành bật "giảm chuyển động".
+- Biểu tượng trang bị theo phẩm, đan dược. Tắt mọi chuyển động khi hệ điều hành bật "giảm chuyển động".
 - Xem toàn bộ hình một lượt: mở trang với `#gallery` ở cuối địa chỉ.
 - **Thay bằng ảnh thật**: đặt file vào `src/assets/art/` theo quy ước tên trong [README ở đó](src/assets/art/README.md);
   thiếu file nào thì game dùng hình vẽ bằng code.
@@ -49,7 +49,7 @@ npm run build    # bản build tĩnh ở dist/, deploy được lên GitHub Page
 
 - **Tự động khiêu chiến** (tab Bí Cảnh): đánh tầng kế tiếp mỗi 20 giây; thua thì tạm dừng tới khi chiến lực tăng, không bế quan cùng lúc.
 - **Tự bế quan lại** (tab Tu Luyện): bế quan xong tự vào lại cùng loại; dừng khi tu vi đầy bình cảnh để người chơi đột phá.
-- **Tự dùng pháp bảo tốt hơn / tự bán đồ kém hơn** khi nhặt được (tab Nhân Vật).
+- **Tự dùng trang bị tốt hơn / tự bán đồ kém hơn** khi nhặt được (tab Nhân Vật).
 - **Tự dùng Hồi Xuân Đan** khi bị thương (tab Phường Thị).
 - Thông báo nổi cho sự kiện quan trọng và khi có thể đột phá; thẻ **Thống Kê**; popup offline tóm tắt cả tầng vượt, trận đấu, số lần bế quan.
 
@@ -60,17 +60,17 @@ npm run build    # bản build tĩnh ở dist/, deploy được lên GitHub Page
 - **3 ô võ kỹ** mở ở Trúc Cơ / Kim Đan / Nguyên Anh. Trong trận tự dùng chiêu đầu tiên đã hồi chiêu theo thứ tự ưu tiên người chơi xếp.
 - Học: chiêu đầu khi chọn hướng tu, **bí tịch rơi từ thủ lĩnh** (tầng 5, 10, 15, 20, 25), Tàng Kinh Các ở Phường Thị. Nâng cấp tới cấp 10 bằng tàn quyển + linh thạch.
 - **Quái từ tầng 5 có chiêu thức**, thủ lĩnh có 2 chiêu; xem trước chiêu của đối thủ trong tab Bí Cảnh. Thủ lĩnh tầng 30/35/40 rơi gói tàn quyển.
-- Sân đấu hô tên chiêu, hiện hồi máu, khiên, né, choáng, thiêu đốt. Tab Nhân Vật chia mục con: Tổng quan / Công Pháp / Võ Kỹ / Pháp Bảo.
+- Sân đấu hô tên chiêu, hiện hồi máu, khiên, né, choáng, thiêu đốt. Tab Nhân Vật chia mục con: Tổng quan / Công Pháp / Võ Kỹ / Trang Bị.
 - Save cũ tự nâng lên v4 và được trao lại các võ kỹ tương ứng với những thủ lĩnh đã hạ.
 
-### Pháp bảo (đợt B)
+### Trang bị (đợt B)
 
 - **5 ô**: Vũ Khí, Hộ Giáp, Linh Bội, Giới Chỉ (bạo kích), Hài (tốc độ). Thêm phẩm **Thần Phẩm** (×5.5), chỉ rơi từ thủ lĩnh; lịch luyện ở tầng thủ lĩnh cũng rơi đồ tốt như thủ lĩnh.
 - **Thuộc tính phụ ngẫu nhiên** theo phẩm (0 / 1 / 2 / 3 / 3 dòng): hút máu, phản đòn, né tránh, bạo kích, % công / khí huyết / thủ, tốc độ, tu luyện, linh thạch.
-- **Bộ trang bị theo khu bí cảnh**: pháp bảo rơi ở khu nào thì thuộc bộ khu đó (Thanh Lang, Huyết Ma, Yêu Hồ, Cổ Ma, Lôi Đình, U Minh, Tiên Phủ, Hỗn Độn).
+- **Bộ trang bị theo khu bí cảnh**: trang bị rơi ở khu nào thì thuộc bộ khu đó (Thanh Lang, Huyết Ma, Yêu Hồ, Cổ Ma, Lôi Đình, U Minh, Tiên Phủ, Hỗn Độn).
   Mặc 2 món / 4 món cùng bộ để nhận thêm thuộc tính (hút máu, thiêu đốt mỗi đòn, phản đòn, choáng mỗi đòn…).
 - **Cường hóa +1 đến +10** bằng linh thạch, mỗi cấp +8% chỉ số gốc; tỉ lệ thành công giảm dần (100% → 15%). Thất bại chỉ mất linh thạch.
-- Chiến đấu hỗ trợ hút máu, phản đòn, né tránh, choáng và thiêu đốt từ pháp bảo. Save v4 tự nâng lên v5 (đồ cũ giữ nguyên, thêm ô Giới Chỉ và Hài).
+- Chiến đấu hỗ trợ hút máu, phản đòn, né tránh, choáng và thiêu đốt từ trang bị. Save v4 tự nâng lên v5 (đồ cũ giữ nguyên, thêm ô Giới Chỉ và Hài).
 
 ### Công pháp theo phẩm cấp (đợt C)
 
@@ -83,13 +83,13 @@ npm run build    # bản build tĩnh ở dist/, deploy được lên GitHub Page
 ### Bản mệnh pháp bảo (đợt D)
 
 - Mở ở Trúc Cơ, chọn 1 trong 3: **Thanh Hồng Phi Kiếm** (công kích), **Càn Khôn Hồ Lô** (bền bỉ), **Trấn Hồn Linh Chung** (khống chế). Không đổi được.
-- **Luyện hóa pháp bảo thừa** (theo phẩm, tầng, cấp cường hóa) để bản mệnh lên cấp 30. Có công tắc tự luyện hóa đồ kém hơn thay cho tự bán.
+- **Luyện hóa trang bị thừa** (theo phẩm, tầng, cấp cường hóa) để bản mệnh lên cấp 30. Có công tắc tự luyện hóa đồ kém hơn thay cho tự bán.
 - Tiến hóa 4 giai đoạn (Phàm, Linh, Bảo, Tiên Khí) với thưởng thêm mỗi giai đoạn; có **chiêu bản mệnh riêng** luôn ưu tiên dùng trước trong trận, mạnh lên theo cấp. Bản mệnh lơ lửng cạnh nhân vật trong cảnh tu luyện.
 - Sức quái từ tầng 6 trở đi tăng thêm để bù cho các nguồn sức mạnh mới.
 
 ### Biểu tượng võ kỹ và công pháp
 
-- Mỗi võ kỹ, chiêu của quái, chiêu bản mệnh và công pháp có biểu tượng riêng cùng kiểu khung với pháp bảo: võ kỹ có vòng tròn, số cấp và số thứ tự ưu tiên; công pháp có hai trục cuộn, màu khung theo phẩm cấp và số chấm = phẩm cấp.
+- Mỗi võ kỹ, chiêu của quái, chiêu bản mệnh và công pháp có biểu tượng riêng cùng kiểu khung với trang bị: võ kỹ có vòng tròn, số cấp và số thứ tự ưu tiên; công pháp có hai trục cuộn, màu khung theo phẩm cấp và số chấm = phẩm cấp.
 - Hiện ở mục Võ Kỹ, Công Pháp, Phường Thị, chiêu thức của đối thủ, chiêu bản mệnh và khi hô tên chiêu trong trận. Thẻ **Đang Trang Bị** ở mục Tổng quan gom công pháp, võ kỹ và bản mệnh đang dùng, chạm vào để mở mục tương ứng.
 - Thay bằng ảnh thật: `src/assets/art/skills/<mã võ kỹ>`, `techs/<mã công pháp>`, `natal/<mã>` (xem README trong thư mục đó). Xem tất cả ở trang `#gallery`.
 
@@ -110,7 +110,7 @@ Kim Đan ~1.5 giờ, Nguyên Anh ~4 giờ… hết Độ Kiếp ~10 ngày.
 
 ### Vô Cực Tháp
 - Sau tầng 40 của Bí Cảnh là **Vô Cực Tháp**: tầng 41 trở đi (hiện là "tầng 1, 2, …" của tháp), không có đỉnh.
-- Quái mạnh thêm khoảng 10% mỗi tầng; linh thạch tăng tuyến tính; thủ lĩnh cứ 5 tầng, thêm 5 tàn quyển và pháp bảo Linh Phẩm trở lên.
+- Quái mạnh thêm khoảng 10% mỗi tầng; linh thạch tăng tuyến tính; thủ lĩnh cứ 5 tầng, thêm 5 tàn quyển và trang bị Linh Phẩm trở lên.
 - Dùng chung tự khiêu chiến, lịch luyện và nhật ký với Bí Cảnh; có 3 nhiệm vụ mới (tầng tháp 5, 15, 30). Không đổi định dạng save.
 
 ### Thiên Kiếp
@@ -123,9 +123,9 @@ Kim Đan ~1.5 giờ, Nguyên Anh ~4 giờ… hết Độ Kiếp ~10 ngày.
 ```
 src/
   engine/       logic game thuần TypeScript, không phụ thuộc giao diện
-    data.ts       toàn bộ số liệu cân bằng: cảnh giới, linh căn, đan dược, bế quan, bí cảnh, pháp bảo, công pháp
+    data.ts       toàn bộ số liệu cân bằng: cảnh giới, linh căn, đan dược, bế quan, bí cảnh, trang bị, công pháp
     state.ts      kiểu dữ liệu, tra cứu cảnh giới, định dạng số
-    combat.ts     chỉ số chiến đấu, quái, pháp bảo, mô phỏng trận đấu
+    combat.ts     chỉ số chiến đấu, quái, trang bị, mô phỏng trận đấu
     engine.ts     tick thời gian và mọi hành động (đột phá, bế quan, bí cảnh, trang bị, công pháp…), offline, lưu/tải
     engine.test.ts
   ui/           giao diện React

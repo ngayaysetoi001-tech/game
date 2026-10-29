@@ -10,7 +10,7 @@ const COLORS: Record<BuildingId, string> = {
   linh_mach: '#6fb2ff',
 };
 
-/** Biểu tượng công trình động phủ, cùng kiểu khung với biểu tượng pháp bảo */
+/** Biểu tượng công trình động phủ, cùng kiểu khung với biểu tượng trang bị */
 export function BuildingIcon({ id, level, size = 40 }: { id: BuildingId; level?: number; size?: number }) {
   const c = COLORS[id];
   return (

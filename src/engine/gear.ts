@@ -1,6 +1,6 @@
 // Dữ liệu thuộc tính phụ, bộ trang bị theo khu bí cảnh và cường hóa.
 
-/** Cộng thêm cho nhân vật từ pháp bảo. Tỉ lệ ghi dạng thập phân (0.05 = 5%); spd là số cộng thẳng. */
+/** Cộng thêm cho nhân vật từ trang bị. Tỉ lệ ghi dạng thập phân (0.05 = 5%); spd là số cộng thẳng. */
 export interface Mods {
   hpPct?: number;
   atkPct?: number;
@@ -79,7 +79,7 @@ export function describeMods(m: Mods): string {
 export type AffixId = ModKey;
 
 /** Khoảng giá trị ở Linh Phẩm; phẩm cao hơn nhân thêm AFFIX_TIER_SCALE mỗi bậc */
-export const AFFIXES: { id: AffixId; range: [number, number]; /** điểm khi so sánh pháp bảo */ score: number }[] = [
+export const AFFIXES: { id: AffixId; range: [number, number]; /** điểm khi so sánh trang bị */ score: number }[] = [
   { id: 'lifesteal', range: [0.02, 0.05], score: 6 },
   { id: 'thorns', range: [0.04, 0.08], score: 3 },
   { id: 'dodge', range: [0.02, 0.05], score: 5 },
@@ -104,7 +104,7 @@ export interface SetDef {
   four: Mods;
 }
 
-/** Cùng thứ tự ZONES: pháp bảo rơi ở khu nào thì thuộc bộ của khu đó */
+/** Cùng thứ tự ZONES: trang bị rơi ở khu nào thì thuộc bộ của khu đó */
 export const SETS: SetDef[] = [
   { name: 'Thanh Lang', two: { hpPct: 0.06 }, four: { spd: 4, crit: 0.03 } },
   { name: 'Huyết Ma', two: { lifesteal: 0.03 }, four: { burnHit: 0.15 } },
@@ -121,9 +121,9 @@ export const SETS: SetDef[] = [
 export const ENHANCE_MAX = 10;
 /** Tỉ lệ thành công khi cường hóa từ +n lên +(n+1) */
 export const ENHANCE_RATES = [1, 0.95, 0.9, 0.8, 0.7, 0.55, 0.45, 0.35, 0.25, 0.15];
-/** Mỗi cấp cộng thêm vào chỉ số gốc của pháp bảo */
+/** Mỗi cấp cộng thêm vào chỉ số gốc của trang bị */
 export const ENHANCE_BONUS = 0.08;
-/** Chi phí = linh thạch thưởng tầng của pháp bảo × hệ số × (n+1). Thất bại mất chi phí, pháp bảo giữ nguyên. */
+/** Chi phí = linh thạch thưởng tầng của trang bị × hệ số × (n+1). Thất bại mất chi phí, trang bị giữ nguyên. */
 export const ENHANCE_COST = 0.4;
-/** Bán pháp bảo đã cường hóa được thêm mỗi cấp */
+/** Bán trang bị đã cường hóa được thêm mỗi cấp */
 export const ENHANCE_SELL_BONUS = 0.3;

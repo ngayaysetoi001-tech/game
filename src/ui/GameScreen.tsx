@@ -41,7 +41,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'shop', label: 'Phường Thị' },
 ];
 
-/** Có pháp bảo trong túi mạnh hơn đồ đang dùng (hoặc ô đang trống) */
+/** Có trang bị trong túi mạnh hơn đồ đang dùng (hoặc ô đang trống) */
 function hasUpgrade(s: GameState): boolean {
   return s.bag.some((it) => {
     const eq = s.gear[it.slot];
