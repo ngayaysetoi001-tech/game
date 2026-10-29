@@ -59,4 +59,37 @@ Quái thường lần lượt theo tầng, cuối cùng là thủ lĩnh.
 
 Tất cả tắt khi hệ điều hành bật "giảm chuyển động". Hình vẽ bằng code vẫn có chuyển động riêng, nên không bị thêm hai lần.
 
+## Ảnh động (cách 3)
+
+Ngoài ảnh tĩnh, mọi mục trong bảng trên đều nhận được ảnh động theo hai cách:
+
+1. **Ảnh động có sẵn** (`.gif`, WebP động, APNG): đặt đúng tên như ảnh tĩnh, game tự phát vòng lặp.
+2. **Sprite sheet** (nhiều khung xếp trong một ảnh): thêm `.sheet-<cột>x<hàng>-<fps>` vào tên, trước đuôi file. Các khung xếp trái sang phải, trên xuống dưới, mọi khung cùng kích thước. Ví dụ `none-sit.sheet-4x2-6.webp` là 8 khung (4 cột, 2 hàng), 6 khung/giây, lặp vòng. Khung nên cùng tỉ lệ với ô hiển thị (nhân vật 100:120, quái 120:100, hiệu ứng vuông).
+
+### Tư thế chiến đấu
+
+Nhân vật và quái có thể có ảnh riêng cho từng tư thế; tư thế nào thiếu thì dùng ảnh gốc.
+
+| Tư thế | Khi nào hiện | Tên file nhân vật | Tên file quái |
+|---|---|---|---|
+| `attack` | lúc ra đòn | `cultivator/<huong-tu>-attack` | `monsters/<ten-quai>-attack` |
+| `cast` | lúc thi triển chiêu hỗ trợ (hồi máu, khiên, tăng lực, thanh tâm) | `cultivator/<huong-tu>-cast` | `monsters/<ten-quai>-cast` |
+| `hit` | lúc bị đánh trúng | `cultivator/<huong-tu>-hit` | `monsters/<ten-quai>-hit` |
+| `defeated` | khi bại trận | `cultivator/<huong-tu>-defeated` | `monsters/<ten-quai>-defeated` |
+
+### Hiệu ứng một lần (thư mục `fx/`)
+
+Phát đè lên cảnh một lần rồi dừng ở khung cuối; không có ảnh thì dùng hiệu ứng vẽ bằng code.
+
+| Tên file | Khi nào phát |
+|---|---|
+| `fx/breakthrough` | đột phá đại cảnh giới thành công (không qua Thiên Kiếp) |
+| `fx/stage-up` | lên một tầng trong cảnh giới |
+| `fx/break-fail` | đột phá thất bại |
+| `fx/kiep-pass` | vượt Thiên Kiếp |
+| `fx/kiep-fail` | ngã xuống ở Thiên Kiếp |
+| `fx/skill-<ma-vo-ky>` | khi thi triển chiêu đó (mã trong `src/engine/skills.ts`, ví dụ `fx/skill-kiem_pha_thien`), đặt trên mục tiêu của chiêu |
+
+Tất cả ảnh động dừng ở khung đầu khi hệ điều hành bật "giảm chuyển động".
+
 Xem toàn bộ biểu tượng và hình hiện có bằng cách mở trang với đuôi `#gallery`.

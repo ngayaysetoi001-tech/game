@@ -311,3 +311,50 @@
     animation: none;
   }
 }
+
+/* Ảnh nhiều khung, hiệu ứng một lần, tư thế chiến đấu */
+.art-sheet {
+  background-size: contain;
+}
+.oneshot-fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+.pose-stack {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.pose-stack > .pose {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+.fighter.lunge .pose-stack.has-attack > .pose-attack,
+.fighter.cast .pose-stack.has-cast > .pose-cast,
+.fighter.hit .pose-stack.has-hit > .pose-hit,
+.fighter.defeated .pose-stack.has-defeated > .pose-defeated {
+  display: block;
+}
+.fighter.lunge .pose-stack.has-attack > .pose-base,
+.fighter.cast .pose-stack.has-cast > .pose-base,
+.fighter.hit .pose-stack.has-hit > .pose-base,
+.fighter.defeated .pose-stack.has-defeated > .pose-base {
+  visibility: hidden;
+}
+.skill-fx {
+  position: absolute;
+  bottom: 3%;
+  width: 40%;
+  aspect-ratio: 1;
+  pointer-events: none;
+  z-index: 3;
+}
+.skill-fx.on-enemy {
+  right: 8%;
+}
+.skill-fx.on-player {
+  left: 6%;
+}

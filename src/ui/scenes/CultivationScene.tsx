@@ -7,9 +7,10 @@ import Landscape from '../art/Landscape';
 import Particles, { prefersReducedMotion } from '../art/Particles';
 import { CAVE_THEME, HOME_THEME, REALM_AURA } from '../art/palette';
 import { Art } from '../art/registry';
-import { FigureAura, SceneMist } from '../art/SceneMotion';
+import { FigureAura, OneShotFx, SceneMist } from '../art/SceneMotion';
+import { hasArt } from '../art/registry';
 
-type Fx = { kind: 'break' | 'stage' | 'fail'; id: number; text: string; flash?: boolean };
+type Fx = { kind: 'break' | 'stage' | 'fail'; id: number; text: string; flash?: boolean; art: string };
 
 /** Tranh động phủ: tu sĩ ngồi thiền, linh khí xoáy vào, hiệu ứng khi lên tầng / đột phá */
 export default function CultivationScene({ s }: { s: GameState }) {
@@ -66,7 +67,7 @@ function useBreakthroughFx(s: GameState): Fx | null {
     let next: Fx | null = null;
     const kiep = s.lastKiep !== p.kiep ? s.lastKiep : null;
     if (kiep && !kiep.pass) {
-      next = { kind: 'fail', id: Date.now(), text: `Thiên Kiếp: ngã ở đạo lôi ${kiep.hp.length}/${kiep.bolts}`, flash: true };
+      next = { kind: 'fail', id: Date.now(), text: `Thiên Kiếp: ngã ở đạo lôi ${kiep.hp.length}/${kiep.bolts}`, flash: true, art: 'kiep-fail' };
     } else if (s.level > p.level) {
       const realmUp = levelInfo(s.level).realm > levelInfo(p.level).realm;
       next = realmUp
@@ -75,10 +76,11 @@ function useBreakthroughFx(s: GameState): Fx | null {
             id: Date.now(),
             text: kiep?.pass ? `Vượt Thiên Kiếp · ${KIEP_GRADE_NAMES[kiep.grade!]}` : `Đột phá ${REALMS[levelInfo(s.level).realm].name}!`,
             flash: !!kiep,
+            art: kiep?.pass ? 'kiep-pass' : 'breakthrough',
           }
-        : { kind: 'stage', id: Date.now(), text: 'Tu vi tinh tiến' };
+        : { kind: 'stage', id: Date.now(), text: 'Tu vi tinh tiến', art: 'stage-up' };
     } else if (s.failBonus > p.failBonus) {
-      next = { kind: 'fail', id: Date.now(), text: 'Đột phá thất bại' };
+      next = { kind: 'fail', id: Date.now(), text: 'Đột phá thất bại', art: 'break-fail' };
     }
     if (!next) return;
     setFx(next);
@@ -94,7 +96,8 @@ function FxLayer({ fx, color }: { fx: Fx; color: string }) {
   return (
     <div className={`fx fx-${fx.kind} ${still ? 'still' : ''}`} aria-live="polite">
       {fx.flash && !still && <div className="scene-flash" />}
-      {fx.kind === 'break' && (
+      <OneShotFx k={`fx/${fx.art}`} />
+      {fx.kind === 'break' && !hasArt(`fx/${fx.art}`) && (
         <svg className="fx-bolts" viewBox="0 0 100 60" preserveAspectRatio="none" aria-hidden="true">
           {['M30,0 L36,14 L31,16 L42,34 L38,35 L50,50', 'M70,0 L64,12 L69,15 L58,32 L62,33 L50,50', 'M50,0 L47,18 L53,20 L50,50'].map((d) => (
             <path key={d} d={d} fill="none" stroke="#fff" strokeWidth={1.2} style={{ filter: `drop-shadow(0 0 2px ${color})` }} />

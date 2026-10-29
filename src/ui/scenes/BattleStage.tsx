@@ -14,7 +14,7 @@ import Landscape from '../art/Landscape';
 import Monster from '../art/Monster';
 import { prefersReducedMotion } from '../art/Particles';
 import { REALM_AURA, ZONE_THEMES } from '../art/palette';
-import { SceneMist } from '../art/SceneMotion';
+import { OneShotFx, PoseArt, SceneMist } from '../art/SceneMotion';
 import { Art, slugify } from '../art/registry';
 import { SkillIcon, skillIdByName } from '../art/SkillIcons';
 import { FRESH_MS, claim, mountStage, playedTime, release } from './playback';
@@ -107,14 +107,14 @@ export default function BattleStage({ s }: { s: GameState }) {
       </div>
 
       <div className={playerCls.join(' ')} key={`p-${view?.key ?? 'idle'}`}>
-        <Art k={`cultivator/${s.path ?? 'none'}-stand`} alt={s.name} motion="breathe">
+        <PoseArt base={`cultivator/${s.path ?? 'none'}-stand`} prefix={`cultivator/${s.path ?? 'none'}`} alt={s.name} motion="breathe">
           <Cultivator pose="stand" path={s.path} aura={REALM_AURA[levelInfo(s.level).realm]} power={0.2} />
-        </Art>
+        </PoseArt>
       </div>
       <div className={enemyCls.join(' ')} key={`e-${view?.key ?? 'idle'}`}>
-        <Art k={`monsters/${slugify(enemyName)}`} alt={enemyName} motion="float">
+        <PoseArt base={`monsters/${slugify(enemyName)}`} prefix={`monsters/${slugify(enemyName)}`} alt={enemyName} motion="float">
           <Monster name={enemyName} boss={isBossFloor(floor)} darkBackdrop={DARK_FEATURES.has(theme.feature)} />
-        </Art>
+        </PoseArt>
       </div>
 
       {ev && (
@@ -132,6 +132,11 @@ export default function BattleStage({ s }: { s: GameState }) {
           {fx === 'shield' && <>Khiên {formatNumber(ev.amount ?? 0)}</>}
           {fx === 'buff' && 'Tăng lực'}
           {fx === 'cleanse' && 'Thanh tâm'}
+        </div>
+      )}
+      {view?.shout && skillIdByName(view.shout.name) && (
+        <div key={`fx-${view.key}`} className={`skill-fx on-${target === 'e' ? 'enemy' : 'player'}`}>
+          <OneShotFx k={`fx/skill-${skillIdByName(view.shout.name)}`} className="inline" />
         </div>
       )}
       {view?.shout && (
