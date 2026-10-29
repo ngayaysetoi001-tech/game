@@ -17,10 +17,12 @@ import Cultivator from '../art/Cultivator';
 import Landscape from '../art/Landscape';
 import { HOME_THEME, REALM_AURA } from '../art/palette';
 import { Art } from '../art/registry';
-import { NATALS, SKILLS, SUB_SLOTS, TECHS, natalSkillLevel, natalStage, skillSlotCount, techLevel } from '../../engine/engine';
+import { NATALS, SKILLS, itemName, itemPlus, SUB_SLOTS, TECHS, natalSkillLevel, natalStage, skillSlotCount, techLevel } from '../../engine/engine';
 import NatalIcon from '../art/NatalIcon';
 import { SkillIcon, TechIcon } from '../art/SkillIcons';
 import SkillsPanel from './SkillsPanel';
+import { ItemIcon } from '../art/Icons';
+import { SLOTS, SLOT_NAMES } from '../../engine/data';
 import NatalPanel from './NatalPanel';
 import TechniquesPanel from './TechPanels';
 import { BagPanel, GearPanel, SetPanel } from './GearPanels';
@@ -210,6 +212,27 @@ function LoadoutStrip({ s, onGo }: { s: TabProps['state']; onGo: (sub: Sub) => v
     <section className="card">
       <h2>Đang Trang Bị</h2>
       <div className="loadout">
+        <button className="loadout-group" onClick={() => onGo('gear')} aria-label="Mở mục Trang Bị">
+          <span className="label">Trang bị</span>
+          <span className="loadout-icons">
+            {SLOTS.map((slot) => {
+              const it = s.gear[slot];
+              return (
+                <span className="slot" key={slot}>
+                  {it ? (
+                    <span className="gear-slot">
+                      <ItemIcon slot={slot} tier={it.tier} />
+                      {itemPlus(it) > 0 && <span className="gear-plus">+{itemPlus(it)}</span>}
+                    </span>
+                  ) : (
+                    <span className="slot-empty">trống</span>
+                  )}
+                  <span className={`slot-cap ${it ? `tier-${it.tier}` : ''}`}>{it ? itemName(it) : SLOT_NAMES[slot]}</span>
+                </span>
+              );
+            })}
+          </span>
+        </button>
         <button className="loadout-group" onClick={() => onGo('technique')} aria-label="Mở mục Công Pháp">
           <span className="label">Công pháp</span>
           <span className="loadout-icons">
