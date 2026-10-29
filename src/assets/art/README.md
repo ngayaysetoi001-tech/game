@@ -1,19 +1,62 @@
 # Ảnh thay thế cho hình vẽ bằng code
 
-Đặt ảnh (`.webp`, `.png`, `.jpg` hoặc `.svg`, nền trong suốt nếu là nhân vật/quái) vào đúng thư mục
-và đúng tên dưới đây. Game sẽ tự dùng ảnh thay cho hình vẽ bằng code; thiếu file nào thì vẫn dùng hình vẽ.
+Đặt ảnh (`.webp`, `.png`, `.jpg` hoặc `.svg`) vào đúng thư mục và đúng tên dưới đây. Game tự dùng ảnh thay cho hình vẽ bằng code; thiếu file nào thì file đó vẫn dùng hình vẽ. Nhân vật và quái nên nền trong suốt.
+
+## Cách đặt tên
 
 | Thư mục | Tên file | Ví dụ |
 |---|---|---|
-| `monsters/` | tên quái, bỏ dấu, nối bằng `-` | `lang-vuong.webp`, `huyet-mang-vuong.webp` |
-| `cultivator/` | `<huong-tu>-<tu-the>` với hướng tu `none`/`kiem`/`the`/`phap`, tư thế `sit`/`stand` | `kiem-stand.webp` |
-| `scenes/` | `dong-phu`, `be-quan`, hoặc tên khu bí cảnh bỏ dấu | `hac-phong-lam.webp` |
-| `items/` | `<o>-<pham>` với ô `weapon`/`armor`/`pendant`, phẩm `0`–`3` | `weapon-3.webp` |
-| `pills/` | `tuKhi`, `phaCanh`, `hoiXuan` | `phaCanh.webp` |
-| `skills/` | mã võ kỹ (xem `src/engine/skills.ts`), gồm cả chiêu quái và bản mệnh | `kiem_pha_thien.webp`, `n_phi_kiem.webp` |
-| `techs/` | mã công pháp (xem `src/engine/techniques.ts`) | `kiem_0.webp`, `dan_khi.webp` |
+| `monsters/` | tên quái bỏ dấu, nối bằng `-` (bảng bên dưới) | `lang-vuong.webp` |
+| `cultivator/` | `<huong-tu>-<tu-the>`: hướng tu `none`/`kiem`/`the`/`phap`, tư thế `sit` (bế quan) hoặc `stand` (chiến đấu) | `kiem-stand.webp`, `none-sit.webp` |
+| `scenes/` | `dong-phu` (tu luyện), `be-quan`, hoặc tên khu bí cảnh bỏ dấu (bảng bên dưới). Tháp Vô Cực dùng ảnh `hon-don-hu-khong` | `hac-phong-lam.webp` |
+| `items/` | `<o>-<pham>`: ô `weapon`/`armor`/`pendant`/`ring`/`boots`, phẩm `0` (Phàm) … `4` (Thần) | `ring-3.webp` |
+| `pills/` | mã đan: `tuKhi`, `tuKhi2`, `tuKhi3`, `phaCanh`, `phaCanh2`, `phaCanh3`, `hoiXuan` | `phaCanh2.webp` |
+| `skills/` | mã võ kỹ, gồm cả chiêu quái và chiêu pháp bảo (`src/engine/skills.ts`) | `kiem_pha_thien.webp`, `n_tran_an.webp` |
+| `techs/` | mã công pháp (`src/engine/techniques.ts`) | `kiem_0.webp`, `dan_khi.webp` |
 | `buildings/` | `linh_dien`, `dan_phong`, `tu_linh`, `linh_mach` | `dan_phong.webp` |
-| `herbs/` | mã thảo dược (xem `src/engine/dwelling.ts`) | `linh_thao.webp` |
-| `natal/` | `phi_kiem`, `ho_lo`, `linh_chung` | `phi_kiem.webp` |
+| `herbs/` | mã thảo dược: `linh_thao`, `thanh_tam`, `huyet_sam`, `ket_dan`, `tu_linh_chi`, `ngoc_tuy`, `cuu_diep`, `thien_huong`, `hoan_hon`, `hon_nguyen` | `linh_thao.webp` |
+| `natal/` | pháp bảo: `phi_kiem`, `ho_lo`, `linh_chung`, `tran_an`, `hon_phan`, `phong_quat` | `phi_kiem.webp` |
 
-Gợi ý kích thước: quái/nhân vật 512×512, bối cảnh 1200×720, biểu tượng 128×128.
+Kích thước gợi ý: quái và nhân vật 512×512, bối cảnh 1200×720 (tỉ lệ 5:3), biểu tượng 128×128.
+
+### Tên file cảnh bí cảnh
+
+| Tên file (không đuôi) | Khu |
+|---|---|
+| `hac-phong-lam` | Hắc Phong Lâm |
+| `huyet-sac-cam-dia` | Huyết Sắc Cấm Địa |
+| `van-yeu-coc` | Vạn Yêu Cốc |
+| `co-ma-chien-truong` | Cổ Ma Chiến Trường |
+| `thien-loi-hai` | Thiên Lôi Hải |
+| `u-minh-gioi` | U Minh Giới |
+| `thai-co-tien-phu` | Thái Cổ Tiên Phủ |
+| `hon-don-hu-khong` | Hỗn Độn Hư Không |
+
+### Tên file quái theo khu
+
+Quái thường lần lượt theo tầng, cuối cùng là thủ lĩnh.
+
+| Khu | Quái |
+|---|---|
+| Hắc Phong Lâm | `thanh-lang`, `doc-phong`, `hac-hung`, `thanh-lang-dau-linh`, `lang-vuong` |
+| Huyết Sắc Cấm Địa | `huyet-buc`, `thi-khoi`, `huyet-mang`, `huyet-thi`, `huyet-mang-vuong` |
+| Vạn Yêu Cốc | `hoa-ho`, `thiet-boi-vien`, `loi-ung`, `tam-vi-yeu-ho`, `yeu-coc-chi-chu` |
+| Cổ Ma Chiến Trường | `ma-binh`, `oan-hon`, `cot-ma`, `ma-tuong`, `co-ma-thong-linh` |
+| Thiên Lôi Hải | `hai-yeu`, `phong-bao-linh`, `loi-giao`, `loi-linh-cu-thu`, `loi-giao-vuong` |
+| U Minh Giới | `u-hon`, `minh-xa`, `quy-tuong`, `cau-hon-su`, `u-minh-quy-de` |
+| Thái Cổ Tiên Phủ | `khoi-loi-ho-phap`, `kiem-linh`, `tien-phu-thu-ve`, `dan-lo-khi-linh`, `tien-phu-khi-linh` |
+| Hỗn Độn Hư Không | `hu-khong-thu`, `hon-don-ma`, `thien-ngoai-ta-ma`, `phe-tinh-trung`, `hon-don-co-than` |
+
+## Chuyển động tự thêm cho ảnh thật
+
+Ảnh đứng yên được game thêm chuyển động bằng code, không cần làm gì thêm:
+
+- Bối cảnh: phóng và trượt rất chậm, hai lớp sương trôi ở phía trước.
+- Nhân vật: thở nhẹ; ở cảnh tu luyện có thêm hào quang đập nhịp theo cảnh giới.
+- Quái: nhấp nhô lơ lửng.
+- Khi đánh nhau: lao tới, rung khi trúng đòn, ngã, né, choáng, thiêu đốt, số sát thương, hô tên chiêu và hiệu ứng chiêu thức vẫn chạy trên ảnh.
+- Đột phá và Thiên Kiếp: sét, chớp trắng, vòng sáng hoặc vết nứt đặt đè lên ảnh.
+
+Tất cả tắt khi hệ điều hành bật "giảm chuyển động". Hình vẽ bằng code vẫn có chuyển động riêng, nên không bị thêm hai lần.
+
+Xem toàn bộ biểu tượng và hình hiện có bằng cách mở trang với đuôi `#gallery`.

@@ -200,3 +200,114 @@
   padding: 0 4px;
   border-radius: 4px;
 }
+
+/* Chuyển động giả cho ảnh thật */
+@keyframes img-breathe {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  50% {
+    transform: scale(1.012, 1.03);
+  }
+}
+.art-img.img-breathe {
+  transform-origin: 50% 100%;
+  animation: img-breathe 3.2s ease-in-out infinite;
+}
+@keyframes img-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-0.6deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(0.6deg);
+  }
+}
+.art-img.img-float {
+  animation: img-float 3.6s ease-in-out infinite;
+}
+@keyframes img-kenburns {
+  from {
+    transform: scale(1.04) translateX(-1.5%);
+  }
+  to {
+    transform: scale(1.1) translateX(1.5%);
+  }
+}
+.art-img.img-kenburns {
+  animation: img-kenburns 26s ease-in-out infinite alternate;
+}
+
+/* Lớp sương trôi và hào quang đặt trên ảnh thật */
+.scene-mist {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.scene-mist i {
+  position: absolute;
+  left: -30%;
+  width: 160%;
+  height: 34%;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.28), transparent 68%);
+  filter: blur(6px);
+  animation: art-drift 22s ease-in-out infinite alternate;
+}
+.scene-mist i:nth-child(1) {
+  bottom: 6%;
+}
+.scene-mist i:nth-child(2) {
+  bottom: 30%;
+  opacity: 0.6;
+  animation-duration: 31s;
+  animation-direction: alternate-reverse;
+}
+.scene-aura {
+  position: absolute;
+  left: 50%;
+  bottom: 4%;
+  width: 62%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--aura, #7fe0c8) 0%, transparent 68%);
+  opacity: 0.35;
+  pointer-events: none;
+  animation: art-pulse 4s ease-in-out infinite;
+}
+.scene-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: #fff;
+  opacity: 0;
+  animation: scene-flash 1.2s ease-out 1;
+  z-index: 3;
+}
+@keyframes scene-flash {
+  0%,
+  18%,
+  34% {
+    opacity: 0;
+  }
+  8%,
+  26% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .art-img.img-breathe,
+  .art-img.img-float,
+  .art-img.img-kenburns,
+  .scene-mist i,
+  .scene-aura,
+  .scene-flash {
+    animation: none;
+  }
+}

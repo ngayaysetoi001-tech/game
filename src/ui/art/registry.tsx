@@ -30,7 +30,25 @@ export function artUrl(key: string): string | undefined {
   return byKey.get(key);
 }
 
-export function Art({ k, alt, className, children }: { k: string; alt: string; className?: string; children: ReactNode }) {
+/** Chuyển động nhẹ thêm cho ảnh thật (hình vẽ bằng code đã tự có chuyển động riêng) */
+export type ImgMotion = 'breathe' | 'float' | 'kenburns';
+
+export function Art({
+  k,
+  alt,
+  className,
+  motion,
+  children,
+}: {
+  k: string;
+  alt: string;
+  className?: string;
+  motion?: ImgMotion;
+  children: ReactNode;
+}) {
   const url = artUrl(k);
-  return url ? <img className={`art-img ${className ?? ''}`} src={url} alt={alt} /> : <>{children}</>;
+  return url ? <img className={`art-img ${motion ? `img-${motion}` : ''} ${className ?? ''}`} src={url} alt={alt} /> : <>{children}</>;
 }
+
+/** Có ảnh thật cho khóa này không (để chỉ thêm lớp hiệu ứng khi dùng ảnh) */
+export const hasArt = (k: string) => artUrl(k) !== undefined;
