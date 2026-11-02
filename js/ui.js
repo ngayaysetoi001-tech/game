@@ -1,7 +1,7 @@
 // Giao diện trình duyệt. Mọi luật chơi nằm trong core.js.
 import { Game, REALMS, ACTIONS, PILLS, LEGACIES, clamp } from './core.js';
 import { STAT_NAMES, PERSONALITIES } from './data.js';
-import { Rng } from './rng.js';
+import { drawSprite, spriteURL, botSeed } from './sprite.js';
 
 const SAVE_KEY = 'tkps.save.v1';
 const SPEEDS = [1, 2, 4, 8, 16, 32];
@@ -44,67 +44,16 @@ function save() {
 }
 
 // ---------- Chân dung pixel ----------
-const AURA = [null, '#9fc3e6', '#7fcf8a', '#e2bb4a', '#b98ae0', '#e0644f', '#5fd6d0', '#ffffff'];
-const SKIN = ['#f1d2b0', '#e6bf98', '#d4a57c', '#b98361'];
-const HAIR = ['#1d1612', '#2e2018', '#4a2c1c', '#5b4632', '#22232c'];
 function drawPortrait(canvas, p, opts = {}) {
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, 32, 32);
-  const r = new Rng(p.look || 1);
-  const skin = SKIN[r.int(0, SKIN.length - 1)];
-  let hair = HAIR[r.int(0, HAIR.length - 1)];
-  const life = opts.life || 60;
-  if (p.age > life * 0.75) hair = '#d8d4cc';
-  else if (p.age > life * 0.55) hair = '#8c8780';
-  const robe = opts.robe || '#7a6a58';
-  const child = p.age < 12;
-  const px = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); };
-  const aura = AURA[p.realm || 0];
-  if (aura) {
-    ctx.globalAlpha = 0.35;
-    for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
-      const d = Math.hypot(x - 15.5, y - 14);
-      if (d > 11.5 && d < 14) px(x, y, 1, 1, aura);
-    }
-    ctx.globalAlpha = 1;
-  }
-  const oy = child ? 5 : 0;
-  const s = child ? 0.8 : 1;
-  // thân
-  for (let y = 0; y < 12 * s; y++) {
-    const w = Math.round((8 + y * 0.8) * s);
-    px(16 - w, 20 + oy + y, w * 2, 1, robe);
-  }
-  px(15, 20 + oy, 2, Math.round(10 * s), 'rgba(0,0,0,0.18)');
-  // đầu
-  const hw = child ? 5 : 6;
-  for (let y = 0; y < 10; y++) {
-    const w = y < 2 || y > 8 ? hw - 1 : hw;
-    px(16 - w, 9 + oy + y, w * 2, 1, skin);
-  }
-  // tóc
-  px(16 - hw, 7 + oy, hw * 2, 3, hair);
-  px(16 - hw - 1, 9 + oy, 2, p.g === 'nu' ? 12 : 4, hair);
-  px(16 + hw - 1, 9 + oy, 2, p.g === 'nu' ? 12 : 4, hair);
-  if (p.g !== 'nu' && !child) px(14, 5 + oy, 4, 2, hair); // búi tóc
-  // mắt
-  const eye = opts.dead ? '#888' : '#1a1410';
-  px(12, 14 + oy, 2, 1, eye);
-  px(18, 14 + oy, 2, 1, eye);
-  if (p.age > life * 0.6 && !child) px(13, 21 + oy, 6, 2, hair); // râu
-  if (opts.dead) {
-    const img = ctx.getImageData(0, 0, 32, 32);
-    for (let i = 0; i < img.data.length; i += 4) {
-      const v = img.data[i] * 0.3 + img.data[i + 1] * 0.59 + img.data[i + 2] * 0.11;
-      img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
-    }
-    ctx.putImageData(img, 0, 0);
-  }
+  drawSprite(canvas, { seed: p.look || 1, g: p.g, age: p.age, life: opts.life, realm: p.realm || 0, robe: opts.robe || null, dead: opts.dead, asc: opts.asc });
 }
-const robeOf = (sectId) => {
+const sectRobe = (sectId) => {
   const sc = sectId ? g.sect(sectId) : null;
-  return sc ? sc.color : '#7a6a58';
+  return sc ? sc.color : null;
 };
+/** Ảnh nhỏ của một bot */
+const botAvatar = (b) => `<img class="avatar" alt="" src="${spriteURL({ seed: botSeed(b), g: b.g, age: b.age, life: b.life, realm: b.realm, robe: sectRobe(b.sect) })}">`;
+const robeOf = sectRobe;
 
 /** Chỉ thay DOM khi nội dung đổi, để nút không bị dựng lại giữa lúc đang chạm */
 function setHTML(el, html) {
@@ -141,7 +90,7 @@ function renderBirth() {
     ${first ? `<p class="intro">Thế giới này đã tồn tại ${fmt(g.s.year)} năm. Bốn mươi linh hồn đang tu luyện, kết thù, kết nghĩa, chết đi rồi đầu thai. Giờ đến lượt ngươi.</p>` : `<p class="intro">Linh hồn ngươi trôi dạt ${g.s.lives.length ? fmt(g.s.year - g.s.lives[g.s.lives.length - 1].year) : 0} năm rồi lại tìm về nhân gian. Kiếp thứ ${P.lifeNo}.</p>`}
     <div class="card fate">
       <div class="head">
-        <canvas class="portrait" id="birthPortrait" width="32" height="32"></canvas>
+        <canvas class="portrait" id="birthPortrait" width="32" height="40"></canvas>
         <div class="who">
           <h1>${esc(P.name)}</h1>
           <div class="sub">${P.g === 'nu' ? 'Nữ' : 'Nam'} · ${esc(P.originN)}</div>
@@ -229,8 +178,8 @@ function renderTab() {
       const cls = r.v >= 20 || ['huynh_de', 'dao_lu', 'su_phu', 'de_tu'].includes(r.tag) ? 'pos' : r.v <= -20 || r.tag === 'thu' ? 'neg' : '';
       const sc = b.sect ? g.sect(b.sect) : null;
       const past = r.past.length ? `<div class="meta">Kiếp trước: ${esc(r.past[r.past.length - 1].name)}</div>` : '';
-      return `<div class="item"><div class="row"><b>${esc(b.name)}</b><span class="tag ${cls}">${esc(g.relLabel(r))} ${r.v > 0 ? '+' : ''}${r.v}</span></div>
-        <div class="meta">${REALMS[b.realm].n} · ${b.age} tuổi · ${PERSONALITIES[b.pers].n}${sc ? ` · ${esc(sc.name)}` : ''}</div>${past}</div>`;
+      return `<div class="item withAv">${botAvatar(b)}<div class="body"><div class="row"><b>${esc(b.name)}</b><span class="tag ${cls}">${esc(g.relLabel(r))} ${r.v > 0 ? '+' : ''}${r.v}</span></div>
+        <div class="meta">${REALMS[b.realm].n} · ${b.age} tuổi · ${PERSONALITIES[b.pers].n}${sc ? ` · ${esc(sc.name)}` : ''}</div>${past}</div></div>`;
     }).join('')}</div>`;
   }
   if (tab === 'world') {
@@ -248,8 +197,12 @@ function renderTab() {
     const rk = g.ranking(20);
     return `<h3>Bảng Thiên Kiêu</h3><div class="list">${rk.map((x, i) => {
       const sc = x.sect ? g.sect(x.sect) : null;
-      return `<div class="item ${x.me ? 'me' : ''}"><div class="row"><b>${i + 1}. ${esc(x.name)}${x.me ? ' (ngươi)' : ''}</b><span class="meta">${REALMS[x.realm].n} ${Math.floor(x.prog * 100)}%</span></div>
-        <div class="meta">${x.age} tuổi${sc ? ` · ${esc(sc.name)}` : ' · tán tu'}</div></div>`;
+      const P = g.P;
+      const av = x.me
+        ? `<img class="avatar" alt="" src="${spriteURL({ seed: P.look, g: P.g, age: P.age, life: g.lifespan(), realm: P.realm, robe: sectRobe(P.sect) })}">`
+        : botAvatar(g.soul(x.id));
+      return `<div class="item withAv ${x.me ? 'me' : ''}">${av}<div class="body"><div class="row"><b>${i + 1}. ${esc(x.name)}${x.me ? ' (ngươi)' : ''}</b><span class="meta">${REALMS[x.realm].n} ${Math.floor(x.prog * 100)}%</span></div>
+        <div class="meta">${x.age} tuổi${sc ? ` · ${esc(sc.name)}` : ' · tán tu'}</div></div></div>`;
     }).join('')}</div>`;
   }
   if (tab === 'lives') return livesList();
@@ -274,7 +227,7 @@ function renderDead() {
   $('scr-dead').innerHTML = `
     <div class="card fate">
       <div class="head">
-        <canvas class="portrait" id="deadPortrait" width="32" height="32"></canvas>
+        <canvas class="portrait" id="deadPortrait" width="32" height="40"></canvas>
         <div class="who">
           <h1>${esc(l.name)}</h1>
           <div class="sub">Kiếp ${l.no} · hưởng thọ ${l.age} tuổi</div>
@@ -290,7 +243,7 @@ function renderDead() {
       return `<button class="btn" data-leg="${id}"><b>${esc(x.n)}</b><small>${esc(x.desc)}</small></button>`;
     }).join('')}</div>
     <h3>Sổ kiếp</h3>${livesList()}`;
-  drawPortrait($('deadPortrait'), { ...g.P, age: l.age }, { life: l.asc ? 1e9 : l.age + 1, robe: robeOf(g.P.sect), dead: !l.asc });
+  drawPortrait($('deadPortrait'), { ...g.P, age: l.age }, { life: g.lifespan(), robe: robeOf(g.P.sect), dead: !l.asc, asc: l.asc });
   $('scr-dead').querySelectorAll('[data-leg]').forEach((b) => {
     b.onclick = () => { g.chooseLegacy(b.dataset.leg); save(); dirty = true; window.scrollTo(0, 0); };
   });

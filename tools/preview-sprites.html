@@ -1,0 +1,15 @@
+<!doctype html><meta charset="utf-8"><body style="background:#f1e8d6;margin:8px;font:12px serif">
+<div id="g" style="display:grid;grid-template-columns:repeat(8,96px);gap:6px"></div>
+<script type="module">
+import { drawSprite } from '../js/sprite.js';
+const cases = [];
+for (let i = 0; i < 8; i++) cases.push({ seed: 100 + i, g: i % 2 ? 'nu' : 'nam', age: 22, life: 100, realm: 0, robe: null });
+for (let i = 0; i < 8; i++) cases.push({ seed: 200 + i, g: i % 2 ? 'nu' : 'nam', age: 8, life: 80, realm: i % 3, robe: null });
+for (let i = 0; i < 8; i++) cases.push({ seed: 300 + i, g: i % 2 ? 'nu' : 'nam', age: 60, life: 300, realm: i, robe: ['#4f8fd6','#d65a4f','#5fae5a','#c58fd6'][i % 4] });
+for (let i = 0; i < 8; i++) cases.push({ seed: 400 + i, g: i % 2 ? 'nu' : 'nam', age: 250, life: 300, realm: i, robe: ['#d6b04f', null][i % 2], dead: i === 6, asc: i === 7 });
+for (const c of cases) {
+  const cv = document.createElement('canvas'); cv.width = 32; cv.height = 40;
+  cv.style.cssText = 'width:96px;height:120px;image-rendering:pixelated;background:#fbf6ea;border:1px solid #d9cbb0;border-radius:8px';
+  drawSprite(cv, c); document.getElementById('g').appendChild(cv);
+}
+</script>

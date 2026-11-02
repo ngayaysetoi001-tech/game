@@ -92,7 +92,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* Nhân vật */
 .hero { display: flex; gap: 14px; align-items: center; }
 #portrait, .portrait {
-  width: 96px; height: 96px; image-rendering: pixelated; flex: none;
+  width: 96px; height: 120px; image-rendering: pixelated; flex: none;
   background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
 }
 .who h1 { font-size: 20px; margin: 0; line-height: 1.25; }
@@ -140,6 +140,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .tag.pos { color: var(--good); border-color: currentColor; }
 .tag.neg { color: var(--bad); border-color: currentColor; }
 .me { border-color: var(--accent); }
+.withAv { display: flex; gap: 10px; align-items: center; }
+.withAv .body { flex: 1; min-width: 0; }
+.avatar { width: 32px; height: 40px; image-rendering: pixelated; flex: none; }
 .sectDot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 .empty { color: var(--muted); font-style: italic; padding: 12px 0; }
 h3 { font-size: 15px; margin: 14px 0 6px; color: var(--muted); font-weight: 600; }
