@@ -167,6 +167,16 @@ h3 { font-size: 15px; margin: 14px 0 6px; color: var(--muted); font-weight: 600;
 .trait.t1 { border-left-color: var(--tuvi); }
 .trait.t2 { border-left-color: var(--accent); }
 .trait.t3 { border-left-color: var(--gold); background: color-mix(in srgb, var(--gold) 10%, var(--bg)); }
+.trait.t4 { border-left-color: var(--tuvi); border-image: linear-gradient(var(--gold), var(--accent), var(--tuvi)) 1; background: color-mix(in srgb, var(--gold) 14%, var(--bg)); }
+.t4c { color: var(--accent); font-weight: 700; }
+.newTag { font-size: 12px; color: var(--accent-ink); background: var(--accent); border-radius: 6px; padding: 0 6px; vertical-align: middle; }
+.codex { display: flex; flex-wrap: wrap; gap: 6px; }
+.cx { font-size: 13px; border: 1px solid var(--line); border-radius: 8px; padding: 2px 8px; background: var(--panel); }
+.cx.t1 { border-color: var(--tuvi); }
+.cx.t2 { border-color: var(--accent); }
+.cx.t3 { border-color: var(--gold); color: var(--gold); }
+.cx.t4 { border-color: var(--gold); color: var(--accent); font-weight: 700; }
+.cx.locked { color: var(--muted); border-style: dashed; font-weight: 400; }
 .t2c { color: var(--accent); }
 .t3c { color: var(--gold); font-weight: 700; }
 .chipBtn { font: inherit; font-size: 13px; color: var(--ink); text-align: left; }

@@ -115,15 +115,43 @@ export const TAG_NAMES = {
 //     evW: nhân trọng số sự kiện, cờ đặc biệt (coldPoison, noBetray, seePast, ngoOnBreak)
 // tier: 0 thường, 1 khá, 2 hiếm, 3 truyền thuyết
 export const THE_CHAT = [
-  { id: 'pham', n: 'Phàm thể', tier: 0, w: 70, desc: 'Thân thể bình thường như bao người.', fx: {} },
-  { id: 'cuu_am', n: 'Cửu Âm Hàn Thể', tier: 2, w: 4, desc: 'Tu luyện +25%. Hàn độc thỉnh thoảng phát tác làm mất sinh lực. Có đạo lữ thì hàn độc bị áp chế.', fx: { gainMul: 1.25, coldPoison: true } },
-  { id: 'liet_duong', n: 'Liệt Dương Chiến Thể', tier: 2, w: 4, desc: 'Sức chiến đấu +35%. Tính nóng như lửa: tâm tính -10, hay bị kẻ khác khiêu chiến.', fx: { fightMul: 1.35, tam: -10, evW: { khieu_chien: 2 } } },
-  { id: 'thong_linh', n: 'Thông Linh Thể', tier: 2, w: 4, desc: 'Ngộ tính +8, cơ duyên +5. Linh thú tự tìm đến.', fx: { ngo: 8, co: 5, evW: { linh_thu: 4 } } },
-  { id: 'vo_cau', n: 'Vô Cấu Linh Thể', tier: 2, w: 4, desc: 'Đột phá +8%. Tâm ma khó xâm nhập.', fx: { brk: 0.08, evW: { tam_ma: 0.3 } } },
-  { id: 'mi_cot', n: 'Thiên Sinh Mị Cốt', tier: 2, w: 4, desc: 'Ai gặp cũng mến: thân thiết tăng nhanh 50%, dễ gặp đạo lữ. Kẻ tham lam cũng dễ nhòm ngó.', fx: { relMul: 1.5, evW: { dao_lu: 2, phan_boi: 2 } } },
-  { id: 'tuc_menh', n: 'Túc Mệnh Nhãn', tier: 2, w: 4, desc: 'Nhìn thấu tiền kiếp người khác. Dễ gặp lại cố nhân, và thấy kiếp trước của mọi người trong Quan hệ.', fx: { seePast: true, evW: { duyen_no: 3, co_nhan_tim: 2 } } },
-  { id: 'bat_diet', n: 'Bất Diệt Kim Thân', tier: 3, w: 1.5, desc: 'Sinh lực hồi gấp đôi, chịu đòn -30%, thọ +15%. Thân thể nặng nề, tu luyện -10%.', fx: { regenMul: 2, hurtMul: 0.7, lifeMul: 1.15, gainMul: 0.9 } },
-  { id: 'hon_don', n: 'Hỗn Độn Đạo Thể', tier: 3, w: 1.5, desc: 'Tu luyện +45%. Bình cảnh dày như núi: đột phá -8%.', fx: { gainMul: 1.45, brk: -0.08 } },
+  { id: 'pham', n: 'Phàm thể', tier: 0, w: 55, desc: 'Thân thể bình thường như bao người.', fx: {} },
+  // --- Khá ---
+  { id: 'thiet_cot', n: 'Thiết Cốt Thể', tier: 1, w: 3, desc: 'Căn cốt +5, chịu đòn -15%.', fx: { can: 5, hurtMul: 0.85 } },
+  { id: 'linh_lung', n: 'Linh Lung Tâm', tier: 1, w: 3, desc: 'Ngộ tính +10.', fx: { ngo: 10 } },
+  { id: 'thanh_tam', n: 'Thanh Tâm Thể', tier: 1, w: 3, desc: 'Tâm tính +10, tâm ma ít gặp.', fx: { tam: 10, evW: { tam_ma: 0.6 } } },
+  { id: 'phuc_hau', n: 'Phúc Hậu Tướng', tier: 1, w: 3, desc: 'Cơ duyên +8, mưu sinh kiếm thêm 30%.', fx: { co: 8, moneyMul: 1.3 } },
+  { id: 'khinh_than', n: 'Khinh Thân Thể', tier: 1, w: 3, desc: 'Bỏ chạy dễ thoát hơn 25%, gặp kỳ ngộ nhiều hơn 15%.', fx: { flee: 0.25, eventRate: 1.15 } },
+  { id: 'duoc_linh', n: 'Dược Linh Thể', tier: 1, w: 3, desc: 'Đan dược hiệu quả gấp rưỡi, sinh lực hồi nhanh 30%.', fx: { pillMul: 1.5, regenMul: 1.3 } },
+  { id: 'truong_xuan', n: 'Trường Xuân Thể', tier: 1, w: 3, desc: 'Thọ nguyên +10%.', fx: { lifeMul: 1.1 } },
+  { id: 'bach_doc', n: 'Bách Độc Bất Xâm', tier: 1, w: 3, desc: 'Chịu đòn -15%, sinh lực hồi nhanh 30%.', fx: { hurtMul: 0.85, regenMul: 1.3 } },
+  // --- Hiếm ---
+  { id: 'cuu_am', n: 'Cửu Âm Hàn Thể', tier: 2, w: 1.2, desc: 'Tu luyện +25%. Hàn độc thỉnh thoảng phát tác làm mất sinh lực. Có đạo lữ thì hàn độc bị áp chế.', fx: { gainMul: 1.25, coldPoison: true } },
+  { id: 'liet_duong', n: 'Liệt Dương Chiến Thể', tier: 2, w: 1.2, desc: 'Sức chiến đấu +35%. Tính nóng như lửa: tâm tính -10, hay bị kẻ khác khiêu chiến.', fx: { fightMul: 1.35, tam: -10, evW: { khieu_chien: 2 } } },
+  { id: 'thong_linh', n: 'Thông Linh Thể', tier: 2, w: 1.2, desc: 'Ngộ tính +8, cơ duyên +5. Linh thú tự tìm đến.', fx: { ngo: 8, co: 5, evW: { linh_thu: 4 } } },
+  { id: 'vo_cau', n: 'Vô Cấu Linh Thể', tier: 2, w: 1.2, desc: 'Đột phá +8%. Tâm ma khó xâm nhập.', fx: { brk: 0.08, evW: { tam_ma: 0.3 } } },
+  { id: 'mi_cot', n: 'Thiên Sinh Mị Cốt', tier: 2, w: 1.2, desc: 'Ai gặp cũng mến: thân thiết tăng nhanh 50%, dễ gặp đạo lữ. Kẻ tham lam cũng dễ nhòm ngó.', fx: { relMul: 1.5, evW: { dao_lu: 2, phan_boi: 2 } } },
+  { id: 'tuc_menh', n: 'Túc Mệnh Nhãn', tier: 2, w: 1.2, desc: 'Nhìn thấu tiền kiếp người khác. Dễ gặp lại cố nhân, và thấy kiếp trước của mọi người trong Quan hệ.', fx: { seePast: true, evW: { duyen_no: 3, co_nhan_tim: 2 } } },
+  { id: 'kiem_thai', n: 'Kiếm Thai Thể', tier: 2, w: 1.2, desc: 'Sức chiến đấu +25%. Mỗi trận thắng, kiếm ý mài sắc thêm: tu vi bằng một năm tu luyện.', fx: { fightMul: 1.25, winTuvi: 1 } },
+  { id: 'loi_linh', n: 'Lôi Linh Thể', tier: 2, w: 1.2, desc: 'Lôi kiếp thân quen như mưa rào: từ Kim Đan trở đi đột phá +12%. Sức chiến đấu +10%.', fx: { brkLate: 0.12, fightMul: 1.1 } },
+  { id: 'moc_linh', n: 'Ất Mộc Linh Thể', tier: 2, w: 1.2, desc: 'Sinh lực hồi gấp đôi, thọ nguyên +12%.', fx: { regenMul: 2, lifeMul: 1.12 } },
+  { id: 'huyen_bang', n: 'Huyền Băng Thể', tier: 2, w: 1.2, desc: 'Tâm tính +8, tu luyện +10%, tâm ma hiếm khi gặp.', fx: { tam: 8, gainMul: 1.1, evW: { tam_ma: 0.5 } } },
+  { id: 'tiem_long', n: 'Tiềm Long Thể', tier: 2, w: 1.2, desc: 'Rồng nằm dưới vực: đến Trúc Cơ tu luyện -20%, từ Nguyên Anh trở đi +50%.', fx: { earlyGain: 0.8, lateGain: 1.5 } },
+  { id: 'than_dong', n: 'Thần Đồng Thể', tier: 2, w: 1.2, desc: 'Đến Trúc Cơ tu luyện +60%. Từ Nguyên Anh trở đi -15%.', fx: { earlyGain: 1.6, lateGain: 0.85 } },
+  { id: 'thach_tam', n: 'Thạch Tâm Thể', tier: 2, w: 1.2, desc: 'Ngồi yên như đá: bế quan hiệu quả gấp rưỡi. Ít gặp kỳ ngộ hơn 30%.', fx: { closedMul: 1.5, eventRate: 0.7 } },
+  { id: 'tu_bao', n: 'Tụ Bảo Thể', tier: 2, w: 1.2, desc: 'Tiền tự tìm đến: mưu sinh kiếm gấp đôi, cơ duyên +5. Kẻ tham dễ sinh lòng phản.', fx: { moneyMul: 2, co: 5, evW: { phan_boi: 2 } } },
+  { id: 'huyet_sat', n: 'Huyết Sát Thể', tier: 2, w: 1.2, desc: 'Sức chiến đấu +15%, mỗi trận thắng tu vi bằng hai năm tu luyện. Khởi đầu Vô tình -20.', fx: { fightMul: 1.15, winTuvi: 2, tinh: -20 } },
+  // --- Truyền thuyết ---
+  { id: 'bat_diet', n: 'Bất Diệt Kim Thân', tier: 3, w: 0.4, desc: 'Sinh lực hồi gấp đôi, chịu đòn -30%, thọ +15%. Thân thể nặng nề, tu luyện -10%.', fx: { regenMul: 2, hurtMul: 0.7, lifeMul: 1.15, gainMul: 0.9 } },
+  { id: 'hon_don', n: 'Hỗn Độn Đạo Thể', tier: 3, w: 0.4, desc: 'Tu luyện +45%. Bình cảnh dày như núi: đột phá -8%.', fx: { gainMul: 1.45, brk: -0.08 } },
+  { id: 'nhat_nguyet', n: 'Nhật Nguyệt Đồng Huy Thể', tier: 3, w: 0.4, desc: 'Âm dương cùng sáng: tu luyện +30%, đột phá +5%.', fx: { gainMul: 1.3, brk: 0.05 } },
+  { id: 'niet_ban', n: 'Niết Bàn Thể', tier: 3, w: 0.4, desc: 'Một lần mỗi kiếp, khi trọng thương sắp chết thì tắm lửa tái sinh với nửa sinh lực. Thọ +10%.', fx: { deathSave: true, lifeMul: 1.1 } },
+  { id: 'khi_van', n: 'Khí Vận Chi Tử', tier: 3, w: 0.4, desc: 'Trời đất thiên vị: cơ duyên +25, kỳ ngộ nhiều hơn 30%, đột phá +5%.', fx: { co: 25, eventRate: 1.3, brk: 0.05 } },
+  { id: 'van_phap', n: 'Vạn Pháp Thể', tier: 3, w: 0.4, desc: 'Học gì cũng thông: tu luyện +20%, sức chiến đấu +20%, ngộ tính +5.', fx: { gainMul: 1.2, fightMul: 1.2, ngo: 5 } },
+  { id: 'chan_long', n: 'Chân Long Huyết Mạch', tier: 3, w: 0.4, desc: 'Sức chiến đấu +40%, thọ +20%, hồi sinh lực nhanh 50%. Long tính khó thuần: tâm tính -8.', fx: { fightMul: 1.4, lifeMul: 1.2, regenMul: 1.5, tam: -8 } },
+  // --- Thần thoại ---
+  { id: 'dao_thai', n: 'Tiên Thiên Đạo Thai', tier: 4, w: 0.12, desc: 'Sinh ra đã mang đạo: tu luyện +50%, đột phá +10%, thọ +20%. Trời ghen người tài: tâm ma tìm đến gấp đôi.', fx: { gainMul: 1.5, brk: 0.1, lifeMul: 1.2, evW: { tam_ma: 2 } } },
+  { id: 'hong_mong', n: 'Hồng Mông Thánh Thể', tier: 4, w: 0.12, desc: 'Thể chất từ thuở khai thiên: tu luyện +35%, sức chiến đấu +35%, chịu đòn -25%, thọ +15%.', fx: { gainMul: 1.35, fightMul: 1.35, hurtMul: 0.75, lifeMul: 1.15 } },
 ];
 
 export const THIEN_PHU = [

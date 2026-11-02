@@ -1,5 +1,5 @@
 // Giao diện trình duyệt. Mọi luật chơi nằm trong core.js.
-import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, clamp } from './core.js';
+import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, clamp } from './core.js';
 import { STAT_NAMES, PERSONALITIES } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 
@@ -81,13 +81,13 @@ function statGrid(st) {
   return Object.keys(STAT_NAMES).map((k) => `<div><span>${STAT_NAMES[k]}</span> <b>${st[k]}</b></div>`).join('');
 }
 
-const TIER_N = ['Thường', 'Khá', 'Hiếm', 'Truyền thuyết'];
+const TIER_N = ['Thường', 'Khá', 'Hiếm', 'Truyền thuyết', 'Thần thoại'];
 /** Khối thể chất + thiên phú cho màn đầu thai */
 function traitBlock() {
   const ts = g.traits();
   const [the, ...tps] = ts;
   return `<div class="traits">
-    <div class="trait t${the.tier}"><div class="row"><b>${esc(the.n)}</b><span class="meta">Thể chất${the.tier ? ' · ' + TIER_N[the.tier] : ''}</span></div><div class="meta">${esc(the.desc)}</div></div>
+    <div class="trait t${the.tier}"><div class="row"><b>${esc(the.n)}${g.s.phase === 'birth' && the.tier && !(g.s.seenThe || []).includes(the.id) ? ' <span class="newTag">Mới!</span>' : ''}</b><span class="meta">Thể chất${the.tier ? ' · ' + TIER_N[the.tier] : ''}</span></div><div class="meta">${esc(the.desc)}</div></div>
     ${tps.length ? tps.map((t) => `<div class="trait t${t.tier}"><div class="row"><b>${esc(t.n)}</b><span class="meta">Thiên phú · ${TIER_N[t.tier]}</span></div><div class="meta">${esc(t.desc)}</div></div>`).join('') : '<div class="meta">Không có thiên phú gì đặc biệt.</div>'}
   </div>`;
 }
@@ -225,8 +225,18 @@ function renderTab() {
         <div class="meta">${x.age} tuổi${sc ? ` · ${esc(sc.name)}` : ' · tán tu'}</div></div></div>`;
     }).join('')}</div>`;
   }
-  if (tab === 'lives') return livesList();
+  if (tab === 'lives') return codex() + '<h3>Các kiếp đã qua</h3>' + livesList();
   return '';
+}
+
+/** Sổ thể chất: những thể chất linh hồn này từng thức tỉnh */
+function codex() {
+  const seen = new Set(g.s.seenThe || []);
+  const list = THE_CHAT.filter((t) => t.tier > 0);
+  const got = list.filter((t) => seen.has(t.id)).length;
+  return `<h3>Sổ thể chất · ${got}/${list.length}</h3><div class="codex">${list.map((t) => seen.has(t.id)
+    ? `<span class="cx t${t.tier}" title="${esc(t.desc)}">${esc(t.n)}</span>`
+    : `<span class="cx locked t${t.tier}">${TIER_N[t.tier]} · ???</span>`).join('')}</div>`;
 }
 
 function livesList() {
@@ -262,7 +272,7 @@ function renderDead() {
       const x = LEGACIES.find((q) => q.id === id);
       return `<button class="btn" data-leg="${id}"><b>${esc(x.n)}</b><small>${esc(x.desc)}</small></button>`;
     }).join('')}</div>
-    <h3>Sổ kiếp</h3>${livesList()}`;
+    <h3>Sổ kiếp</h3>${livesList()}${codex()}`;
   drawPortrait($('deadPortrait'), { ...g.P, age: l.age }, { life: g.lifespan(), robe: robeOf(g.P.sect), dead: !l.asc, asc: l.asc });
   $('scr-dead').querySelectorAll('[data-leg]').forEach((b) => {
     b.onclick = () => { g.chooseLegacy(b.dataset.leg); save(); dirty = true; window.scrollTo(0, 0); };

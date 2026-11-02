@@ -448,6 +448,8 @@ export class Game {
     P.born = this.s.year;
     this.s.player = P;
     this.s.phase = 'play';
+    if (!this.s.seenThe) this.s.seenThe = [];
+    if (!this.s.seenThe.includes(P.the)) this.s.seenThe.push(P.the);
     this.s.log = [];
     this.s.cd = {};
     this.s.once = {};
@@ -489,7 +491,7 @@ export class Game {
   }
   gain() {
     const P = this.P;
-    return baseGain(P.realm) * P.root.m * (1 + (P.stats.ngo - 50) / 200) * (P.sect ? 1.2 : 1) * (P.tinh <= -30 ? 1.2 : 1) * (P.hp < 30 ? 0.6 : 1) * this.tmul('gainMul');
+    return baseGain(P.realm) * P.root.m * (1 + (P.stats.ngo - 50) / 200) * (P.sect ? 1.2 : 1) * (P.tinh <= -30 ? 1.2 : 1) * (P.hp < 30 ? 0.6 : 1) * this.tmul('gainMul') * (P.realm <= 2 ? this.tmul('earlyGain') : P.realm >= 4 ? this.tmul('lateGain') : 1);
   }
   addTuvi(n) {
     const P = this.P;
@@ -524,6 +526,11 @@ export class Game {
         ? `Hiệp ${i + 1}: ngươi tung ${mv}, ${foeName} lảo đảo lùi lại.`
         : `Hiệp ${i + 1}: ${mv} của ngươi bị hóa giải, ${foeName} phản đòn trúng ngực.`;
     });
+    const wt = this.tadd('winTuvi');
+    if (res.win && wt && this.P.dao) {
+      const t = this.addTuvi(this.gain() * wt);
+      if (t) lines.push(`Sát ý sau trận đánh hóa thành tu vi: +${t}.`);
+    }
     return { win: res.win, text: lines.join('\n') };
   }
   fightBot(b, mul = 1) {
@@ -532,6 +539,12 @@ export class Game {
   hurt(n, cause) {
     const P = this.P;
     P.hp = Math.max(0, P.hp - Math.round(n * this.tmul('hurtMul')));
+    if (P.hp <= 0 && this.thas('deathSave') && !P.flags.reborn) {
+      P.flags.reborn = true;
+      P.hp = 50;
+      this.log('Lửa Niết Bàn bùng lên từ trong xương tủy. Ngươi chết đi rồi sống lại.', 'big');
+      return false;
+    }
     if (P.hp <= 0) {
       this.die(cause || 'trọng thương không qua khỏi');
       return true;
@@ -584,8 +597,9 @@ export class Game {
     if (id === 'pha_canh') return 'Phá Cảnh Đan được dùng khi đột phá.';
     if (id === 'dien_tho' && P.dienTho[P.realm]) return 'Thân thể đã kháng thuốc, ở cảnh giới này không hấp thu thêm được.';
     P.pills[id]--;
-    if (id === 'hoi_xuan') { P.hp = Math.min(100, P.hp + 40); return 'Sinh lực hồi phục.'; }
-    if (id === 'tinh_tam') { this.stat('tam', 6); return 'Tâm tính +6.'; }
+    const pm = this.tmul('pillMul');
+    if (id === 'hoi_xuan') { P.hp = Math.min(100, P.hp + Math.round(40 * pm)); return 'Sinh lực hồi phục.'; }
+    if (id === 'tinh_tam') { this.stat('tam', Math.round(6 * pm)); return `Tâm tính +${Math.round(6 * pm)}.`; }
     if (id === 'dien_tho') {
       P.dienTho[P.realm] = true;
       P.lifeBonus += 0.05;
@@ -610,7 +624,7 @@ export class Game {
     let p = REALMS[P.realm].brk + (st.ngo - 50) / 250 + (st.tam - 50) / 300 + (st.co - 50) / 400 + bonus;
     p += this.breakHelpers().length * 0.04;
     if (P.tinh <= -30) p += 0.06;
-    p += this.tadd('brk');
+    p += this.tadd('brk') + (P.realm >= 3 ? this.tadd('brkLate') : 0);
     return clamp(p, 0.05, 0.95);
   }
   attemptBreak(bonus = 0) {
@@ -662,7 +676,7 @@ export class Game {
     }
     const g = this.gain();
     if (act === 'tu_luyen') this.addTuvi(g * this.r.range(0.85, 1.15));
-    else if (act === 'be_quan') this.addTuvi(g * 1.6);
+    else if (act === 'be_quan') this.addTuvi(g * 1.6 * this.tmul('closedMul'));
     else if (act === 'lich_luyen') {
       this.addTuvi(g * 0.35);
       if (this.r.chance(0.15)) this.stat('co', 1);
@@ -713,7 +727,7 @@ export class Game {
       return;
     }
     if (s.pending || queueOnly) return;
-    const rate = EVENT_RATE[act] ?? 0.25;
+    const rate = (EVENT_RATE[act] ?? 0.25) * this.tmul('eventRate');
     if (!this.r.chance(rate)) return;
     const P = this.P;
     const cands = [];
@@ -829,4 +843,4 @@ export class Game {
   }
 }
 
-export { REALMS, TOP_REALM, ACTIONS, PILLS, LEGACIES, TAG_NAMES, THE_MAP, TP_MAP };
+export { REALMS, TOP_REALM, ACTIONS, PILLS, LEGACIES, TAG_NAMES, THE_MAP, TP_MAP, THE_CHAT };

@@ -45,18 +45,16 @@ Game tu tiên luân hồi chơi một mình, chạy offline trên trình duyệt
 
 Lúc đầu thai, ngoài 4 chỉ số còn gieo **một thể chất** và **0-2 thiên phú** (25% không có, 50% một, 25% hai). Gieo lại thì gieo cả những thứ này. Món nào mạnh cũng có cái giá.
 
-**Thể chất** (70% là Phàm thể). Bot cũng có thể chất, hiện trong tab Quan hệ.
+**Thể chất:** 32 loại ngoài Phàm thể, chia 4 phẩm. Tỉ lệ gieo: Phàm thể khoảng 55%, Khá khoảng 24%, Hiếm khoảng 18%, Truyền thuyết khoảng 2,8%, Thần thoại khoảng 0,2%. Bot cũng có thể chất, hiện trong tab Quan hệ.
 
-| Thể chất | Phẩm | Tác dụng |
-|---|---|---|
-| Cửu Âm Hàn Thể | Hiếm | Tu luyện +25%. Hàn độc phát tác (4%/năm, -12 sinh lực), có đạo lữ thì hết |
-| Liệt Dương Chiến Thể | Hiếm | Chiến đấu +35%, tâm tính -10, bị khiêu chiến gấp đôi |
-| Thông Linh Thể | Hiếm | Ngộ tính +8, cơ duyên +5, gặp linh thú gấp 4 |
-| Vô Cấu Linh Thể | Hiếm | Đột phá +8%, tâm ma ít gặp |
-| Thiên Sinh Mị Cốt | Hiếm | Thân thiết +50%, dễ có đạo lữ, nhưng dễ bị kẻ tham phản bội |
-| Túc Mệnh Nhãn | Hiếm | Thấy tiền kiếp của bot, gặp duyên nợ gấp 3, cố nhân tìm tới gấp đôi |
-| Bất Diệt Kim Thân | Truyền thuyết | Hồi sinh lực x2, chịu đòn -30%, thọ +15%, tu luyện -10% |
-| Hỗn Độn Đạo Thể | Truyền thuyết | Tu luyện +45%, đột phá -8% |
+- **Khá (8):** Thiết Cốt Thể, Linh Lung Tâm, Thanh Tâm Thể, Phúc Hậu Tướng, Khinh Thân Thể, Dược Linh Thể, Trường Xuân Thể, Bách Độc Bất Xâm.
+- **Hiếm (15):** Cửu Âm Hàn Thể (hàn độc, đạo lữ áp chế), Liệt Dương Chiến Thể, Thông Linh Thể, Vô Cấu Linh Thể, Thiên Sinh Mị Cốt, Túc Mệnh Nhãn (thấy tiền kiếp bot), Kiếm Thai Thể (thắng trận được tu vi), Lôi Linh Thể (đột phá từ Kim Đan), Ất Mộc Linh Thể, Huyền Băng Thể, Tiềm Long Thể (đầu chậm cuối nhanh), Thần Đồng Thể (đầu nhanh cuối chậm), Thạch Tâm Thể (bế quan), Tụ Bảo Thể, Huyết Sát Thể.
+- **Truyền thuyết (7):** Bất Diệt Kim Thân, Hỗn Độn Đạo Thể, Nhật Nguyệt Đồng Huy Thể, Niết Bàn Thể (sống lại một lần mỗi kiếp), Khí Vận Chi Tử, Vạn Pháp Thể, Chân Long Huyết Mạch.
+- **Thần thoại (2):** Tiên Thiên Đạo Thai, Hồng Mông Thánh Thể.
+
+Các kiểu tác dụng: cộng chỉ số, nhân tu luyện, tu luyện theo giai đoạn (đến Trúc Cơ / từ Nguyên Anh), chiến đấu, chịu đòn, hồi sinh lực, thọ, đột phá (chung hoặc từ Kim Đan), bế quan, đan dược, mưu sinh, thân thiết, bỏ chạy, tần suất kỳ ngộ, trọng số từng sự kiện, tu vi khi thắng trận, sống lại một lần. Chi tiết trong `js/data.js`.
+
+**Sổ thể chất** (tab Sổ kiếp): ghi lại các thể chất linh hồn từng thức tỉnh, cái chưa có hiện "???" theo phẩm. Lúc đầu thai, thể chất chưa từng có gắn dấu "Mới!".
 
 **Thiên phú:** Võ si, Đầu óc buôn bán, Dễ gần, Đa nghi (không bị lừa của), Bệnh căn từ nhỏ, Sinh giờ hoàng đạo, Hay mơ, Chân nhanh hơn não, Lòng trắc ẩn, Đồng bì thiết cốt, Độc hành giả, Đại khí vãn thành (đột phá xong ngộ tính +4), Sát khí bẩm sinh. Chi tiết trong `js/data.js`.
 
