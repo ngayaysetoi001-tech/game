@@ -66,7 +66,7 @@ export function fighter(o) {
   return {
     name: o.name, beast: !!o.beast, look: o.look || null,
     maxHp, hp: Math.max(1, maxHp * (o.hpPct ?? 1)),
-    atk: 10 * o.pw * (1 + (wt && wt.atk ? wt.atk : 0)) + (gear.atk || 0),
+    atk: (10 * o.pw * (1 + (wt && wt.atk ? wt.atk : 0)) + (gear.atk || 0)) * (1 + (gear.atkPct || 0)),
     def: 4 * o.pw + (gear.def || 0),
     crit: 0.05 + (gear.crit || 0) + (wt && wt.crit ? wt.crit : 0),
     dodge: 0.05 + (gear.dodge || 0) + (wt && wt.dodge ? wt.dodge : 0),
@@ -76,7 +76,12 @@ export function fighter(o) {
     mp: 100, wep: o.wep || null,
     skills: (o.skills && o.skills.length ? o.skills : ['quyen']).slice(0, 4),
     tactic: o.tactic || 'can_bang',
-    st: { burn: 0, burnDmg: 0, burnName: '', stun: false, stunName: '', shield: 0, shieldT: 0, armor: 0, evade: 0, rage: 0, thorns: 0 },
+    st: { burn: 0, burnDmg: 0, burnName: '', stun: false, stunName: '', shield: Math.round(maxHp * (gear.startShield || 0)), shieldT: gear.startShield ? 99 : 0, armor: 0, evade: 0, rage: 0, thorns: 0 },
+    // thần thông từ đồ Thần thoại
+    atkPct: gear.atkPct || 0, takenPct: gear.takenPct || 0, dmgRed: gear.dmgRed || 0,
+    combo: gear.combo || 0, execute: gear.execute || 0, first: !!gear.first, firstCrit: !!gear.first,
+    stunHit: gear.stunHit || 0, critDmg: gear.critDmg || 1.7, mpDrain: gear.mpDrain || 0,
+    immune: !!gear.immune, lastStand: !!gear.lastStand, usedLS: false, regenTurn: gear.regenTurn || 0, mpRegen: gear.mpRegen || 0,
   };
 }
 
@@ -122,8 +127,11 @@ function hit(att, def, sk, r, ev) {
   let d = def.def * (def.st.armor ? 0.6 : 1) * (1 - Math.min(0.8, (sk.pierce ? 0.7 : 0) + att.pierce));
   if (r.chance(def.dodge + (def.st.evade ? 0.35 : 0))) { ev.hits.push({ miss: true }); return 0; }
   let dmg = atk * (sk.mult || 1) * fit * r.range(0.9, 1.1) * (1 - d / (d + atk * 1.5));
-  const crit = r.chance(att.crit + (sk.crit || 0));
-  if (crit) dmg *= 1.7;
+  if (att.execute && def.hp / def.maxHp < 0.3) { dmg *= att.execute; ev.execute = true; }
+  const crit = att.firstCrit || r.chance(att.crit + (sk.crit || 0));
+  att.firstCrit = false;
+  if (crit) dmg *= att.critDmg;
+  dmg *= (1 + def.takenPct) * (1 - def.dmgRed);
   dmg = Math.max(1, Math.round(dmg));
   let absorbed = 0;
   if (def.st.shield > 0) {
@@ -132,6 +140,8 @@ function hit(att, def, sk, r, ev) {
   }
   const real = dmg - absorbed;
   def.hp = Math.max(0, def.hp - real);
+  if (def.hp <= 0 && def.lastStand && !def.usedLS) { def.usedLS = true; def.hp = Math.round(def.maxHp * 0.3); ev.lastStand = true; }
+  if (att.mpDrain && real > 0) { const m = Math.min(def.mp, att.mpDrain); def.mp -= m; att.mp = Math.min(100, att.mp + m); }
   ev.hits.push({ dmg: real, crit, absorbed });
   const thorn = def.st.thorns ? 0.3 : 0;
   const reflect = Math.round(real * (def.rf + thorn));
@@ -154,7 +164,8 @@ export function battle(A, B, r) {
   let round = 0;
   while (A.hp > 0 && B.hp > 0 && round < 14) {
     round++;
-    const order = A.spd + r.range(-3, 3) >= B.spd + r.range(-3, 3) ? [[A, B, 'a'], [B, A, 'b']] : [[B, A, 'b'], [A, B, 'a']];
+    const aFirst = A.first && !B.first ? true : B.first && !A.first ? false : A.spd + r.range(-3, 3) >= B.spd + r.range(-3, 3);
+    const order = aFirst ? [[A, B, 'a'], [B, A, 'b']] : [[B, A, 'b'], [A, B, 'a']];
     for (const [f, foe, side] of order) {
       if (f.hp <= 0 || foe.hp <= 0) break;
       const ev = { side, round, hits: [] };
@@ -168,7 +179,8 @@ export function battle(A, B, r) {
       }
       for (const k of ['armor', 'evade', 'rage', 'thorns']) if (f.st[k] > 0) f.st[k]--;
       if (f.st.shieldT > 0 && --f.st.shieldT === 0) f.st.shield = 0;
-      f.mp = Math.min(100, f.mp + 12);
+      f.mp = Math.min(100, f.mp + 12 + f.mpRegen);
+      if (f.regenTurn && f.hp < f.maxHp) { const h = Math.round(f.maxHp * f.regenTurn); f.hp = Math.min(f.maxHp, f.hp + h); ev.regen = h; }
       if (f.st.stun) {
         f.st.stun = false;
         ev.stunned = f.st.stunName || 'choáng';
@@ -184,8 +196,12 @@ export function battle(A, B, r) {
       ev.misfit = sk.wep && sk.wep !== f.wep;
       if (sk.kind === 'atk') {
         for (let i = 0; i < (sk.hits || 1) && foe.hp > 0; i++) hit(f, foe, sk, r, ev);
+        // Liên Hoàn: thêm một đòn
+        if (f.combo && foe.hp > 0 && r.chance(f.combo)) { hit(f, foe, { mult: 0.8 }, r, ev); ev.combo = true; }
         const landed = ev.hits.some((h) => !h.miss && h.dmg > 0);
-        if (landed && foe.hp > 0) {
+        if (landed && foe.hp > 0 && !foe.immune && f.stunHit && r.chance(f.stunHit)) { foe.st.stun = true; foe.st.stunName = 'choáng vì sấm'; ev.applied = 'choáng vì sấm'; }
+        if (landed && foe.hp > 0 && foe.immune && (sk.burn || sk.stun)) ev.applied = 'miễn nhiễm';
+        if (landed && foe.hp > 0 && !foe.immune) {
           if (sk.burn) { foe.st.burn = sk.burn; foe.st.burnDmg = f.atk * 0.15; foe.st.burnName = sk.burnName || 'thiêu đốt'; ev.applied = foe.st.burnName; }
           if (sk.armorBreak) { foe.st.armor = sk.armorBreak; ev.applied = 'phá giáp'; }
           if (sk.stun && r.chance(sk.stun)) { foe.st.stun = true; foe.st.stunName = sk.stunName || 'choáng'; ev.applied = foe.st.stunName; }
@@ -233,6 +249,10 @@ export function turnText(t, aName, bName) {
   if (t.applied) s += ` ${foe} bị ${t.applied}.`;
   if (t.drain) s += ` Hút ${t.drain} sinh lực.`;
   if (t.reflect) s += ` Bị phản ${t.reflect}.`;
+  if (t.combo) s += ' Liên hoàn thêm một đòn!';
+  if (t.execute) s += ' Đoạn Mệnh!';
+  if (t.lastStand) s += ` ${foe} gục xuống rồi đứng dậy, Bất Tử Thân!`;
+  if (t.regen) s = `Hồi ${t.regen} sinh lực. ` + s;
   parts.push(s);
   return parts.join(' ');
 }

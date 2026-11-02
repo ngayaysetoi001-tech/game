@@ -118,7 +118,13 @@ Ký ức đạo pháp, Thân thể kiếp trước, Dư âm cơ duyên, Tàn h�
 
 **Thang màu độ hiếm dùng chung** (biến `--r0`…`--r4` trong `style.css`): Thường xám, Khá lam, Hiếm tím, Truyền thuyết/Truyền kỳ vàng, Thần thoại đỏ rực (viền lửa chập chờn, chữ ánh đỏ-cam-vàng). Áp cho thể chất, thiên phú, Sổ thể chất, thể chất của bot, danh hiệu, Danh hiệu lục. Phẩm trang bị theo cùng thang: Hạ phẩm xám, Trung phẩm lam, Thượng phẩm tím, Cực phẩm vàng, Thần thoại đỏ rực.
 
-**Trang bị Thần thoại:** chỉ số x3,4 so với Hạ phẩm (Cực phẩm x2,5), 3 thuộc tính đặc biệt, tên riêng (Hồng Mông, Thái Sơ, Cửu U, Diệt Thế, Chư Thiên, Thái Cổ, Hỗn Nguyên, Vạn Kiếp). Rơi ngẫu nhiên 0,4%; cơ hội riêng: hội đấu giá 3%, rương cuối cổ mộ 6%, Thi Vương giữ mộ 12%, kiếm trủng 5%, một mình hạ yêu vương 15%. Biểu tượng lưỡi đỏ, vầng sáng lửa hai lớp.
+**Trang bị Thần thoại:** chỉ số x5 so với Hạ phẩm (Cực phẩm x2,5), 3 dòng thường và 1 dòng **Thần thông** chỉ đồ Thần thoại mới có, tên riêng (Hồng Mông, Thái Sơ, Cửu U, Diệt Thế, Chư Thiên, Thái Cổ, Hỗn Nguyên, Vạn Kiếp). Rơi ngẫu nhiên 0,4%; cơ hội riêng: hội đấu giá 3%, rương cuối cổ mộ 6%, Thi Vương giữ mộ 12%, kiếm trủng 5%, một mình hạ yêu vương 15%.
+
+**Thần thông** (`THAN_THONG` trong `js/items.js`, 32 loại theo ô đồ; trùng nhau chỉ tính một):
+- Vũ khí: Sát Phạt (thắng trận +3 năm tu vi), Phá Thiên (xuyên 50% thủ), Liên Hoàn (25% thêm đòn), Huyết Tế (hút máu 20%), Đoạn Mệnh (địch dưới 30% sinh lực nhận x1,8), Tiên Phát Chế Nhân (luôn ra tay trước, đòn đầu bạo kích), Kinh Lôi (15% choáng mỗi đòn), Tuyệt Sát (bạo kích +10%, x2,5), Thôn Linh (nuốt 10 linh lực mỗi đòn), Ma Thần Phụ Thể (công +40%, chịu đòn +15%).
+- Y phục: Hộ Mệnh (chết thay một lần mỗi kiếp), Bất Hoại (sát thương ngoài trận -25%), Vạn Pháp Bất Xâm (miễn choáng, đóng băng, thiêu đốt, trúng độc, phá giáp), Trường Sinh (thọ +15%), Bất Tử Thân (mỗi trận gục một lần thì đứng dậy với 30% sinh lực), Huyền Quang Hộ Thể (khiên 30% đầu trận), Phản Thiên (phản 30%), Kim Cương Bất Diệt (giảm 25% sát thương trong trận), Sinh Sinh Bất Tức (hồi 6%/lượt, ngoài trận hồi x2), Ẩn Thân (né +25%, bỏ chạy +30%).
+- Phụ kiện: Ngộ Đạo (tu luyện +25%), Thiên Cơ (đột phá +8%), Khí Vận Hộ Thân (kỳ ngộ +30%), Tụ Linh (bế quan x1,5), Chiêu Tài (mưu sinh x2), Vạn Duyên (thân thiết +50%), Dược Vương (đan x2), Linh Tuyền (linh lực hồi x2), Thiên Nhãn (thấy tiền kiếp, bạo kích +10%), Nghịch Thiên (đột phá từ Kim Đan +12%), Tâm Ma Bất Sinh (không gặp tâm ma), Phong Thần (hồi sinh lực ngoài trận x3, thọ +5%).
+- Thử 1.500 trận ngang sức: không thần thông thắng 28%, có một thần thông chiến đấu thắng 38-65%.
 
 ## 6d. Tốc độ cao và tự quyết
 

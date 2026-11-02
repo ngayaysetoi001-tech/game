@@ -3,7 +3,7 @@ import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITL
 import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, TACTICS, WEAPON_TYPES, turnText } from './combat.js';
-import { SLOTS, QUALITY, itemLine } from './items.js';
+import { SLOTS, QUALITY, itemLine, TT_MAP } from './items.js';
 import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE } from './icons.js';
 
 const SAVE_KEY = 'tkps.save.v1';
@@ -96,7 +96,7 @@ function statGrid(st) {
 const TIER_N = ['Thường', 'Khá', 'Hiếm', 'Truyền thuyết', 'Thần thoại'];
 /** Khối thể chất + thiên phú cho màn đầu thai */
 function traitBlock() {
-  const ts = g.traits().filter((t) => !t.cond);
+  const ts = g.traits().filter((t) => !t.cond && !t.tt);
   const [the, ...tps] = ts;
   return `<div class="traits">
     <div class="trait t${the.tier}"><div class="row"><b>${esc(the.n)}${g.s.phase === 'birth' && the.tier && !(g.s.seenThe || []).includes(the.id) ? ' <span class="newTag">Mới!</span>' : ''}</b><span class="meta">Thể chất${the.tier ? ' · ' + TIER_N[the.tier] : ''}</span></div><div class="meta">${esc(the.desc)}</div></div>
@@ -170,7 +170,7 @@ function renderPlay() {
     `<span class="chip">Linh thạch <b>${fmt(P.money)}</b></span>` +
     `<span class="chip">Danh vọng <b>${fmt(P.fame)}</b></span>` +
     (P.flags.pet ? `<span class="chip">Linh thú: ${esc(P.flags.pet)}</span>` : '') +
-    `<button class="chip chipBtn" id="traitChip">${esc(g.traits().filter((t) => !t.cond).map((t) => t.n).join(' · '))} ›</button>`;
+    `<button class="chip chipBtn" id="traitChip">${esc(g.traits().filter((t) => !t.cond && !t.tt).map((t) => t.n).join(' · '))} ›</button>`;
   $('traitChip').onclick = openTraits;
 
   const canBreak = g.canBreak();
@@ -482,7 +482,12 @@ const qCls = (q) => `q${q}`;
 function itemCard(it, btns) {
   const wt = it.wt ? ` · ${WEAPON_TYPES[it.wt].n}` : '';
   return `<div class="item withIco">${itemIco(it)}<div class="body"><div class="row"><b class="${qCls(it.q)}">${esc(it.n)}</b><span class="meta">${QUALITY[it.q].n} · ${SLOTS[it.slot]}${wt} · ${REALMS[it.lv].n}</span></div>
-    <div class="meta">${esc(itemLine(it))}</div>${btns ? `<div class="row btnRow">${btns}</div>` : ''}</div></div>`;
+    <div class="meta">${esc(itemLine(it))}</div>${ttLine(it)}${btns ? `<div class="row btnRow">${btns}</div>` : ''}</div></div>`;
+}
+/** Dòng thần thông của đồ Thần thoại */
+function ttLine(it) {
+  const tt = it.tt && TT_MAP[it.tt];
+  return tt ? `<div class="ttLine"><span class="ttName">✦ ${esc(tt.n)}</span> ${esc(tt.t)}</div>` : '';
 }
 function shopGear() {
   const P = g.P;
@@ -520,6 +525,7 @@ function openBag() {
     }).join('');
     openSheet(`<h2>Hành trang</h2>
       <div class="cstats"><span>Công <b>${fmt(F.atk)}</b></span><span>Thủ <b>${fmt(F.def)}</b></span><span>Sinh lực <b>${fmt(F.maxHp)}</b></span><span>Bạo kích <b>${Math.round(F.crit * 100)}%</b></span><span>Né <b>${Math.round(F.dodge * 100)}%</b></span></div>
+      ${(() => { const ids = [...new Set(Object.values(P.eq).filter((x) => x && x.tt).map((x) => x.tt))]; return ids.length ? `<div class="ttActive">Thần thông đang phát huy: ${ids.map((id) => `<span class="ttName">✦ ${esc(TT_MAP[id].n)}</span>`).join(' ')}</div>` : ''; })()}
       ${msg ? `<p class="intro">${esc(msg)}</p>` : ''}
       <h3>Đang mang</h3><div class="list">${eq}</div>
       <h3>Võ kỹ · mang theo ${P.loadout.length}/4</h3><div class="list">${sks}</div>

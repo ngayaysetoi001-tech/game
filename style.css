@@ -439,3 +439,11 @@ h3 { font-size: 15px; margin: 14px 0 6px; color: var(--muted); font-weight: 600;
 .ico.q4 { border: 2px solid var(--r4); animation: blaze 1.6s ease-in-out infinite; }
 .withIco:has(.ico.q4) { border-color: var(--r4); background: color-mix(in srgb, var(--r4) 6%, var(--panel)); }
 @media (prefers-reduced-motion: reduce) { .q4, .ico.q4 { animation: none !important; } .q4 { color: var(--r4); background: none; } }
+
+/* Thần thông */
+.ttLine { margin-top: 4px; padding: 4px 8px; border-radius: 6px; font-size: 13px; color: var(--ink);
+  background: color-mix(in srgb, var(--r4) 10%, var(--panel)); border: 1px dashed color-mix(in srgb, var(--r4) 60%, var(--line)); }
+.ttName { font-weight: 800; background: linear-gradient(90deg, var(--r4), var(--r4b), #ffd54a, var(--r4b), var(--r4)); background-size: 250% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 2.2s linear infinite; }
+.ttActive { margin-top: 6px; font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; }
+@media (prefers-reduced-motion: reduce) { .ttName { animation: none; color: var(--r4); background: none; } }

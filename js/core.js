@@ -14,7 +14,7 @@ const THE_MAP = Object.fromEntries(THE_CHAT.map((t) => [t.id, t]));
 const TP_MAP = Object.fromEntries(THIEN_PHU.map((t) => [t.id, t]));
 import { EVENTS, EVENT_MAP } from './events.js';
 import { SKILLS, SKILL_IDS, BEAST_SKILLS, fighter, battle, turnText } from './combat.js';
-import { makeItem, gearStats, itemScore, QUALITY } from './items.js';
+import { makeItem, gearStats, itemScore, QUALITY, THAN_THONG, TT_MAP } from './items.js';
 import { botSeed } from './sprite.js';
 import { armorColor, itemToken, iconToken } from './icons.js';
 
@@ -403,6 +403,12 @@ export class Game {
     if (!P) return [];
     const out = [THE_MAP[P.the] || THE_MAP.pham, ...(P.tps || []).map((id) => TP_MAP[id]).filter(Boolean)];
     if (P.title && TITLE_MAP[P.title]) out.push(TITLE_MAP[P.title]);
+    // thần thông của đồ Thần thoại đang mặc (trùng thì chỉ tính một)
+    const seen = new Set();
+    for (const it of Object.values(P.eq || {})) {
+      const tt = it && it.tt && TT_MAP[it.tt];
+      if (tt && tt.fx && !seen.has(tt.id)) { seen.add(tt.id); out.push({ n: tt.n, tt: true, fx: tt.fx }); }
+    }
     return out;
   }
   tmul(k) {
@@ -724,6 +730,10 @@ export class Game {
     if (!P.titles) P.titles = [];
     if (P.title === undefined) P.title = null;
     if (!P.later) P.later = [];
+    // đồ Thần thoại từ bản cũ chưa có thần thông thì gán theo mã món
+    for (const it of [...P.bag, ...Object.values(P.eq)]) {
+      if (it && it.q >= 4 && !it.tt) { const pool = THAN_THONG[it.slot]; it.tt = pool[Math.abs(it.id) % pool.length].id; }
+    }
   }
   learn(id) {
     const P = this.P;
@@ -760,6 +770,7 @@ export class Game {
     const P = this.P;
     const qn = QUALITY[it.q].n;
     const tk = itemToken(it);
+    if (it.tt && TT_MAP[it.tt]) prefix = `${prefix} thần khí mang thần thông 「${TT_MAP[it.tt].n}」`;
     if (!P.eq[it.slot]) {
       P.eq[it.slot] = it;
       const m = `${prefix}: ${tk}${it.n} (${qn}), đã mang vào người.`;
