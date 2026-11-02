@@ -361,3 +361,12 @@ h3 { font-size: 15px; margin: 14px 0 6px; color: var(--muted); font-weight: 600;
   .ttl span, .tcard .tname span, .ttl.t4, .ttl.t4::before, .ttl.t4::after, .tcard.t4.on, .toast.t4 { animation: none !important; }
   .toast { transition: none; }
 }
+
+/* Nút đóng ghim góc trên bên phải của bảng */
+.sheetTop { position: sticky; top: -16px; height: 0; display: flex; justify-content: flex-end; z-index: 3; margin: -16px -16px 0 0; }
+.sheetX {
+  width: 40px; height: 40px; margin: 8px 8px 0 0; border-radius: 50%; border: 1px solid var(--line);
+  background: var(--panel); color: var(--ink); font-size: 18px; line-height: 1; box-shadow: var(--shadow);
+}
+.sheetX:hover, .sheetX:focus-visible { border-color: var(--accent); color: var(--accent); }
+.sheet h2 { padding-right: 44px; }

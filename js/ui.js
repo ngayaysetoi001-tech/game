@@ -464,11 +464,19 @@ $('btFast').onclick = () => {
 
 // ---------- Bảng phụ ----------
 function openSheet(html, bind) {
+  const card = $('sheet').querySelector('.card');
+  const fresh = $('sheet').hidden;
+  const keep = card.scrollTop;
   $('sheetBody').innerHTML = html;
   $('sheet').hidden = false;
+  // mở mới thì lên đầu, vẽ lại (bấm Đeo, Mua...) thì giữ chỗ đang xem
+  card.scrollTop = fresh ? 0 : keep;
   if (bind) bind();
 }
 $('sheetClose').onclick = () => { $('sheet').hidden = true; dirty = true; };
+$('sheetX').onclick = () => { $('sheet').hidden = true; dirty = true; };
+// chạm ra ngoài bảng cũng đóng
+$('sheet').addEventListener('click', (e) => { if (e.target === $('sheet')) { $('sheet').hidden = true; dirty = true; } });
 
 const qCls = (q) => `q${q}`;
 function itemCard(it, btns) {
