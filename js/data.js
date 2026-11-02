@@ -170,3 +170,42 @@ export const THIEN_PHU = [
   { id: 'sat_khi', n: 'Sát khí bẩm sinh', tier: 2, desc: 'Sức chiến đấu +10%. Sinh ra đã lạnh lùng: khởi đầu Vô tình -25.', fx: { fightMul: 1.1, tinh: -25 } },
 ];
 export const TP_WEIGHT = { 1: 10, 2: 4 };
+
+// ---------- Đạo hiệu ----------
+export const DH_A = ['Thanh', 'Huyền', 'Vân', 'Tử', 'Lăng', 'Mặc', 'Trường', 'Vô', 'Bích', 'Hư', 'Lạc', 'Tịch', 'Minh', 'Cô', 'Phong', 'Nguyệt', 'Tinh', 'Hàn', 'U', 'Tĩnh', 'Thái', 'Ngọc'];
+export const DH_B = ['Hư', 'Cơ', 'Dương', 'Trần', 'Nhai', 'Tùng', 'Hạc', 'Tuyền', 'Ngộ', 'Kiếm', 'Vân', 'Thủy', 'Sơn', 'Phong', 'Diệp', 'Huyền', 'Linh', 'Tâm', 'Uyên', 'Hà', 'Cốc'];
+// tôn xưng theo cảnh giới (từ Trúc Cơ)
+export const DH_HON = [null, null, 'Tử', 'Chân Nhân', 'Chân Quân', 'Đạo Quân', 'Tôn Giả', 'Đạo Tôn'];
+export const DH_HON_NU = [null, null, 'Tiên Tử', 'Chân Nhân', 'Chân Quân', 'Nguyên Quân', 'Tôn Giả', 'Đạo Tôn'];
+export const DH_HON_MA = [null, null, 'Tử', 'Ma Nhân', 'Ma Quân', 'Ma Quân', 'Ma Tôn', 'Ma Tôn'];
+
+// ---------- Danh hiệu: giang hồ xưng tụng theo thành tích, mỗi kiếp mở lại ----------
+// cond: điều kiện (hiện cho người chơi), check(g): đạt chưa, fx: lợi ích khi đeo (dùng chung hệ với thể chất)
+const fr = (g) => g.known();
+export const TITLES = [
+  { id: 'so_xuat', n: 'Sơ Xuất Giang Hồ', cond: 'Thắng 5 trận', bonus: 'Chiến đấu +3%', fx: { fightMul: 1.03 }, check: (g) => g.P.cnt.win >= 5 },
+  { id: 'bach_chien', n: 'Bách Chiến Dư Sinh', cond: 'Thắng 30 trận', bonus: 'Chiến đấu +7%', fx: { fightMul: 1.07 }, check: (g) => g.P.cnt.win >= 30 },
+  { id: 'khac_tinh', n: 'Yêu Thú Khắc Tinh', cond: 'Hạ 15 yêu thú', bonus: 'Chiến đấu +5%, chịu đòn -5%', fx: { fightMul: 1.05, hurtMul: 0.95 }, check: (g) => g.P.cnt.beast >= 15 },
+  { id: 'thieu_nien', n: 'Thiếu Niên Anh Tài', cond: 'Lên Trúc Cơ trước 30 tuổi', bonus: 'Tu luyện +5%', fx: { gainMul: 1.05 }, check: (g) => g.P.realm >= 2 && g.P.age < 30 },
+  { id: 'thien_kieu_tu', n: 'Thiên Chi Kiêu Tử', cond: 'Lên Kim Đan trước 80 tuổi', bonus: 'Đột phá +3%', fx: { brk: 0.03 }, check: (g) => g.P.realm >= 3 && g.P.age < 80 },
+  { id: 'lao_thu', n: 'Lão Thụ Khai Hoa', cond: 'Lên Kim Đan sau 150 tuổi', bonus: 'Thọ nguyên +5%', fx: { lifeMul: 1.05 }, check: (g) => g.P.realm >= 3 && g.P.age >= 150 },
+  { id: 'lao_bat_tu', n: 'Lão Bất Tử', cond: 'Sống tới 500 tuổi', bonus: 'Thọ nguyên +5%', fx: { lifeMul: 1.05 }, check: (g) => g.P.age >= 500 },
+  { id: 'phu_giap', n: 'Phú Giáp Nhất Phương', cond: 'Có 5.000 linh thạch', bonus: 'Mưu sinh +15%', fx: { moneyMul: 1.15 }, check: (g) => g.P.money >= 5000 },
+  { id: 'hiep_khach', n: 'Nhân Nghĩa Hiệp Khách', cond: 'Hữu tình đạt 70', bonus: 'Thân thiết +15%', fx: { relMul: 1.15 }, check: (g) => g.P.tinh >= 70 },
+  { id: 'vong_tinh', n: 'Thái Thượng Vong Tình', cond: 'Vô tình đạt -70', bonus: 'Tu luyện +5%', fx: { gainMul: 1.05 }, check: (g) => g.P.tinh <= -70 },
+  { id: 'bang_huu', n: 'Bằng Hữu Khắp Thiên Hạ', cond: '5 người thân thiết từ 50 cùng lúc', bonus: 'Thân thiết +10%, đột phá +2%', fx: { relMul: 1.1, brk: 0.02 }, check: (g) => fr(g).filter(({ r }) => r.v >= 50).length >= 5 },
+  { id: 'thu_dich', n: 'Kẻ Thù Của Thiên Hạ', cond: '3 kẻ thù cùng lúc', bonus: 'Chiến đấu +5%', fx: { fightMul: 1.05 }, check: (g) => fr(g).filter(({ r }) => r.v <= -40 || r.tag === 'thu').length >= 3 },
+  { id: 'than_tien', n: 'Thần Tiên Quyến Lữ', cond: 'Có đạo lữ, cả hai từ Kim Đan', bonus: 'Đột phá +3%', fx: { brk: 0.03 }, check: (g) => g.P.realm >= 3 && fr(g).some(({ b, r }) => r.tag === 'dao_lu' && b.realm >= 3) },
+  { id: 'dao_ly', n: 'Đào Lý Khắp Nơi', cond: 'Có 3 đệ tử', bonus: 'Thân thiết +10%', fx: { relMul: 1.1 }, check: (g) => fr(g).filter(({ r }) => r.tag === 'de_tu').length >= 3 },
+  { id: 'bao_thu', n: 'Có Thù Tất Báo', cond: 'Báo thù cho người thân thành công', bonus: 'Chiến đấu +4%', fx: { fightMul: 1.04 }, check: (g) => g.P.cnt.revenge >= 1 },
+  { id: 'cuu_tu', n: 'Cửu Tử Nhất Sinh', cond: '3 lần sống sót khi sinh lực dưới 20', bonus: 'Chịu đòn -8%', fx: { hurtMul: 0.92 }, check: (g) => g.P.cnt.low >= 3 },
+  { id: 'duc_hoa', n: 'Dục Hỏa Trùng Sinh', cond: 'Sống lại nhờ lửa Niết Bàn', bonus: 'Hồi sinh lực +20%', fx: { regenMul: 1.2 }, check: (g) => !!g.P.flags.reborn },
+  { id: 'danh_chan', n: 'Danh Chấn Một Phương', cond: 'Danh vọng 50', bonus: 'Kỳ ngộ +5%', fx: { eventRate: 1.05 }, check: (g) => g.P.fame >= 50 },
+  { id: 'danh_thien_ha', n: 'Uy Chấn Thiên Hạ', cond: 'Danh vọng 200', bonus: 'Đột phá +3%, kỳ ngộ +5%', fx: { brk: 0.03, eventRate: 1.05 }, check: (g) => g.P.fame >= 200 },
+  { id: 'thap_dai', n: 'Thập Đại Cao Thủ', cond: 'Vào top 10 Bảng Thiên Kiêu khi đã Nguyên Anh', bonus: 'Chiến đấu +5%', fx: { fightMul: 1.05 }, check: (g) => g.P.realm >= 4 && g._rank <= 10 },
+  { id: 'bang_thu', n: 'Thiên Kiêu Bảng Thủ', cond: 'Giữ ngôi đầu Bảng Thiên Kiêu 100 năm', bonus: 'Tu luyện +8%, chiến đấu +5%', fx: { gainMul: 1.08, fightMul: 1.05 }, check: (g) => g.P.cnt.top1 >= 100 },
+  { id: 'tru_cot', n: 'Trụ Cột Sơn Môn', cond: 'Mạnh nhất tông môn của mình', bonus: 'Tu luyện +5%', fx: { gainMul: 1.05 }, check: (g) => !!g.P.sect && g.P.realm >= 2 && g.members(g.P.sect).every((b) => b.realm < g.P.realm || (b.realm === g.P.realm && b.tuvi <= g.P.tuvi)) },
+  { id: 'tang_bao', n: 'Tàng Bảo Các Chủ', cond: 'Mang một món Cực phẩm', bonus: 'Kỳ ngộ +5%', fx: { eventRate: 1.05 }, check: (g) => Object.values(g.P.eq || {}).some((it) => it && it.q >= 3) },
+  { id: 'vo_hoc', n: 'Võ Học Tông Sư', cond: 'Biết 8 võ kỹ', bonus: 'Chiến đấu +4%', fx: { fightMul: 1.04 }, check: (g) => g.P.skills.length >= 8 },
+  { id: 'huyet_mach', n: 'Huyết Mạch Thức Tỉnh', cond: 'Mang thể chất Truyền thuyết trở lên', bonus: 'Đột phá +2%', fx: { brk: 0.02 }, check: (g) => g.traits()[0].tier >= 3 },
+];

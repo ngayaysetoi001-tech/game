@@ -106,6 +106,12 @@ Ký ức đạo pháp, Thân thể kiếp trước, Dư âm cơ duyên, Tàn h�
 
 **Trang bị** (`js/items.js`): 3 ô (vũ khí, y phục, phụ kiện), 4 phẩm (Hạ, Trung, Thượng, Cực), chỉ số theo cảnh giới của món. Thượng phẩm có 1 thuộc tính đặc biệt, Cực phẩm có 2 (hút máu, bạo kích, phản chấn, né tránh, thân pháp). Loại vũ khí có thiên hướng riêng: kiếm thêm bạo kích, đao thêm công, thương xuyên giáp, quạt thêm né. Vũ khí đang cầm hiện trên chân dung. Nguồn: yêu thú (25%), hang động (60%), bí cảnh, đánh bại bot (15%, rơi binh khí của họ), Tụ Bảo Lâu (3 món, đổi hàng mỗi 5 năm), hội đấu giá (Thượng/Cực phẩm). Con thợ rèn khởi đầu với Thiết Kiếm. Túi chứa 16 món, đầy thì tự bán món rẻ nhất.
 
+## 6c. Đạo hiệu và danh hiệu
+
+**Đạo hiệu:** lên Trúc Cơ thì có sự kiện đặt đạo hiệu (chọn 1 trong 3 tên ghép hai chữ, hoặc giữ tục danh). Tôn xưng đổi theo cảnh giới: Tử (nữ: Tiên Tử), Chân Nhân, Chân Quân, Đạo Quân (nữ: Nguyên Quân), Tôn Giả, Đạo Tôn; phi thăng thành Tiên Tôn. Từ Kim Đan mà Vô tình từ -50 trở xuống thì thành Ma Nhân, Ma Quân, Ma Tôn. Bot từ Trúc Cơ cũng có đạo hiệu (cố định theo kiếp); bot từng giết 3 người thì mang tôn xưng ma đạo. Đạo hiệu hiện trên chân dung, Quan hệ, Bảng Thiên Kiêu, Thiên hạ ký sự và Sổ kiếp.
+
+**Danh hiệu:** 25 danh hiệu giang hồ xưng tụng, mở theo thành tích trong kiếp (thắng trận, hạ yêu thú, tu nhanh hoặc tu muộn, sống lâu, giàu có, Hữu tình/Vô tình cực độ, nhiều bạn, nhiều thù, đạo lữ, đệ tử, báo thù, cửu tử nhất sinh, danh vọng, thứ hạng Bảng Thiên Kiêu, mạnh nhất tông môn, đồ Cực phẩm, võ kỹ, thể chất). Đeo một danh hiệu để nhận lợi ích nhỏ (2-8%), hiện phía trên tên. Danh hiệu mở lại mỗi kiếp. **Danh hiệu lục** (tab Sổ kiếp) ghi mọi danh hiệu từng có, cái chưa có hiện điều kiện để người chơi nhắm tới. Bảng Thiên Kiêu gắn nhãn Bảng thủ và Chưởng môn (người mạnh nhất mỗi tông).
+
 ## 7. Kỹ thuật
 
 - HTML, CSS, JavaScript thuần (ES module), không cần build, không cần máy chủ.

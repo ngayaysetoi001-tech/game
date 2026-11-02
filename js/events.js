@@ -164,6 +164,16 @@ export const EVENTS = [
     ],
   },
 
+  // ===== Đạo hiệu (vào qua hàng đợi khi lên Trúc Cơ) =====
+  {
+    id: 'dao_hieu', queued: true, title: 'Đạo hiệu',
+    text: (g) => `Bước vào Trúc Cơ là đã rời hàng phàm tục. Theo lệ người tu đạo, ngươi nên tự đặt cho mình một đạo hiệu. Tôn xưng sẽ đổi theo cảnh giới: Trúc Cơ gọi là "Tử"${g.P.g === 'nu' ? ' hoặc "Tiên Tử"' : ''}, Kim Đan là "Chân Nhân", Nguyên Anh là "Chân Quân"...`,
+    choices: (g, { data }) => [
+      ...data.opts.map((o) => ({ t: `${o} ${g.P.g === 'nu' ? 'Tiên Tử' : 'Tử'}`, go: (g) => { g.P.daoHieu = o; return `Từ nay giang hồ gọi ngươi là ${g.honorific()}.`; } })),
+      { t: `Giữ tục danh ${g.P.name}`, go: (g) => { g.P.daoHieu = null; return 'Tên cha mẹ đặt, ngươi không đổi. Người ta vẫn gọi ngươi bằng tên thật.'; } },
+    ],
+  },
+
   // ===== Lịch luyện =====
   {
     id: 'hang_dong', w: 5, acts: ['lich_luyen'], title: 'Hang động sau thác',
@@ -602,7 +612,7 @@ export const EVENTS = [
             const f = g.fightBot(k);
             if (f.win) {
               g.fame(6); g.tinh(-3);
-              if (g.r.chance(0.5)) { g.botDie(k, `bị ${g.P.name} giết để báo thù cho ${data.name}`); return `${f.text}\n\n${k.name} gục dưới chân ngươi. Mối thù đã trả.`; }
+              if (g.r.chance(0.5)) { g.P.cnt.revenge++; g.botDie(k, `bị ${g.P.name} giết để báo thù cho ${data.name}`); return `${f.text}\n\n${k.name} gục dưới chân ngươi. Mối thù đã trả.`; }
               g.relSet(k, -70, 'thu');
               return `${f.text}\n\n${k.name} bị trọng thương, nhưng đã chạy thoát.`;
             }

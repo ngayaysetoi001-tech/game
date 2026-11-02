@@ -5,7 +5,10 @@ import {
   REALMS, TOP_REALM, baseGain, ROOTS, ORIGINS, PERSONALITIES, PERS_KEYS,
   SURNAMES, NAMES_M, NAMES_F, SECT_A, SECT_B, SECT_COLORS, MONSTERS, MOVES,
   ACTIONS, PILLS, LEGACIES, TAG_NAMES, THE_CHAT, THIEN_PHU, TP_WEIGHT,
+  DH_A, DH_B, DH_HON, DH_HON_NU, DH_HON_MA, TITLES,
 } from './data.js';
+
+const TITLE_MAP = Object.fromEntries(TITLES.map((t) => [t.id, t]));
 
 const THE_MAP = Object.fromEntries(THE_CHAT.map((t) => [t.id, t]));
 const TP_MAP = Object.fromEntries(THIEN_PHU.map((t) => [t.id, t]));
@@ -397,7 +400,9 @@ export class Game {
   /** Danh sách thể chất + thiên phú của người chơi */
   traits(P = this.P || this.s.draft) {
     if (!P) return [];
-    return [THE_MAP[P.the] || THE_MAP.pham, ...(P.tps || []).map((id) => TP_MAP[id]).filter(Boolean)];
+    const out = [THE_MAP[P.the] || THE_MAP.pham, ...(P.tps || []).map((id) => TP_MAP[id]).filter(Boolean)];
+    if (P.title && TITLE_MAP[P.title]) out.push(TITLE_MAP[P.title]);
+    return out;
   }
   tmul(k) {
     return this.traits().reduce((m, t) => m * (t.fx[k] ?? 1), 1);
@@ -589,6 +594,7 @@ export class Game {
     const res = battle(A, B, this.r);
     const P = this.P;
     const hp0 = P.hp;
+    if (res.win) P.cnt.win++; else P.cnt.lose++;
     // thắng thì chỉ mang về 60% vết thương trong trận
     if (res.win) P.hp = Math.max(5, Math.min(P.hp, Math.round(hp0 - (hp0 - res.aHpPct * 100) * 0.6)));
     const lines = [];
@@ -622,6 +628,7 @@ export class Game {
     if (m.r >= 3) sk.push(r.pick(['vay_giap', 'cuong_bao', 'gam_thet']));
     const B = fighter({ name: m.n, pw: m.pow * scale * enemyGear(m.r ?? this.P.realm), skills: [...new Set(sk)], beast: true, look: { type: 'beast', seed: m.seed, realm: m.r, name: m.n } });
     const res = this.runBattle(this.playerFighter(mul), B);
+    if (res.win) this.P.cnt.beast++;
     if (res.win && this.r.chance(0.25)) res.text += '\n' + this.gainItem(makeItem(this.r, this.s.nextItem++, m.r ?? this.P.realm));
     return res;
   }
@@ -647,6 +654,9 @@ export class Game {
     if (!P.skills) P.skills = ['quyen'];
     if (!P.loadout) P.loadout = ['quyen'];
     if (!P.tactic) P.tactic = 'can_bang';
+    if (!P.cnt) P.cnt = { win: 0, lose: 0, beast: 0, revenge: 0, low: 0 };
+    if (!P.titles) P.titles = [];
+    if (P.title === undefined) P.title = null;
   }
   learn(id) {
     const P = this.P;
@@ -770,6 +780,7 @@ export class Game {
       this.die(cause || 'trọng thương không qua khỏi');
       return true;
     }
+    if (P.hp < 20) P.cnt.low++;
     return false;
   }
   joinSect(sc) {
@@ -869,12 +880,13 @@ export class Game {
         return `${lightning}Đạo lôi cuối cùng tan vào thân thể ngươi. Một cột sáng từ trời rủ xuống.${helpTxt}\n\nNgươi phi thăng.`;
       }
       P.realm++;
+      if (P.realm >= 2 && P.daoHieu === undefined) this.s.queue.push({ id: 'dao_hieu', botId: null, data: { opts: this.genDaoHieuOpts() } });
       P.tuvi = 0;
       this.fame(P.realm * 3);
       const ob = this.tadd('ngoOnBreak');
       if (ob) this.stat('ngo', ob);
       this.log(`Đột phá thành công! Ngươi đã là tu sĩ ${REALMS[P.realm].n}. Thọ nguyên ${this.lifespan()}.`, 'big');
-      if (P.realm >= 3) this.chron(`${P.name} đột phá ${REALMS[P.realm].n}.`, 2);
+      if (P.realm >= 3) this.chron(`${this.fullName()} đột phá ${REALMS[P.realm].n}.`, 2);
       return `${lightning}Bình cảnh vỡ tan như băng mùa xuân.${helpTxt}\n\nNgươi đã bước vào ${REALMS[P.realm].n}. Thọ nguyên tăng lên ${this.lifespan()} năm.`;
     }
     P.tuvi = Math.floor(P.tuvi * 0.7);
@@ -945,6 +957,9 @@ export class Game {
       }
       this.s.queue.push({ id: 'dot_pha', botId: null, data: {} });
     }
+    if (P.realm >= 2 && P.daoHieu === undefined && !this.s.queue.some((q) => q.id === 'dao_hieu')) this.s.queue.push({ id: 'dao_hieu', botId: null, data: { opts: this.genDaoHieuOpts() } });
+    this.checkTitles();
+    if (this._rank === 1) P.cnt.top1 = (P.cnt.top1 || 0) + 1;
     this.nextEvent(act);
     return true;
   }
@@ -1012,6 +1027,7 @@ export class Game {
     p.result = res;
     const first = res.split('\n').filter(Boolean).pop();
     if (this.P && first) this.log(`${ev.title}: ${first}`, 'event');
+    if (this.playing) this.checkTitles();
   }
   dismiss() {
     const p = this.s.pending;
@@ -1030,11 +1046,11 @@ export class Game {
     const sc = P.sect ? this.sect(P.sect) : null;
     const rec = {
       no: P.lifeNo, name: P.name, age: P.age, realm: P.realm, cause, tinh: P.tinh,
-      sect: sc ? sc.name : null, root: P.root.n, year: this.s.year, asc: !!P.ascended, fame: P.fame,
+      sect: sc ? sc.name : null, root: P.root.n, dh: this.honorific(), title: P.title ? TITLE_MAP[P.title].n : null, nTitles: P.titles.length, year: this.s.year, asc: !!P.ascended, fame: P.fame,
       friends: this.closeFriends().length,
     };
     this.s.lives.push(rec);
-    if (P.realm >= 3 || P.ascended) this.chron(`${P.name} (${REALMS[P.realm].n}) ${cause}.`, 2);
+    if (P.realm >= 3 || P.ascended) this.chron(`${this.fullName()} (${REALMS[P.realm].n}) ${cause}.`, 2);
     for (const id in this.s.rel) {
       const r = this.s.rel[id];
       const b = this.soul(+id);
@@ -1065,6 +1081,61 @@ export class Game {
     this.rollDraft();
   }
 
+  // ---------- Đạo hiệu, danh hiệu ----------
+  genDaoHieu(r = this.r) {
+    let a, b;
+    do { a = r.pick(DH_A); b = r.pick(DH_B); } while (a === b);
+    return `${a} ${b}`;
+  }
+  genDaoHieuOpts() {
+    const out = new Set();
+    while (out.size < 3) out.add(this.genDaoHieu());
+    return [...out];
+  }
+  /** Tôn xưng hiện tại của người chơi (null nếu chưa có đạo hiệu) */
+  honorific(P = this.P) {
+    if (!P || !P.daoHieu || P.realm < 2) return null;
+    const ma = P.tinh <= -50 && P.realm >= 3;
+    const hon = ma ? DH_HON_MA : P.g === 'nu' ? DH_HON_NU : DH_HON;
+    return P.ascended ? `${P.daoHieu} Tiên Tôn` : `${P.daoHieu} ${hon[Math.min(P.realm, hon.length - 1)]}`;
+  }
+  fullName(P = this.P) {
+    const h = this.honorific(P);
+    return h ? `${P.name} (${h})` : P.name;
+  }
+  /** Đạo hiệu của bot, cố định theo kiếp */
+  botHonorific(b) {
+    if (b.realm < 2 || !b.dao) return null;
+    const r = new Rng((botSeed(b) ^ 0x2545f491) >>> 0);
+    const base = this.genDaoHieu(r);
+    const hon = b.kills >= 3 && b.realm >= 3 ? DH_HON_MA : b.g === 'nu' ? DH_HON_NU : DH_HON;
+    return `${base} ${hon[Math.min(b.realm, hon.length - 1)]}`;
+  }
+  myRank() {
+    const i = this.ranking(40).findIndex((x) => x.me);
+    return i < 0 ? 99 : i + 1;
+  }
+  checkTitles() {
+    const P = this.P;
+    if (!P || !P.cnt) return;
+    if (!this.s.seenTitles) this.s.seenTitles = [];
+    this._rank = P.dao ? this.myRank() : 99;
+    for (const t of TITLES) {
+      if (P.titles.includes(t.id)) continue;
+      let ok = false;
+      try { ok = t.check(this); } catch (e) { ok = false; }
+      if (!ok) continue;
+      P.titles.push(t.id);
+      if (!this.s.seenTitles.includes(t.id)) this.s.seenTitles.push(t.id);
+      this.log(`Giang hồ bắt đầu gọi ngươi là 「${t.n}」. (${t.bonus} khi đeo)`, 'big');
+      if (!P.title) P.title = t.id;
+    }
+  }
+  setTitle(id) {
+    const P = this.P;
+    if (P && (id === null || P.titles.includes(id))) P.title = id;
+  }
+
   // ---------- Bảng xếp hạng ----------
   ranking(n = 15) {
     const list = this.s.souls
@@ -1078,4 +1149,4 @@ export class Game {
   }
 }
 
-export { REALMS, TOP_REALM, ACTIONS, PILLS, LEGACIES, TAG_NAMES, THE_MAP, TP_MAP, THE_CHAT };
+export { REALMS, TOP_REALM, ACTIONS, PILLS, LEGACIES, TAG_NAMES, THE_MAP, TP_MAP, THE_CHAT, TITLES, TITLE_MAP };

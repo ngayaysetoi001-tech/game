@@ -1,5 +1,5 @@
 // Giao diện trình duyệt. Mọi luật chơi nằm trong core.js.
-import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, clamp } from './core.js';
+import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITLE_MAP, clamp } from './core.js';
 import { STAT_NAMES, PERSONALITIES } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, TACTICS, WEAPON_TYPES, turnText } from './combat.js';
@@ -138,8 +138,12 @@ function renderPlay() {
   const life = g.lifespan();
   const sc = P.sect ? g.sect(P.sect) : null;
   drawPortrait($('portrait'), P, { life, robe: robeOf(P.sect), dead: g.s.phase === 'dead' });
+  const hon = g.honorific();
+  const ttl = P.title && TITLE_MAP[P.title] ? TITLE_MAP[P.title].n : null;
   $('who').innerHTML = `
+    ${ttl ? `<div class="titleTag">「${esc(ttl)}」</div>` : ''}
     <h1>${esc(P.name)}</h1>
+    ${hon ? `<div class="daohieu">${esc(hon)}</div>` : ''}
     <div class="sub">${P.age} tuổi · Kiếp ${P.lifeNo} · ${esc(P.root.n)}</div>
     <div class="sub"><span class="realm">${REALMS[P.realm].n}</span>${P.dao ? '' : ' · chưa nhập đạo'}${sc ? ` · ${esc(sc.name)}` : P.dao ? ' · tán tu' : ''}</div>`;
   const need = g.need();
@@ -204,7 +208,8 @@ function renderTab() {
       const past = r.past.length ? `<div class="meta">Kiếp trước: ${esc(r.past[r.past.length - 1].name)}</div>` : seen;
       const bt = THE_MAP[b.the];
       const theTxt = bt && bt.id !== 'pham' ? ` · <span class="t${bt.tier}c">${esc(bt.n)}</span>` : '';
-      return `<div class="item withAv">${botAvatar(b)}<div class="body"><div class="row"><b>${esc(b.name)}</b><span class="tag ${cls}">${esc(g.relLabel(r))} ${r.v > 0 ? '+' : ''}${r.v}</span></div>
+      const bh = g.botHonorific(b);
+      return `<div class="item withAv">${botAvatar(b)}<div class="body"><div class="row"><b>${esc(b.name)}${bh ? ` <span class="dhSmall">${esc(bh)}</span>` : ''}</b><span class="tag ${cls}">${esc(g.relLabel(r))} ${r.v > 0 ? '+' : ''}${r.v}</span></div>
         <div class="meta">${REALMS[b.realm].n} · ${b.age} tuổi · ${PERSONALITIES[b.pers].n}${sc ? ` · ${esc(sc.name)}` : ''}${theTxt}</div>${past}</div></div>`;
     }).join('')}</div>`;
   }
@@ -227,12 +232,24 @@ function renderTab() {
       const av = x.me
         ? `<img class="avatar" alt="" src="${spriteURL({ seed: P.look, g: P.g, age: P.age, life: g.lifespan(), realm: P.realm, robe: sectRobe(P.sect), wep: P.eq && P.eq.vu_khi ? P.eq.vu_khi.wt : null })}">`
         : botAvatar(g.soul(x.id));
-      return `<div class="item withAv ${x.me ? 'me' : ''}">${av}<div class="body"><div class="row"><b>${i + 1}. ${esc(x.name)}${x.me ? ' (ngươi)' : ''}</b><span class="meta">${REALMS[x.realm].n} ${Math.floor(x.prog * 100)}%</span></div>
-        <div class="meta">${x.age} tuổi${sc ? ` · ${esc(sc.name)}` : ' · tán tu'}</div></div></div>`;
+      const xh = x.me ? g.honorific() : g.botHonorific(g.soul(x.id));
+      const leader = sc && !x.me ? g.members(sc.id).sort((a, b) => b.realm - a.realm || b.tuvi - a.tuvi)[0] : null;
+      const badge = i === 0 ? '<span class="tag gold">Bảng thủ</span>' : leader && leader.id === x.id ? '<span class="tag">Chưởng môn</span>' : '';
+      return `<div class="item withAv ${x.me ? 'me' : ''}">${av}<div class="body"><div class="row"><b>${i + 1}. ${esc(x.name)}${x.me ? ' (ngươi)' : ''}${xh ? ` <span class="dhSmall">${esc(xh)}</span>` : ''}</b><span class="meta">${REALMS[x.realm].n} ${Math.floor(x.prog * 100)}%</span></div>
+        <div class="meta">${x.age} tuổi${sc ? ` · ${esc(sc.name)}` : ' · tán tu'} ${badge}</div></div></div>`;
     }).join('')}</div>`;
   }
-  if (tab === 'lives') return codex() + '<h3>Các kiếp đã qua</h3>' + livesList();
+  if (tab === 'lives') return titleCodex() + codex() + '<h3>Các kiếp đã qua</h3>' + livesList();
   return '';
+}
+
+/** Danh hiệu lục: mọi danh hiệu linh hồn này từng được xưng tụng */
+function titleCodex() {
+  const seen = new Set(g.s.seenTitles || []);
+  const got = TITLES.filter((t) => seen.has(t.id)).length;
+  return `<h3>Danh hiệu lục · ${got}/${TITLES.length}</h3><div class="codex">${TITLES.map((t) => seen.has(t.id)
+    ? `<span class="cx t2" title="${esc(t.cond)}">${esc(t.n)}</span>`
+    : `<span class="cx locked" title="${esc(t.cond)}">??? · ${esc(t.cond)}</span>`).join('')}</div>`;
 }
 
 /** Sổ thể chất: những thể chất linh hồn này từng thức tỉnh */
@@ -248,7 +265,8 @@ function codex() {
 function livesList() {
   const ls = g.s.lives.slice().reverse();
   if (!ls.length) return '<p class="empty">Đây là kiếp đầu tiên.</p>';
-  return `<div class="list">${ls.map((l) => `<div class="item"><div class="row"><b>Kiếp ${l.no}: ${esc(l.name)}</b><span class="meta">${l.age} tuổi</span></div>
+  return `<div class="list">${ls.map((l) => `<div class="item"><div class="row"><b>Kiếp ${l.no}: ${esc(l.name)}${l.dh ? ` <span class="dhSmall">${esc(l.dh)}</span>` : ''}</b><span class="meta">${l.age} tuổi</span></div>
+    ${l.title ? `<div class="meta">「${esc(l.title)}」${l.nTitles > 1 ? ` và ${l.nTitles - 1} danh hiệu khác` : ''}</div>` : ''}
     <div class="meta">${REALMS[l.realm].n}${l.sect ? ` · ${esc(l.sect)}` : ''} · ${esc(l.cause)}</div></div>`).join('')}</div>`;
 }
 
@@ -473,6 +491,12 @@ function openBag() {
     openSheet(`<h2>Hành trang</h2>
       <div class="cstats"><span>Công <b>${fmt(F.atk)}</b></span><span>Thủ <b>${fmt(F.def)}</b></span><span>Sinh lực <b>${fmt(F.maxHp)}</b></span><span>Bạo kích <b>${Math.round(F.crit * 100)}%</b></span><span>Né <b>${Math.round(F.dodge * 100)}%</b></span></div>
       ${msg ? `<p class="intro">${esc(msg)}</p>` : ''}
+      <h3>Danh hiệu · đeo một danh hiệu để nhận lợi ích</h3><div class="list">${P.titles.length ? P.titles.map((id) => {
+        const t = TITLE_MAP[id];
+        const on = P.title === id;
+        return `<div class="item"><div class="row"><b>「${esc(t.n)}」</b><span class="meta">${esc(t.bonus)}</span></div><div class="meta">${esc(t.cond)}</div>
+          <div class="row btnRow"><button class="btn ${on ? 'on' : 'ghost'}" data-ti="${on ? '' : id}">${on ? 'Đang đeo' : 'Đeo'}</button></div></div>`;
+      }).join('') : '<p class="empty">Chưa có danh hiệu. Giang hồ sẽ xưng tụng khi ngươi làm nên chuyện: thắng trận, tu nhanh, giàu có, kết giao, báo thù...</p>'}</div>
       <h3>Đang mang</h3><div class="list">${eq}</div>
       <h3>Võ kỹ · mang theo ${P.loadout.length}/4</h3><div class="list">${sks}</div>
       <h3>Chiến thuật</h3><div class="tactics">${Object.entries(TACTICS).map(([k, t]) => `<button class="btn ${P.tactic === k ? 'on' : ''}" data-tc="${k}">${t.n}<small>${t.desc}</small></button>`).join('')}</div>
@@ -483,6 +507,7 @@ function openBag() {
       q('[data-sell]', (b) => `Bán được ${g.sell(+b.dataset.sell)} linh thạch.`);
       q('[data-sk]', (b) => g.toggleSkill(b.dataset.sk));
       q('[data-tc]', (b) => g.setTactic(b.dataset.tc));
+      q('[data-ti]', (b) => g.setTitle(b.dataset.ti || null));
     });
   };
   draw();

@@ -271,3 +271,9 @@ h3 { font-size: 15px; margin: 14px 0 6px; color: var(--muted); font-weight: 600;
 @media (prefers-reduced-motion: reduce) {
   .lunge canvas, .foe.lunge canvas, .hit canvas, .foe.hit canvas, .float, .banner.show { animation-duration: 0.01s; }
 }
+
+/* Đạo hiệu, danh hiệu */
+.titleTag { color: var(--gold); font-weight: 700; font-size: 14px; letter-spacing: 0.02em; }
+.daohieu { color: var(--accent); font-size: 15px; font-weight: 600; }
+.dhSmall { color: var(--accent); font-weight: 400; font-size: 13px; }
+.tag.gold { color: var(--gold); border-color: currentColor; }
