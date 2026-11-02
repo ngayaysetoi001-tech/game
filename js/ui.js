@@ -4,6 +4,7 @@ import { STAT_NAMES, PERSONALITIES } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, TACTICS, WEAPON_TYPES, turnText } from './combat.js';
 import { SLOTS, QUALITY, itemLine } from './items.js';
+import { iconURL, itemIconOpts, armorColor, PILL_COLORS } from './icons.js';
 
 const SAVE_KEY = 'tkps.save.v1';
 const SPEEDS = [1, 2, 4, 8, 16, 32];
@@ -57,6 +58,11 @@ const sectRobe = (sectId) => {
 /** Ảnh nhỏ của một bot */
 const botAvatar = (b) => `<img class="avatar" alt="" src="${spriteURL({ seed: botSeed(b), g: b.g, age: b.age, life: b.life, realm: b.realm, robe: sectRobe(b.sect), wep: b.realm >= 1 ? g.botWep(b) : null })}">`;
 const robeOf = sectRobe;
+/** Màu áo người chơi: y phục đang mặc, không có thì màu tông môn */
+const playerRobe = (P) => (P.eq && P.eq.ao ? armorColor(P.eq.ao) : sectRobe(P.sect));
+const SLOT_KIND = { vu_khi: 'kiem', ao: 'dao_bao', phu_kien: 'ngoc_boi' };
+const icoImg = (o, cls = '') => `<img class="ico ${cls}" alt="" src="${iconURL(o)}">`;
+const itemIco = (it) => icoImg(itemIconOpts(it), `q${it.q}`);
 
 /** Chỉ thay DOM khi nội dung đổi, để nút không bị dựng lại giữa lúc đang chạm */
 function setHTML(el, html) {
@@ -137,7 +143,7 @@ function renderPlay() {
   const P = g.P;
   const life = g.lifespan();
   const sc = P.sect ? g.sect(P.sect) : null;
-  drawPortrait($('portrait'), P, { life, robe: robeOf(P.sect), dead: g.s.phase === 'dead' });
+  drawPortrait($('portrait'), P, { life, robe: playerRobe(P), dead: g.s.phase === 'dead' });
   const hon = g.honorific();
   const ttl = P.title && TITLE_MAP[P.title] ? TITLE_MAP[P.title].n : null;
   $('who').innerHTML = `
@@ -145,7 +151,9 @@ function renderPlay() {
     <h1>${esc(P.name)}</h1>
     ${hon ? `<div class="daohieu">${esc(hon)}</div>` : ''}
     <div class="sub">${P.age} tuổi · Kiếp ${P.lifeNo} · ${esc(P.root.n)}</div>
-    <div class="sub"><span class="realm">${REALMS[P.realm].n}</span>${P.dao ? '' : ' · chưa nhập đạo'}${sc ? ` · ${esc(sc.name)}` : P.dao ? ' · tán tu' : ''}</div>`;
+    <div class="sub"><span class="realm">${REALMS[P.realm].n}</span>${P.dao ? '' : ' · chưa nhập đạo'}${sc ? ` · ${esc(sc.name)}` : P.dao ? ' · tán tu' : ''}</div>
+    <button class="eqStrip" id="eqStrip" aria-label="Mở hành trang">${Object.keys(SLOTS).map((sl) => (P.eq && P.eq[sl] ? itemIco(P.eq[sl]) : icoImg({ kind: SLOT_KIND[sl], faded: true }, 'empty'))).join('')}</button>`;
+  $('eqStrip').onclick = openBag;
   const need = g.need();
   $('bars').innerHTML =
     bar('Tu vi', P.tuvi, need, 'var(--tuvi)', P.dao ? `${fmt(P.tuvi)}/${fmt(need)}` : '-') +
@@ -230,7 +238,7 @@ function renderTab() {
       const sc = x.sect ? g.sect(x.sect) : null;
       const P = g.P;
       const av = x.me
-        ? `<img class="avatar" alt="" src="${spriteURL({ seed: P.look, g: P.g, age: P.age, life: g.lifespan(), realm: P.realm, robe: sectRobe(P.sect), wep: P.eq && P.eq.vu_khi ? P.eq.vu_khi.wt : null })}">`
+        ? `<img class="avatar" alt="" src="${spriteURL({ seed: P.look, g: P.g, age: P.age, life: g.lifespan(), realm: P.realm, robe: playerRobe(P), wep: P.eq && P.eq.vu_khi ? P.eq.vu_khi.wt : null })}">`
         : botAvatar(g.soul(x.id));
       const xh = x.me ? g.honorific() : g.botHonorific(g.soul(x.id));
       const leader = sc && !x.me ? g.members(sc.id).sort((a, b) => b.realm - a.realm || b.tuvi - a.tuvi)[0] : null;
@@ -297,7 +305,7 @@ function renderDead() {
       return `<button class="btn" data-leg="${id}"><b>${esc(x.n)}</b><small>${esc(x.desc)}</small></button>`;
     }).join('')}</div>
     <h3>Sổ kiếp</h3>${livesList()}${codex()}`;
-  drawPortrait($('deadPortrait'), { ...g.P, age: l.age }, { life: g.lifespan(), robe: robeOf(g.P.sect), dead: !l.asc, asc: l.asc });
+  drawPortrait($('deadPortrait'), { ...g.P, age: l.age }, { life: g.lifespan(), robe: playerRobe(g.P), dead: !l.asc, asc: l.asc });
   $('scr-dead').querySelectorAll('[data-leg]').forEach((b) => {
     b.onclick = () => { g.chooseLegacy(b.dataset.leg); save(); dirty = true; window.scrollTo(0, 0); };
   });
@@ -451,8 +459,8 @@ $('sheetClose').onclick = () => { $('sheet').hidden = true; dirty = true; };
 const qCls = (q) => `q${q}`;
 function itemCard(it, btns) {
   const wt = it.wt ? ` · ${WEAPON_TYPES[it.wt].n}` : '';
-  return `<div class="item"><div class="row"><b class="${qCls(it.q)}">${esc(it.n)}</b><span class="meta">${QUALITY[it.q].n} · ${SLOTS[it.slot]}${wt} · ${REALMS[it.lv].n}</span></div>
-    <div class="meta">${esc(itemLine(it))}</div>${btns ? `<div class="row btnRow">${btns}</div>` : ''}</div>`;
+  return `<div class="item withIco">${itemIco(it)}<div class="body"><div class="row"><b class="${qCls(it.q)}">${esc(it.n)}</b><span class="meta">${QUALITY[it.q].n} · ${SLOTS[it.slot]}${wt} · ${REALMS[it.lv].n}</span></div>
+    <div class="meta">${esc(itemLine(it))}</div>${btns ? `<div class="row btnRow">${btns}</div>` : ''}</div></div>`;
 }
 function shopGear() {
   const P = g.P;
@@ -464,8 +472,8 @@ function shopGear() {
   const books = st.books.map((b) => {
     const sk = SKILLS[b.id];
     const has = P.skills.includes(b.id);
-    return `<div class="item"><div class="row"><b>Bí kíp: ${esc(sk.n)}</b><span class="meta">Linh lực ${sk.mp}</span></div><div class="meta">${esc(sk.desc)}</div>
-      <div class="row btnRow">${has ? '<span class="meta">Đã học</span>' : `<button class="btn ghost" data-bk="${b.id}" ${P.money < b.price ? 'disabled' : ''}>Mua · ${fmt(b.price)}</button>`}</div></div>`;
+    return `<div class="item withIco">${icoImg({ kind: 'bi_kip', q: sk.tier })}<div class="body"><div class="row"><b>Bí kíp: ${esc(sk.n)}</b><span class="meta">Linh lực ${sk.mp}</span></div><div class="meta">${esc(sk.desc)}</div>
+      <div class="row btnRow">${has ? '<span class="meta">Đã học</span>' : `<button class="btn ghost" data-bk="${b.id}" ${P.money < b.price ? 'disabled' : ''}>Mua · ${fmt(b.price)}</button>`}</div></div></div>`;
   }).join('');
   return `<h3>Pháp khí · đổi hàng mỗi 5 năm</h3><div class="list">${gear}</div><h3>Bí kíp võ kỹ</h3><div class="list">${books}</div>`;
 }
@@ -476,7 +484,7 @@ function openBag() {
     const F = g.playerFighter();
     const eq = Object.keys(SLOTS).map((sl) => {
       const it = P.eq[sl];
-      return it ? itemCard(it, `<button class="btn ghost" data-un="${sl}">Tháo</button>`) : `<div class="item"><div class="row"><b class="meta">${SLOTS[sl]}: trống</b></div></div>`;
+      return it ? itemCard(it, `<button class="btn ghost" data-un="${sl}">Tháo</button>`) : `<div class="item withIco">${icoImg({ kind: SLOT_KIND[sl], faded: true }, 'empty')}<div class="body"><b class="meta">${SLOTS[sl]}: trống</b></div></div>`;
     }).join('');
     const bag = P.bag.slice().sort((a, b) => (a.slot > b.slot ? 1 : a.slot < b.slot ? -1 : b.val - a.val)).map((it) => itemCard(it,
       `<button class="btn ghost" data-eq="${it.id}">Mang</button><button class="btn ghost" data-sell="${it.id}">Bán · ${fmt(it.val)}</button>${g.betterThanEquipped(it) ? '<span class="tag pos">Tốt hơn</span>' : ''}`)).join('');
@@ -520,9 +528,9 @@ function openShop() {
       <div class="list">${Object.entries(PILLS).map(([id, p]) => {
         const price = g.pillPrice(id);
         const n = P.pills[id] || 0;
-        return `<div class="item"><div class="row"><b>${p.n}</b><span class="meta">Có ${n}</span></div><div class="meta">${p.desc}</div>
-          <div class="row" style="margin-top:6px;gap:8px"><button class="btn ghost" data-buy="${id}" ${P.money < price ? 'disabled' : ''}>Mua · ${fmt(price)}</button>
-          ${id !== 'pha_canh' ? `<button class="btn ghost" data-use="${id}" ${n ? '' : 'disabled'}>Dùng</button>` : '<span class="meta">Dùng khi đột phá</span>'}</div></div>`;
+        return `<div class="item withIco">${icoImg({ kind: 'dan', q: id === 'dien_tho' ? 2 : 0, col: PILL_COLORS[id] })}<div class="body"><div class="row"><b>${p.n}</b><span class="meta">Có ${n}</span></div><div class="meta">${p.desc}</div>
+          <div class="row btnRow"><button class="btn ghost" data-buy="${id}" ${P.money < price ? 'disabled' : ''}>Mua · ${fmt(price)}</button>
+          ${id !== 'pha_canh' ? `<button class="btn ghost" data-use="${id}" ${n ? '' : 'disabled'}>Dùng</button>` : '<span class="meta">Dùng khi đột phá</span>'}</div></div></div>`;
       }).join('')}</div>
       ${shopGear()}
       <p class="intro" id="shopMsg"></p>`, () => {

@@ -16,6 +16,7 @@ import { EVENTS, EVENT_MAP } from './events.js';
 import { SKILLS, SKILL_IDS, BEAST_SKILLS, fighter, battle, turnText } from './combat.js';
 import { makeItem, gearStats, itemScore, QUALITY } from './items.js';
 import { botSeed } from './sprite.js';
+import { armorColor } from './icons.js';
 
 // đối thủ coi như có sẵn trang bị (trừ hạng phàm nhân)
 const enemyGear = (realm) => (realm <= 0 ? 1 : 1.2);
@@ -571,7 +572,7 @@ export class Game {
       name: P.name, pw: this.basePower() * mul, hpPct: P.hp / 100,
       skills: P.loadout, wep: w ? w.wt : null, tactic: P.tactic, gear: gearStats(P.eq || {}),
       spd: (P.stats.co - 50) / 25,
-      look: { type: 'human', seed: P.look, g: P.g, age: P.age, life: this.lifespan(), realm: P.realm, robe: P.sect ? (this.sect(P.sect) || {}).color : null, wep: w ? w.wt : null },
+      look: { type: 'human', seed: P.look, g: P.g, age: P.age, life: this.lifespan(), realm: P.realm, robe: P.eq && P.eq.ao ? armorColor(P.eq.ao) : P.sect ? (this.sect(P.sect) || {}).color : null, wep: w ? w.wt : null },
     });
   }
   botWep(b) {

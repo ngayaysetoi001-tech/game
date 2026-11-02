@@ -9,7 +9,7 @@ const read = (p) => readFileSync(join(root, p), 'utf8');
 const out = process.argv[2] || join(root, 'dist', 'tram-kiep-phu-sinh.html');
 
 // Thứ tự theo phụ thuộc: rng -> data -> events -> core -> ui
-const mods = ['js/rng.js', 'js/data.js', 'js/items.js', 'js/combat.js', 'js/sprite.js', 'js/events.js', 'js/core.js', 'js/ui.js'];
+const mods = ['js/rng.js', 'js/data.js', 'js/items.js', 'js/combat.js', 'js/sprite.js', 'js/icons.js', 'js/events.js', 'js/core.js', 'js/ui.js'];
 const js = mods.map((m) => {
   let s = read(m);
   s = s.replace(/^import[\s\S]*?from\s+'[^']+';\s*$/gm, '');
@@ -18,6 +18,14 @@ const js = mods.map((m) => {
   return `// ---- ${m} ----\n${s}`;
 }).join('\n');
 if (/^\s*(import|export)\b/m.test(js)) throw new Error('còn sót import/export');
+// các module gộp chung một phạm vi: báo lỗi nếu hai file khai báo trùng tên ở cấp ngoài cùng
+const seen = new Map();
+for (const m of mods) {
+  for (const mm of read(m).matchAll(/^(?:export )?(?:const|let|function|class) ([A-Za-z_$][\w$]*)/gm)) {
+    if (seen.has(mm[1])) throw new Error(`Trùng tên "${mm[1]}" giữa ${seen.get(mm[1])} và ${m}`);
+    seen.set(mm[1], m);
+  }
+}
 
 const html = read('index.html');
 const body = html.slice(html.indexOf('<body>') + 6, html.indexOf('<script type="module"')).trim();

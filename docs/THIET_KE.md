@@ -106,6 +106,8 @@ Ký ức đạo pháp, Thân thể kiếp trước, Dư âm cơ duyên, Tàn h�
 
 **Trang bị** (`js/items.js`): 3 ô (vũ khí, y phục, phụ kiện), 4 phẩm (Hạ, Trung, Thượng, Cực), chỉ số theo cảnh giới của món. Thượng phẩm có 1 thuộc tính đặc biệt, Cực phẩm có 2 (hút máu, bạo kích, phản chấn, né tránh, thân pháp). Loại vũ khí có thiên hướng riêng: kiếm thêm bạo kích, đao thêm công, thương xuyên giáp, quạt thêm né. Vũ khí đang cầm hiện trên chân dung. Nguồn: yêu thú (25%), hang động (60%), bí cảnh, đánh bại bot (15%, rơi binh khí của họ), Tụ Bảo Lâu (3 món, đổi hàng mỗi 5 năm), hội đấu giá (Thượng/Cực phẩm). Con thợ rèn khởi đầu với Thiết Kiếm. Túi chứa 16 món, đầy thì tự bán món rẻ nhất.
 
+**Hình ảnh vật phẩm** (`js/icons.js`): mỗi món có biểu tượng pixel 16x16 vẽ bằng code theo loại (4 vũ khí, 4 kiểu y phục, 4 kiểu phụ kiện, bình đan, bí kíp). Phẩm đổi màu lưỡi và khảm; Thượng phẩm có vầng sáng xanh, Cực phẩm vầng sáng vàng. Biểu tượng hiện ở dải trang bị cạnh chân dung (chạm để mở Hành trang), trong Hành trang và Tụ Bảo Lâu. Y phục đang mặc đổi màu áo trên nhân vật, cả trong màn giao chiến. Xem tất cả: `tools/preview-icons.html`.
+
 ## 6c. Đạo hiệu và danh hiệu
 
 **Đạo hiệu:** lên Trúc Cơ thì có sự kiện đặt đạo hiệu (chọn 1 trong 3 tên ghép hai chữ, hoặc giữ tục danh). Tôn xưng đổi theo cảnh giới: Tử (nữ: Tiên Tử), Chân Nhân, Chân Quân, Đạo Quân (nữ: Nguyên Quân), Tôn Giả, Đạo Tôn; phi thăng thành Tiên Tôn. Từ Kim Đan mà Vô tình từ -50 trở xuống thì thành Ma Nhân, Ma Quân, Ma Tôn. Bot từ Trúc Cơ cũng có đạo hiệu (cố định theo kiếp); bot từng giết 3 người thì mang tôn xưng ma đạo. Đạo hiệu hiện trên chân dung, Quan hệ, Bảng Thiên Kiêu, Thiên hạ ký sự và Sổ kiếp.

@@ -277,3 +277,14 @@ h3 { font-size: 15px; margin: 14px 0 6px; color: var(--muted); font-weight: 600;
 .daohieu { color: var(--accent); font-size: 15px; font-weight: 600; }
 .dhSmall { color: var(--accent); font-weight: 400; font-size: 13px; }
 .tag.gold { color: var(--gold); border-color: currentColor; }
+
+/* Biểu tượng vật phẩm */
+.withIco { display: flex; gap: 10px; align-items: flex-start; }
+.withIco .body { flex: 1; min-width: 0; }
+.ico { width: 44px; height: 44px; image-rendering: pixelated; flex: none; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); }
+.ico.q1 { border-color: var(--tuvi); }
+.ico.q2 { border-color: var(--accent); }
+.ico.q3 { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+.ico.empty { border-style: dashed; }
+.eqStrip { display: flex; gap: 6px; margin-top: 6px; padding: 0; background: none; border: none; cursor: pointer; }
+.eqStrip .ico { width: 36px; height: 36px; }
