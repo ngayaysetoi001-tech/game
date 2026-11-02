@@ -468,3 +468,14 @@ h3 { font-size: 15px; margin: 14px 0 6px; color: var(--muted); font-weight: 600;
 .statVal { color: var(--accent); margin-left: 6px; }
 .statList { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 .statList.up li::marker { content: '↑ '; color: var(--good); }
+
+/* Đài Luân Hồi */
+.altar { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; background: color-mix(in srgb, var(--r2) 6%, var(--bg)); }
+.altar .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.altar .hl { color: var(--r2); }
+.altarRow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.altarRow > .btn:only-child { grid-column: 1 / -1; }
+.altarRow.three { grid-template-columns: repeat(3, 1fr); }
+.altarRow .btn { font-size: 14px; padding: 8px; text-align: center; }
+.trait.lockT { opacity: 0.55; filter: grayscale(0.6); }
+.hlGain { margin-top: 12px; background: color-mix(in srgb, var(--r2) 8%, var(--panel)); }

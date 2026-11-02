@@ -9,6 +9,12 @@ import {
 } from './data.js';
 
 const TITLE_MAP = Object.fromEntries(TITLES.map((t) => [t.id, t]));
+// Đài Luân Hồi: giá thể chất cộng thêm theo phẩm, giá gieo lại thể chất theo phẩm bảo đảm
+export const HL_PRICE = [0, 20, 60, 180, 500];
+export const HL_REROLL = { 0: 5, 2: 40, 3: 150 };
+// giới hạn cộng dồn từ thể chất
+const THE_CAP_MUL = { gainMul: 1.8, fightMul: 1.7 };
+const THE_CAP_ADD = { brk: 0.15 };
 
 const THE_MAP = Object.fromEntries(THE_CHAT.map((t) => [t.id, t]));
 const TP_MAP = Object.fromEntries(THIEN_PHU.map((t) => [t.id, t]));
@@ -401,7 +407,7 @@ export class Game {
   /** Danh sách thể chất + thiên phú của người chơi */
   traits(P = this.P || this.s.draft) {
     if (!P) return [];
-    const out = [THE_MAP[P.the] || THE_MAP.pham, ...(P.tps || []).map((id) => TP_MAP[id]).filter(Boolean)];
+    const out = [THE_MAP[P.the] || THE_MAP.pham, ...(P.the2 && THE_MAP[P.the2] ? [THE_MAP[P.the2]] : []), ...(P.tps || []).map((id) => TP_MAP[id]).filter(Boolean)];
     if (P.title && TITLE_MAP[P.title]) out.push(TITLE_MAP[P.title]);
     // thần thông của đồ Thần thoại đang mặc (trùng thì chỉ tính một)
     const seen = new Set();
@@ -412,10 +418,17 @@ export class Game {
     return out;
   }
   tmul(k) {
-    return this.traits().reduce((m, t) => m * (t.fx[k] ?? 1), 1);
+    // phần đến từ thể chất (có tối đa hai thể chất) bị giới hạn để không cộng dồn quá mức
+    let th = 1, other = 1;
+    for (const t of this.traits()) { const v = t.fx[k] ?? 1; if (t.w !== undefined) th *= v; else other *= v; }
+    if (THE_CAP_MUL[k]) th = Math.min(th, THE_CAP_MUL[k]);
+    return th * other;
   }
   tadd(k) {
-    return this.traits().reduce((m, t) => m + (typeof t.fx[k] === 'number' ? t.fx[k] : 0), 0);
+    let th = 0, other = 0;
+    for (const t of this.traits()) { const v = typeof t.fx[k] === 'number' ? t.fx[k] : 0; if (t.w !== undefined) th += v; else other += v; }
+    if (THE_CAP_ADD[k] !== undefined) th = Math.min(th, THE_CAP_ADD[k]);
+    return th + other;
   }
   thas(k) {
     return this.traits().some((t) => t.fx[k]);
@@ -442,12 +455,14 @@ export class Game {
     if (leg === 'tam_canh') st.tam += 15;
     const the = leg === 'huyet_mach' && this.s.legacy.the ? this.s.legacy.the : this.rollThe();
     const tps = this.rollTraits();
-    const tl = [THE_MAP[the], ...tps.map((id) => TP_MAP[id])];
+    const tl = tps.map((id) => TP_MAP[id]);
     for (const t of tl) for (const k of ['can', 'ngo', 'tam', 'co']) if (t.fx[k]) st[k] += t.fx[k];
     const tinh0 = tl.reduce((m, t) => m + (t.fx.tinh || 0), 0);
-    for (const k in st) st[k] = clamp(st[k], 0, 100);
+    // chỉ số gốc chưa tính thể chất, để đổi thể chất ở Đài Luân Hồi không bị cộng lệch
+    const baseStats = { ...st };
+    const prev2 = this.s.draft && this.s.draft.the2;
     const P = {
-      the, tps,
+      the, tps, the2: null, baseStats, baseTinh: tinh0,
       name: this.genName(gender), g: gender, origin: o.id, originN: o.n, root, stats: st,
       hp: 100, age: 0, realm: 0, tuvi: 0, dao: !!o.fx.dao, sect: null,
       money: (o.fx.money || 0) + (leg === 'tai_san' ? this.s.legacy.money : 0),
@@ -471,7 +486,70 @@ export class Game {
       P.flags.thanKhi = it.n;
     }
     this.s.draft = P;
+    // giữ thể chất cộng thêm đã mua khi gieo lại lá số (trùng thể chất chính thì hoàn Hồn Lực)
+    if (prev2) { if (prev2 !== the) P.the2 = prev2; else this.s.honLuc = (this.s.honLuc || 0) + HL_PRICE[THE_MAP[prev2].tier]; }
+    this.applyThe(P);
   }
+  /** Tính lại chỉ số từ chỉ số gốc + thể chất chính + thể chất cộng thêm */
+  applyThe(P) {
+    const ts = [THE_MAP[P.the] || THE_MAP.pham, P.the2 ? THE_MAP[P.the2] : null].filter(Boolean);
+    const st = { ...(P.baseStats || P.stats) };
+    for (const t of ts) for (const k of ['can', 'ngo', 'tam', 'co']) if (t.fx[k]) st[k] += t.fx[k];
+    for (const k in st) st[k] = clamp(st[k], 0, 100);
+    P.stats = st;
+    P.tinh = clamp((P.baseTinh || 0) + ts.reduce((m, t) => m + (t.fx.tinh || 0), 0), -100, 100);
+  }
+
+  // ---------- Hồn Lực, Đài Luân Hồi ----------
+  /** Thể chất cộng thêm: chỉ chọn được thể chất đã từng thức tỉnh, khác thể chất chính */
+  buyThe2(id) {
+    const P = this.s.draft;
+    const t = THE_MAP[id];
+    if (this.s.phase !== 'birth' || !P || !t || !t.tier || id === P.the || !(this.s.seenThe || []).includes(id)) return false;
+    const refund = P.the2 ? HL_PRICE[THE_MAP[P.the2].tier] : 0;
+    const cost = HL_PRICE[t.tier];
+    if ((this.s.honLuc || 0) + refund < cost) return false;
+    this.s.honLuc = (this.s.honLuc || 0) + refund - cost;
+    P.the2 = id;
+    this.applyThe(P);
+    return true;
+  }
+  dropThe2() {
+    const P = this.s.draft;
+    if (this.s.phase !== 'birth' || !P || !P.the2) return;
+    this.s.honLuc = (this.s.honLuc || 0) + HL_PRICE[THE_MAP[P.the2].tier];
+    P.the2 = null;
+    this.applyThe(P);
+  }
+  /** Gieo lại riêng thể chất chính. minTier: bảo đảm phẩm từ mức đó trở lên */
+  rerollThe(minTier = 0) {
+    const P = this.s.draft;
+    const cost = HL_REROLL[minTier];
+    if (this.s.phase !== 'birth' || !P || cost === undefined || (this.s.honLuc || 0) < cost) return false;
+    this.s.honLuc -= cost;
+    let id;
+    do { id = this.r.weighted(THE_CHAT.filter((t) => t.tier >= minTier), (t) => t.w).id; } while (id === P.the2);
+    P.the = id;
+    this.applyThe(P);
+    return true;
+  }
+  /** Tính Hồn Lực nhận được khi một kiếp kết thúc */
+  honLucGain(P) {
+    const lines = [];
+    const add = (n, t) => { if (n > 0) lines.push({ n, t }); };
+    add([0, 2, 5, 10, 18, 30, 45, 65][P.realm] || 0, `Đạt ${REALMS[P.realm].n}`);
+    add(Math.floor(P.age / 50), `Sống ${P.age} năm`);
+    const tt = (P.titles || []).reduce((m, id) => m + ([0, 1, 2, 4, 8][TITLE_MAP[id].tier] || 0), 0);
+    add(tt, `${(P.titles || []).length} danh hiệu`);
+    add((P.flags.newCodex || 0) * 3, `${P.flags.newCodex || 0} mục mới trong Sổ`);
+    // kỷ lục so với các kiếp trước (kiếp vừa chết đã được ghi vào cuối sổ)
+    const prev = this.s.lives.slice(0, -1);
+    const best = this.s.bestRealm ?? (prev.length ? Math.max(...prev.map((l) => l.realm)) : -1);
+    if (prev.length && P.realm > best) add(10, 'Phá kỷ lục cảnh giới của linh hồn');
+    if (P.ascended) add(80, 'Phi thăng');
+    return { total: lines.reduce((m, x) => m + x.n, 0), lines };
+  }
+
   reroll() {
     if (this.s.phase !== 'birth' || this.s.rerolls <= 0) return false;
     this.s.rerolls--;
@@ -486,7 +564,7 @@ export class Game {
     this.s.player = P;
     this.s.phase = 'play';
     if (!this.s.seenThe) this.s.seenThe = [];
-    if (!this.s.seenThe.includes(P.the)) this.s.seenThe.push(P.the);
+    if (!this.s.seenThe.includes(P.the)) { this.s.seenThe.push(P.the); if (THE_MAP[P.the].tier) P.flags.newCodex = (P.flags.newCodex || 0) + 1; }
     this.s.log = [];
     this.s.cd = {};
     this.s.once = {};
@@ -1207,7 +1285,10 @@ export class Game {
     const pool = LEGACIES.filter((l) => l.id !== 'duyen' || hasBond).filter((l) => l.id !== 'tai_san' || P.money >= 20).filter((l) => l.id !== 'huyet_mach' || (P.the && P.the !== 'pham')).filter((l) => l.id !== 'than_khi');
     const opts = myth ? ['than_khi'] : [];
     while (opts.length < 3 && pool.length) opts.push(pool.splice(this.r.int(0, pool.length - 1), 1)[0].id);
-    this.s.deadInfo = { rec, options: opts, money: P.money, the: P.the, myth };
+    const hl = this.honLucGain(P);
+    this.s.honLuc = (this.s.honLuc || 0) + hl.total;
+    this.s.bestRealm = Math.max(this.s.bestRealm ?? -1, P.realm);
+    this.s.deadInfo = { rec, options: opts, money: P.money, the: P.the, myth, hl };
   }
   chooseLegacy(id) {
     if (this.s.phase !== 'dead' || !this.s.deadInfo.options.includes(id)) return;
@@ -1277,7 +1358,7 @@ export class Game {
       try { ok = t.check(this); } catch (e) { ok = false; }
       if (!ok) continue;
       P.titles.push(t.id);
-      if (!this.s.seenTitles.includes(t.id)) this.s.seenTitles.push(t.id);
+      if (!this.s.seenTitles.includes(t.id)) { this.s.seenTitles.push(t.id); P.flags.newCodex = (P.flags.newCodex || 0) + 1; }
       this.log(`Giang hồ bắt đầu gọi ngươi là 「${t.n}」. (${t.bonus} khi đeo)`, 'big');
       (this.s.toasts = this.s.toasts || []).push({ n: t.n, tier: t.tier, bonus: t.bonus });
       if (this.s.toasts.length > 5) this.s.toasts.shift();

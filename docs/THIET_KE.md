@@ -62,6 +62,15 @@ Tàn niệm mới **Huyết mạch còn vương**: giữ thể chất sang kiế
 
 **Giải thích chỉ số:** chạm vào bất kỳ chỉ số nào (căn cốt, ngộ tính, tâm tính, cơ duyên, Hữu tình/Vô tình, linh thạch, danh vọng, thanh tu vi, sinh lực, thọ), kể cả ở màn đầu thai, để mở bảng giải thích: chỉ số làm gì, tác dụng tính theo đúng giá trị hiện tại (ví dụ căn cốt 26 → thọ -10%, sức chiến đấu -12%), và cách tăng. Nội dung ở `statInfo` trong `js/ui.js`, công thức phải khớp với `js/core.js`.
 
+## 3c. Hồn Lực và Đài Luân Hồi
+
+**Hồn Lực** tích qua mọi kiếp, nhận khi chết: cảnh giới (Phàm 0, Luyện Khí 2, Trúc Cơ 5, Kim Đan 10, Nguyên Anh 18, Hóa Thần 30, Luyện Hư 45, Đại Thừa 65), +1 mỗi 50 năm sống, danh hiệu (Thường 1, Hiếm 2, Truyền kỳ 4, Thần thoại 8), +3 mỗi mục mới trong Sổ thể chất hoặc Danh hiệu lục, +10 khi phá kỷ lục cảnh giới của linh hồn (từ kiếp 2), +80 khi phi thăng. Màn chết hiện chi tiết. Mô phỏng: trung vị 11 mỗi kiếp, kiếp xuất sắc 130-270; sau 6 kiếp trung vị khoảng 230.
+
+**Đài Luân Hồi** (màn đầu thai, `buyThe2`, `rerollThe` trong `js/core.js`):
+- Thể chất cộng thêm (ô thứ hai): chỉ chọn thể chất đã từng thức tỉnh, khác thể chất chính, phát huy 100%, chỉ trong kiếp đó. Giá: Khá 20, Hiếm 60, Truyền thuyết 180, Thần thoại 500. Đổi hoặc bỏ thì được hoàn. Gieo lại lá số vẫn giữ ô này (trùng thể chất chính thì hoàn).
+- Gieo lại riêng thể chất chính: 5. Bảo đảm Hiếm trở lên: 40. Bảo đảm Truyền thuyết trở lên: 150.
+- Giới hạn cộng dồn từ thể chất: tu luyện tối đa x1,8, chiến đấu x1,7, đột phá +15%.
+
 ## 4. Cảnh giới
 
 | Cảnh giới | Tu vi cần | Thọ gốc | Đột phá lên kế tiếp |

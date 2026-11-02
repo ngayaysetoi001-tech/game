@@ -1,5 +1,5 @@
 // Giao diện trình duyệt. Mọi luật chơi nằm trong core.js.
-import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITLE_MAP, clamp } from './core.js';
+import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITLE_MAP, HL_PRICE, HL_REROLL, clamp } from './core.js';
 import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, TACTICS, WEAPON_TYPES, turnText } from './combat.js';
@@ -156,14 +156,60 @@ const TIER_N = ['Thường', 'Khá', 'Hiếm', 'Truyền thuyết', 'Thần tho�
 /** Khối thể chất + thiên phú cho màn đầu thai */
 function traitBlock() {
   const ts = g.traits().filter((t) => !t.cond && !t.tt);
-  const [the, ...tps] = ts;
+  const P0 = g.P || g.s.draft;
+  const the2 = P0 && P0.the2 ? THE_MAP[P0.the2] : null;
+  const [the, ...rest] = ts;
+  const tps = rest.filter((t) => t !== the2);
+  const the2Card = the2 ? `<div class="trait t${the2.tier}"><div class="row"><b>${esc(the2.n)}</b><span class="meta">Thể chất cộng thêm · ${TIER_N[the2.tier]}</span></div><div class="meta">${esc(the2.desc)}</div></div>` : '';
   return `<div class="traits">
     <div class="trait t${the.tier}"><div class="row"><b>${esc(the.n)}${g.s.phase === 'birth' && the.tier && !(g.s.seenThe || []).includes(the.id) ? ' <span class="newTag">Mới!</span>' : ''}</b><span class="meta">Thể chất${the.tier ? ' · ' + TIER_N[the.tier] : ''}</span></div><div class="meta">${esc(the.desc)}</div></div>
+    ${the2Card}
     ${tps.length ? tps.map((t) => `<div class="trait t${t.tier}"><div class="row"><b>${esc(t.n)}</b><span class="meta">Thiên phú · ${TIER_N[t.tier]}</span></div><div class="meta">${esc(t.desc)}</div></div>`).join('') : '<div class="meta">Không có thiên phú gì đặc biệt.</div>'}
   </div>`;
 }
 function openTraits() {
   openSheet(`<h2>Thể chất và thiên phú</h2>${traitBlock()}`);
+}
+
+/** Đài Luân Hồi: tiêu Hồn Lực đổi thể chất ở màn đầu thai */
+function altar(P) {
+  const hl = g.s.honLuc || 0;
+  const seen = (g.s.seenThe || []).filter((id) => THE_MAP[id] && THE_MAP[id].tier > 0).length;
+  const t2 = P.the2 ? THE_MAP[P.the2] : null;
+  const rr = [[0, 'Gieo lại thể chất'], [2, 'Bảo đảm Hiếm trở lên'], [3, 'Bảo đảm Truyền thuyết trở lên']];
+  return `<div class="altar">
+    <div class="row"><b>Đài Luân Hồi</b><span class="hl">Hồn Lực <b>${fmt(hl)}</b></span></div>
+    <div class="meta">Hồn Lực tích từ các kiếp trước. Dùng để thêm một thể chất đã từng thức tỉnh, hoặc gieo lại thể chất chính.</div>
+    <div class="altarRow">
+      ${t2 ? `<button class="btn ghost" id="pickThe2">Đổi thể chất cộng thêm</button><button class="btn ghost" id="dropThe2">Bỏ (hoàn ${HL_PRICE[t2.tier]})</button>`
+        : `<button class="btn" id="pickThe2" ${seen ? '' : 'disabled'}>＋ Thể chất cộng thêm<small>${seen ? `Chọn từ ${seen} thể chất đã thức tỉnh` : 'Chưa thức tỉnh thể chất nào'}</small></button>`}
+    </div>
+    <div class="altarRow three">${rr.map(([t, n]) => `<button class="btn ghost" data-rt="${t}" ${hl < HL_REROLL[t] ? 'disabled' : ''}>${n}<small>${HL_REROLL[t]} Hồn Lực</small></button>`).join('')}</div>
+  </div>`;
+}
+function openThe2() {
+  const draw = () => {
+    const P = g.s.draft;
+    const hl = g.s.honLuc || 0;
+    const refund = P.the2 ? HL_PRICE[THE_MAP[P.the2].tier] : 0;
+    const seen = new Set(g.s.seenThe || []);
+    const list = THE_CHAT.filter((t) => t.tier > 0).sort((a, b) => b.tier - a.tier);
+    openSheet(`<h2>Thể chất cộng thêm</h2>
+      <p class="intro">Hồn Lực: <b>${fmt(hl)}</b>${refund ? ` (đổi thì được hoàn ${refund})` : ''}. Chỉ chọn được thể chất đã từng thức tỉnh. Thể chất cộng thêm phát huy đủ 100% nhưng chỉ trong kiếp này. Hai thể chất cộng lại tối đa tu luyện +80%, chiến đấu +70%, đột phá +15%.</p>
+      <div class="list">${list.map((t) => {
+        const own = seen.has(t.id);
+        const price = HL_PRICE[t.tier];
+        const isMain = t.id === P.the, isCur = t.id === P.the2;
+        const can = own && !isMain && !isCur && hl + refund >= price;
+        const why = !own ? 'Chưa từng thức tỉnh' : isMain ? 'Đang là thể chất chính' : isCur ? 'Đang chọn' : '';
+        return `<div class="trait t${t.tier} ${own ? '' : 'lockT'}"><div class="row"><b>${own ? esc(t.n) : '???'}</b><span class="meta">${TIER_N[t.tier]} · ${price} Hồn Lực</span></div>
+          <div class="meta">${own ? esc(t.desc) : 'Thức tỉnh thể chất này ở một kiếp nào đó để mở khóa.'}</div>
+          <div class="row btnRow">${why ? `<span class="meta">${why}</span>` : `<button class="btn ghost" data-b2="${t.id}" ${can ? '' : 'disabled'}>Chọn · ${price}</button>`}</div></div>`;
+      }).join('')}</div>`, () => {
+      $('sheetBody').querySelectorAll('[data-b2]').forEach((b) => { b.onclick = () => { g.buyThe2(b.dataset.b2); save(); dirty = true; draw(); }; });
+    });
+  };
+  draw();
 }
 
 function renderBirth() {
@@ -186,6 +232,7 @@ function renderBirth() {
       <div class="grid">${statGrid(P.stats)}<div><span>Linh thạch</span> <b>${fmt(P.money)}</b></div>${P.dao ? '<div><span>Gia truyền</span> <b>Đã nhập đạo</b></div>' : ''}</div>
       ${leg ? `<div class="legacyNote">Tàn niệm kiếp trước: ${esc(leg.n)}. ${esc(leg.desc)}</div>` : ''}
       ${P.flags.thanKhi ? Object.values(P.eq).filter((it) => it && it.q >= 4).map((it) => itemCard(it)).join('') : ''}
+      ${altar(P)}
       <div class="btns">
         <button class="btn ghost" id="rerollBtn" ${g.s.rerolls <= 0 ? 'disabled' : ''}>Gieo lại (${g.s.rerolls})</button>
         <button class="btn primary" id="startBtn">Đầu thai</button>
@@ -193,6 +240,9 @@ function renderBirth() {
     </div>`;
   drawPortrait($('birthPortrait'), { ...P, age: 20 }, { life: 100 });
   $('rerollBtn').onclick = () => { g.reroll(); save(); dirty = true; };
+  $('scr-birth').querySelectorAll('[data-rt]').forEach((b) => { b.onclick = () => { g.rerollThe(+b.dataset.rt); save(); dirty = true; }; });
+  if ($('pickThe2')) $('pickThe2').onclick = openThe2;
+  if ($('dropThe2')) $('dropThe2').onclick = () => { g.dropThe2(); save(); dirty = true; };
   $('startBtn').onclick = () => { g.start(); paused = false; tab = 'log'; save(); dirty = true; };
 }
 
@@ -365,6 +415,9 @@ function renderDead() {
       <div>${esc(l.name)} ${esc(l.cause)}.</div>
       <div class="meta">${fr ? `${fr} người vẫn nhớ ngươi.` : ''} ${en ? `${en} kẻ thù vẫn chưa quên.` : ''} Thế giới vẫn tiếp tục khi ngươi vắng mặt.</div>
     </div>
+    ${d.hl ? `<div class="altar hlGain"><div class="row"><b>Hồn Lực</b><span class="hl">+${fmt(d.hl.total)} · tổng <b>${fmt(g.s.honLuc || 0)}</b></span></div>
+      ${d.hl.lines.length ? `<ul class="statList">${d.hl.lines.map((x) => `<li>${esc(x.t)}: +${x.n}</li>`).join('')}</ul>` : '<div class="meta">Kiếp này quá ngắn, linh hồn chưa kịp tích được gì.</div>'}
+      <div class="meta">Dùng ở Đài Luân Hồi khi đầu thai để thêm thể chất.</div></div>` : ''}
     <h3>Chọn một tàn niệm mang sang kiếp sau</h3>
     <div class="legacies">${d.options.map((id) => {
       const x = LEGACIES.find((q) => q.id === id);
