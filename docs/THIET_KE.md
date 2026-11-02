@@ -60,6 +60,8 @@ Các kiểu tác dụng: cộng chỉ số, nhân tu luyện, tu luyện theo gi
 
 Tàn niệm mới **Huyết mạch còn vương**: giữ thể chất sang kiếp sau (chỉ hiện khi thể chất không phải Phàm thể).
 
+**Giải thích chỉ số:** chạm vào bất kỳ chỉ số nào (căn cốt, ngộ tính, tâm tính, cơ duyên, Hữu tình/Vô tình, linh thạch, danh vọng, thanh tu vi, sinh lực, thọ), kể cả ở màn đầu thai, để mở bảng giải thích: chỉ số làm gì, tác dụng tính theo đúng giá trị hiện tại (ví dụ căn cốt 26 → thọ -10%, sức chiến đấu -12%), và cách tăng. Nội dung ở `statInfo` trong `js/ui.js`, công thức phải khớp với `js/core.js`.
+
 ## 4. Cảnh giới
 
 | Cảnh giới | Tu vi cần | Thọ gốc | Đột phá lên kế tiếp |

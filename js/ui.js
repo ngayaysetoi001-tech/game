@@ -90,7 +90,66 @@ function render() {
 }
 
 function statGrid(st) {
-  return Object.keys(STAT_NAMES).map((k) => `<div><span>${STAT_NAMES[k]}</span> <b>${st[k]}</b></div>`).join('');
+  return Object.keys(STAT_NAMES).map((k) => `<button class="statCell" data-stat="${k}"><span>${STAT_NAMES[k]}</span> <b>${st[k]}</b> <i>?</i></button>`).join('');
+}
+
+// ---------- Giải thích chỉ số ----------
+const sg = (x, d = 0) => `${x >= 0 ? '+' : ''}${(Math.round(x * 10 ** d) / 10 ** d).toLocaleString('vi-VN')}`;
+const pc = (x) => `${sg(x * 100)}%`;
+/** Nội dung giải thích một chỉ số theo đúng giá trị hiện tại */
+function statInfo(k, P) {
+  const v = P.stats ? P.stats[k] : 0;
+  const playing = g.playing && g.P === P;
+  const d = v - 50;
+  const L = {
+    can: {
+      n: 'Căn cốt', val: v, about: 'Thể chất trời sinh: xương cốt, khí huyết. 50 là người thường.',
+      now: [`Thọ nguyên ${pc(d / 250)}`, `Sức chiến đấu ${pc(d / 200)}`, 'Dễ thắng các phép thử sức bền: đấu rượu, rút kiếm ở kiếm trủng, đỡ sét lôi kiếp cho người khác'],
+      up: ['Lúc nhỏ theo đom đóm tìm được suối nước ấm, cơn sốt được đạo sĩ cho uống bùa', 'Cốt Linh Quả ở hội đấu giá, Huyết Sâm ở vườn thuốc, ăn trứng yêu thú', 'Tàn niệm "Thân thể kiếp trước" (+15)', 'Thể chất Thiết Cốt Thể; xuất thân con nhà nông'],
+    },
+    ngo: {
+      n: 'Ngộ tính', val: v, about: 'Độ sáng dạ: hiểu công pháp nhanh hay chậm.',
+      now: [`Tốc độ tu luyện ${pc(d / 200)}`, `Tỉ lệ đột phá ${pc(d / 250)}`, 'Dễ thành công khi nhận truyền thừa, phá huyết trận, tham ngộ ngọc giản, luyện đan, thi vào tông môn, tự minh oan'],
+      up: ['Tiền bối chỉ điểm, quan sát lôi kiếp, xem lôi đài, giấc mộng nồi kê', 'Ngộ Đạo Trà ở hội đấu giá; nhận truyền thừa', 'Tàn niệm "Ký ức đạo pháp" (+15); thiên phú Đại khí vãn thành (+4 mỗi lần đột phá)'],
+    },
+    tam: {
+      n: 'Tâm tính', val: v, about: 'Sự vững vàng của đạo tâm.',
+      now: [`Tỉ lệ đột phá ${pc(d / 300)}`, `Nguy cơ chết khi đột phá hỏng (từ Kim Đan) ${pc(-d / 1000)}`, `Đối diện tâm ma thành công ~${Math.round(Math.min(97, (0.4 + v / 150) * 100))}%`],
+      up: ['Tĩnh Tâm Đan ở Tụ Bảo Lâu', 'Vượt tâm ma, lập mộ cho người thân, tha thứ, ngắm hoàng hôn lúc tuổi già', 'Tàn niệm "Tâm như chỉ thủy" (+15)'],
+    },
+    co: {
+      n: 'Cơ duyên', val: v, about: 'Vận may và duyên phận với trời đất.',
+      now: [`Tỉ lệ đột phá ${pc(d / 400)}`, `Bỏ chạy thoát ${pc(d / 150)}`, `Linh thạch khi mưu sinh ${pc(d / 200)}`, `Nguy cơ mất mạng khi thua trận ${pc(-d / 400)}`, 'Dễ may mắn ở hang động, bí cảnh, cổ mộ, kho báu, sòng bạc, đột nhập trại cướp'],
+      up: ['Lịch luyện (15% mỗi năm +1)', 'Thả linh thú về rừng, bái kiếm trủng, ngọc lông hồ ly', 'Tàn niệm "Dư âm cơ duyên" (+15); thiên phú Sinh giờ hoàng đạo (+12)'],
+    },
+  };
+  if (L[k]) return L[k];
+  if (k === 'tinh') {
+    const t = P.tinh;
+    const helpers = playing ? g.breakHelpers().length : 0;
+    return {
+      n: 'Hữu tình / Vô tình', val: `${t > 0 ? '+' : ''}${t}`, about: 'Con đường của ngươi: sống vì người hay bỏ hết tình cảm. Từ 30 là Hữu tình, từ -30 trở xuống là Vô tình.',
+      now: t >= 30 ? [`Bạn bè thân (thân thiết từ 50, cảnh giới không thấp hơn ngươi) hộ pháp khi đột phá, mỗi người +4%, tối đa 4 người. Hiện có ${helpers} người: ${pc(helpers * 0.04)}`, `Thân thiết tăng ${pc(t / 200)} khi kết giao`]
+        : t <= -30 ? ['Tu luyện +20%', 'Đột phá +6%', `Thân thiết tăng ${pc(t / 200)} khi kết giao`, t <= -50 ? 'Từ Kim Đan, tôn xưng đổi sang ma đạo (Ma Quân, Ma Tôn)' : 'Tới -50 thì từ Kim Đan tôn xưng đổi sang ma đạo']
+          : ['Chưa nghiêng về bên nào, chưa có tác dụng đặc biệt', `Thân thiết tăng ${pc(t / 200)} khi kết giao`],
+      up: ['Hữu tình tăng: kết giao, cứu người, chữa dịch, giải cứu dân làng, tha thứ, kết nghĩa, có đạo lữ', 'Vô tình tăng: bỏ mặc người gặp nạn, cướp của, đánh lén, học lén ma trận, chém tâm ma bằng sát niệm', 'Đạt 70 hoặc -70 mở danh hiệu riêng'],
+    };
+  }
+  if (k === 'money') return { n: 'Linh thạch', val: fmt(P.money), about: 'Tiền tệ của giới tu tiên.', now: ['Mua đan dược, pháp khí, bí kíp ở Tụ Bảo Lâu; đấu giá; chuộc người; cược', 'Có 5.000 mở danh hiệu Phú Giáp Nhất Phương'], up: ['Mưu sinh (tăng theo cảnh giới và cơ duyên)', 'Hộ tống thương đội, đầu tư thương hội, linh mạch, kho báu, bán đồ thừa'] };
+  if (k === 'fame') return { n: 'Danh vọng', val: fmt(P.fame), about: 'Tiếng tăm trên giang hồ.', now: ['Giúp tự minh oan khi bị vu cáo', 'Đạt 50 và 200 mở danh hiệu'], up: ['Thắng trận, đột phá, cứu người, thắng lôi đài, hạ yêu vương, trừ huyết trận'] };
+  if (k === 'tuvi') return { n: 'Tu vi', val: playing ? `${fmt(P.tuvi)}/${fmt(g.need())}` : '-', about: 'Công lực tích lũy ở cảnh giới hiện tại. Đầy thì có thể đột phá.', now: playing ? [`Mỗi năm tu luyện được khoảng ${fmt(g.gain())} tu vi`, `Tỉ lệ đột phá hiện tại ~${Math.round(g.breakChance() * 100)}%`] : [], up: ['Tu luyện (đủ), bế quan (x1,6), các việc khác (25-35%)', 'Linh căn, ngộ tính, tông môn (+20%), thể chất, Vô tình, thần thông'] };
+  if (k === 'hp') return { n: 'Sinh lực', val: `${P.hp}/100`, about: 'Về 0 là chết.', now: [`Sức chiến đấu x${(0.5 + P.hp / 200).toFixed(2)} (sinh lực càng thấp càng yếu)`, P.hp < 30 ? 'Dưới 30: tu luyện chậm 40%' : 'Dưới 30 thì tu luyện chậm 40%', 'Vào trận với đúng lượng sinh lực đang có'], up: ['Tự hồi 4 mỗi năm (bế quan 6)', 'Hồi Xuân Đan (+40)', 'Thể chất, thần thông hồi phục'] };
+  if (k === 'tho') return { n: 'Thọ nguyên', val: playing ? `${P.age}/${g.lifespan()}` : '-', about: 'Hết thọ là tọa hóa.', now: ['Mỗi lần đột phá lên cảnh giới mới thì thọ nguyên tăng mạnh', 'Căn cốt cao thì sống lâu hơn'], up: ['Đột phá cảnh giới', 'Diên Thọ Đan (+5%, mỗi cảnh giới một viên)', 'Tìm thuốc trường sinh lúc tuổi già, Huyền Quy, thể chất, thần thông Trường Sinh'] };
+  return null;
+}
+function openStat(k, P = g.P || g.s.draft) {
+  const x = statInfo(k, P);
+  if (!x) return;
+  const li = (a) => a.map((t) => `<li>${esc(t)}</li>`).join('');
+  openSheet(`<h2>${esc(x.n)} <span class="statVal">${esc(String(x.val))}</span></h2>
+    <p class="intro">${esc(x.about)}</p>
+    ${x.now.length ? `<h3>Tác dụng hiện tại</h3><ul class="statList">${li(x.now)}</ul>` : ''}
+    <h3>Cách tăng</h3><ul class="statList up">${li(x.up)}</ul>`);
 }
 
 const TIER_N = ['Thường', 'Khá', 'Hiếm', 'Truyền thuyết', 'Thần thoại'];
@@ -137,9 +196,9 @@ function renderBirth() {
   $('startBtn').onclick = () => { g.start(); paused = false; tab = 'log'; save(); dirty = true; };
 }
 
-function bar(label, val, max, color, text) {
+function bar(label, val, max, color, text, key) {
   const w = clamp((val / Math.max(1, max)) * 100, 0, 100);
-  return `<div class="bar"><span>${label}</span><div class="track"><div class="fill" style="width:${w}%;background:${color}"></div></div><span class="num">${text}</span></div>`;
+  return `<div class="bar" data-stat="${key}" role="button" tabindex="0"><span>${label} <i class="qm">?</i></span><div class="track"><div class="fill" style="width:${w}%;background:${color}"></div></div><span class="num">${text}</span></div>`;
 }
 
 function renderPlay() {
@@ -161,15 +220,15 @@ function renderPlay() {
   if ($('ttlBtn')) $('ttlBtn').onclick = openTitles;
   const need = g.need();
   $('bars').innerHTML =
-    bar('Tu vi', P.tuvi, need, 'var(--tuvi)', P.dao ? `${fmt(P.tuvi)}/${fmt(need)}` : '-') +
-    bar('Sinh lực', P.hp, 100, 'var(--hp)', `${P.hp}/100`) +
-    bar('Thọ', P.age, life, 'var(--life)', `${P.age}/${life}`);
+    bar('Tu vi', P.tuvi, need, 'var(--tuvi)', P.dao ? `${fmt(P.tuvi)}/${fmt(need)}` : '-', 'tuvi') +
+    bar('Sinh lực', P.hp, 100, 'var(--hp)', `${P.hp}/100`, 'hp') +
+    bar('Thọ', P.age, life, 'var(--life)', `${P.age}/${life}`, 'tho');
   const tinh = P.tinh >= 30 ? 'Hữu tình' : P.tinh <= -30 ? 'Vô tình' : 'Trung dung';
   $('stats').innerHTML =
-    Object.keys(STAT_NAMES).map((k) => `<span class="chip">${STAT_NAMES[k]} <b>${P.stats[k]}</b></span>`).join('') +
-    `<span class="chip" title="Hữu tình: bạn bè hộ pháp khi đột phá. Vô tình: tu nhanh hơn.">${tinh} <b>${P.tinh > 0 ? '+' : ''}${P.tinh}</b></span>` +
-    `<span class="chip">Linh thạch <b>${fmt(P.money)}</b></span>` +
-    `<span class="chip">Danh vọng <b>${fmt(P.fame)}</b></span>` +
+    Object.keys(STAT_NAMES).map((k) => `<button class="chip chipBtn" data-stat="${k}">${STAT_NAMES[k]} <b>${P.stats[k]}</b></button>`).join('') +
+    `<button class="chip chipBtn" data-stat="tinh">${tinh} <b>${P.tinh > 0 ? '+' : ''}${P.tinh}</b></button>` +
+    `<button class="chip chipBtn" data-stat="money">Linh thạch <b>${fmt(P.money)}</b></button>` +
+    `<button class="chip chipBtn" data-stat="fame">Danh vọng <b>${fmt(P.fame)}</b></button>` +
     (P.flags.pet ? `<span class="chip">Linh thú: ${esc(P.flags.pet)}</span>` : '') +
     `<button class="chip chipBtn" id="traitChip">${esc(g.traits().filter((t) => !t.cond && !t.tt).map((t) => t.n).join(' · '))} ›</button>`;
   $('traitChip').onclick = openTraits;
@@ -660,6 +719,27 @@ $('menuBtn').onclick = () => {
     };
   });
 };
+
+// Chạm chỉ số để xem giải thích. Dùng pointerdown vì chỉ số được vẽ lại liên tục khi thời gian trôi.
+let statTap = null;
+for (const id of ['stats', 'bars', 'scr-birth']) {
+  $(id).addEventListener('pointerdown', (e) => {
+    const b = e.target.closest('[data-stat]');
+    statTap = b ? { k: b.dataset.stat, x: e.clientX, y: e.clientY } : null;
+  });
+  $(id).addEventListener('pointerup', (e) => {
+    const b = e.target.closest('[data-stat]');
+    const t = statTap;
+    statTap = null;
+    // chỉ mở khi nhấc tay đúng chỉ số đã chạm và không phải đang vuốt cuộn
+    if (!t || !b || b.dataset.stat !== t.k || Math.hypot(e.clientX - t.x, e.clientY - t.y) > 12) return;
+    openStat(t.k, g.s.phase === 'birth' ? g.s.draft : g.P);
+  });
+  $(id).addEventListener('keydown', (e) => {
+    const b = e.target.closest('[data-stat]');
+    if (b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openStat(b.dataset.stat, g.s.phase === 'birth' ? g.s.draft : g.P); }
+  });
+}
 
 // Gắn sự kiện một lần (ủy quyền), không gắn lại mỗi lần vẽ
 $('speed').addEventListener('click', (e) => {
