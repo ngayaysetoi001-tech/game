@@ -41,6 +41,27 @@ Game tu tiên luân hồi chơi một mình, chạy offline trên trình duyệt
   - Vô tình (từ -30 trở xuống): tu luyện x1,2, đột phá +6%, nhưng sống cô độc.
 - Sinh lực 0-100: về 0 là chết. Mỗi năm hồi 4 (bế quan hồi 6).
 
+## 3b. Thể chất và thiên phú
+
+Lúc đầu thai, ngoài 4 chỉ số còn gieo **một thể chất** và **0-2 thiên phú** (25% không có, 50% một, 25% hai). Gieo lại thì gieo cả những thứ này. Món nào mạnh cũng có cái giá.
+
+**Thể chất** (70% là Phàm thể). Bot cũng có thể chất, hiện trong tab Quan hệ.
+
+| Thể chất | Phẩm | Tác dụng |
+|---|---|---|
+| Cửu Âm Hàn Thể | Hiếm | Tu luyện +25%. Hàn độc phát tác (4%/năm, -12 sinh lực), có đạo lữ thì hết |
+| Liệt Dương Chiến Thể | Hiếm | Chiến đấu +35%, tâm tính -10, bị khiêu chiến gấp đôi |
+| Thông Linh Thể | Hiếm | Ngộ tính +8, cơ duyên +5, gặp linh thú gấp 4 |
+| Vô Cấu Linh Thể | Hiếm | Đột phá +8%, tâm ma ít gặp |
+| Thiên Sinh Mị Cốt | Hiếm | Thân thiết +50%, dễ có đạo lữ, nhưng dễ bị kẻ tham phản bội |
+| Túc Mệnh Nhãn | Hiếm | Thấy tiền kiếp của bot, gặp duyên nợ gấp 3, cố nhân tìm tới gấp đôi |
+| Bất Diệt Kim Thân | Truyền thuyết | Hồi sinh lực x2, chịu đòn -30%, thọ +15%, tu luyện -10% |
+| Hỗn Độn Đạo Thể | Truyền thuyết | Tu luyện +45%, đột phá -8% |
+
+**Thiên phú:** Võ si, Đầu óc buôn bán, Dễ gần, Đa nghi (không bị lừa của), Bệnh căn từ nhỏ, Sinh giờ hoàng đạo, Hay mơ, Chân nhanh hơn não, Lòng trắc ẩn, Đồng bì thiết cốt, Độc hành giả, Đại khí vãn thành (đột phá xong ngộ tính +4), Sát khí bẩm sinh. Chi tiết trong `js/data.js`.
+
+Tàn niệm mới **Huyết mạch còn vương**: giữ thể chất sang kiếp sau (chỉ hiện khi thể chất không phải Phàm thể).
+
 ## 4. Cảnh giới
 
 | Cảnh giới | Tu vi cần | Thọ gốc | Đột phá lên kế tiếp |

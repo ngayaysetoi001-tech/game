@@ -4,8 +4,11 @@ import { Rng } from './rng.js';
 import {
   REALMS, TOP_REALM, baseGain, ROOTS, ORIGINS, PERSONALITIES, PERS_KEYS,
   SURNAMES, NAMES_M, NAMES_F, SECT_A, SECT_B, SECT_COLORS, MONSTERS, MOVES,
-  ACTIONS, PILLS, LEGACIES, TAG_NAMES,
+  ACTIONS, PILLS, LEGACIES, TAG_NAMES, THE_CHAT, THIEN_PHU, TP_WEIGHT,
 } from './data.js';
+
+const THE_MAP = Object.fromEntries(THE_CHAT.map((t) => [t.id, t]));
+const TP_MAP = Object.fromEntries(THIEN_PHU.map((t) => [t.id, t]));
 import { EVENTS, EVENT_MAP } from './events.js';
 
 export const SAVE_VERSION = 1;
@@ -129,6 +132,7 @@ export class Game {
     return b;
   }
   incarnate(b) {
+    if (b.name) b.prevName = b.name;
     b.g = this.r.chance(0.5) ? 'nam' : 'nu';
     b.name = this.genName(b.g);
     b.age = 0; b.realm = 0; b.tuvi = 0;
@@ -138,15 +142,17 @@ export class Game {
     b.alive = true; b.lives++; b.fame = 0; b.kills = 0; b.cause = null;
     // linh hồn giữ tính cách cũ phần lớn thời gian
     if (this.r.chance(0.3)) b.pers = this.r.pick(PERS_KEYS);
+    b.the = this.rollThe();
     const rel = this.s.rel[b.id];
     if (rel) rel.met = false;
   }
   power(b) {
     const R = REALMS[b.realm];
-    return R.pow * (1 + (b.tuvi / R.need) * 0.5) * (0.85 + b.rootM * 0.15);
+    const t = THE_MAP[b.the] || THE_MAP.pham;
+    return R.pow * (1 + (b.tuvi / R.need) * 0.5) * (0.85 + b.rootM * 0.15) * (t.fx.fightMul || 1);
   }
   botGain(b) {
-    let m = b.rootM * (b.sect ? 1.2 : 1) * (b.pers === 'an' ? 1.1 : 1);
+    let m = b.rootM * (b.sect ? 1.2 : 1) * (b.pers === 'an' ? 1.1 : 1) * ((THE_MAP[b.the] || THE_MAP.pham).fx.gainMul || 1);
     const rel = this.s.rel[b.id];
     if (rel && rel.tag === 'de_tu' && this.playing) m *= 1.3;
     return baseGain(b.realm) * m * this.r.range(0.6, 1);
@@ -304,6 +310,7 @@ export class Game {
   }
   relAdd(b, dv) {
     const r = this.rel(b);
+    if (dv > 0 && this.P) dv *= this.tmul('relMul');
     r.v = clamp(Math.round(r.v + dv), -100, 100);
     r.met = true;
     return r.v;
@@ -360,6 +367,39 @@ export class Game {
     return true;
   }
 
+  // ---------- Thể chất, thiên phú ----------
+  rollThe() {
+    return this.r.weighted(THE_CHAT, (t) => t.w).id;
+  }
+  rollTraits() {
+    const n = this.r.weighted([0, 1, 2], (k) => [25, 50, 25][k]);
+    const pool = THIEN_PHU.slice();
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const t = this.r.weighted(pool, (x) => TP_WEIGHT[x.tier]);
+      out.push(t.id);
+      pool.splice(pool.indexOf(t), 1);
+    }
+    return out;
+  }
+  /** Danh sách thể chất + thiên phú của người chơi */
+  traits(P = this.P || this.s.draft) {
+    if (!P) return [];
+    return [THE_MAP[P.the] || THE_MAP.pham, ...(P.tps || []).map((id) => TP_MAP[id]).filter(Boolean)];
+  }
+  tmul(k) {
+    return this.traits().reduce((m, t) => m * (t.fx[k] ?? 1), 1);
+  }
+  tadd(k) {
+    return this.traits().reduce((m, t) => m + (typeof t.fx[k] === 'number' ? t.fx[k] : 0), 0);
+  }
+  thas(k) {
+    return this.traits().some((t) => t.fx[k]);
+  }
+  tevW(id) {
+    return this.traits().reduce((m, t) => m * ((t.fx.evW && t.fx.evW[id]) ?? 1), 1);
+  }
+
   // ---------- Người chơi ----------
   rollDraft() {
     const leg = this.s.legacy ? this.s.legacy.id : null;
@@ -376,13 +416,19 @@ export class Game {
     if (leg === 'than_the') st.can += 15;
     if (leg === 'co_duyen') st.co += 15;
     if (leg === 'tam_canh') st.tam += 15;
+    const the = leg === 'huyet_mach' && this.s.legacy.the ? this.s.legacy.the : this.rollThe();
+    const tps = this.rollTraits();
+    const tl = [THE_MAP[the], ...tps.map((id) => TP_MAP[id])];
+    for (const t of tl) for (const k of ['can', 'ngo', 'tam', 'co']) if (t.fx[k]) st[k] += t.fx[k];
+    const tinh0 = tl.reduce((m, t) => m + (t.fx.tinh || 0), 0);
     for (const k in st) st[k] = clamp(st[k], 0, 100);
     const P = {
+      the, tps,
       name: this.genName(gender), g: gender, origin: o.id, originN: o.n, root, stats: st,
       hp: 100, age: 0, realm: 0, tuvi: 0, dao: !!o.fx.dao, sect: null,
       money: (o.fx.money || 0) + (leg === 'tai_san' ? this.s.legacy.money : 0),
       fight: (o.fx.fight || 0) + (leg === 'kiem_y' ? 0.2 : 0),
-      tinh: 0, action: 'tu_luyen', closed: 0, pills: {}, dienTho: {}, lifeBonus: 0,
+      tinh: tinh0, action: 'tu_luyen', closed: 0, pills: {}, dienTho: {}, lifeBonus: 0,
       fame: 0, lifeNo: this.s.lives.length + 1, flags: {}, legacy: leg, born: null,
       look: this.r.int(0, 1e6),
     };
@@ -423,7 +469,7 @@ export class Game {
     if (P.lifeNo > 1) this.log(`Đây là kiếp thứ ${P.lifeNo} của linh hồn này.`, 'muted');
   }
   lifespan(P = this.P) {
-    return Math.round(REALMS[P.realm].life * (1 + (P.stats.can - 50) / 250) * (1 + P.lifeBonus));
+    return Math.round(REALMS[P.realm].life * (1 + (P.stats.can - 50) / 250) * (1 + P.lifeBonus) * this.tmul('lifeMul'));
   }
   need(P = this.P) {
     return REALMS[P.realm].need;
@@ -443,7 +489,7 @@ export class Game {
   }
   gain() {
     const P = this.P;
-    return baseGain(P.realm) * P.root.m * (1 + (P.stats.ngo - 50) / 200) * (P.sect ? 1.2 : 1) * (P.tinh <= -30 ? 1.2 : 1) * (P.hp < 30 ? 0.6 : 1);
+    return baseGain(P.realm) * P.root.m * (1 + (P.stats.ngo - 50) / 200) * (P.sect ? 1.2 : 1) * (P.tinh <= -30 ? 1.2 : 1) * (P.hp < 30 ? 0.6 : 1) * this.tmul('gainMul');
   }
   addTuvi(n) {
     const P = this.P;
@@ -455,7 +501,7 @@ export class Game {
   playerPower() {
     const P = this.P;
     const R = REALMS[P.realm];
-    return R.pow * (1 + (P.tuvi / R.need) * 0.5) * (1 + (P.stats.can - 50) / 200) * (1 + P.fight) * (0.5 + P.hp / 200) * (P.flags.pet ? 1.1 : 1);
+    return R.pow * (1 + (P.tuvi / R.need) * 0.5) * (1 + (P.stats.can - 50) / 200) * (1 + P.fight) * (0.5 + P.hp / 200) * (P.flags.pet ? 1.1 : 1) * this.tmul('fightMul');
   }
   monster(realm) {
     const r = clamp(realm, 0, TOP_REALM);
@@ -485,7 +531,7 @@ export class Game {
   }
   hurt(n, cause) {
     const P = this.P;
-    P.hp = Math.max(0, P.hp - Math.round(n));
+    P.hp = Math.max(0, P.hp - Math.round(n * this.tmul('hurtMul')));
     if (P.hp <= 0) {
       this.die(cause || 'trọng thương không qua khỏi');
       return true;
@@ -564,6 +610,7 @@ export class Game {
     let p = REALMS[P.realm].brk + (st.ngo - 50) / 250 + (st.tam - 50) / 300 + (st.co - 50) / 400 + bonus;
     p += this.breakHelpers().length * 0.04;
     if (P.tinh <= -30) p += 0.06;
+    p += this.tadd('brk');
     return clamp(p, 0.05, 0.95);
   }
   attemptBreak(bonus = 0) {
@@ -583,6 +630,8 @@ export class Game {
       P.realm++;
       P.tuvi = 0;
       this.fame(P.realm * 3);
+      const ob = this.tadd('ngoOnBreak');
+      if (ob) this.stat('ngo', ob);
       this.log(`Đột phá thành công! Ngươi đã là tu sĩ ${REALMS[P.realm].n}. Thọ nguyên ${this.lifespan()}.`, 'big');
       if (P.realm >= 3) this.chron(`${P.name} đột phá ${REALMS[P.realm].n}.`, 2);
       return `${lightning}Bình cảnh vỡ tan như băng mùa xuân.${helpTxt}\n\nNgươi đã bước vào ${REALMS[P.realm].n}. Thọ nguyên tăng lên ${this.lifespan()} năm.`;
@@ -618,7 +667,7 @@ export class Game {
       this.addTuvi(g * 0.35);
       if (this.r.chance(0.15)) this.stat('co', 1);
     } else if (act === 'muu_sinh') {
-      const m = Math.round(15 * (1 + P.realm * 1.5) * this.r.range(0.7, 1.3) * (1 + (P.stats.co - 50) / 200));
+      const m = Math.round(15 * (1 + P.realm * 1.5) * this.r.range(0.7, 1.3) * (1 + (P.stats.co - 50) / 200) * this.tmul('moneyMul'));
       this.money(m);
       this.addTuvi(g * 0.25);
     } else if (act === 'ket_giao') {
@@ -627,7 +676,11 @@ export class Game {
     } else if (act === 'lon_len' && P.age >= 6 && this.r.chance(0.2)) {
       this.stat(this.r.pick(['can', 'ngo', 'tam', 'co']), 1);
     }
-    P.hp = Math.min(100, P.hp + (act === 'be_quan' ? 6 : 4));
+    P.hp = Math.min(100, P.hp + (act === 'be_quan' ? 6 : 4) * this.tmul('regenMul'));
+    if (this.thas('coldPoison') && P.age >= 8 && this.r.chance(0.04) && !this.known().some(({ r }) => r.tag === 'dao_lu')) {
+      this.log('Hàn độc Cửu Âm phát tác, cả người lạnh như băng.', 'bad');
+      if (this.hurt(12, 'hàn độc Cửu Âm phát tác, đông cứng mà chết')) return true;
+    }
 
     if (P.age >= this.lifespan()) {
       this.die('thọ nguyên cạn kiệt, tọa hóa');
@@ -676,6 +729,7 @@ export class Game {
       if (e.prep && !data) continue;
       let w = typeof e.w === 'function' ? e.w(this) : e.w ?? 1;
       if (e.acts && e.acts.includes(act)) w *= 3;
+      w *= this.tevW(e.id);
       cands.push({ e, bot, data, w });
     }
     const pick = this.r.weighted(cands, (c) => c.w);
@@ -743,14 +797,14 @@ export class Game {
       r.met = false;
     }
     const hasBond = this.s.souls.some((b) => b.alive && this.s.rel[b.id] && this.s.rel[b.id].cn && this.s.rel[b.id].cn.v > 0);
-    const pool = LEGACIES.filter((l) => l.id !== 'duyen' || hasBond).filter((l) => l.id !== 'tai_san' || P.money >= 20);
+    const pool = LEGACIES.filter((l) => l.id !== 'duyen' || hasBond).filter((l) => l.id !== 'tai_san' || P.money >= 20).filter((l) => l.id !== 'huyet_mach' || (P.the && P.the !== 'pham'));
     const opts = [];
     while (opts.length < 3 && pool.length) opts.push(pool.splice(this.r.int(0, pool.length - 1), 1)[0].id);
-    this.s.deadInfo = { rec, options: opts, money: P.money };
+    this.s.deadInfo = { rec, options: opts, money: P.money, the: P.the };
   }
   chooseLegacy(id) {
     if (this.s.phase !== 'dead' || !this.s.deadInfo.options.includes(id)) return;
-    this.s.legacy = { id, money: id === 'tai_san' ? Math.min(500, Math.floor(this.s.deadInfo.money / 2)) : 0 };
+    this.s.legacy = { id, money: id === 'tai_san' ? Math.min(500, Math.floor(this.s.deadInfo.money / 2)) : 0, the: id === 'huyet_mach' ? this.s.deadInfo.the : null };
     this.s.pending = null;
     this.s.queue = [];
     this.s.player = null;
@@ -775,4 +829,4 @@ export class Game {
   }
 }
 
-export { REALMS, TOP_REALM, ACTIONS, PILLS, LEGACIES, TAG_NAMES };
+export { REALMS, TOP_REALM, ACTIONS, PILLS, LEGACIES, TAG_NAMES, THE_MAP, TP_MAP };

@@ -207,7 +207,7 @@ export const EVENTS = [
       },
       {
         t: 'Bỏ chạy', go: (g) => {
-          if (g.r.chance(0.55 + (g.P.stats.co - 50) / 150)) return 'Ngươi lao xuống dốc, lẩn vào bụi rậm. Thoát rồi.';
+          if (g.r.chance(0.55 + (g.P.stats.co - 50) / 150 + g.tadd('flee'))) return 'Ngươi lao xuống dốc, lẩn vào bụi rậm. Thoát rồi.';
           g.hurt(15, `bị ${data.m.n} đuổi kịp`);
           return 'Không thoát kịp. Lưng ngươi bị cào một vệt dài.';
         },
@@ -416,7 +416,7 @@ export const EVENTS = [
   },
   {
     id: 'phan_boi', w: 2, cd: 15, title: 'Túi trữ vật trống rỗng',
-    when: (g) => g.P.money >= 50,
+    when: (g) => g.P.money >= 50 && !g.thas('noBetray'),
     bot: (g) => g.findBot((b, r) => (b.pers === 'tham' || b.pers === 'muu') && r && r.met && r.tag !== 'dao_lu' && (r.tag === 'huynh_de' || (r.v >= 20 && r.v <= 70))),
     prep: (g) => ({ loss: Math.floor(g.P.money * 0.5) }),
     text: (g, { bot: b, data }) => `Sáng ra tỉnh dậy, ${data.loss} linh thạch trong túi ngươi đã không cánh mà bay. ${b.name} cũng biến mất, chỉ để lại vết chân dẫn về hướng tây.`,
@@ -715,7 +715,7 @@ export const EVENTS = [
         {
           t: 'Bỏ chạy', go: (g) => {
             done(-60, 'thu');
-            if (g.r.chance(0.4 + (g.P.stats.co - 50) / 150)) return 'Ngươi thoát được, nhưng biết rằng người đó sẽ còn quay lại.';
+            if (g.r.chance(0.4 + (g.P.stats.co - 50) / 150 + g.tadd('flee'))) return 'Ngươi thoát được, nhưng biết rằng người đó sẽ còn quay lại.';
             g.hurt(35, `bị ${b.name} đuổi kịp và giết chết`);
             return 'Bóng đen đuổi theo như hình với bóng.';
           },

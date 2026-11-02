@@ -97,6 +97,7 @@ export const LEGACIES = [
   { id: 'tam_canh', n: 'Tâm như chỉ thủy', desc: 'Tâm tính +15.' },
   { id: 'duyen', n: 'Một sợi tơ duyên', desc: 'Người thân thiết nhất kiếp này sẽ sớm tìm thấy ngươi.' },
   { id: 'tai_san', n: 'Rương chôn dưới gốc đào', desc: 'Chôn lại một nửa linh thạch (tối đa 500) cho kiếp sau.' },
+  { id: 'huyet_mach', n: 'Huyết mạch còn vương', desc: 'Kiếp sau giữ lại thể chất của kiếp này.' },
 ];
 
 export const STAT_NAMES = { can: 'Căn cốt', ngo: 'Ngộ tính', tam: 'Tâm tính', co: 'Cơ duyên' };
@@ -108,3 +109,36 @@ export const TAG_NAMES = {
   de_tu: 'Đệ tử',
   thu: 'Kẻ thù',
 };
+
+// ---------- Thể chất (mỗi người một loại) và thiên phú (0-2 món) ----------
+// fx: cộng chỉ số lúc sinh (can, ngo, tam, co, tinh), hệ số nhân (*Mul), cộng tỉ lệ (brk, flee),
+//     evW: nhân trọng số sự kiện, cờ đặc biệt (coldPoison, noBetray, seePast, ngoOnBreak)
+// tier: 0 thường, 1 khá, 2 hiếm, 3 truyền thuyết
+export const THE_CHAT = [
+  { id: 'pham', n: 'Phàm thể', tier: 0, w: 70, desc: 'Thân thể bình thường như bao người.', fx: {} },
+  { id: 'cuu_am', n: 'Cửu Âm Hàn Thể', tier: 2, w: 4, desc: 'Tu luyện +25%. Hàn độc thỉnh thoảng phát tác làm mất sinh lực. Có đạo lữ thì hàn độc bị áp chế.', fx: { gainMul: 1.25, coldPoison: true } },
+  { id: 'liet_duong', n: 'Liệt Dương Chiến Thể', tier: 2, w: 4, desc: 'Sức chiến đấu +35%. Tính nóng như lửa: tâm tính -10, hay bị kẻ khác khiêu chiến.', fx: { fightMul: 1.35, tam: -10, evW: { khieu_chien: 2 } } },
+  { id: 'thong_linh', n: 'Thông Linh Thể', tier: 2, w: 4, desc: 'Ngộ tính +8, cơ duyên +5. Linh thú tự tìm đến.', fx: { ngo: 8, co: 5, evW: { linh_thu: 4 } } },
+  { id: 'vo_cau', n: 'Vô Cấu Linh Thể', tier: 2, w: 4, desc: 'Đột phá +8%. Tâm ma khó xâm nhập.', fx: { brk: 0.08, evW: { tam_ma: 0.3 } } },
+  { id: 'mi_cot', n: 'Thiên Sinh Mị Cốt', tier: 2, w: 4, desc: 'Ai gặp cũng mến: thân thiết tăng nhanh 50%, dễ gặp đạo lữ. Kẻ tham lam cũng dễ nhòm ngó.', fx: { relMul: 1.5, evW: { dao_lu: 2, phan_boi: 2 } } },
+  { id: 'tuc_menh', n: 'Túc Mệnh Nhãn', tier: 2, w: 4, desc: 'Nhìn thấu tiền kiếp người khác. Dễ gặp lại cố nhân, và thấy kiếp trước của mọi người trong Quan hệ.', fx: { seePast: true, evW: { duyen_no: 3, co_nhan_tim: 2 } } },
+  { id: 'bat_diet', n: 'Bất Diệt Kim Thân', tier: 3, w: 1.5, desc: 'Sinh lực hồi gấp đôi, chịu đòn -30%, thọ +15%. Thân thể nặng nề, tu luyện -10%.', fx: { regenMul: 2, hurtMul: 0.7, lifeMul: 1.15, gainMul: 0.9 } },
+  { id: 'hon_don', n: 'Hỗn Độn Đạo Thể', tier: 3, w: 1.5, desc: 'Tu luyện +45%. Bình cảnh dày như núi: đột phá -8%.', fx: { gainMul: 1.45, brk: -0.08 } },
+];
+
+export const THIEN_PHU = [
+  { id: 'vo_si', n: 'Võ si', tier: 1, desc: 'Sức chiến đấu +15%.', fx: { fightMul: 1.15 } },
+  { id: 'buon_ban', n: 'Đầu óc buôn bán', tier: 1, desc: 'Mưu sinh kiếm được gấp rưỡi.', fx: { moneyMul: 1.5 } },
+  { id: 'de_gan', n: 'Dễ gần', tier: 1, desc: 'Thân thiết tăng nhanh 25%.', fx: { relMul: 1.25 } },
+  { id: 'da_nghi', n: 'Đa nghi', tier: 1, desc: 'Không bao giờ bị lừa mất của. Đổi lại khó thân với ai.', fx: { noBetray: true, relMul: 0.85 } },
+  { id: 'benh_can', n: 'Bệnh căn từ nhỏ', tier: 1, desc: 'Căn cốt -10. Ốm đau nhiều nên tâm tính +10.', fx: { can: -10, tam: 10 } },
+  { id: 'hoang_dao', n: 'Sinh giờ hoàng đạo', tier: 1, desc: 'Cơ duyên +12.', fx: { co: 12 } },
+  { id: 'hay_mo', n: 'Hay mơ', tier: 1, desc: 'Ngộ tính +8, tâm tính -4.', fx: { ngo: 8, tam: -4 } },
+  { id: 'chan_nhanh', n: 'Chân nhanh hơn não', tier: 1, desc: 'Bỏ chạy dễ thoát hơn 20%.', fx: { flee: 0.2 } },
+  { id: 'trac_an', n: 'Lòng trắc ẩn', tier: 1, desc: 'Khởi đầu Hữu tình +20, tâm tính +4.', fx: { tinh: 20, tam: 4 } },
+  { id: 'dong_bi', n: 'Đồng bì thiết cốt', tier: 2, desc: 'Chịu đòn -25% sát thương.', fx: { hurtMul: 0.75 } },
+  { id: 'doc_hanh', n: 'Độc hành giả', tier: 2, desc: 'Tu luyện +12%, nhưng khó kết thân (thân thiết -40%).', fx: { gainMul: 1.12, relMul: 0.6 } },
+  { id: 'van_thanh', n: 'Đại khí vãn thành', tier: 2, desc: 'Mỗi lần đột phá thành công, ngộ tính +4.', fx: { ngoOnBreak: 4 } },
+  { id: 'sat_khi', n: 'Sát khí bẩm sinh', tier: 2, desc: 'Sức chiến đấu +10%. Sinh ra đã lạnh lùng: khởi đầu Vô tình -25.', fx: { fightMul: 1.1, tinh: -25 } },
+];
+export const TP_WEIGHT = { 1: 10, 2: 4 };

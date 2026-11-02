@@ -1,5 +1,5 @@
 // Giao diện trình duyệt. Mọi luật chơi nằm trong core.js.
-import { Game, REALMS, ACTIONS, PILLS, LEGACIES, clamp } from './core.js';
+import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, clamp } from './core.js';
 import { STAT_NAMES, PERSONALITIES } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 
@@ -81,6 +81,20 @@ function statGrid(st) {
   return Object.keys(STAT_NAMES).map((k) => `<div><span>${STAT_NAMES[k]}</span> <b>${st[k]}</b></div>`).join('');
 }
 
+const TIER_N = ['Thường', 'Khá', 'Hiếm', 'Truyền thuyết'];
+/** Khối thể chất + thiên phú cho màn đầu thai */
+function traitBlock() {
+  const ts = g.traits();
+  const [the, ...tps] = ts;
+  return `<div class="traits">
+    <div class="trait t${the.tier}"><div class="row"><b>${esc(the.n)}</b><span class="meta">Thể chất${the.tier ? ' · ' + TIER_N[the.tier] : ''}</span></div><div class="meta">${esc(the.desc)}</div></div>
+    ${tps.length ? tps.map((t) => `<div class="trait t${t.tier}"><div class="row"><b>${esc(t.n)}</b><span class="meta">Thiên phú · ${TIER_N[t.tier]}</span></div><div class="meta">${esc(t.desc)}</div></div>`).join('') : '<div class="meta">Không có thiên phú gì đặc biệt.</div>'}
+  </div>`;
+}
+function openTraits() {
+  openSheet(`<h2>Thể chất và thiên phú</h2>${traitBlock()}`);
+}
+
 function renderBirth() {
   show('scr-birth');
   const P = g.s.draft;
@@ -97,6 +111,7 @@ function renderBirth() {
           <div class="realm">${esc(P.root.n)}</div>
         </div>
       </div>
+      ${traitBlock()}
       <div class="grid">${statGrid(P.stats)}<div><span>Linh thạch</span> <b>${fmt(P.money)}</b></div>${P.dao ? '<div><span>Gia truyền</span> <b>Đã nhập đạo</b></div>' : ''}</div>
       ${leg ? `<div class="legacyNote">Tàn niệm kiếp trước: ${esc(leg.n)}. ${esc(leg.desc)}</div>` : ''}
       <div class="btns">
@@ -135,7 +150,9 @@ function renderPlay() {
     `<span class="chip" title="Hữu tình: bạn bè hộ pháp khi đột phá. Vô tình: tu nhanh hơn.">${tinh} <b>${P.tinh > 0 ? '+' : ''}${P.tinh}</b></span>` +
     `<span class="chip">Linh thạch <b>${fmt(P.money)}</b></span>` +
     `<span class="chip">Danh vọng <b>${fmt(P.fame)}</b></span>` +
-    (P.flags.pet ? `<span class="chip">Linh thú: ${esc(P.flags.pet)}</span>` : '');
+    (P.flags.pet ? `<span class="chip">Linh thú: ${esc(P.flags.pet)}</span>` : '') +
+    `<button class="chip chipBtn" id="traitChip">${esc(g.traits().map((t) => t.n).join(' · '))} ›</button>`;
+  $('traitChip').onclick = openTraits;
 
   const canBreak = g.canBreak();
   setHTML($('speed'),
@@ -177,9 +194,12 @@ function renderTab() {
     return `<div class="list">${list.map(({ b, r }) => {
       const cls = r.v >= 20 || ['huynh_de', 'dao_lu', 'su_phu', 'de_tu'].includes(r.tag) ? 'pos' : r.v <= -20 || r.tag === 'thu' ? 'neg' : '';
       const sc = b.sect ? g.sect(b.sect) : null;
-      const past = r.past.length ? `<div class="meta">Kiếp trước: ${esc(r.past[r.past.length - 1].name)}</div>` : '';
+      const seen = g.thas('seePast') && b.prevName && !r.past.length ? `<div class="meta">Tiền kiếp: ${esc(b.prevName)} · đã luân hồi ${b.lives - 1} lần</div>` : '';
+      const past = r.past.length ? `<div class="meta">Kiếp trước: ${esc(r.past[r.past.length - 1].name)}</div>` : seen;
+      const bt = THE_MAP[b.the];
+      const theTxt = bt && bt.id !== 'pham' ? ` · <span class="t${bt.tier}c">${esc(bt.n)}</span>` : '';
       return `<div class="item withAv">${botAvatar(b)}<div class="body"><div class="row"><b>${esc(b.name)}</b><span class="tag ${cls}">${esc(g.relLabel(r))} ${r.v > 0 ? '+' : ''}${r.v}</span></div>
-        <div class="meta">${REALMS[b.realm].n} · ${b.age} tuổi · ${PERSONALITIES[b.pers].n}${sc ? ` · ${esc(sc.name)}` : ''}</div>${past}</div></div>`;
+        <div class="meta">${REALMS[b.realm].n} · ${b.age} tuổi · ${PERSONALITIES[b.pers].n}${sc ? ` · ${esc(sc.name)}` : ''}${theTxt}</div>${past}</div></div>`;
     }).join('')}</div>`;
   }
   if (tab === 'world') {

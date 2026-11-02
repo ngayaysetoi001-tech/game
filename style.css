@@ -158,6 +158,19 @@ h3 { font-size: 15px; margin: 14px 0 6px; color: var(--muted); font-weight: 600;
 .intro { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
 
 .legacies { display: grid; gap: 8px; margin-top: 12px; }
+
+/* Thể chất, thiên phú */
+.traits { display: grid; gap: 6px; }
+.trait { border: 1px solid var(--line); border-left-width: 4px; border-radius: 8px; padding: 6px 10px; background: var(--bg); }
+.trait .row { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.trait.t0 { border-left-color: var(--line); }
+.trait.t1 { border-left-color: var(--tuvi); }
+.trait.t2 { border-left-color: var(--accent); }
+.trait.t3 { border-left-color: var(--gold); background: color-mix(in srgb, var(--gold) 10%, var(--bg)); }
+.t2c { color: var(--accent); }
+.t3c { color: var(--gold); font-weight: 700; }
+.chipBtn { font: inherit; font-size: 13px; color: var(--ink); text-align: left; }
+.meta { color: var(--muted); font-size: 13px; }
 .legacies .btn b { display: block; }
 
 /* Hộp thoại */
@@ -172,6 +185,7 @@ h3 { font-size: 15px; margin: 14px 0 6px; color: var(--muted); font-weight: 600;
 .choices { display: grid; gap: 8px; }
 .sheet h2 { margin: 0 0 10px; font-size: 18px; }
 .sheet .list { margin-bottom: 12px; }
+.sheet .traits { margin-bottom: 12px; }
 
 @media (min-width: 600px) {
   .overlay { align-items: center; }
