@@ -42,6 +42,29 @@
     </div>
   </div>
 
+  <div class="overlay battleOv" id="battle" hidden>
+    <div class="card arena" role="dialog" aria-modal="true" aria-label="Giao chiến">
+      <div class="arenaTop"><b id="btTitle"></b><span id="btRound" class="meta"></span></div>
+      <div class="stage">
+        <div class="fighter" id="fA">
+          <canvas width="32" height="40"></canvas>
+          <div class="fname"></div>
+          <div class="gauge hp"><i></i><span></span></div>
+          <div class="gauge mp"><i></i></div>
+        </div>
+        <div class="fighter foe" id="fB">
+          <canvas width="32" height="40"></canvas>
+          <div class="fname"></div>
+          <div class="gauge hp"><i></i><span></span></div>
+          <div class="gauge mp"><i></i></div>
+        </div>
+        <div class="banner" id="btBanner"></div>
+      </div>
+      <ul class="btlog" id="btLog"></ul>
+      <div class="btBtns"><button class="btn ghost" id="btFast">Nhanh ×2</button><button class="btn primary" id="btNext">Bỏ qua</button></div>
+    </div>
+  </div>
+
   <div class="overlay" id="sheet" hidden>
     <div class="card sheet" role="dialog" aria-modal="true">
       <div id="sheetBody"></div>

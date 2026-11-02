@@ -91,10 +91,25 @@ Tàn niệm mới **Huyết mạch còn vương**: giữ thể chất sang kiế
 
 Ký ức đạo pháp, Thân thể kiếp trước, Dư âm cơ duyên, Tàn hồn kiếm ý, Linh căn tôi luyện, Tâm như chỉ thủy, Một sợi tơ duyên (người thân nhất sẽ sớm tìm thấy ngươi), Rương chôn dưới gốc đào.
 
+## 6b. Chiến đấu, võ kỹ, trang bị
+
+**Trận đấu** (`js/combat.js`) đánh theo lượt, tối đa 14 hiệp, rồi so % sinh lực. Hai bên tự ra chiêu theo **chiến thuật** đã chọn (Cuồng công / Cân bằng / Phòng thủ). Giao diện diễn lại từng lượt: tên chiêu, sát thương bay lên, lao tới, rung khi trúng đòn; có nút Nhanh ×2 và Bỏ qua.
+
+- Chỉ số quy từ sức mạnh gốc `pw`: sinh lực 60·pw, công 10·pw, thủ 4·pw, linh lực 100 (hồi 12 mỗi lượt). Trang bị cộng thẳng vào.
+- Sát thương = công × hệ số chiêu × (1 - thủ/(thủ + 1,5·công)), ±10%. Bạo kích x1,7. Mỗi trận mỗi bên có "phong độ" ±22% công, để kẻ yếu hơn vẫn có cửa lật kèo.
+- Trạng thái: thiêu đốt/trúng độc, choáng/đóng băng, phá giáp (-40% thủ), né tránh, khiên, phản đòn, hút máu, cuồng bạo.
+- Đối thủ từ Luyện Khí trở lên được tính như có trang bị (x1,2 sức mạnh).
+- Thắng trận chỉ mang về 60% vết thương. Thua thì sự kiện tự xử lý hậu quả như trước.
+- Tỉ lệ thắng thử nghiệm (cùng bộ chiêu): yếu hơn 20% không đồ ~7%, có đồ Hạ phẩm ~30%; ngang sức ~50-60%; mạnh hơn 25% ~94%.
+
+**Võ kỹ:** 17 chiêu theo binh khí (kiếm, đao, thương, quạt), chưởng/ấn dùng tay không, hộ thể, hồi phục. Mang tối đa 4. Dùng chiêu không hợp binh khí đang cầm thì yếu đi 40%. Học được từ: lần đầu nhập đạo (1 chiêu Khá), vào tông môn (chiêu riêng của tông), truyền thừa (phẩm 2-3), tiền bối chỉ điểm (40%), bí kíp ở Tụ Bảo Lâu. Yêu thú có bộ chiêu riêng (cắn xé, độc nha, cuồng bạo, vảy giáp, gầm thét). Bot có chiêu theo binh khí và cảnh giới.
+
+**Trang bị** (`js/items.js`): 3 ô (vũ khí, y phục, phụ kiện), 4 phẩm (Hạ, Trung, Thượng, Cực), chỉ số theo cảnh giới của món. Thượng phẩm có 1 thuộc tính đặc biệt, Cực phẩm có 2 (hút máu, bạo kích, phản chấn, né tránh, thân pháp). Loại vũ khí có thiên hướng riêng: kiếm thêm bạo kích, đao thêm công, thương xuyên giáp, quạt thêm né. Vũ khí đang cầm hiện trên chân dung. Nguồn: yêu thú (25%), hang động (60%), bí cảnh, đánh bại bot (15%, rơi binh khí của họ), Tụ Bảo Lâu (3 món, đổi hàng mỗi 5 năm), hội đấu giá (Thượng/Cực phẩm). Con thợ rèn khởi đầu với Thiết Kiếm. Túi chứa 16 món, đầy thì tự bán món rẻ nhất.
+
 ## 7. Kỹ thuật
 
 - HTML, CSS, JavaScript thuần (ES module), không cần build, không cần máy chủ.
-- `js/core.js`: luật chơi và mô phỏng, không đụng DOM. `js/events.js`: kỳ ngộ. `js/data.js`: dữ liệu. `js/ui.js`: giao diện. `js/rng.js`: RNG có seed.
+- `js/core.js`: luật chơi và mô phỏng, không đụng DOM. `js/events.js`: kỳ ngộ. `js/data.js`: dữ liệu. `js/combat.js`: chiến đấu, võ kỹ. `js/items.js`: trang bị. `js/sprite.js`: nhân vật và yêu thú pixel. `js/ui.js`: giao diện. `js/rng.js`: RNG có seed.
 - **RNG có seed** và trạng thái nằm trong bản lưu: cùng seed và cùng lựa chọn cho cùng kết quả, dễ tái hiện lỗi.
 - Lưu bằng `localStorage` (`tkps.save.v1`) mỗi 5 giây, khi chọn và khi rời tab.
 - `tools/sim.mjs`: chơi tự động nhiều kiếp không giao diện để kiểm lỗi và cân bằng.

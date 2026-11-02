@@ -2,6 +2,8 @@
 import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, clamp } from './core.js';
 import { STAT_NAMES, PERSONALITIES } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
+import { SKILLS, TACTICS, WEAPON_TYPES, turnText } from './combat.js';
+import { SLOTS, QUALITY, itemLine } from './items.js';
 
 const SAVE_KEY = 'tkps.save.v1';
 const SPEEDS = [1, 2, 4, 8, 16, 32];
@@ -45,14 +47,15 @@ function save() {
 
 // ---------- Chân dung pixel ----------
 function drawPortrait(canvas, p, opts = {}) {
-  drawSprite(canvas, { seed: p.look || 1, g: p.g, age: p.age, life: opts.life, realm: p.realm || 0, robe: opts.robe || null, dead: opts.dead, asc: opts.asc });
+  const wep = p.eq && p.eq.vu_khi ? p.eq.vu_khi.wt : null;
+  drawSprite(canvas, { seed: p.look || 1, g: p.g, age: p.age, life: opts.life, realm: p.realm || 0, robe: opts.robe || null, dead: opts.dead, asc: opts.asc, wep });
 }
 const sectRobe = (sectId) => {
   const sc = sectId ? g.sect(sectId) : null;
   return sc ? sc.color : null;
 };
 /** Ảnh nhỏ của một bot */
-const botAvatar = (b) => `<img class="avatar" alt="" src="${spriteURL({ seed: botSeed(b), g: b.g, age: b.age, life: b.life, realm: b.realm, robe: sectRobe(b.sect) })}">`;
+const botAvatar = (b) => `<img class="avatar" alt="" src="${spriteURL({ seed: botSeed(b), g: b.g, age: b.age, life: b.life, realm: b.realm, robe: sectRobe(b.sect), wep: b.realm >= 1 ? g.botWep(b) : null })}">`;
 const robeOf = sectRobe;
 
 /** Chỉ thay DOM khi nội dung đổi, để nút không bị dựng lại giữa lúc đang chạm */
@@ -172,8 +175,11 @@ function renderPlay() {
       const why = P.age < a.minAge ? `Từ ${a.minAge} tuổi` : a.needDao && !P.dao ? 'Cần nhập đạo' : a.desc;
       return `<button class="btn ${P.action === id ? 'on' : ''}" data-act="${id}" ${ok ? '' : 'disabled'}>${a.icon} ${a.n}<small>${esc(why)}</small></button>`;
     }).join('');
-    html += `<button class="btn" data-do="shop" ${P.age < 10 ? 'disabled' : ''}>🏮 Tụ Bảo Lâu<small>Mua và dùng đan dược</small></button>`;
-    html += `<button class="btn" data-do="close" ${P.dao && P.age >= 12 && !canBreak ? '' : 'disabled'}>🕯 Bế quan<small>${P.dao ? 'Tu nhanh, xa lánh thế sự' : 'Cần nhập đạo'}</small></button>`;
+    html += `<div class="utils">
+      <button class="btn" data-do="bag">🎒 Hành trang<small>Trang bị, võ kỹ</small></button>
+      <button class="btn" data-do="shop" ${P.age < 10 ? 'disabled' : ''}>🏮 Tụ Bảo Lâu<small>Đan, pháp khí, bí kíp</small></button>
+      <button class="btn" data-do="close" ${P.dao && P.age >= 12 && !canBreak ? '' : 'disabled'}>🕯 Bế quan<small>${P.dao ? 'Tu nhanh, ít kỳ ngộ' : 'Cần nhập đạo'}</small></button>
+    </div>`;
     if (act === 'lon_len') html += `<p class="hint">${P.age < 6 ? 'Ngươi còn nhỏ, cứ lớn lên đã.' : 'Chưa nhập đạo nên chưa thể tu luyện. Hãy đi đây đi đó, cơ duyên sẽ tới.'}</p>`;
   }
   setHTML($('actions'), html);
@@ -219,7 +225,7 @@ function renderTab() {
       const sc = x.sect ? g.sect(x.sect) : null;
       const P = g.P;
       const av = x.me
-        ? `<img class="avatar" alt="" src="${spriteURL({ seed: P.look, g: P.g, age: P.age, life: g.lifespan(), realm: P.realm, robe: sectRobe(P.sect) })}">`
+        ? `<img class="avatar" alt="" src="${spriteURL({ seed: P.look, g: P.g, age: P.age, life: g.lifespan(), realm: P.realm, robe: sectRobe(P.sect), wep: P.eq && P.eq.vu_khi ? P.eq.vu_khi.wt : null })}">`
         : botAvatar(g.soul(x.id));
       return `<div class="item withAv ${x.me ? 'me' : ''}">${av}<div class="body"><div class="row"><b>${i + 1}. ${esc(x.name)}${x.me ? ' (ngươi)' : ''}</b><span class="meta">${REALMS[x.realm].n} ${Math.floor(x.prog * 100)}%</span></div>
         <div class="meta">${x.age} tuổi${sc ? ` · ${esc(sc.name)}` : ' · tán tu'}</div></div></div>`;
@@ -281,6 +287,12 @@ function renderDead() {
 
 function renderModal() {
   const v = g.eventView();
+  const p = g.s.pending;
+  if (v && v.done && p.battles && p.bi < p.battles.length) {
+    $('modal').hidden = true;
+    if (!bt) startBattle(p);
+    return;
+  }
   $('modal').hidden = !v;
   if (!v) return;
   $('evTitle').textContent = v.title;
@@ -294,6 +306,122 @@ function renderModal() {
   }
 }
 
+// ---------- Diễn lại trận đấu ----------
+let bt = null;
+let btFast = false;
+function lookOf(l) {
+  return l.type === 'beast' ? { type: 'beast', seed: l.seed, realm: l.realm, name: l.name } : { ...l };
+}
+function setGauge(el, v, max) {
+  const w = clamp((v / Math.max(1, max)) * 100, 0, 100);
+  el.querySelector('i').style.width = w + '%';
+  const sp = el.querySelector('span');
+  if (sp) sp.textContent = `${fmt(Math.max(0, v))}/${fmt(max)}`;
+}
+function floatText(side, text, cls) {
+  const host = $(side === 'a' ? 'fA' : 'fB');
+  const el = document.createElement('span');
+  el.className = 'float ' + cls;
+  el.textContent = text;
+  el.style.left = 30 + Math.random() * 40 + '%';
+  host.appendChild(el);
+  setTimeout(() => el.remove(), 1100);
+}
+function startBattle(p) {
+  const res = p.battles[p.bi];
+  bt = { res, i: 0, timer: null, fast: btFast, done: false };
+  $('battle').hidden = false;
+  $('btTitle').textContent = `${res.a.name} ⚔ ${res.b.name}`;
+  for (const [side, f] of [['A', res.a], ['B', res.b]]) {
+    const box = $('f' + side);
+    box.querySelectorAll('.float').forEach((x) => x.remove());
+    box.classList.remove('lunge', 'hit', 'down');
+    drawSprite(box.querySelector('canvas'), lookOf(f.look));
+    box.querySelector('.fname').textContent = f.name;
+  }
+  const aHp0 = Math.round((res.a.maxHp * (res.a.hp0 ?? 100)) / 100);
+  setGauge($('fA').querySelector('.hp'), aHp0, res.a.maxHp);
+  setGauge($('fB').querySelector('.hp'), res.b.maxHp, res.b.maxHp);
+  setGauge($('fA').querySelector('.mp'), 100, 100);
+  setGauge($('fB').querySelector('.mp'), 100, 100);
+  $('btLog').innerHTML = '';
+  $('btBanner').textContent = '';
+  $('btRound').textContent = '';
+  $('btNext').textContent = 'Bỏ qua';
+  $('btFast').classList.toggle('on', bt.fast);
+  bt.timer = setTimeout(stepBattle, 500);
+}
+function applySnap(t) {
+  const r = bt.res;
+  setGauge($('fA').querySelector('.hp'), t.aHp, r.a.maxHp);
+  setGauge($('fB').querySelector('.hp'), t.bHp, r.b.maxHp);
+  setGauge($('fA').querySelector('.mp'), t.aMp, 100);
+  setGauge($('fB').querySelector('.mp'), t.bMp, 100);
+  $('fA').classList.toggle('shielded', t.aSh > 0);
+  $('fB').classList.toggle('shielded', t.bSh > 0);
+}
+function stepBattle() {
+  if (!bt || bt.done) return;
+  const r = bt.res;
+  const t = r.turns[bt.i];
+  if (!t) return endBattle();
+  const me = t.side === 'a' ? $('fA') : $('fB');
+  const foe = t.side === 'a' ? 'b' : 'a';
+  $('btRound').textContent = `Hiệp ${t.round}`;
+  if (t.dot) floatText(t.side, `-${t.dot.dmg}`, 'dot');
+  if (t.stunned) floatText(t.side, t.stunned, 'status');
+  if (t.skill) {
+    const big = t.skill !== 'quyen' && t.skill !== 'can_xe';
+    $('btBanner').textContent = t.skillN;
+    $('btBanner').className = 'banner show ' + (big ? 'big ' : '') + (t.side === 'a' ? 'left' : 'right');
+    me.classList.remove('lunge'); void me.offsetWidth; me.classList.add('lunge');
+    const foeEl = $(foe === 'a' ? 'fA' : 'fB');
+    setTimeout(() => {
+      if (t.hits.some((h) => !h.miss)) { foeEl.classList.remove('hit'); void foeEl.offsetWidth; foeEl.classList.add('hit'); }
+      t.hits.forEach((h, k) => setTimeout(() => floatText(foe, h.miss ? 'Né!' : `-${h.dmg}`, h.miss ? 'miss' : h.crit ? 'crit' : 'dmg'), k * 120));
+      if (t.heal) floatText(t.side, `+${t.heal}`, 'heal');
+      if (t.shield) floatText(t.side, `Khiên ${t.shield}`, 'shield');
+      if (t.drain) floatText(t.side, `+${t.drain}`, 'heal');
+      if (t.applied) floatText(foe, t.applied, 'status');
+      if (t.self) floatText(t.side, t.self, 'status');
+      applySnap(t);
+    }, bt.fast ? 120 : 260);
+  } else applySnap(t);
+  const li = document.createElement('li');
+  li.className = t.side === 'a' ? 'mine' : 'theirs';
+  li.textContent = turnText(t, r.a.name, r.b.name);
+  $('btLog').prepend(li);
+  while ($('btLog').children.length > 6) $('btLog').lastChild.remove();
+  bt.i++;
+  bt.timer = setTimeout(stepBattle, bt.fast ? 420 : 900);
+}
+function endBattle() {
+  clearTimeout(bt.timer);
+  bt.done = true;
+  const r = bt.res;
+  const last = r.turns[r.turns.length - 1];
+  if (last) applySnap(last);
+  (r.win ? $('fB') : $('fA')).classList.add('down');
+  $('btBanner').textContent = r.win ? 'Thắng!' : 'Bại...';
+  $('btBanner').className = 'banner show big result ' + (r.win ? 'win' : 'lose');
+  $('btNext').textContent = 'Tiếp tục';
+}
+$('btNext').onclick = () => {
+  if (!bt) return;
+  if (!bt.done) return endBattle();
+  const p = g.s.pending;
+  $('battle').hidden = true;
+  bt = null;
+  if (p && p.battles) p.bi++;
+  save();
+  dirty = true;
+};
+$('btFast').onclick = () => {
+  if (!bt) return;
+  bt.fast = btFast = !btFast;
+  $('btFast').classList.toggle('on', bt.fast);
+};
+
 // ---------- Bảng phụ ----------
 function openSheet(html, bind) {
   $('sheetBody').innerHTML = html;
@@ -301,6 +429,64 @@ function openSheet(html, bind) {
   if (bind) bind();
 }
 $('sheetClose').onclick = () => { $('sheet').hidden = true; dirty = true; };
+
+const qCls = (q) => `q${q}`;
+function itemCard(it, btns) {
+  const wt = it.wt ? ` · ${WEAPON_TYPES[it.wt].n}` : '';
+  return `<div class="item"><div class="row"><b class="${qCls(it.q)}">${esc(it.n)}</b><span class="meta">${QUALITY[it.q].n} · ${SLOTS[it.slot]}${wt} · ${REALMS[it.lv].n}</span></div>
+    <div class="meta">${esc(itemLine(it))}</div>${btns ? `<div class="row btnRow">${btns}</div>` : ''}</div>`;
+}
+function shopGear() {
+  const P = g.P;
+  const st = g.shopStock();
+  const bought = P.shopBought || [];
+  const gear = st.gear.map((it) => itemCard(it, bought.includes(it.key)
+    ? '<span class="meta">Đã bán hết</span>'
+    : `<button class="btn ghost" data-bg="${it.key}" ${P.money < it.price ? 'disabled' : ''}>Mua · ${fmt(it.price)}</button>${g.betterThanEquipped(it) ? '<span class="tag pos">Tốt hơn đồ đang mang</span>' : ''}`)).join('');
+  const books = st.books.map((b) => {
+    const sk = SKILLS[b.id];
+    const has = P.skills.includes(b.id);
+    return `<div class="item"><div class="row"><b>Bí kíp: ${esc(sk.n)}</b><span class="meta">Linh lực ${sk.mp}</span></div><div class="meta">${esc(sk.desc)}</div>
+      <div class="row btnRow">${has ? '<span class="meta">Đã học</span>' : `<button class="btn ghost" data-bk="${b.id}" ${P.money < b.price ? 'disabled' : ''}>Mua · ${fmt(b.price)}</button>`}</div></div>`;
+  }).join('');
+  return `<h3>Pháp khí · đổi hàng mỗi 5 năm</h3><div class="list">${gear}</div><h3>Bí kíp võ kỹ</h3><div class="list">${books}</div>`;
+}
+
+function openBag() {
+  const draw = (msg = '') => {
+    const P = g.P;
+    const F = g.playerFighter();
+    const eq = Object.keys(SLOTS).map((sl) => {
+      const it = P.eq[sl];
+      return it ? itemCard(it, `<button class="btn ghost" data-un="${sl}">Tháo</button>`) : `<div class="item"><div class="row"><b class="meta">${SLOTS[sl]}: trống</b></div></div>`;
+    }).join('');
+    const bag = P.bag.slice().sort((a, b) => (a.slot > b.slot ? 1 : a.slot < b.slot ? -1 : b.val - a.val)).map((it) => itemCard(it,
+      `<button class="btn ghost" data-eq="${it.id}">Mang</button><button class="btn ghost" data-sell="${it.id}">Bán · ${fmt(it.val)}</button>${g.betterThanEquipped(it) ? '<span class="tag pos">Tốt hơn</span>' : ''}`)).join('');
+    const wep = P.eq.vu_khi ? P.eq.vu_khi.wt : null;
+    const sks = P.skills.map((id) => {
+      const sk = SKILLS[id];
+      const on = P.loadout.includes(id);
+      const fit = sk.wep && sk.wep !== wep ? `<span class="tag neg">Cần ${WEAPON_TYPES[sk.wep].n.toLowerCase()}, đang yếu 40%</span>` : '';
+      return `<div class="item"><div class="row"><b>${esc(sk.n)}</b><span class="meta">${sk.mp ? `Linh lực ${sk.mp}` : 'Không tốn linh lực'}</span></div><div class="meta">${esc(sk.desc)}</div>
+        <div class="row btnRow"><button class="btn ${on ? 'on' : 'ghost'}" data-sk="${id}">${on ? 'Đang mang theo' : 'Mang theo'}</button>${fit}</div></div>`;
+    }).join('');
+    openSheet(`<h2>Hành trang</h2>
+      <div class="cstats"><span>Công <b>${fmt(F.atk)}</b></span><span>Thủ <b>${fmt(F.def)}</b></span><span>Sinh lực <b>${fmt(F.maxHp)}</b></span><span>Bạo kích <b>${Math.round(F.crit * 100)}%</b></span><span>Né <b>${Math.round(F.dodge * 100)}%</b></span></div>
+      ${msg ? `<p class="intro">${esc(msg)}</p>` : ''}
+      <h3>Đang mang</h3><div class="list">${eq}</div>
+      <h3>Võ kỹ · mang theo ${P.loadout.length}/4</h3><div class="list">${sks}</div>
+      <h3>Chiến thuật</h3><div class="tactics">${Object.entries(TACTICS).map(([k, t]) => `<button class="btn ${P.tactic === k ? 'on' : ''}" data-tc="${k}">${t.n}<small>${t.desc}</small></button>`).join('')}</div>
+      <h3>Túi đồ · ${P.bag.length}/16</h3><div class="list">${bag || '<p class="empty">Túi trống. Đồ rơi từ yêu thú, hang động, bí cảnh, đối thủ, hoặc mua ở Tụ Bảo Lâu.</p>'}</div>`, () => {
+      const q = (sel, fn) => $('sheetBody').querySelectorAll(sel).forEach((b) => { b.onclick = () => { const m = fn(b); save(); draw(typeof m === 'string' ? m : ''); }; });
+      q('[data-un]', (b) => g.unequip(b.dataset.un));
+      q('[data-eq]', (b) => g.equip(+b.dataset.eq));
+      q('[data-sell]', (b) => `Bán được ${g.sell(+b.dataset.sell)} linh thạch.`);
+      q('[data-sk]', (b) => g.toggleSkill(b.dataset.sk));
+      q('[data-tc]', (b) => g.setTactic(b.dataset.tc));
+    });
+  };
+  draw();
+}
 
 function openShop() {
   const draw = () => {
@@ -312,8 +498,12 @@ function openShop() {
         return `<div class="item"><div class="row"><b>${p.n}</b><span class="meta">Có ${n}</span></div><div class="meta">${p.desc}</div>
           <div class="row" style="margin-top:6px;gap:8px"><button class="btn ghost" data-buy="${id}" ${P.money < price ? 'disabled' : ''}>Mua · ${fmt(price)}</button>
           ${id !== 'pha_canh' ? `<button class="btn ghost" data-use="${id}" ${n ? '' : 'disabled'}>Dùng</button>` : '<span class="meta">Dùng khi đột phá</span>'}</div></div>`;
-      }).join('')}</div><p class="intro" id="shopMsg"></p>`, () => {
+      }).join('')}</div>
+      ${shopGear()}
+      <p class="intro" id="shopMsg"></p>`, () => {
       $('sheetBody').querySelectorAll('[data-buy]').forEach((b) => { b.onclick = () => { g.buy(b.dataset.buy); save(); draw(); }; });
+      $('sheetBody').querySelectorAll('[data-bg]').forEach((b) => { b.onclick = () => { const m = g.buyGear(b.dataset.bg); save(); draw(); if (m) $('shopMsg').textContent = m; }; });
+      $('sheetBody').querySelectorAll('[data-bk]').forEach((b) => { b.onclick = () => { const m = g.buyBook(b.dataset.bk); save(); draw(); if (m) $('shopMsg').textContent = m; }; });
       $('sheetBody').querySelectorAll('[data-use]').forEach((b) => {
         b.onclick = () => { const m = g.usePill(b.dataset.use); save(); draw(); if (m) $('shopMsg').textContent = m; };
       });
@@ -372,6 +562,7 @@ $('actions').addEventListener('click', (e) => {
   if (!b || b.disabled) return;
   if (b.dataset.act) { g.setAction(b.dataset.act); save(); }
   else if (b.dataset.do === 'shop') openShop();
+  else if (b.dataset.do === 'bag') openBag();
   else if (b.dataset.do === 'close') openClose();
   else if (b.dataset.do === 'openDoor') { g.P.closed = 0; g.log('Ngươi xuất quan sớm.', 'muted'); }
   dirty = true;

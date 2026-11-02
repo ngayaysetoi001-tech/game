@@ -4,6 +4,7 @@
 //  when(g), bot(g) chọn bot liên quan, prep(g, bot) chuẩn bị dữ liệu,
 //  text(g, ctx), choices(g, ctx) -> [{ t, if, go(g, ctx) -> chuỗi kết quả }]
 import { REALMS, TOP_REALM, TAG_NAMES } from './data.js';
+import { makeItem } from './items.js';
 
 const RN = (r) => REALMS[r].n;
 const near = (g, b, d = 1) => Math.abs(b.realm - g.P.realm) <= d;
@@ -175,7 +176,8 @@ export const EVENTS = [
             const t = g.addTuvi(g.gain() * 6);
             const m = g.r.int(10, 40) * (1 + g.P.realm);
             g.money(m);
-            return `Cuối hang là một bộ hài cốt ngồi kiết già, trước mặt đặt một túi trữ vật. Ngươi vái ba vái rồi nhận lấy.\n\nTu vi +${t}, linh thạch +${m}.`;
+            const loot = g.r.chance(0.6) ? '\n' + g.gainItem(makeItem(g.r, g.s.nextItem++, g.P.realm), 'Trong túi còn có') : '';
+            return `Cuối hang là một bộ hài cốt ngồi kiết già, trước mặt đặt một túi trữ vật. Ngươi vái ba vái rồi nhận lấy.\n\nTu vi +${t}, linh thạch +${m}.${loot}`;
           }
           g.hurt(g.r.int(15, 30), 'chết trong hang động sau thác nước');
           return 'Cơ quan dưới chân bật lên, tên độc bắn ra như mưa. Ngươi lết được ra ngoài, máu me đầy người.';
@@ -188,13 +190,13 @@ export const EVENTS = [
   {
     id: 'yeu_thu', w: 5, cd: 3, acts: ['lich_luyen'], title: 'Yêu thú chặn đường',
     when: (g) => g.P.age >= 10,
-    prep: (g) => ({ m: g.monster(g.P.realm + g.r.pick([-1, 0, 0, 1])) }),
+    prep: (g) => ({ m: g.monster(g.P.realm + (g.P.realm === 0 ? 0 : g.r.pick([-1, 0, 0, 1]))) }),
     text: (g, { data }) => `Một con ${data.m.n} chặn ngang đường mòn, mắt đỏ ngầu, nước dãi nhỏ xuống đất.\n\n${g.hint(data.m.pow)}`,
     choices: (g, { data }) => [
       {
         t: 'Nghênh chiến', go: (g) => {
           const m = data.m;
-          const f = g.fight(m.n, m.pow);
+          const f = g.fightMonster(m);
           if (f.win) {
             const t = g.addTuvi(g.gain() * 2);
             const mo = g.r.int(8, 25) * (1 + g.P.realm);
@@ -246,7 +248,8 @@ export const EVENTS = [
         t: 'Quỳ xuống nhận truyền thừa', go: (g) => {
           if (g.r.chance(0.6 + (g.P.stats.ngo - 50) / 200)) {
             const t = g.addTuvi(g.gain() * 15); g.stat('ngo', 5);
-            return `Ký ức của một kiếm tu cổ xưa tràn vào đầu ngươi: những trận chiến, những năm tháng cô độc, một cái tên đã bị thế gian quên lãng.\n\nTu vi +${t}, ngộ tính +5.`;
+            const sk = g.learnRandom(2, g.P.realm >= 4 ? 3 : 2);
+            return `Ký ức của một kiếm tu cổ xưa tràn vào đầu ngươi: những trận chiến, những năm tháng cô độc, một cái tên đã bị thế gian quên lãng.\n\nTu vi +${t}, ngộ tính +5. ${sk}`;
           }
           g.hurt(40, 'không chịu nổi truyền thừa, thần hồn vỡ nát');
           return 'Thần thức của cổ nhân quá mạnh, đầu ngươi như muốn nổ tung.';
@@ -307,6 +310,12 @@ export const EVENTS = [
       return [
         { t: `Ngộ Đạo Trà: ngộ tính +8 (${p})`, if: g.P.money >= p, go: (g) => { g.money(-p); g.stat('ngo', 8); return 'Một ngụm trà, trước mắt như có ngàn con chữ xoay tròn. Ngộ tính +8.'; } },
         { t: `Cốt Linh Quả: căn cốt +8 (${p})`, if: g.P.money >= p, go: (g) => { g.money(-p); g.stat('can', 8); return 'Ăn xong, xương cốt kêu răng rắc. Căn cốt +8. Thọ nguyên cũng dài thêm.'; } },
+        {
+          t: `Một món pháp khí Thượng phẩm (${p * 2})`, if: g.P.money >= p * 2, go: (g) => {
+            g.money(-p * 2);
+            return 'Ngươi giơ bảng giá cuối cùng. ' + g.gainItem(makeItem(g.r, g.s.nextItem++, g.P.realm, g.r.chance(0.2) ? 3 : 2), 'Thắng đấu giá');
+          },
+        },
         { t: 'Chỉ đứng xem', go: () => 'Giá cứ thế vọt lên. Ngươi lặng lẽ ra về.' },
       ];
     },
@@ -322,7 +331,7 @@ export const EVENTS = [
     choices: (g, { bot: b, data }) => [
       {
         t: 'Lao vào cứu', go: (g) => {
-          const f = g.fight(data.m.n, data.m.pow * 0.8);
+          const f = g.fightMonster(data.m, 0.8);
           if (f.win) { g.relAdd(b, 35); g.tinh(5); g.fame(2); return `${f.text}\n\nHai người cùng hạ con thú. ${b.name} chắp tay: "Ơn cứu mạng, ngày sau nhất định báo đáp."`; }
           g.relAdd(b, 20);
           g.hurt(25, `chết khi cứu ${b.name}`);
@@ -444,7 +453,7 @@ export const EVENTS = [
       { t: 'Rủ người đó cùng đi', go: (g) => { const t = g.addTuvi(g.gain() * 6); g.relAdd(b, 15); return `Hai người thay nhau canh gác, đi được tới tầng thứ ba. Tu vi +${t}, ${b.name} thân thiết hơn.`; } },
       {
         t: 'Đi một mình', go: (g) => {
-          if (g.r.chance(0.4 + (g.P.stats.co - 50) / 150)) { const t = g.addTuvi(g.gain() * 10); return `Ngươi tìm được một hồ linh dịch ở tầng sâu nhất. Tu vi +${t}.`; }
+          if (g.r.chance(0.4 + (g.P.stats.co - 50) / 150)) { const t = g.addTuvi(g.gain() * 10); const it = g.gainItem(makeItem(g.r, g.s.nextItem++, g.P.realm, g.r.chance(0.3) ? 2 : 1), 'Bên hồ còn có'); return `Ngươi tìm được một hồ linh dịch ở tầng sâu nhất. Tu vi +${t}.\n${it}`; }
           g.hurt(30, 'lạc trong bí cảnh, không bao giờ ra được');
           return 'Ngươi lạc vào mê trận, mãi mới tìm được lối ra, người đầy thương tích.';
         },
@@ -489,7 +498,8 @@ export const EVENTS = [
         t: 'Xin được chỉ điểm', go: (g) => {
           if (b.pers === 'cuong' && g.r.chance(0.5)) { g.hurt(10); return 'Người đó búng tay một cái, ngươi bay xa ba trượng: "Không có duyên."'; }
           g.stat('ngo', 4); const t = g.addTuvi(g.gain() * 2); g.relAdd(b, 10);
-          return `${b.name} nói vài câu, chỉ vài câu thôi, mà bao năm vướng mắc của ngươi bỗng thông suốt. Ngộ tính +4, tu vi +${t}.`;
+          const sk = g.r.chance(0.4) ? ' ' + g.learnRandom(1, 2) : '';
+          return `${b.name} nói vài câu, chỉ vài câu thôi, mà bao năm vướng mắc của ngươi bỗng thông suốt. Ngộ tính +4, tu vi +${t}.${sk}`;
         },
       },
       { t: 'Ngồi câu cùng, không nói gì', go: (g) => { g.stat('tam', 3); g.relAdd(b, b.pers === 'an' ? 20 : 10); return 'Hai người ngồi tới tối, chẳng ai câu được con nào. Tâm tính +3.'; } },
@@ -515,7 +525,7 @@ export const EVENTS = [
     choices: (g, { bot: b, data }) => [
       {
         t: 'Lập tức lên đường', go: (g) => {
-          const f = g.fight(data.m.n, data.m.pow);
+          const f = g.fightMonster(data.m);
           if (f.win) { g.relAdd(b, 20); g.fame(3); return `${f.text}\n\nNgươi cứu được đệ tử. Nó ôm chân ngươi khóc như mưa.`; }
           if (g.r.chance(0.5)) g.botDie(b, `chết dưới tay ${data.m.n} ở Hắc Phong Lĩnh`);
           g.hurt(30, `chết khi cứu đệ tử ${b.name}`);

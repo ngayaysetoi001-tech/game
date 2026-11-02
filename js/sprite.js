@@ -53,7 +53,6 @@ export function buildSprite(o) {
   const stylesM = child ? ['ngan', 'chom'] : ['bui', 'bui', 'dai', 'ngan'];
   const stylesF = child ? ['song', 'chom'] : ['dai', 'song', 'duoi', 'buinu'];
   const style = r.pick(female ? stylesF : stylesM);
-  const hasSword = o.realm >= 1 && !child && r.chance(0.6);
   const bigEyes = female || child;
 
   // ---------- lớp sau: tóc dài, đuôi tóc, kiếm ----------
@@ -64,11 +63,6 @@ export function buildSprite(o) {
   if (style === 'duoi') {
     rect(21, 6, 25, 9, hair);
     for (let y = 9; y <= 27; y++) rect(23 + (y > 18 ? 1 : 0), y, 25 + (y > 18 ? 1 : 0), y, y % 3 === 0 ? hairL : hair);
-  }
-  if (hasSword) {
-    for (let i = 0; i < 12; i++) set(20 + i * 0.5 | 0, 22 - i, i < 3 ? '#8a6a2e' : i === 3 ? '#e2c46a' : '#d6dde6');
-    for (let i = 4; i < 12; i++) set(21 + i * 0.5 | 0, 22 - i, '#a9b3c0');
-    rect(20, 19, 23, 19, '#e2c46a');
   }
 
   // ---------- thân ----------
@@ -116,6 +110,31 @@ export function buildSprite(o) {
   rect(17, hemY + 1, 19, hemY + 2, '#3b2b2c');
   // cổ
   rect(15, 20, 16, 20, skinS);
+
+  // ---------- binh khí cầm tay phải ----------
+  const hy = armBot + 1; // ngang bàn tay
+  const steel = '#dbe2ea', steelD = '#9aa5b2', gold = '#e2c46a', wood = '#7a5230';
+  if (o.wep === 'kiem') {
+    rect(26, hy - 12, 26, hy - 1, steel);
+    rect(27, hy - 11, 27, hy - 1, steelD);
+    set(26, hy - 13, '#f4f7fa');
+    rect(25, hy, 28, hy, gold);
+    rect(26, hy + 1, 26, hy + 2, wood);
+  } else if (o.wep === 'dao') {
+    rect(26, hy - 10, 26, hy - 1, steelD);
+    rect(27, hy - 10, 28, hy - 1, steel);
+    set(28, hy - 11, steel); set(27, hy - 11, steel);
+    rect(25, hy, 28, hy, '#8a6a2e');
+    rect(26, hy + 1, 26, hy + 3, wood);
+  } else if (o.wep === 'thuong') {
+    rect(26, 4, 26, hemY + 1, wood);
+    rect(26, 0, 26, 2, steel); set(25, 2, steelD); set(27, 2, steelD);
+    set(25, 3, '#c0392b'); set(27, 3, '#c0392b'); set(26, 3, '#c0392b'); set(26, 5, '#c0392b');
+  } else if (o.wep === 'quat') {
+    for (let k = 0; k <= 5; k++) for (let dx = -k; dx <= k; dx++) set(26 + dx, hy - 1 - k, (dx + k) % 2 ? '#c9a24a' : '#f3e6c4');
+    rect(21, hy - 6, 31, hy - 6, '#b0413e');
+    set(26, hy, wood);
+  }
 
   // ---------- đầu ----------
   for (let y = 7; y <= 19; y++) {
@@ -202,22 +221,80 @@ export function buildSprite(o) {
     rect(15, 25, 16, 26, '#d4d0c8');
   }
 
-  // ---------- viền ngoài ----------
-  const filled = px.slice();
-  for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) {
-    if (filled[y * SW + x]) continue;
-    const n = (xx, yy) => xx >= 0 && xx < SW && yy >= 0 && yy < SH && filled[yy * SW + xx];
-    if (n(x - 1, y) || n(x + 1, y) || n(x, y - 1) || n(x, y + 1)) px[y * SW + x] = OUT;
-  }
+  outline(px);
 
   let aura = o.asc ? '#fff2c4' : AURA[Math.min(o.realm || 0, AURA.length - 1)];
   if (o.dead && !o.asc) aura = null;
   return { px, aura, realm: o.realm || 0, seed: o.seed };
 }
 
-/** Vẽ lên canvas kích thước SW x SH */
+/** Tự viền đen quanh dáng */
+function outline(px) {
+  const filled = px.slice();
+  for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) {
+    if (filled[y * SW + x]) continue;
+    const n = (xx, yy) => xx >= 0 && xx < SW && yy >= 0 && yy < SH && filled[yy * SW + xx];
+    if (n(x - 1, y) || n(x + 1, y) || n(x, y - 1) || n(x, y + 1)) px[y * SW + x] = OUT;
+  }
+}
+
+const BEAST_COL = ['#7a6a58', '#5b6b4a', '#8a4b3a', '#4a5a7a', '#6a4a6a', '#9a8a4a', '#4a4446', '#a89880', '#3f6b6b', '#8a6a3a'];
+/** Yêu thú: dáng bốn chân, rắn hoặc chim tùy tên. o: { seed, realm, name } */
+export function buildBeast(o) {
+  const r = new Rng((o.seed >>> 0) || 1);
+  const px = new Array(SW * SH).fill(null);
+  const set = (x, y, c) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && x < SW && y >= 0 && y < SH) px[y * SW + x] = c; };
+  const ell = (cx, cy, rx, ry, c, cD) => {
+    for (let y = Math.floor(cy - ry); y <= cy + ry; y++) for (let x = Math.floor(cx - rx); x <= cx + rx; x++) {
+      if (((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1) set(x, y, cD && y > cy + ry * 0.35 ? cD : y < cy - ry * 0.5 ? dark(c, 0.15) : c);
+    }
+  };
+  const col = BEAST_COL[r.int(0, BEAST_COL.length - 1)];
+  const belly = lite(col, 0.35);
+  const name = o.name || '';
+  const eye = (o.realm || 0) >= 3 ? '#ff4b3a' : '#f2d04a';
+  const kind = /Xà|Giao|Long|Trùng/.test(name) ? 'snake' : /Ưng|Bằng|Bức|Nha/.test(name) ? 'bird' : 'quad';
+  if (kind === 'snake') {
+    for (let i = 0; i <= 40; i++) {
+      const t = i / 40;
+      const x = 4 + t * 24;
+      const y = 26 + Math.sin(t * Math.PI * 2.2) * 5 + t * 4;
+      ell(x, y, 2.6 - t * 1.2, 2.6 - t * 1.2, col, belly);
+    }
+    ell(5, 19, 4, 3.2, col);
+    for (let y = 21; y <= 25; y++) set(5, y, col);
+    set(3, 18, eye); set(1, 20, '#c0392b'); set(0, 21, '#c0392b');
+    if (/Long|Giao/.test(name)) { set(4, 14, '#e8dcc0'); set(4, 15, '#e8dcc0'); set(7, 14, '#e8dcc0'); set(7, 15, '#e8dcc0'); }
+  } else if (kind === 'bird') {
+    ell(17, 25, 7, 5, col, belly);
+    ell(9, 19, 3.5, 3.2, col);
+    set(5, 19, '#e2a33a'); set(4, 20, '#e2a33a'); set(5, 20, '#c78a2a');
+    set(8, 18, eye);
+    for (let k = 0; k < 9; k++) for (let j = 0; j <= k; j++) set(15 + k, 22 - j - Math.floor(k / 2), k % 3 === 0 ? dark(col, 0.3) : col);
+    for (let i = 0; i < 5; i++) { set(25 + i, 26 + (i % 2), dark(col, 0.2)); }
+    for (let y = 30; y <= 34; y++) { set(14, y, '#c78a2a'); set(19, y, '#c78a2a'); }
+    set(13, 35, '#c78a2a'); set(15, 35, '#c78a2a'); set(18, 35, '#c78a2a'); set(20, 35, '#c78a2a');
+  } else {
+    ell(18, 28, 10, 5.5, col, belly);
+    ell(8, 23, 5, 4, col);
+    for (let y = 24; y <= 25; y++) for (let x = 2; x <= 4; x++) set(x, y, dark(col, 0.1));
+    set(2, 24, '#2a1d1d');
+    for (let y = 17; y <= 19; y++) { set(6, y, dark(col, 0.2)); set(10, y, dark(col, 0.2)); }
+    set(7, 19, col); set(9, 19, col);
+    if ((o.realm || 0) >= 3) { for (let y = 14; y <= 17; y++) { set(5, y, '#e8dcc0'); set(11, y, '#e8dcc0'); } }
+    set(6, 22, eye);
+    set(4, 26, '#f4f4f4');
+    for (const x of [10, 14, 21, 25]) for (let y = 32; y <= 37; y++) { set(x, y, dark(col, 0.15)); set(x + 1, y, dark(col, 0.25)); }
+    for (let i = 0; i < 8; i++) set(28 + Math.min(2, i / 3), 27 - i, i > 5 ? belly : col);
+  }
+  outline(px);
+  const aura = (o.realm || 0) >= 2 ? '#e0644f' : null;
+  return { px, aura, realm: o.realm || 0, seed: o.seed, beast: true };
+}
+
+/** Vẽ lên canvas kích thước SW x SH. o.type = 'beast' vẽ yêu thú. */
 export function drawSprite(canvas, o) {
-  const s = buildSprite(o);
+  const s = o.type === 'beast' ? buildBeast(o) : buildSprite(o);
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, SW, SH);
   if (s.aura) {
@@ -238,7 +315,7 @@ export function drawSprite(canvas, o) {
       }
     }
     // vòng hào quang sau đầu từ Nguyên Anh
-    if (s.realm >= 4) {
+    if (s.realm >= 4 && !s.beast) {
       ctx.globalAlpha = 0.85;
       for (let a = 0; a < 64; a++) {
         const t = (a / 64) * Math.PI * 2;
@@ -277,7 +354,7 @@ const cache = new Map();
 /** Ảnh nhỏ cho danh sách, có bộ nhớ đệm */
 export function spriteURL(o) {
   const ageBand = o.age < 12 ? 'c' : o.age >= 50 && o.age > (o.life || 80) * 0.7 ? 'e' : o.age >= 40 && o.age > (o.life || 80) * 0.5 ? 'm' : 'a';
-  const key = [o.seed, o.g, ageBand, o.realm, o.robe, o.dead ? 1 : 0, o.asc ? 1 : 0].join('|');
+  const key = [o.type || 'h', o.seed, o.g, ageBand, o.realm, o.robe, o.wep || '', o.dead ? 1 : 0, o.asc ? 1 : 0].join('|');
   let url = cache.get(key);
   if (!url) {
     const c = document.createElement('canvas');
