@@ -116,6 +116,8 @@ Ký ức đạo pháp, Thân thể kiếp trước, Dư âm cơ duyên, Tàn h�
 
 **Phẩm danh hiệu và hiệu ứng** (`TITLE_TIER` trong `js/data.js`): Thường (khung đơn), Hiếm (khung xanh), Truyền kỳ (chữ vàng ánh kim chạy ngang), Thần thoại (chữ ánh cầu vồng, khung tỏa sáng, tia lấp lánh hai bên). Danh hiệu có ô riêng (nút 🏅 Danh hiệu, hoặc chạm danh hiệu trên tên): đang đeo, đã đạt, chưa đạt kèm điều kiện. Đạt danh hiệu mới thì có thông báo trượt xuống từ trên màn hình. Hiệu ứng tắt khi máy bật giảm chuyển động.
 
+**Thang màu độ hiếm dùng chung** (biến `--r0`…`--r4` trong `style.css`): Thường xám, Khá lam, Hiếm tím, Truyền thuyết/Truyền kỳ vàng, Thần thoại đỏ rực (viền lửa chập chờn, chữ ánh đỏ-cam-vàng). Áp cho thể chất, thiên phú, Sổ thể chất, thể chất của bot, danh hiệu, Danh hiệu lục. Phẩm trang bị theo cùng thang: Hạ phẩm xám, Trung phẩm lam, Thượng phẩm tím, Cực phẩm vàng.
+
 ## 6d. Tốc độ cao và tự quyết
 
 - Nút **Tự quyết** (bật sẵn, lưu theo bản lưu): từ 8× trở lên, kỳ ngộ nhỏ tự chọn phương án mặc định (`auto` trong từng sự kiện ở `js/events.js`, ví dụ yêu thú thì đánh nếu đủ sức, không thì chạy) và ghi vào nhật ký với tiền tố "(Tự quyết)", bỏ qua phần diễn trận.

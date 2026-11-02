@@ -262,7 +262,7 @@ function titleCodex() {
   const seen = new Set(g.s.seenTitles || []);
   const got = TITLES.filter((t) => seen.has(t.id)).length;
   return `<h3>Danh hiệu lục · ${got}/${TITLES.length}</h3><div class="codex">${TITLES.map((t) => seen.has(t.id)
-    ? `<span class="cx t2" title="${esc(t.cond)}">${esc(t.n)}</span>`
+    ? `<span class="cx t${t.tier === 1 ? 0 : t.tier}" title="${esc(t.cond)}">${esc(t.n)}</span>`
     : `<span class="cx locked" title="${esc(t.cond)}">??? · ${esc(t.cond)}</span>`).join('')}</div>`;
 }
 

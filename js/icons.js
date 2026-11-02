@@ -7,9 +7,9 @@ const idark = (c, t) => mix(c, '#1a1020', t);
 const ilite = (c, t) => mix(c, '#fff6e2', t);
 
 // màu theo phẩm: lưỡi, khảm, vầng sáng
-const I_STEEL = ['#8f969c', '#c3ccd5', '#b8d3f5', '#ffe39a'];
+const I_STEEL = ['#8f969c', '#c3ccd5', '#d4c4f5', '#ffe39a'];
 const I_GUARD = ['#8a6a3a', '#b08d3a', '#c9ced8', '#f0c64a'];
-const I_GLOW = [null, null, '#7fb2ff', '#ffcf3d'];
+const I_GLOW = [null, null, '#b48cff', '#ffcf3d'];
 const I_CLOTH = ['#6d7f9a', '#8a4f4a', '#5f7d5a', '#7d6a9a', '#9a7a4a', '#4f7f86', '#86566f'];
 
 /** Màu áo của một món y phục, cố định theo món */
@@ -62,7 +62,7 @@ export function buildIcon(o) {
     set(4, 11, idark(guard, 0.2));
     line(1, 14, 3, 12, wood);
     set(0, 15, guard);
-    if (q >= 2) set(4, 11, q >= 3 ? '#e2413a' : '#5fa8ff');
+    if (q >= 2) set(4, 11, q >= 3 ? '#e2413a' : '#a77bff');
   } else if (k === 'dao') {
     for (let t = 0; t < 3; t++) line(4 + t, 11 + t * 0.4, 12 + t * 0.6, 2 + t, t === 0 ? steelD : t === 1 ? steel : steelL);
     set(13, 1, steel); set(14, 2, steelL); set(14, 3, steelL);
@@ -76,10 +76,10 @@ export function buildIcon(o) {
     set(12, 3, steel); set(13, 4, steel); set(13, 2, steelL); set(14, 3, steelD);
     set(10, 5, '#c0392b'); set(11, 6, '#c0392b'); set(9, 6, '#a5302a'); set(10, 7, '#a5302a'); set(9, 8, '#c0392b');
   } else if (k === 'quat') {
-    const paper = q >= 3 ? '#fbe7a6' : q >= 2 ? '#e4eefb' : '#f3e6c4';
+    const paper = q >= 3 ? '#fbe7a6' : q >= 2 ? '#eee4fb' : '#f3e6c4';
     for (let a = 0; a <= 24; a++) {
       const ang = Math.PI * (1.08 + (a / 24) * 0.84);
-      const c = a % 4 === 0 ? (q >= 2 ? '#7f97c9' : '#b89a5a') : a % 2 ? paper : ilite(paper, 0.2);
+      const c = a % 4 === 0 ? (q >= 2 ? '#9a7fd0' : '#b89a5a') : a % 2 ? paper : ilite(paper, 0.2);
       for (let r = 2; r <= 7.5; r += 0.5) set(8 + Math.cos(ang) * r, 13 + Math.sin(ang) * r, c);
     }
     for (let a = 0; a <= 40; a++) { const ang = Math.PI * (1.08 + (a / 40) * 0.84); set(8 + Math.cos(ang) * 7.6, 13 + Math.sin(ang) * 7.6, q >= 3 ? '#e2413a' : '#b0413e'); }
@@ -93,7 +93,7 @@ export function buildIcon(o) {
     rect(3, 14, 12, 14, trim);
     if (k === 'phap_y') { ell(8, 11, 2.2, 2.2, (x, y, d) => (d > 0.45 ? trim : col)); set(8, 11, trim); }
   } else if (k === 'chien_giap') {
-    const m = q >= 3 ? '#d8b44a' : q >= 2 ? '#b8c6d8' : '#8f969c';
+    const m = q >= 3 ? '#d8b44a' : q >= 2 ? '#c4b4e0' : '#8f969c';
     rect(4, 3, 11, 12, m);
     for (let y = 5; y <= 11; y += 2) rect(4, y, 11, y, idark(m, 0.3));
     rect(4, 3, 4, 12, ilite(m, 0.3));
@@ -106,14 +106,14 @@ export function buildIcon(o) {
     ell(7.5, 8, 3.2, 3.2, (x, y, d) => (d > 0.6 ? guard : d < 0.15 ? steelL : steel));
     set(6, 7, '#ffffff');
   } else if (k === 'ngoc_boi') {
-    const jade = q >= 3 ? '#f3d35a' : q >= 2 ? '#9fd8ff' : '#6fbf8f';
+    const jade = q >= 3 ? '#f3d35a' : q >= 2 ? '#c9a8ff' : '#6fbf8f';
     line(8, 0, 8, 3, '#c0392b');
     ell(8, 8, 5, 5, (x, y, d) => (d < 0.12 ? null : d > 0.75 ? idark(jade, 0.2) : x + y < 14 ? ilite(jade, 0.35) : jade));
     line(8, 13, 8, 15, '#c0392b'); set(7, 15, '#c0392b'); set(9, 15, '#c0392b');
   } else if (k === 'gioi_chi') {
     const band = q >= 2 ? '#d9e2f0' : '#d0a040';
     ell(8, 10, 5, 4, (x, y, d) => (d > 0.5 ? (y < 10 ? ilite(band, 0.3) : band) : null));
-    const gem = q >= 3 ? '#e2413a' : q >= 2 ? '#5fa8ff' : q >= 1 ? '#5fbf7f' : '#a08060';
+    const gem = q >= 3 ? '#e2413a' : q >= 2 ? '#a77bff' : q >= 1 ? '#5fbf7f' : '#a08060';
     ell(8, 5, 2.5, 2.2, (x, y, d) => (d < 0.3 ? ilite(gem, 0.5) : gem));
   } else if (k === 'ho_phu') {
     const paper = q >= 3 ? '#ffe48a' : '#f1d77a';
@@ -121,7 +121,7 @@ export function buildIcon(o) {
     line(8, 3, 8, 12, '#b0302a'); line(6, 5, 10, 5, '#b0302a'); line(6, 8, 10, 10, '#b0302a'); line(10, 8, 6, 10, '#b0302a');
     set(11, 2, idark(paper, 0.2));
   } else if (k === 'linh_chau') {
-    const orb = q >= 3 ? '#ffcf3d' : q >= 2 ? '#8fb8ff' : q >= 1 ? '#a77bd8' : '#7fa0b0';
+    const orb = q >= 3 ? '#ffcf3d' : q >= 2 ? '#b48cff' : q >= 1 ? '#a77bd8' : '#7fa0b0';
     ell(8, 7, 5.2, 5.2, (x, y, d) => (d < 0.08 ? '#ffffff' : x + y < 12 ? ilite(orb, 0.35) : d > 0.7 ? idark(orb, 0.25) : orb));
     set(6, 5, '#ffffff');
     rect(5, 12, 10, 13, guard); rect(4, 14, 11, 14, idark(guard, 0.3));

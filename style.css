@@ -370,3 +370,66 @@ h3 { font-size: 15px; margin: 14px 0 6px; color: var(--muted); font-weight: 600;
 }
 .sheetX:hover, .sheetX:focus-visible { border-color: var(--accent); color: var(--accent); }
 .sheet h2 { padding-right: 44px; }
+
+/* ========== Thang màu độ hiếm dùng chung ==========
+   Thường xám · Khá lam · Hiếm tím · Truyền thuyết vàng · Thần thoại đỏ rực */
+:root { --r0: #8a7f72; --r1: #3f6fb5; --r2: #7b4fc4; --r3: #b8860b; --r4: #c8202a; --r4b: #ff7a1a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) { --r0: #a49786; --r1: #6f9be0; --r2: #b18cf0; --r3: #e0b33c; --r4: #ff4d45; --r4b: #ff9a3c; } }
+:root[data-theme='dark'] { --r0: #a49786; --r1: #6f9be0; --r2: #b18cf0; --r3: #e0b33c; --r4: #ff4d45; --r4b: #ff9a3c; }
+
+/* thẻ thể chất / thiên phú */
+.trait.t0 { border-left-color: var(--r0); }
+.trait.t1 { border-left-color: var(--r1); }
+.trait.t2 { border-left-color: var(--r2); background: color-mix(in srgb, var(--r2) 8%, var(--bg)); }
+.trait.t3 { border-left-color: var(--r3); background: color-mix(in srgb, var(--r3) 10%, var(--bg)); border-image: none; }
+.trait.t4 { border: 2px solid var(--r4); border-left-width: 5px; border-image: none; background: color-mix(in srgb, var(--r4) 10%, var(--bg)); animation: blaze 1.6s ease-in-out infinite; }
+.trait.t1 b { color: var(--r1); }
+.trait.t2 b { color: var(--r2); }
+.trait.t3 b { color: var(--r3); }
+.trait.t4 b { background: linear-gradient(90deg, var(--r4), var(--r4b), #ffd54a, var(--r4b), var(--r4)); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 2.2s linear infinite; }
+
+/* Sổ thể chất */
+.cx.t1 { border-color: var(--r1); color: var(--r1); }
+.cx.t2 { border-color: var(--r2); color: var(--r2); }
+.cx.t3 { border-color: var(--r3); color: var(--r3); font-weight: 600; }
+.cx.t4 { border: 2px solid var(--r4); color: var(--r4); font-weight: 800; background: color-mix(in srgb, var(--r4) 10%, var(--panel)); animation: blaze 1.6s ease-in-out infinite; }
+.cx.locked { color: var(--muted); font-weight: 400; animation: none; background: var(--panel); }
+.cx.locked.t1 { border-color: color-mix(in srgb, var(--r1) 60%, var(--line)); }
+.cx.locked.t2 { border-color: color-mix(in srgb, var(--r2) 60%, var(--line)); }
+.cx.locked.t3 { border-color: color-mix(in srgb, var(--r3) 60%, var(--line)); }
+.cx.locked.t4 { border-color: var(--r4); border-width: 1px; }
+
+/* thể chất của bot trong Quan hệ */
+.t1c { color: var(--r1); }
+.t2c { color: var(--r2); }
+.t3c { color: var(--r3); font-weight: 700; }
+.t4c { color: var(--r4); font-weight: 800; }
+
+/* phẩm trang bị: Hạ xám, Trung lam, Thượng tím, Cực vàng */
+.q0 { color: var(--ink); }
+.q1 { color: var(--r1); }
+.q2 { color: var(--r2); }
+.q3 { color: var(--r3); }
+.ico.q1 { border-color: var(--r1); }
+.ico.q2 { border-color: var(--r2); box-shadow: 0 0 0 1px color-mix(in srgb, var(--r2) 40%, transparent); }
+.ico.q3 { border-color: var(--r3); box-shadow: 0 0 0 1px var(--r3); }
+
+/* danh hiệu: Thường xám, Hiếm tím, Truyền kỳ vàng, Thần thoại đỏ rực */
+:root { --t1: var(--r0); --t2: var(--r2); --t3: var(--r3); --t4: var(--r4); }
+.ttl.t4 { color: var(--r4); background: color-mix(in srgb, var(--r4) 12%, var(--panel)); animation: blaze 1.6s ease-in-out infinite; }
+.ttl.t4 span, .tcard.t4 .tname span { background: linear-gradient(90deg, var(--r4), var(--r4b), #ffd54a, var(--r4b), var(--r4)); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 2.2s linear infinite; }
+.ttl.t4::before, .ttl.t4::after { color: var(--r4b); }
+.tcard.t4 { border: 2px solid var(--r4); background: color-mix(in srgb, var(--r4) 8%, var(--panel)); }
+.tcard.t4.on, .tcard.t4:not(.lock) { animation: blaze 1.6s ease-in-out infinite; }
+.toast.t2 { border-color: var(--r2); }
+.toast.t3 { border-color: var(--r3); }
+.toast.t4 { border-color: var(--r4); animation: blaze 1s ease-in-out infinite; }
+
+/* viền lửa cho Thần thoại */
+@keyframes blaze {
+  0%, 100% { box-shadow: 0 0 6px 1px color-mix(in srgb, var(--r4) 55%, transparent), inset 0 0 6px color-mix(in srgb, var(--r4b) 25%, transparent); }
+  50% { box-shadow: 0 0 14px 4px color-mix(in srgb, var(--r4b) 60%, transparent), inset 0 0 10px color-mix(in srgb, var(--r4) 35%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .trait.t4, .trait.t4 b, .cx.t4, .ttl.t4, .tcard.t4, .toast.t4 { animation: none !important; }
+}
