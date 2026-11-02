@@ -5,6 +5,7 @@
 //  text(g, ctx), choices(g, ctx) -> [{ t, if, go(g, ctx) -> chuỗi kết quả }]
 import { REALMS, TOP_REALM, TAG_NAMES } from './data.js';
 import { makeItem } from './items.js';
+import { EVENTS2 } from './events2.js';
 
 const RN = (r) => REALMS[r].n;
 const near = (g, b, d = 1) => Math.abs(b.realm - g.P.realm) <= d;
@@ -12,7 +13,7 @@ const relOf = (g, b) => g.s.rel[b.id];
 const metOf = (g, b) => !!(relOf(g, b) && relOf(g, b).met);
 const pastLabel = (p) => (p.tag ? TAG_NAMES[p.tag].toLowerCase() : p.v >= 40 ? 'tri kỷ' : p.v > 0 ? 'bằng hữu' : 'kẻ thù');
 
-export const EVENTS = [
+const BASE_EVENTS = [
   // ===== Đột phá (vào qua hàng đợi hoặc nút Đột phá) =====
   {
     id: 'dot_pha', queued: true, title: 'Bình cảnh',
@@ -41,7 +42,7 @@ export const EVENTS = [
     id: 'lac_rung', auto: () => 0, once: true, w: 40, title: 'Đom đóm xanh',
     when: (g) => g.P.age >= 3 && g.P.age <= 6,
     text: () => 'Ngươi đuổi theo một con đom đóm xanh vào khu rừng sau làng. Khi ngoảnh lại, con đường về đã biến mất.',
-    choices: () => [
+    choices: (g) => [
       { t: 'Ngồi yên chờ người lớn đi tìm', go: (g) => { g.stat('tam', 4); return 'Trời tối hẳn thì có tiếng gọi tên ngươi. Ngươi không khóc, chỉ ngồi đó. Tâm tính +4.'; } },
       {
         t: 'Theo con đom đóm đi tiếp', go: (g) => {
@@ -56,7 +57,7 @@ export const EVENTS = [
     id: 'sot_cao', auto: () => 0, once: true, w: 4, title: 'Cơn sốt bảy ngày',
     when: (g) => g.P.age >= 2 && g.P.age <= 9,
     text: () => 'Ngươi lên cơn sốt bảy ngày bảy đêm, người nóng như hòn than. Thầy lang trong làng lắc đầu.',
-    choices: () => [
+    choices: (g) => [
       {
         t: 'Mẹ thức trắng đêm chăm sóc', go: (g) => {
           if (g.r.chance(0.6)) { g.stat('tam', 5); return 'Sáng ngày thứ tám ngươi hạ sốt. Ngươi nhớ mãi bàn tay mát lạnh trên trán mình. Tâm tính +5.'; }
@@ -94,9 +95,9 @@ export const EVENTS = [
     id: 'lao_gia_gieng', auto: () => 0, w: 6, cd: 3, title: 'Ông lão bên giếng',
     when: (g) => !g.P.dao && g.P.age >= 6 && g.P.age <= 15,
     text: () => 'Một ông lão rách rưới ngồi bên miệng giếng làng, chìa cái gáo dừa ra xin nước uống.',
-    choices: () => [
+    choices: (g) => [
       {
-        t: 'Múc nước mời ông', go: (g) => {
+        t: 'Múc nước mời ông', p: 0.55 + g.P.stats.co / 500, go: (g) => {
           if (g.r.chance(0.55 + g.P.stats.co / 500)) {
             g.P.dao = true; g.stat('ngo', 3);
             return 'Ông uống xong, gõ nhẹ lên trán ngươi ba cái. Đêm ấy ngươi mơ thấy một bài khẩu quyết, tỉnh dậy vẫn nhớ từng chữ.\n\nNgươi đã nhập đạo. Giờ có thể chọn Tu luyện.';
@@ -126,7 +127,7 @@ export const EVENTS = [
     text: (g, { data }) => `${g.sect(data.sect).name} mở đợt thu nhận đệ tử ở trấn bên. Trẻ con khắp vùng xếp hàng, lần lượt đặt tay lên trắc linh thạch.`,
     choices: (g, { data }) => [
       {
-        t: 'Xếp hàng thử sức', go: (g) => {
+        t: 'Xếp hàng thử sức', p: 0.2 + g.P.root.m * 0.3 + (g.P.stats.ngo - 50) / 200, go: (g) => {
           const sc = g.sect(data.sect);
           const p = 0.2 + g.P.root.m * 0.3 + (g.P.stats.ngo - 50) / 200;
           if (g.r.chance(p)) {
@@ -143,9 +144,9 @@ export const EVENTS = [
     id: 'co_duyen_muon', auto: () => 0, w: 4, cd: 5, title: 'Quyển sách trong kho',
     when: (g) => !g.P.dao && g.P.age >= 16 && g.P.age <= 45,
     text: () => 'Dọn kho cũ, ngươi tìm thấy một quyển sách chép tay mục nát. Trang đầu viết bốn chữ: "Dẫn khí nhập thể".',
-    choices: () => [
+    choices: (g) => [
       {
-        t: 'Thức đêm nghiền ngẫm', go: (g) => {
+        t: 'Thức đêm nghiền ngẫm', p: 0.5 + g.P.stats.ngo / 200, go: (g) => {
           if (g.r.chance(0.5 + g.P.stats.ngo / 200)) { g.P.dao = true; return 'Ba tháng sau, lần đầu tiên ngươi cảm nhận được một luồng khí mát chạy dọc sống lưng.\n\nNgươi đã nhập đạo, dù muộn.'; }
           g.stat('ngo', 3); return 'Chữ nghĩa lộn xộn, đọc mãi không hiểu. Nhưng đầu óc ngươi sáng ra đôi chút. Ngộ tính +3.';
         },
@@ -179,9 +180,9 @@ export const EVENTS = [
     id: 'hang_dong', auto: (g) => (g.P.hp >= 60 && g.P.stats.co >= 55 ? 0 : 1), w: 5, acts: ['lich_luyen'], title: 'Hang động sau thác',
     when: (g) => g.P.dao && g.P.age >= 12,
     text: () => 'Sau một thác nước có cửa hang tối om. Hơi lạnh và linh khí từ bên trong tỏa ra từng đợt.',
-    choices: () => [
+    choices: (g) => [
       {
-        t: 'Đi vào tận cùng', go: (g) => {
+        t: 'Đi vào tận cùng', p: 0.45 + (g.P.stats.co - 50) / 150, go: (g) => {
           if (g.r.chance(0.45 + (g.P.stats.co - 50) / 150)) {
             const t = g.addTuvi(g.gain() * 6);
             const m = g.r.int(10, 40) * (1 + g.P.realm);
@@ -198,13 +199,13 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'yeu_thu', auto: (g, { data }) => (g.playerPower() >= data.m.pow * (g.P.realm ? 1.2 : 1) * 0.95 ? 0 : 1), w: 5, cd: 3, acts: ['lich_luyen'], title: 'Yêu thú chặn đường',
+    id: 'yeu_thu', auto: (g, { data }) => (g.winOdds(() => g.monsterFighter(data.m)) >= 0.6 ? 0 : 1), w: 5, cd: 3, acts: ['lich_luyen'], title: 'Yêu thú chặn đường',
     when: (g) => g.P.age >= 10,
     prep: (g) => ({ m: g.monster(g.P.realm + (g.P.realm === 0 ? 0 : g.r.pick([-1, 0, 0, 1]))) }),
-    text: (g, { data }) => `Một con ${data.m.n} chặn ngang đường mòn, mắt đỏ ngầu, nước dãi nhỏ xuống đất.\n\n${g.hint(data.m.pow)}`,
+    text: (g, { data }) => `Một con ${data.m.n} chặn ngang đường mòn, mắt đỏ ngầu, nước dãi nhỏ xuống đất.\n\n${g.hintMonster(data.m)}`,
     choices: (g, { data }) => [
       {
-        t: 'Nghênh chiến', go: (g) => {
+        t: 'Nghênh chiến', p: g.winOdds(() => g.monsterFighter(data.m)), go: (g) => {
           const m = data.m;
           const f = g.fightMonster(m);
           if (f.win) {
@@ -218,7 +219,7 @@ export const EVENTS = [
         },
       },
       {
-        t: 'Bỏ chạy', go: (g) => {
+        t: 'Bỏ chạy', p: 0.55 + (g.P.stats.co - 50) / 150 + g.tadd('flee'), go: (g) => {
           if (g.r.chance(0.55 + (g.P.stats.co - 50) / 150 + g.tadd('flee'))) return 'Ngươi lao xuống dốc, lẩn vào bụi rậm. Thoát rồi.';
           g.hurt(15, `bị ${data.m.n} đuổi kịp`);
           return 'Không thoát kịp. Lưng ngươi bị cào một vệt dài.';
@@ -253,9 +254,9 @@ export const EVENTS = [
     id: 'truyen_thua', auto: (g) => (g.P.stats.ngo >= 50 && g.P.hp >= 60 ? 0 : 1), w: 2, cd: 25, acts: ['lich_luyen'], title: 'Pho tượng dưới vực',
     when: (g) => g.P.dao && g.P.realm >= 1 && g.P.stats.co >= 40,
     text: () => 'Dưới đáy vực sâu, ngươi thấy một pho tượng đá tay cầm ngọc giản. Vừa chạm vào, một giọng nói vang lên trong đầu: "Ba nghìn năm rồi... cuối cùng cũng có người tới."',
-    choices: () => [
+    choices: (g) => [
       {
-        t: 'Quỳ xuống nhận truyền thừa', go: (g) => {
+        t: 'Quỳ xuống nhận truyền thừa', p: 0.6 + (g.P.stats.ngo - 50) / 200, go: (g) => {
           if (g.r.chance(0.6 + (g.P.stats.ngo - 50) / 200)) {
             const t = g.addTuvi(g.gain() * 15); g.stat('ngo', 5);
             const sk = g.learnRandom(2, g.P.realm >= 4 ? 3 : 2);
@@ -295,7 +296,7 @@ export const EVENTS = [
     id: 'ho_tong', auto: (g) => (g.P.hp >= 50 ? 0 : 1), w: 4, cd: 4, acts: ['muu_sinh'], title: 'Hộ tống thương đội',
     when: (g) => g.P.age >= 14,
     text: () => 'Một thương đội cần người hộ tống qua Hắc Thạch Cốc. Tiền công hậu hĩnh, nhưng ai cũng biết trong cốc có cướp.',
-    choices: () => [
+    choices: (g) => [
       {
         t: 'Nhận việc', go: (g) => {
           const pay = Math.round(30 * (1 + g.P.realm * 1.5));
@@ -333,14 +334,14 @@ export const EVENTS = [
 
   // ===== Bot: cứu, đấu, kết giao =====
   {
-    id: 'cuu_nguoi', auto: (g, { data }) => (g.playerPower() >= data.m.pow * 0.8 * (g.P.realm ? 1.2 : 1) ? 'Lao vào cứu' : 'Làm như không thấy'), w: 4, cd: 5, title: 'Tiếng kêu cứu',
+    id: 'cuu_nguoi', auto: (g, { data }) => (g.winOdds(() => g.monsterFighter(data.m, 0.8)) >= 0.65 ? 'Lao vào cứu' : 'Làm như không thấy'), w: 4, cd: 5, title: 'Tiếng kêu cứu',
     when: (g) => g.P.age >= 12,
     bot: (g) => g.findBot((b) => b.age >= 10 && near(g, b)),
     prep: (g, b) => ({ m: g.monster(b.realm) }),
-    text: (g, { bot: b, data }) => `Giữa rừng, ${g.nm(b)} đang bị một con ${data.m.n} dồn vào vách đá, áo đã rách tả tơi.\n\n${g.hint(data.m.pow)}`,
+    text: (g, { bot: b, data }) => `Giữa rừng, ${g.nm(b)} đang bị một con ${data.m.n} dồn vào vách đá, áo đã rách tả tơi.\n\n${g.hintMonster(data.m, 0.8)}`,
     choices: (g, { bot: b, data }) => [
       {
-        t: 'Lao vào cứu', go: (g) => {
+        t: 'Lao vào cứu', p: g.winOdds(() => g.monsterFighter(data.m, 0.8)), go: (g) => {
           const f = g.fightMonster(data.m, 0.8);
           if (f.win) { g.relAdd(b, 35); g.tinh(5); g.fame(2); return `${f.text}\n\nHai người cùng hạ con thú. ${b.name} chắp tay: "Ơn cứu mạng, ngày sau nhất định báo đáp."`; }
           g.relAdd(b, 20);
@@ -376,10 +377,10 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'khieu_chien', auto: (g, { bot }) => (g.playerPower() >= g.power(bot) * (bot.realm ? 1.2 : 1) * 1.05 ? 'Nhận lời' : 'Chắp tay từ chối'), w: 4, cd: 4, title: 'Kẻ chặn đường',
+    id: 'khieu_chien', auto: (g, { bot }) => (g.winOdds(() => g.botFighter(bot)) >= 0.6 ? 'Nhận lời' : 'Chắp tay từ chối'), w: 4, cd: 4, title: 'Kẻ chặn đường',
     when: (g) => g.P.dao && g.P.age >= 14,
     bot: (g) => g.findBot((b, r) => b.dao && b.age >= 14 && near(g, b) && (b.pers === 'cuong' || (r && r.met && r.v <= -20))),
-    text: (g, { bot: b }) => `${g.nm(b)} chặn đường, mũi kiếm chĩa thẳng vào ngươi: "Nghe danh đã lâu. Hôm nay xem ngươi có xứng không!"\n\n${g.hint(g.power(b))}`,
+    text: (g, { bot: b }) => `${g.nm(b)} chặn đường, mũi kiếm chĩa thẳng vào ngươi: "Nghe danh đã lâu. Hôm nay xem ngươi có xứng không!"\n\n${g.hintBot(b)}`,
     choices: (g, { bot: b }) => {
       const go = (mul) => (g) => {
         const f = g.fightBot(b, mul);
@@ -391,14 +392,13 @@ export const EVENTS = [
           return `${f.text}\n\nNgươi thắng. ${b.pers === 'cuong' ? `${b.name} cười lớn: "Được! Ta phục." ` : ''}Danh vọng +4, tu vi +${t}.`;
         }
         g.fame(-2);
-        if (r && r.v <= -50 && g.r.chance(0.3)) { g.die(`bị ${b.name} hạ sát trong một trận quyết đấu`); return f.text; }
         g.hurt(g.r.int(15, 30), `chết trong trận đấu với ${b.name}`);
         g.relAdd(b, -5);
         return `${f.text}\n\nNgươi thua, nằm sóng soài dưới đất. ${b.name} quay lưng bỏ đi.`;
       };
       return [
-        { t: 'Nhận lời', go: go(1) },
-        { t: 'Nói khích cho hắn mất bình tĩnh', if: g.P.stats.ngo >= 55, go: go(1.3) },
+        { t: 'Nhận lời', p: g.winOdds(() => g.botFighter(b)), go: go(1) },
+        { t: 'Nói khích cho hắn mất bình tĩnh', if: g.P.stats.ngo >= 55, p: g.winOdds(() => g.botFighter(b), 1.3), go: go(1.3) },
         { t: 'Chắp tay từ chối', go: (g) => { g.fame(-3); g.stat('tam', 2); g.relAdd(b, -5); return `${b.name} cười nhạt: "Đồ nhát gan." Ngươi mặc kệ. Danh vọng -3, tâm tính +2.`; } },
       ];
     },
@@ -462,14 +462,14 @@ export const EVENTS = [
     choices: (g, { bot: b }) => [
       { t: 'Rủ người đó cùng đi', go: (g) => { const t = g.addTuvi(g.gain() * 6); g.relAdd(b, 15); return `Hai người thay nhau canh gác, đi được tới tầng thứ ba. Tu vi +${t}, ${b.name} thân thiết hơn.`; } },
       {
-        t: 'Đi một mình', go: (g) => {
+        t: 'Đi một mình', p: 0.4 + (g.P.stats.co - 50) / 150, go: (g) => {
           if (g.r.chance(0.4 + (g.P.stats.co - 50) / 150)) { const t = g.addTuvi(g.gain() * 10); const it = g.gainItem(makeItem(g.r, g.s.nextItem++, g.P.realm, g.r.chance(0.3) ? 2 : 1), 'Bên hồ còn có'); return `Ngươi tìm được một hồ linh dịch ở tầng sâu nhất. Tu vi +${t}.\n${it}`; }
           g.hurt(30, 'lạc trong bí cảnh, không bao giờ ra được');
           return 'Ngươi lạc vào mê trận, mãi mới tìm được lối ra, người đầy thương tích.';
         },
       },
       {
-        t: 'Chặn cửa, không cho ai vào', go: (g) => {
+        t: 'Chặn cửa, không cho ai vào', p: g.winOdds(() => g.botFighter(b)), go: (g) => {
           const f = g.fightBot(b);
           if (f.win) { const t = g.addTuvi(g.gain() * 12); g.relAdd(b, -40); g.tinh(-8); return `${f.text}\n\n${b.name} bị đánh bật ra ngoài. Ngươi một mình vơ vét bí cảnh. Tu vi +${t}.`; }
           g.relAdd(b, -20);
@@ -488,7 +488,7 @@ export const EVENTS = [
       { t: 'Nhường cho người đó', go: (g) => { g.relAdd(b, 20); g.stat('tam', 3); g.tinh(3); return `${b.name} ngạc nhiên, rồi chắp tay thật sâu.`; } },
       { t: 'Đề nghị chia đôi', go: (g) => { const t = g.addTuvi(g.gain() * 3); g.relAdd(b, 6); return `Mỗi người một nửa. Tu vi +${t}.`; } },
       {
-        t: 'Ra tay giành lấy', go: (g) => {
+        t: 'Ra tay giành lấy', p: g.winOdds(() => g.botFighter(b)), go: (g) => {
           const f = g.fightBot(b);
           if (f.win) { const t = g.addTuvi(g.gain() * 8); g.relAdd(b, -30); g.tinh(-5); return `${f.text}\n\nLinh chi về tay ngươi. Tu vi +${t}.`; }
           g.relAdd(b, -15);
@@ -531,10 +531,10 @@ export const EVENTS = [
     when: (g) => g.P.dao,
     bot: (g) => g.findBot((b, r) => r && r.met && r.tag === 'de_tu'),
     prep: (g, b) => ({ m: g.monster(b.realm + 1) }),
-    text: (g, { bot: b, data }) => `Một con hạc giấy bay tới: đệ tử ${b.name} bị ${data.m.n} vây khốn ở Hắc Phong Lĩnh.\n\n${g.hint(data.m.pow)}`,
+    text: (g, { bot: b, data }) => `Một con hạc giấy bay tới: đệ tử ${b.name} bị ${data.m.n} vây khốn ở Hắc Phong Lĩnh.\n\n${g.hintMonster(data.m)}`,
     choices: (g, { bot: b, data }) => [
       {
-        t: 'Lập tức lên đường', go: (g) => {
+        t: 'Lập tức lên đường', p: g.winOdds(() => g.monsterFighter(data.m)), go: (g) => {
           const f = g.fightMonster(data.m);
           if (f.win) { g.relAdd(b, 20); g.fame(3); return `${f.text}\n\nNgươi cứu được đệ tử. Nó ôm chân ngươi khóc như mưa.`; }
           if (g.r.chance(0.5)) g.botDie(b, `chết dưới tay ${data.m.n} ở Hắc Phong Lĩnh`);
@@ -562,7 +562,7 @@ export const EVENTS = [
       const fr = g.closeFriends();
       return [
         {
-          t: 'Nhìn thẳng vào chúng', go: (g) => {
+          t: 'Nhìn thẳng vào chúng', p: 0.4 + g.P.stats.tam / 150, go: (g) => {
             if (g.r.chance(0.4 + g.P.stats.tam / 150)) { g.stat('tam', 6); const t = g.addTuvi(g.gain() * 2); return `Ảo ảnh tan như khói. Tâm cảnh ngươi sáng thêm một tầng. Tâm tính +6, tu vi +${t}.`; }
             g.stat('tam', -3);
             g.hurt(20, 'bị tâm ma cắn nuốt');
@@ -608,7 +608,7 @@ export const EVENTS = [
       const alive = k && k.alive;
       return [
         {
-          t: alive ? `Đi tìm ${k.name} báo thù` : 'Đi tìm kẻ thủ ác', if: !!alive, go: (g) => {
+          t: alive ? `Đi tìm ${k.name} báo thù` : 'Đi tìm kẻ thủ ác', if: !!alive, p: alive ? g.winOdds(() => g.botFighter(k)) : undefined, go: (g) => {
             const f = g.fightBot(k);
             if (f.win) {
               g.fame(6); g.tinh(-3);
@@ -709,13 +709,13 @@ export const EVENTS = [
     id: 'thu_kiep_truoc', w: 30, once: true, title: 'Nợ máu kiếp trước',
     when: (g) => g.P.age >= 16 && g.P.dao,
     bot: (g) => g.findBot((b, r) => r && r.cn && r.cn.v <= -35 && b.dao, 1),
-    text: (g, { bot: b }) => `Một bóng áo đen chặn đường: ${g.nm(b)}. Người đó cười lạnh: "${relOf(g, b).cn.name}, đầu thai rồi tưởng ta không nhận ra sao?"\n\n${g.hint(g.power(b))}`,
+    text: (g, { bot: b }) => `Một bóng áo đen chặn đường: ${g.nm(b)}. Người đó cười lạnh: "${relOf(g, b).cn.name}, đầu thai rồi tưởng ta không nhận ra sao?"\n\n${g.hintBot(b)}`,
     choices: (g, { bot: b }) => {
       const r = relOf(g, b);
       const done = (v, tag) => { g.relSet(b, v, tag); r.cn = null; };
       return [
         {
-          t: 'Liều một trận', go: (g) => {
+          t: 'Liều một trận', p: g.winOdds(() => g.botFighter(b)), go: (g) => {
             const f = g.fightBot(b);
             done(-60, 'thu');
             if (f.win) { g.fame(8); return `${f.text}\n\nKẻ thù kiếp trước bỏ chạy, buông lại một câu: "Chưa xong đâu."`; }
@@ -724,7 +724,7 @@ export const EVENTS = [
           },
         },
         {
-          t: 'Quỳ xuống xin tha', go: (g) => {
+          t: 'Quỳ xuống xin tha', p: b.pers === 'hien' || b.pers === 'nghia' ? 0.85 : 0.45, go: (g) => {
             g.stat('tam', -5);
             if (g.r.chance(b.pers === 'hien' || b.pers === 'nghia' ? 0.85 : 0.45)) { done(-20, null); return 'Người kia nhổ toẹt xuống đất: "Kiếp này ngươi không đáng để ta ra tay." Rồi bỏ đi.'; }
             done(-60, 'thu');
@@ -733,7 +733,7 @@ export const EVENTS = [
           },
         },
         {
-          t: 'Bỏ chạy', go: (g) => {
+          t: 'Bỏ chạy', p: 0.4 + (g.P.stats.co - 50) / 150 + g.tadd('flee'), go: (g) => {
             done(-60, 'thu');
             if (g.r.chance(0.4 + (g.P.stats.co - 50) / 150 + g.tadd('flee'))) return 'Ngươi thoát được, nhưng biết rằng người đó sẽ còn quay lại.';
             g.hurt(35, `bị ${b.name} đuổi kịp và giết chết`);
@@ -761,7 +761,7 @@ export const EVENTS = [
           },
         },
         {
-          t: 'Lên núi tìm thuốc trường sinh', go: (g) => {
+          t: 'Lên núi tìm thuốc trường sinh', p: 0.25 + (g.P.stats.co - 50) / 200, go: (g) => {
             if (g.r.chance(0.25 + (g.P.stats.co - 50) / 200)) { g.P.lifeBonus += 0.15; return `Trên đỉnh tuyết sơn, ngươi tìm được một gốc tuyết liên. Thọ nguyên tăng lên ${g.lifespan()}.`; }
             g.hurt(20, 'chết rét trên tuyết sơn khi tìm thuốc trường sinh');
             return 'Trên đỉnh núi chỉ có gió lạnh và tuyết.';
@@ -773,4 +773,5 @@ export const EVENTS = [
   },
 ];
 
+export const EVENTS = BASE_EVENTS.concat(EVENTS2);
 export const EVENT_MAP = Object.fromEntries(EVENTS.map((e) => [e.id, e]));

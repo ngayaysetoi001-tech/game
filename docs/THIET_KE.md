@@ -121,6 +121,26 @@ Ký ức đạo pháp, Thân thể kiếp trước, Dư âm cơ duyên, Tàn h�
 - Hộp câu hỏi không còn phủ tối và chặn màn hình: các nút tốc độ, tạm dừng, tự quyết vẫn bấm được; trong hộp có nút "Dừng sau khi chọn".
 - Biểu tượng vật phẩm và bí kíp được nhúng vào chữ bằng mã `[[i|loại|phẩm|màu]]` (`iconToken` trong `js/icons.js`), giao diện thay bằng ảnh trong kết quả sự kiện và nhật ký.
 
+## 6e. Thua trận có thể chết, kỳ ngộ nhiều nhánh
+
+**Thua trận:** thua thì có thể mất mạng. Xác suất = mức tàn độc của đối thủ × (sức đối thủ / sức mình)^1,4, giảm 70% nếu chỉ thua vì hết hiệp (chưa gục), giảm 70% nếu dưới 16 tuổi, cơ duyên cao giảm thêm; kẹp 2%-90%. Mức tàn độc: yêu thú 0,35; người vô danh 0,22; bot cuồng ngạo 0,3, tham/mưu 0,25, ẩn dật 0,12, trọng nghĩa 0,07, hiền 0,05, kẻ thù 0,4; lôi đài 0,05. Sống sót thì sinh lực còn 4-14 (gục) hoặc 4-30 (hết hiệp), sự kiện không trừ thêm. Trước trận, lời dẫn hiện "thắng ~X%, thua thì nguy hiểm tính mạng ~Y%", tính bằng cách đánh thử 40 trận với RNG riêng (`winOdds`).
+
+**Tỉ lệ trên nút:** lựa chọn có `p` hiện "· ~X%" ngay trên nút. Tự quyết chỉ đánh khi thắng từ 60% (cứu người 65%).
+
+**Chuỗi sự kiện:** `g.later(năm, id, data, botId)` hẹn một sự kiện vài năm sau, `g.next(id, data)` cho sự kiện xảy ra ngay sau sự kiện hiện tại. Tần suất kỳ ngộ tăng (tu luyện 16%, lịch luyện 55%, mưu sinh và kết giao 26%).
+
+**Kỳ ngộ mới** (`js/events2.js`, 23 sự kiện + 11 sự kiện nối tiếp):
+- Bản đồ da dê → Dưới chân Song Phong (đào, rình, rủ bạn).
+- Trứng nóng hổi → Trứng nở (5 loại linh thú, Song Đầu Xà có thể cắn chủ).
+- Thuyền ra Nam Hải: góp 1/3 hay dốc hết túi, 3 năm sau lời gấp 3, hòa vốn, đắm thuyền hoặc bị lừa → Truy đuổi kẻ lừa đảo.
+- Sòng Kim Ngân: cược nhỏ/lớn, gian lận bằng thần thức; thắng nhiều thì chủ sòng mời "nói chuyện".
+- Cổ mộ 3 gian: càng vào sâu càng nhiều báu, tỉ lệ an toàn giảm dần, gian cuối có Thi Vương.
+- Lôi đài Lạc Dương: 3 trận liên tiếp, có thể dừng giữa chừng giữ thưởng.
+- Khách lạ đêm mưa (hồ ly), Chợ người (chuộc, đánh, mua làm nô) → Người xưa trở lại báo ân / Món nợ năm xưa báo oán.
+- Làng ngủ say (huyết trận) → Ma tu tìm tới trả thù.
+- Lôi kiếp người khác: hộ pháp, quan sát ngộ đạo, đánh lén cướp bảo vật.
+- Bị vu oan trong tông môn, Linh mạch → bị đòi chia, Lão ăn mày (có thể là cao nhân), Thư nhà, Hắc Phong trại bắt cóc, Đấu rượu, Kiếm trủng, Yêu vương (lập đội hay đi một mình), Giấc mộng nồi kê, Ngọc giản dính máu → Mở ngọc giản, Vườn thuốc hoang, Lò đan cũ (3 mức lửa), Đứa trẻ móc túi.
+
 ## 7. Kỹ thuật
 
 - HTML, CSS, JavaScript thuần (ES module), không cần build, không cần máy chủ.

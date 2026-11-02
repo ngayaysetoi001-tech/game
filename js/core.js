@@ -33,7 +33,7 @@ export const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 export const pct = (p) => Math.round(p * 100) + '%';
 
 // Xác suất có sự kiện mỗi năm theo việc đang làm
-const EVENT_RATE = { lon_len: 0.25, tu_luyen: 0.1, lich_luyen: 0.45, muu_sinh: 0.18, ket_giao: 0.18, be_quan: 0.03 };
+const EVENT_RATE = { lon_len: 0.3, tu_luyen: 0.16, lich_luyen: 0.55, muu_sinh: 0.26, ket_giao: 0.26, be_quan: 0.03 };
 
 export class Game {
   constructor(state) {
@@ -591,7 +591,11 @@ export class Game {
     return [...new Set(out)];
   }
   /** Ghi trận đấu để giao diện diễn lại, trả về kết quả gọn cho sự kiện */
-  runBattle(A, B, extra = '') {
+  /**
+   * Chạy trận, ghi lại để diễn. Thua thì có thể mất mạng:
+   * nguy hiểm theo loại đối thủ (lethal), độ chênh sức mạnh, thua gục hay chỉ hết giờ, tuổi, cơ duyên.
+   */
+  runBattle(A, B, opts = {}) {
     const res = battle(A, B, this.r);
     const P = this.P;
     const hp0 = P.hp;
@@ -610,35 +614,96 @@ export class Game {
       if (t) lines.push(`Sát ý sau trận hóa thành tu vi: +${t}.`);
     }
     if (res.win && hp0 > P.hp) lines.push(`Sinh lực còn ${P.hp}.`);
-    if (extra) lines.push(extra);
+    let died = false;
+    if (!res.win) {
+      const knocked = res.aHpPct <= 0;
+      const pd = this.deathChance(B.maxHp / A.maxHp, opts.lethal ?? 0.15, knocked);
+      if (this.r.chance(pd)) {
+        died = true;
+        lines.push(knocked ? 'Đòn cuối cùng giáng xuống. Ngươi không gượng dậy được nữa.' : 'Ngươi kiệt sức, đối phương không tha.');
+        this.die(opts.cause || `chết dưới tay ${B.name}`);
+      } else {
+        P.hp = Math.max(1, Math.min(P.hp, this.r.int(4, knocked ? 14 : 30)));
+        lines.push(knocked ? `Ngươi gục xuống, may mắn thoát được một mạng. Sinh lực còn ${P.hp}.` : `Không trụ nổi nữa, ngươi buộc phải lui. Sinh lực còn ${P.hp}.`);
+        // vết thương đã tính trong trận, sự kiện không trừ thêm
+        this._absorbHurt = true;
+      }
+    }
+    if (opts.extra) lines.push(opts.extra);
     res.a.hp0 = hp0;
+    res.died = died;
     if (this._sink) this._sink.push(res);
-    return { win: res.win, text: [head, ...lines].join('\n') };
+    const text = [head, ...lines].join('\n');
+    if (died) this._battleDeath = text;
+    return { win: res.win, died, text };
   }
-  /** Đánh với đối thủ là người vô danh */
-  fight(foeName, foePow, mul = 1) {
-    const B = fighter({
-      name: foeName, pw: foePow * enemyGear(this.P.realm), skills: ['quyen', this.r.pick(['han_bang', 'luu_van', 'liet_hoa', 'truy_hon'])], wep: this.r.pick(WEP_KEYS),
-      look: { type: 'human', seed: this.r.int(1, 1e6), g: 'nam', age: 35, life: 80, realm: 0, robe: '#4a3f3a', wep: 'dao' },
+  /** Xác suất mất mạng khi thua. gap: sức đối phương / sức mình */
+  deathChance(gap, lethal, knocked = true) {
+    const P = this.P;
+    let p = lethal * Math.pow(Math.max(0.5, Math.min(3, gap)), 1.4);
+    if (!knocked) p *= 0.3;
+    if (P.age < 16) p *= 0.3;
+    p -= (P.stats.co - 50) / 400;
+    return clamp(p, 0.02, 0.9);
+  }
+  // ---------- Dựng đối thủ ----------
+  genericFighter(foeName, foePow) {
+    const r = new Rng([...foeName].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7));
+    return fighter({
+      name: foeName, pw: foePow * enemyGear(this.P.realm), skills: ['quyen', r.pick(['han_bang', 'luu_van', 'liet_hoa', 'truy_hon'])], wep: r.pick(WEP_KEYS),
+      look: { type: 'human', seed: r.int(1, 1e6), g: 'nam', age: 35, life: 80, realm: 0, robe: '#4a3f3a', wep: 'dao' },
     });
-    return this.runBattle(this.playerFighter(mul), B);
   }
-  fightMonster(m, scale = 1, mul = 1) {
+  monsterFighter(m, scale = 1) {
     const r = new Rng(m.seed || 1);
     const sk = ['can_xe', r.pick(Object.keys(BEAST_SKILLS).filter((k) => k !== 'can_xe'))];
     if (m.r >= 3) sk.push(r.pick(['vay_giap', 'cuong_bao', 'gam_thet']));
-    const B = fighter({ name: m.n, pw: m.pow * scale * enemyGear(m.r ?? this.P.realm), skills: [...new Set(sk)], beast: true, look: { type: 'beast', seed: m.seed, realm: m.r, name: m.n } });
-    const res = this.runBattle(this.playerFighter(mul), B);
+    return fighter({ name: m.n, pw: m.pow * scale * enemyGear(m.r ?? this.P.realm), skills: [...new Set(sk)], beast: true, look: { type: 'beast', seed: m.seed, realm: m.r, name: m.n } });
+  }
+  botFighter(b) {
+    return fighter({
+      name: b.name, pw: this.power(b) * enemyGear(b.realm), skills: this.botSkills(b), wep: this.botWep(b), tactic: b.pers === 'cuong' ? 'cuong_cong' : b.pers === 'an' ? 'phong_thu' : 'can_bang',
+      look: { type: 'human', seed: botSeed(b), g: b.g, age: b.age, life: b.life, realm: b.realm, robe: b.sect ? (this.sect(b.sect) || {}).color : null, wep: this.botWep(b) },
+    });
+  }
+  /** Bot có ra tay giết người thua không */
+  botLethal(b) {
+    const r = this.s.rel[b.id];
+    if (r && (r.tag === 'thu' || r.v <= -50)) return 0.4;
+    return { cuong: 0.3, tham: 0.25, muu: 0.25, hien: 0.05, nghia: 0.07, an: 0.12 }[b.pers] ?? 0.15;
+  }
+  /** Ước lượng tỉ lệ thắng bằng cách đánh thử 40 trận (RNG riêng, không ảnh hưởng ván chơi) */
+  winOdds(makeB, mul = 1) {
+    const r = new Rng(424242);
+    let w = 0;
+    for (let i = 0; i < 40; i++) if (battle(this.playerFighter(mul), makeB(), r).win) w++;
+    return w / 40;
+  }
+  oddsText(p, lethal, gap) {
+    const pd = this.deathChance(gap, lethal);
+    const word = p >= 0.85 ? 'Nắm chắc phần thắng' : p >= 0.6 ? 'Khá có lợi' : p >= 0.4 ? 'Năm ăn năm thua' : p >= 0.15 ? 'Bất lợi' : 'Gần như không có cửa';
+    return `${word}: thắng ~${Math.round(p * 100)}%. Thua thì nguy hiểm tính mạng ~${Math.round(pd * 100)}%.`;
+  }
+  hintMonster(m, scale = 1) {
+    const B = this.monsterFighter(m, scale);
+    return this.oddsText(this.winOdds(() => this.monsterFighter(m, scale)), 0.35, B.maxHp / this.playerFighter().maxHp);
+  }
+  hintBot(b, mul = 1) {
+    const B = this.botFighter(b);
+    return this.oddsText(this.winOdds(() => this.botFighter(b), mul), this.botLethal(b), B.maxHp / this.playerFighter(mul).maxHp);
+  }
+  /** Đánh với đối thủ là người vô danh */
+  fight(foeName, foePow, mul = 1, opts = {}) {
+    return this.runBattle(this.playerFighter(mul), this.genericFighter(foeName, foePow), { lethal: 0.22, cause: `bị ${foeName} giết`, ...opts });
+  }
+  fightMonster(m, scale = 1, mul = 1, opts = {}) {
+    const res = this.runBattle(this.playerFighter(mul), this.monsterFighter(m, scale), { lethal: 0.35, cause: `bị ${m.n} giết chết`, ...opts });
     if (res.win) this.P.cnt.beast++;
     if (res.win && this.r.chance(0.25)) res.text += '\n' + this.gainItem(makeItem(this.r, this.s.nextItem++, m.r ?? this.P.realm));
     return res;
   }
-  fightBot(b, mul = 1) {
-    const B = fighter({
-      name: b.name, pw: this.power(b) * enemyGear(b.realm), skills: this.botSkills(b), wep: this.botWep(b), tactic: b.pers === 'cuong' ? 'cuong_cong' : b.pers === 'an' ? 'phong_thu' : 'can_bang',
-      look: { type: 'human', seed: botSeed(b), g: b.g, age: b.age, life: b.life, realm: b.realm, robe: b.sect ? (this.sect(b.sect) || {}).color : null, wep: this.botWep(b) },
-    });
-    const res = this.runBattle(this.playerFighter(mul), B);
+  fightBot(b, mul = 1, opts = {}) {
+    const res = this.runBattle(this.playerFighter(mul), this.botFighter(b), { lethal: this.botLethal(b), cause: `chết dưới tay ${b.name}`, ...opts });
     if (res.win && this.r.chance(0.15)) {
       const it = makeItem(this.r, this.s.nextItem++, b.realm, null, 'vu_khi');
       it.wt = this.botWep(b);
@@ -658,6 +723,7 @@ export class Game {
     if (!P.cnt) P.cnt = { win: 0, lose: 0, beast: 0, revenge: 0, low: 0 };
     if (!P.titles) P.titles = [];
     if (P.title === undefined) P.title = null;
+    if (!P.later) P.later = [];
   }
   learn(id) {
     const P = this.P;
@@ -776,6 +842,8 @@ export class Game {
   }
   hurt(n, cause) {
     const P = this.P;
+    if (this._absorbHurt) { this._absorbHurt = false; return false; }
+    if (!this.playing) return true;
     P.hp = Math.max(0, P.hp - Math.round(n * this.tmul('hurtMul')));
     if (P.hp <= 0 && this.thas('deathSave') && !P.flags.reborn) {
       P.flags.reborn = true;
@@ -981,6 +1049,16 @@ export class Game {
       return;
     }
     if (s.pending || queueOnly) return;
+    // chuỗi sự kiện: tình huống được hẹn từ lựa chọn trước, tới lúc thì xảy ra
+    const P0 = this.P;
+    const due = P0.later.findIndex((x) => x.at <= P0.age);
+    if (due >= 0) {
+      const x = P0.later.splice(due, 1)[0];
+      if (EVENT_MAP[x.id] && (!x.botId || (this.soul(x.botId) || {}).alive)) {
+        s.pending = { id: x.id, botId: x.botId || null, data: x.data || {} };
+        return;
+      }
+    }
     const rate = (EVENT_RATE[act] ?? 0.25) * this.tmul('eventRate');
     if (!this.r.chance(rate)) return;
     const P = this.P;
@@ -1016,7 +1094,7 @@ export class Game {
     const c = this.ctx(p);
     if (p.result !== undefined) return { title: ev.title, text: p.result, done: true };
     const choices = ev.choices(this, c).filter((x) => x.if !== false);
-    return { title: typeof ev.title === 'function' ? ev.title(this, c) : ev.title, text: ev.text(this, c), choices: choices.map((x) => x.t) };
+    return { title: typeof ev.title === 'function' ? ev.title(this, c) : ev.title, text: ev.text(this, c), choices: choices.map((x) => (x.p !== undefined ? `${x.t} · ~${Math.round(clamp(x.p, 0, 1) * 100)}%` : x.t)) };
   }
   choose(idx) {
     const p = this.s.pending;
@@ -1027,9 +1105,13 @@ export class Game {
     const ch = choices[idx];
     if (!ch) return;
     this._sink = [];
+    this._battleDeath = null;
     let res = ch.go(this, c) || '';
+    // chết trong trận thì bỏ lời kể thua trận của sự kiện, chỉ giữ diễn biến
+    if (this._battleDeath && this.s.phase === 'dead') res = this._battleDeath;
     if (this._sink.length) { p.battles = this._sink; p.bi = 0; }
     this._sink = null;
+    this._absorbHurt = false;
     if (this.s.phase === 'dead') res += `\n\n${this.P.name} ngã xuống, hưởng thọ ${this.P.age} tuổi.`;
     p.result = res;
     const first = res.split('\n').filter(Boolean).pop();
@@ -1051,7 +1133,8 @@ export class Game {
     const c = this.ctx(p);
     const list = ev.choices(this, c).filter((x) => x.if !== false);
     let pick = ev.auto(this, c, list);
-    if (typeof pick === 'string') pick = Math.max(0, list.findIndex((x) => x.t.startsWith(pick)));
+    if (typeof pick === 'string') { const i = list.findIndex((x) => x.t.startsWith(pick)); pick = i >= 0 ? i : list.length - 1; }
+    if (typeof pick === 'number' && pick < 0) pick = list.length + pick;
     if (typeof pick !== 'number' || pick < 0 || pick >= list.length) pick = list.length - 1;
     this._auto = true;
     this.choose(pick);
@@ -1111,6 +1194,15 @@ export class Game {
     this.s.deadInfo = null;
     this.s.phase = 'birth';
     this.rollDraft();
+  }
+
+  /** Hẹn một sự kiện xảy ra sau `years` năm (0 = năm sau) */
+  later(years, id, data = {}, botId = null) {
+    this.P.later.push({ at: this.P.age + Math.max(1, years), id, data, botId });
+  }
+  /** Đưa ngay một sự kiện vào hàng đợi (hiện ngay sau sự kiện hiện tại) */
+  next(id, data = {}, botId = null) {
+    this.s.queue.unshift({ id, data, botId });
   }
 
   // ---------- Đạo hiệu, danh hiệu ----------
