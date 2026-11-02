@@ -1252,6 +1252,8 @@ export class Game {
       P.titles.push(t.id);
       if (!this.s.seenTitles.includes(t.id)) this.s.seenTitles.push(t.id);
       this.log(`Giang hồ bắt đầu gọi ngươi là 「${t.n}」. (${t.bonus} khi đeo)`, 'big');
+      (this.s.toasts = this.s.toasts || []).push({ n: t.n, tier: t.tier, bonus: t.bonus });
+      if (this.s.toasts.length > 5) this.s.toasts.shift();
       if (!P.title) P.title = t.id;
     }
   }

@@ -1,6 +1,6 @@
 // Giao diện trình duyệt. Mọi luật chơi nằm trong core.js.
 import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITLE_MAP, clamp } from './core.js';
-import { STAT_NAMES, PERSONALITIES } from './data.js';
+import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, TACTICS, WEAPON_TYPES, turnText } from './combat.js';
 import { SLOTS, QUALITY, itemLine } from './items.js';
@@ -96,7 +96,7 @@ function statGrid(st) {
 const TIER_N = ['Thường', 'Khá', 'Hiếm', 'Truyền thuyết', 'Thần thoại'];
 /** Khối thể chất + thiên phú cho màn đầu thai */
 function traitBlock() {
-  const ts = g.traits();
+  const ts = g.traits().filter((t) => !t.cond);
   const [the, ...tps] = ts;
   return `<div class="traits">
     <div class="trait t${the.tier}"><div class="row"><b>${esc(the.n)}${g.s.phase === 'birth' && the.tier && !(g.s.seenThe || []).includes(the.id) ? ' <span class="newTag">Mới!</span>' : ''}</b><span class="meta">Thể chất${the.tier ? ' · ' + TIER_N[the.tier] : ''}</span></div><div class="meta">${esc(the.desc)}</div></div>
@@ -150,13 +150,14 @@ function renderPlay() {
   const hon = g.honorific();
   const ttl = P.title && TITLE_MAP[P.title] ? TITLE_MAP[P.title].n : null;
   $('who').innerHTML = `
-    ${ttl ? `<div class="titleTag">「${esc(ttl)}」</div>` : ''}
+    ${ttl ? `<button class="ttl t${TITLE_MAP[P.title].tier}" id="ttlBtn"><span>${esc(ttl)}</span></button>` : ''}
     <h1>${esc(P.name)}</h1>
     ${hon ? `<div class="daohieu">${esc(hon)}</div>` : ''}
     <div class="sub">${P.age} tuổi · Kiếp ${P.lifeNo} · ${esc(P.root.n)}</div>
     <div class="sub"><span class="realm">${REALMS[P.realm].n}</span>${P.dao ? '' : ' · chưa nhập đạo'}${sc ? ` · ${esc(sc.name)}` : P.dao ? ' · tán tu' : ''}</div>
     <button class="eqStrip" id="eqStrip" aria-label="Mở hành trang">${Object.keys(SLOTS).map((sl) => (P.eq && P.eq[sl] ? itemIco(P.eq[sl]) : icoImg({ kind: SLOT_KIND[sl], faded: true }, 'empty'))).join('')}</button>`;
   $('eqStrip').onclick = openBag;
+  if ($('ttlBtn')) $('ttlBtn').onclick = openTitles;
   const need = g.need();
   $('bars').innerHTML =
     bar('Tu vi', P.tuvi, need, 'var(--tuvi)', P.dao ? `${fmt(P.tuvi)}/${fmt(need)}` : '-') +
@@ -169,7 +170,7 @@ function renderPlay() {
     `<span class="chip">Linh thạch <b>${fmt(P.money)}</b></span>` +
     `<span class="chip">Danh vọng <b>${fmt(P.fame)}</b></span>` +
     (P.flags.pet ? `<span class="chip">Linh thú: ${esc(P.flags.pet)}</span>` : '') +
-    `<button class="chip chipBtn" id="traitChip">${esc(g.traits().map((t) => t.n).join(' · '))} ›</button>`;
+    `<button class="chip chipBtn" id="traitChip">${esc(g.traits().filter((t) => !t.cond).map((t) => t.n).join(' · '))} ›</button>`;
   $('traitChip').onclick = openTraits;
 
   const canBreak = g.canBreak();
@@ -193,6 +194,7 @@ function renderPlay() {
     }).join('');
     html += `<div class="utils">
       <button class="btn" data-do="bag">🎒 Hành trang<small>Trang bị, võ kỹ</small></button>
+      <button class="btn" data-do="titles">🏅 Danh hiệu<small>${P.titles.length ? `Đã có ${P.titles.length}` : 'Chưa có'}</small></button>
       <button class="btn" data-do="shop" ${P.age < 10 ? 'disabled' : ''}>🏮 Tụ Bảo Lâu<small>Đan, pháp khí, bí kíp</small></button>
       <button class="btn" data-do="close" ${P.dao && P.age >= 12 && !canBreak ? '' : 'disabled'}>🕯 Bế quan<small>${P.dao ? 'Tu nhanh, ít kỳ ngộ' : 'Cần nhập đạo'}</small></button>
     </div>`;
@@ -511,12 +513,6 @@ function openBag() {
     openSheet(`<h2>Hành trang</h2>
       <div class="cstats"><span>Công <b>${fmt(F.atk)}</b></span><span>Thủ <b>${fmt(F.def)}</b></span><span>Sinh lực <b>${fmt(F.maxHp)}</b></span><span>Bạo kích <b>${Math.round(F.crit * 100)}%</b></span><span>Né <b>${Math.round(F.dodge * 100)}%</b></span></div>
       ${msg ? `<p class="intro">${esc(msg)}</p>` : ''}
-      <h3>Danh hiệu · đeo một danh hiệu để nhận lợi ích</h3><div class="list">${P.titles.length ? P.titles.map((id) => {
-        const t = TITLE_MAP[id];
-        const on = P.title === id;
-        return `<div class="item"><div class="row"><b>「${esc(t.n)}」</b><span class="meta">${esc(t.bonus)}</span></div><div class="meta">${esc(t.cond)}</div>
-          <div class="row btnRow"><button class="btn ${on ? 'on' : 'ghost'}" data-ti="${on ? '' : id}">${on ? 'Đang đeo' : 'Đeo'}</button></div></div>`;
-      }).join('') : '<p class="empty">Chưa có danh hiệu. Giang hồ sẽ xưng tụng khi ngươi làm nên chuyện: thắng trận, tu nhanh, giàu có, kết giao, báo thù...</p>'}</div>
       <h3>Đang mang</h3><div class="list">${eq}</div>
       <h3>Võ kỹ · mang theo ${P.loadout.length}/4</h3><div class="list">${sks}</div>
       <h3>Chiến thuật</h3><div class="tactics">${Object.entries(TACTICS).map(([k, t]) => `<button class="btn ${P.tactic === k ? 'on' : ''}" data-tc="${k}">${t.n}<small>${t.desc}</small></button>`).join('')}</div>
@@ -527,10 +523,55 @@ function openBag() {
       q('[data-sell]', (b) => `Bán được ${g.sell(+b.dataset.sell)} linh thạch.`);
       q('[data-sk]', (b) => g.toggleSkill(b.dataset.sk));
       q('[data-tc]', (b) => g.setTactic(b.dataset.tc));
-      q('[data-ti]', (b) => g.setTitle(b.dataset.ti || null));
     });
   };
   draw();
+}
+
+/** Ô danh hiệu riêng: đã đạt (đeo một cái) và chưa đạt (hiện điều kiện) */
+function titleCard(t, state) {
+  const stars = '★'.repeat(t.tier) + '☆'.repeat(4 - t.tier);
+  const btn = state === 'on' ? '<button class="btn on" data-ti="">Đang đeo</button>'
+    : state === 'got' ? `<button class="btn ghost" data-ti="${t.id}">Đeo</button>` : '';
+  return `<div class="tcard t${t.tier} ${state}">
+    <div class="tseal" aria-hidden="true">${stars}</div>
+    <div class="body"><div class="row"><b class="tname"><span>${esc(t.n)}</span></b><span class="meta">${TITLE_TIER_N[t.tier]}</span></div>
+      <div class="meta">${state === 'lock' ? 'Điều kiện: ' : ''}${esc(t.cond)} · Khi đeo: ${esc(t.bonus)}</div>
+      ${btn ? `<div class="row btnRow">${btn}</div>` : ''}</div></div>`;
+}
+function openTitles() {
+  const draw = () => {
+    const P = g.P;
+    const got = TITLES.filter((t) => P.titles.includes(t.id)).sort((a, b) => b.tier - a.tier);
+    const lock = TITLES.filter((t) => !P.titles.includes(t.id)).sort((a, b) => a.tier - b.tier);
+    const cur = P.title ? TITLE_MAP[P.title] : null;
+    openSheet(`<h2>Danh hiệu</h2>
+      <p class="intro">Giang hồ xưng tụng theo việc ngươi làm trong kiếp này. Đeo một danh hiệu để nhận lợi ích, danh hiệu sẽ hiện phía trên tên. Kiếp sau phải làm lại từ đầu.</p>
+      ${cur ? `<div class="tcur"><span class="meta">Đang đeo</span><span class="ttl t${cur.tier} big"><span>${esc(cur.n)}</span></span></div>` : ''}
+      <h3>Đã đạt · ${got.length}/${TITLES.length}</h3>
+      <div class="list">${got.map((t) => titleCard(t, P.title === t.id ? 'on' : 'got')).join('') || '<p class="empty">Chưa có danh hiệu nào.</p>'}</div>
+      <h3>Chưa đạt</h3>
+      <div class="list">${lock.map((t) => titleCard(t, 'lock')).join('')}</div>`, () => {
+      $('sheetBody').querySelectorAll('[data-ti]').forEach((b) => { b.onclick = () => { g.setTitle(b.dataset.ti || null); save(); draw(); dirty = true; }; });
+    });
+  };
+  draw();
+}
+
+// ---------- Thông báo danh hiệu mới ----------
+let toastBusy = false;
+function showToasts() {
+  const q = g.s.toasts;
+  if (toastBusy || !q || !q.length) return;
+  const t = q.shift();
+  toastBusy = true;
+  const el = $('toast');
+  el.className = `toast t${t.tier}`;
+  el.innerHTML = `<div class="meta">Danh hiệu mới</div><div class="ttl t${t.tier} big"><span>${esc(t.n)}</span></div><div class="meta">Khi đeo: ${esc(t.bonus)}</div>`;
+  el.hidden = false;
+  void el.offsetWidth;
+  el.classList.add('show');
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => { el.hidden = true; toastBusy = false; }, 400); }, 2600);
 }
 
 function openShop() {
@@ -609,6 +650,7 @@ $('actions').addEventListener('click', (e) => {
   if (b.dataset.act) { g.setAction(b.dataset.act); save(); }
   else if (b.dataset.do === 'shop') openShop();
   else if (b.dataset.do === 'bag') openBag();
+  else if (b.dataset.do === 'titles') openTitles();
   else if (b.dataset.do === 'close') openClose();
   else if (b.dataset.do === 'openDoor') { g.P.closed = 0; g.log('Ngươi xuất quan sớm.', 'muted'); }
   dirty = true;
@@ -642,6 +684,7 @@ function frame(t) {
     }
   } else acc = 0;
   if (dirty) render();
+  if (g.s.toasts && g.s.toasts.length) showToasts();
   if (t - lastSave > 5000) save();
   requestAnimationFrame(frame);
 }

@@ -114,6 +114,8 @@ Ký ức đạo pháp, Thân thể kiếp trước, Dư âm cơ duyên, Tàn h�
 
 **Danh hiệu:** 25 danh hiệu giang hồ xưng tụng, mở theo thành tích trong kiếp (thắng trận, hạ yêu thú, tu nhanh hoặc tu muộn, sống lâu, giàu có, Hữu tình/Vô tình cực độ, nhiều bạn, nhiều thù, đạo lữ, đệ tử, báo thù, cửu tử nhất sinh, danh vọng, thứ hạng Bảng Thiên Kiêu, mạnh nhất tông môn, đồ Cực phẩm, võ kỹ, thể chất). Đeo một danh hiệu để nhận lợi ích nhỏ (2-8%), hiện phía trên tên. Danh hiệu mở lại mỗi kiếp. **Danh hiệu lục** (tab Sổ kiếp) ghi mọi danh hiệu từng có, cái chưa có hiện điều kiện để người chơi nhắm tới. Bảng Thiên Kiêu gắn nhãn Bảng thủ và Chưởng môn (người mạnh nhất mỗi tông).
 
+**Phẩm danh hiệu và hiệu ứng** (`TITLE_TIER` trong `js/data.js`): Thường (khung đơn), Hiếm (khung xanh), Truyền kỳ (chữ vàng ánh kim chạy ngang), Thần thoại (chữ ánh cầu vồng, khung tỏa sáng, tia lấp lánh hai bên). Danh hiệu có ô riêng (nút 🏅 Danh hiệu, hoặc chạm danh hiệu trên tên): đang đeo, đã đạt, chưa đạt kèm điều kiện. Đạt danh hiệu mới thì có thông báo trượt xuống từ trên màn hình. Hiệu ứng tắt khi máy bật giảm chuyển động.
+
 ## 6d. Tốc độ cao và tự quyết
 
 - Nút **Tự quyết** (bật sẵn, lưu theo bản lưu): từ 8× trở lên, kỳ ngộ nhỏ tự chọn phương án mặc định (`auto` trong từng sự kiện ở `js/events.js`, ví dụ yêu thú thì đánh nếu đủ sức, không thì chạy) và ghi vào nhật ký với tiền tố "(Tự quyết)", bỏ qua phần diễn trận.

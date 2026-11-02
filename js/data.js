@@ -209,3 +209,13 @@ export const TITLES = [
   { id: 'vo_hoc', n: 'Võ Học Tông Sư', cond: 'Biết 8 võ kỹ', bonus: 'Chiến đấu +4%', fx: { fightMul: 1.04 }, check: (g) => g.P.skills.length >= 8 },
   { id: 'huyet_mach', n: 'Huyết Mạch Thức Tỉnh', cond: 'Mang thể chất Truyền thuyết trở lên', bonus: 'Đột phá +2%', fx: { brk: 0.02 }, check: (g) => g.traits()[0].tier >= 3 },
 ];
+
+// phẩm danh hiệu theo độ khó: 1 Thường, 2 Hiếm, 3 Truyền kỳ, 4 Thần thoại
+const TITLE_TIER = {
+  so_xuat: 1, danh_chan: 1, lao_thu: 1,
+  bach_chien: 2, khac_tinh: 2, thien_kieu_tu: 2, phu_giap: 2, hiep_khach: 2, thu_dich: 2, than_tien: 2, bao_thu: 2, tru_cot: 2, vo_hoc: 2,
+  thieu_nien: 3, lao_bat_tu: 3, vong_tinh: 3, bang_huu: 3, dao_ly: 3, cuu_tu: 3, danh_thien_ha: 3, thap_dai: 3, tang_bao: 3, huyet_mach: 3,
+  duc_hoa: 4, bang_thu: 4,
+};
+for (const t of TITLES) t.tier = TITLE_TIER[t.id] || 1;
+export const TITLE_TIER_N = ['', 'Thường', 'Hiếm', 'Truyền kỳ', 'Thần thoại'];
