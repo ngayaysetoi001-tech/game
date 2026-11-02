@@ -357,7 +357,7 @@ export const EVENTS2 = [
 
   // ===== Huyết trận ở làng (chuỗi ma tu trả thù) =====
   {
-    id: 'huyet_tran', w: 2, cd: 25, title: 'Làng ngủ say',
+    id: 'huyet_tran', w: 2, cd: 70, title: 'Làng ngủ say',
     when: (g) => g.P.dao && g.P.realm >= 1 && g.P.age >= 16,
     text: () => 'Cả làng Thạch Khê ngủ li bì không dậy, ngay cả chó cũng nằm im. Giữa đình làng là một trận pháp vẽ bằng máu, đang hút dần sinh khí của mọi người.',
     choices: (g) => {
