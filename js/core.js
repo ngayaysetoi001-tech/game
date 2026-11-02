@@ -16,7 +16,7 @@ import { EVENTS, EVENT_MAP } from './events.js';
 import { SKILLS, SKILL_IDS, BEAST_SKILLS, fighter, battle, turnText } from './combat.js';
 import { makeItem, gearStats, itemScore, QUALITY } from './items.js';
 import { botSeed } from './sprite.js';
-import { armorColor } from './icons.js';
+import { armorColor, itemToken, iconToken } from './icons.js';
 
 // đối thủ coi như có sẵn trang bị (trừ hạng phàm nhân)
 const enemyGear = (realm) => (realm <= 0 ? 1 : 1.2);
@@ -675,7 +675,9 @@ export class Game {
     if (!opts.length) return '';
     const id = this.r.weighted(opts, (k) => (!SKILLS[k].wep || SKILLS[k].wep === w ? 3 : 1));
     this.learn(id);
-    return `Lĩnh ngộ võ kỹ: ${SKILLS[id].n}.`;
+    const m = `Lĩnh ngộ võ kỹ: ${iconToken({ kind: 'bi_kip', q: SKILLS[id].tier })}${SKILLS[id].n}.`;
+    this.log(m, 'good');
+    return m;
   }
   toggleSkill(id) {
     const P = this.P;
@@ -691,18 +693,22 @@ export class Game {
   gainItem(it, prefix = 'Thu được') {
     const P = this.P;
     const qn = QUALITY[it.q].n;
+    const tk = itemToken(it);
     if (!P.eq[it.slot]) {
       P.eq[it.slot] = it;
-      return `${prefix}: ${it.n} (${qn}), đã mang vào người.`;
+      const m = `${prefix}: ${tk}${it.n} (${qn}), đã mang vào người.`;
+      this.log(m, 'good');
+      return m;
     }
     P.bag.push(it);
-    let msg = `${prefix}: ${it.n} (${qn}).`;
+    let msg = `${prefix}: ${tk}${it.n} (${qn}).`;
     if (P.bag.length > BAG_MAX) {
       P.bag.sort((a, b) => a.val - b.val);
       const sold = P.bag.shift();
       this.money(sold.val);
       msg += ` Túi đầy, bán ${sold.n} được ${sold.val} linh thạch.`;
     }
+    this.log(msg, 'good');
     return msg;
   }
   equip(itemId) {
@@ -766,7 +772,7 @@ export class Game {
     if (!b || P.skills.includes(id) || P.money < b.price) return null;
     this.money(-b.price);
     this.learn(id);
-    return `Học được ${SKILLS[id].n}.`;
+    return `Học được ${iconToken({ kind: 'bi_kip', q: SKILLS[id].tier })}${SKILLS[id].n}.`;
   }
   hurt(n, cause) {
     const P = this.P;
@@ -1027,8 +1033,33 @@ export class Game {
     if (this.s.phase === 'dead') res += `\n\n${this.P.name} ngã xuống, hưởng thọ ${this.P.age} tuổi.`;
     p.result = res;
     const first = res.split('\n').filter(Boolean).pop();
-    if (this.P && first) this.log(`${ev.title}: ${first}`, 'event');
+    if (this.P && first) this.log(`${this._auto ? '(Tự quyết) ' : ''}${ev.title}: ${first}`, 'event');
     if (this.playing) this.checkTitles();
+  }
+  /** Sự kiện đang chờ có tự quyết được không (việc nhỏ) */
+  canAuto() {
+    const p = this.s.pending;
+    if (!p || p.result !== undefined) return false;
+    const ev = EVENT_MAP[p.id];
+    return !!(ev && ev.auto);
+  }
+  /** Tự chọn phương án mặc định của sự kiện nhỏ, bỏ qua phần diễn trận, rồi đóng lại */
+  autoResolve() {
+    if (!this.canAuto()) return false;
+    const p = this.s.pending;
+    const ev = EVENT_MAP[p.id];
+    const c = this.ctx(p);
+    const list = ev.choices(this, c).filter((x) => x.if !== false);
+    let pick = ev.auto(this, c, list);
+    if (typeof pick === 'string') pick = Math.max(0, list.findIndex((x) => x.t.startsWith(pick)));
+    if (typeof pick !== 'number' || pick < 0 || pick >= list.length) pick = list.length - 1;
+    this._auto = true;
+    this.choose(pick);
+    this._auto = false;
+    if (p.battles) p.bi = p.battles.length;
+    const dead = this.s.phase === 'dead';
+    if (!dead) this.dismiss();
+    return true;
   }
   dismiss() {
     const p = this.s.pending;

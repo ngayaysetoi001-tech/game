@@ -114,6 +114,13 @@ Ký ức đạo pháp, Thân thể kiếp trước, Dư âm cơ duyên, Tàn h�
 
 **Danh hiệu:** 25 danh hiệu giang hồ xưng tụng, mở theo thành tích trong kiếp (thắng trận, hạ yêu thú, tu nhanh hoặc tu muộn, sống lâu, giàu có, Hữu tình/Vô tình cực độ, nhiều bạn, nhiều thù, đạo lữ, đệ tử, báo thù, cửu tử nhất sinh, danh vọng, thứ hạng Bảng Thiên Kiêu, mạnh nhất tông môn, đồ Cực phẩm, võ kỹ, thể chất). Đeo một danh hiệu để nhận lợi ích nhỏ (2-8%), hiện phía trên tên. Danh hiệu mở lại mỗi kiếp. **Danh hiệu lục** (tab Sổ kiếp) ghi mọi danh hiệu từng có, cái chưa có hiện điều kiện để người chơi nhắm tới. Bảng Thiên Kiêu gắn nhãn Bảng thủ và Chưởng môn (người mạnh nhất mỗi tông).
 
+## 6d. Tốc độ cao và tự quyết
+
+- Nút **Tự quyết** (bật sẵn, lưu theo bản lưu): từ 8× trở lên, kỳ ngộ nhỏ tự chọn phương án mặc định (`auto` trong từng sự kiện ở `js/events.js`, ví dụ yêu thú thì đánh nếu đủ sức, không thì chạy) và ghi vào nhật ký với tiền tố "(Tự quyết)", bỏ qua phần diễn trận.
+- Việc lớn vẫn hỏi: đột phá, đạo hiệu, đạo lữ, tin dữ, cố nhân, duyên nợ, kẻ thù kiếp trước, phản bội, đệ tử gặp nạn, lời mời tông môn, tuổi già. Mô phỏng: khoảng 12 lần hỏi mỗi kiếp (phần lớn là đột phá), 42 lần tự quyết. Chiến hỏa sơn môn cũng tự quyết: đủ mạnh thì ra tiền tuyến, không thì ở hậu phương.
+- Hộp câu hỏi không còn phủ tối và chặn màn hình: các nút tốc độ, tạm dừng, tự quyết vẫn bấm được; trong hộp có nút "Dừng sau khi chọn".
+- Biểu tượng vật phẩm và bí kíp được nhúng vào chữ bằng mã `[[i|loại|phẩm|màu]]` (`iconToken` trong `js/icons.js`), giao diện thay bằng ảnh trong kết quả sự kiện và nhật ký.
+
 ## 7. Kỹ thuật
 
 - HTML, CSS, JavaScript thuần (ES module), không cần build, không cần máy chủ.

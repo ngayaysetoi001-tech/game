@@ -4,7 +4,7 @@ import { STAT_NAMES, PERSONALITIES } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, TACTICS, WEAPON_TYPES, turnText } from './combat.js';
 import { SLOTS, QUALITY, itemLine } from './items.js';
-import { iconURL, itemIconOpts, armorColor, PILL_COLORS } from './icons.js';
+import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE } from './icons.js';
 
 const SAVE_KEY = 'tkps.save.v1';
 const SPEEDS = [1, 2, 4, 8, 16, 32];
@@ -15,6 +15,8 @@ const fmt = (n) => Math.floor(n).toLocaleString('vi-VN');
 let g = null;
 let speed = 1;
 let paused = false;
+let autoOn = true; // tự quyết việc nhỏ từ 8×
+const AUTO_SPEED = 8;
 let tab = 'log';
 let acc = 0;
 let lastT = performance.now();
@@ -29,6 +31,7 @@ function load() {
       g = Game.load(raw);
       const ui = g.s.ui || {};
       speed = SPEEDS.includes(ui.speed) ? ui.speed : 1;
+      autoOn = ui.auto !== false;
       return;
     }
   } catch (e) {
@@ -38,7 +41,7 @@ function load() {
 }
 function save() {
   try {
-    g.s.ui = { speed };
+    g.s.ui = { speed, auto: autoOn };
     localStorage.setItem(SAVE_KEY, g.save());
   } catch (e) {
     /* hết chỗ hoặc chế độ riêng tư: chơi tiếp không lưu */
@@ -173,6 +176,7 @@ function renderPlay() {
   setHTML($('speed'),
     `<button class="btn sp ${paused ? 'on' : ''}" data-sp="0" aria-label="Tạm dừng">${paused ? '▶' : '⏸'}</button>` +
     SPEEDS.map((s) => `<button class="btn sp ${!paused && s === speed ? 'on' : ''}" data-sp="${s}">${s}×</button>`).join('') +
+    `<button class="btn sp ${autoOn ? 'on' : ''}" data-do="auto" title="Từ ${AUTO_SPEED}×, kỳ ngộ nhỏ tự chọn phương án hợp lý">Tự quyết ${autoOn ? 'bật' : 'tắt'}</button>` +
     `<span class="grow"></span>` +
     (canBreak ? `<button class="btn primary breakBtn" data-do="break">Đột phá</button>` : ''));
 
@@ -204,7 +208,7 @@ function renderPlay() {
 function renderTab() {
   if (tab === 'log') {
     const items = g.s.log.slice(-80).reverse();
-    return `<ul class="log">${items.map((l) => `<li class="${l.tone}"><span class="age">${l.a} tuổi</span>${esc(l.t)}</li>`).join('')}</ul>`;
+    return `<ul class="log">${items.map((l) => `<li class="${l.tone}"><span class="age">${l.a} tuổi</span>${rich(l.t)}</li>`).join('')}</ul>`;
   }
   if (tab === 'rel') {
     const list = g.known().sort((a, b) => Math.abs(b.r.v) - Math.abs(a.r.v) || (b.r.tag ? 1 : 0) - (a.r.tag ? 1 : 0));
@@ -322,7 +326,9 @@ function renderModal() {
   $('modal').hidden = !v;
   if (!v) return;
   $('evTitle').textContent = v.title;
-  $('evText').textContent = v.text;
+  $('evText').innerHTML = rich(v.text);
+  $('evPause').textContent = paused ? '▶ Chạy tiếp sau khi chọn' : '⏸ Dừng sau khi chọn';
+  $('evPause').classList.toggle('on', paused);
   if (v.done) {
     $('evChoices').innerHTML = `<button class="btn primary" id="evOk">Tiếp tục</button>`;
     $('evOk').onclick = () => { g.dismiss(); save(); dirty = true; };
@@ -331,6 +337,12 @@ function renderModal() {
     $('evChoices').querySelectorAll('[data-ch]').forEach((b) => { b.onclick = () => { g.choose(+b.dataset.ch); save(); dirty = true; }; });
   }
 }
+
+/** Chữ có mã biểu tượng: thoát HTML rồi thay mã bằng ảnh */
+function rich(t) {
+  return esc(t).replace(ICON_TOKEN_RE, (m, kind, q, col) => `<img class="ico inl q${q}" alt="" src="${iconURL({ kind, q: +q, col: col === '-' ? null : col })}">`);
+}
+$('evPause').onclick = () => { paused = !paused; dirty = true; };
 
 // ---------- Diễn lại trận đấu ----------
 let bt = null;
@@ -585,6 +597,7 @@ $('speed').addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (!b) return;
   if (b.dataset.do === 'break') { g.openBreak(); dirty = true; return; }
+  if (b.dataset.do === 'auto') { autoOn = !autoOn; save(); dirty = true; return; }
   const v = +b.dataset.sp;
   if (v === 0) paused = !paused;
   else { speed = v; paused = false; }
@@ -610,6 +623,11 @@ function frame(t) {
   const dt = Math.min(250, t - lastT);
   lastT = t;
   const sheetOpen = !$('sheet').hidden;
+  // tốc độ cao: kỳ ngộ nhỏ tự quyết để không bị hộp câu hỏi chặn liên tục
+  if (autoOn && !paused && speed >= AUTO_SPEED && g.playing && g.canAuto()) {
+    g.autoResolve();
+    dirty = true;
+  }
   if (g.playing && !paused && !g.s.pending && !sheetOpen) {
     const yearMs = 1000 / speed / (g.P.closed > 0 ? 3 : 1);
     acc += dt;
@@ -619,6 +637,7 @@ function frame(t) {
       n++;
       g.tick();
       dirty = true;
+      if (g.s.pending && autoOn && speed >= AUTO_SPEED && g.canAuto()) g.autoResolve();
       if (!g.playing || g.s.pending) { acc = 0; break; }
     }
   } else acc = 0;

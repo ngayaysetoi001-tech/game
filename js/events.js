@@ -38,7 +38,7 @@ export const EVENTS = [
 
   // ===== Tuổi thơ =====
   {
-    id: 'lac_rung', once: true, w: 40, title: 'Đom đóm xanh',
+    id: 'lac_rung', auto: () => 0, once: true, w: 40, title: 'Đom đóm xanh',
     when: (g) => g.P.age >= 3 && g.P.age <= 6,
     text: () => 'Ngươi đuổi theo một con đom đóm xanh vào khu rừng sau làng. Khi ngoảnh lại, con đường về đã biến mất.',
     choices: () => [
@@ -53,7 +53,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'sot_cao', once: true, w: 4, title: 'Cơn sốt bảy ngày',
+    id: 'sot_cao', auto: () => 0, once: true, w: 4, title: 'Cơn sốt bảy ngày',
     when: (g) => g.P.age >= 2 && g.P.age <= 9,
     text: () => 'Ngươi lên cơn sốt bảy ngày bảy đêm, người nóng như hòn than. Thầy lang trong làng lắc đầu.',
     choices: () => [
@@ -73,7 +73,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'ban_thuo_nho', once: true, w: 5, title: 'Đứa trẻ nhà bên',
+    id: 'ban_thuo_nho', auto: () => 0, once: true, w: 5, title: 'Đứa trẻ nhà bên',
     when: (g) => g.P.age >= 4 && g.P.age <= 12,
     bot: (g) => g.findBot((b, r) => Math.abs(b.age - g.P.age) <= 3 && !(r && r.met), 1),
     text: (g, { bot: b }) => {
@@ -91,7 +91,7 @@ export const EVENTS = [
 
   // ===== Nhập đạo =====
   {
-    id: 'lao_gia_gieng', w: 6, cd: 3, title: 'Ông lão bên giếng',
+    id: 'lao_gia_gieng', auto: () => 0, w: 6, cd: 3, title: 'Ông lão bên giếng',
     when: (g) => !g.P.dao && g.P.age >= 6 && g.P.age <= 15,
     text: () => 'Một ông lão rách rưới ngồi bên miệng giếng làng, chìa cái gáo dừa ra xin nước uống.',
     choices: () => [
@@ -120,7 +120,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'khao_hach', w: (g) => (g.P.dao ? 3 : 7), cd: 3, title: 'Tông môn tuyển đệ tử',
+    id: 'khao_hach', auto: () => 0, w: (g) => (g.P.dao ? 3 : 7), cd: 3, title: 'Tông môn tuyển đệ tử',
     when: (g) => !g.P.sect && g.P.age >= 8 && g.P.age <= 16,
     prep: (g) => { const ss = g.aliveSects(); return ss.length ? { sect: g.r.pick(ss).id } : null; },
     text: (g, { data }) => `${g.sect(data.sect).name} mở đợt thu nhận đệ tử ở trấn bên. Trẻ con khắp vùng xếp hàng, lần lượt đặt tay lên trắc linh thạch.`,
@@ -140,7 +140,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'co_duyen_muon', w: 4, cd: 5, title: 'Quyển sách trong kho',
+    id: 'co_duyen_muon', auto: () => 0, w: 4, cd: 5, title: 'Quyển sách trong kho',
     when: (g) => !g.P.dao && g.P.age >= 16 && g.P.age <= 45,
     text: () => 'Dọn kho cũ, ngươi tìm thấy một quyển sách chép tay mục nát. Trang đầu viết bốn chữ: "Dẫn khí nhập thể".',
     choices: () => [
@@ -176,7 +176,7 @@ export const EVENTS = [
 
   // ===== Lịch luyện =====
   {
-    id: 'hang_dong', w: 5, acts: ['lich_luyen'], title: 'Hang động sau thác',
+    id: 'hang_dong', auto: (g) => (g.P.hp >= 60 && g.P.stats.co >= 55 ? 0 : 1), w: 5, acts: ['lich_luyen'], title: 'Hang động sau thác',
     when: (g) => g.P.dao && g.P.age >= 12,
     text: () => 'Sau một thác nước có cửa hang tối om. Hơi lạnh và linh khí từ bên trong tỏa ra từng đợt.',
     choices: () => [
@@ -198,7 +198,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'yeu_thu', w: 5, cd: 3, acts: ['lich_luyen'], title: 'Yêu thú chặn đường',
+    id: 'yeu_thu', auto: (g, { data }) => (g.playerPower() >= data.m.pow * (g.P.realm ? 1.2 : 1) * 0.95 ? 0 : 1), w: 5, cd: 3, acts: ['lich_luyen'], title: 'Yêu thú chặn đường',
     when: (g) => g.P.age >= 10,
     prep: (g) => ({ m: g.monster(g.P.realm + (g.P.realm === 0 ? 0 : g.r.pick([-1, 0, 0, 1]))) }),
     text: (g, { data }) => `Một con ${data.m.n} chặn ngang đường mòn, mắt đỏ ngầu, nước dãi nhỏ xuống đất.\n\n${g.hint(data.m.pow)}`,
@@ -227,7 +227,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'cho_dem', w: 2, cd: 6, title: 'Chợ đêm tán tu',
+    id: 'cho_dem', auto: () => -1, w: 2, cd: 6, title: 'Chợ đêm tán tu',
     when: (g) => g.P.age >= 12 && g.P.money >= 20,
     text: () => 'Phiên chợ đêm của tán tu họp dưới chân núi. Đèn lồng giấy treo lủng lẳng, người bán nào cũng trùm kín mặt.',
     choices: (g) => {
@@ -250,7 +250,7 @@ export const EVENTS = [
     },
   },
   {
-    id: 'truyen_thua', w: 2, cd: 25, acts: ['lich_luyen'], title: 'Pho tượng dưới vực',
+    id: 'truyen_thua', auto: (g) => (g.P.stats.ngo >= 50 && g.P.hp >= 60 ? 0 : 1), w: 2, cd: 25, acts: ['lich_luyen'], title: 'Pho tượng dưới vực',
     when: (g) => g.P.dao && g.P.realm >= 1 && g.P.stats.co >= 40,
     text: () => 'Dưới đáy vực sâu, ngươi thấy một pho tượng đá tay cầm ngọc giản. Vừa chạm vào, một giọng nói vang lên trong đầu: "Ba nghìn năm rồi... cuối cùng cũng có người tới."',
     choices: () => [
@@ -269,7 +269,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'linh_thu', w: 2, cd: 10, acts: ['lich_luyen'], title: 'Sinh linh bị thương',
+    id: 'linh_thu', auto: () => 0, w: 2, cd: 10, acts: ['lich_luyen'], title: 'Sinh linh bị thương',
     when: (g) => g.P.age >= 10 && !g.P.flags.pet,
     prep: (g) => ({ sp: g.r.pick(['hồ ly lông bạc', 'chim sẻ lửa', 'rùa đá nhỏ', 'mèo mun ba mắt', 'rắn ngọc xanh']) }),
     text: (g, { data }) => `Trong bụi rậm có một con ${data.sp} bị thương, đang run rẩy nhìn ngươi.`,
@@ -280,7 +280,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'dich_benh', w: 2, cd: 20, title: 'Ôn dịch',
+    id: 'dich_benh', auto: (g) => (g.P.hp >= 50 ? 0 : -1), w: 2, cd: 20, title: 'Ôn dịch',
     when: (g) => g.P.age >= 14,
     text: () => 'Ôn dịch hoành hành ở trấn Lạc Hà. Người chết nằm la liệt bên đường, ai còn chân đều bỏ chạy.',
     choices: (g) => [
@@ -292,7 +292,7 @@ export const EVENTS = [
 
   // ===== Mưu sinh =====
   {
-    id: 'ho_tong', w: 4, cd: 4, acts: ['muu_sinh'], title: 'Hộ tống thương đội',
+    id: 'ho_tong', auto: (g) => (g.P.hp >= 50 ? 0 : 1), w: 4, cd: 4, acts: ['muu_sinh'], title: 'Hộ tống thương đội',
     when: (g) => g.P.age >= 14,
     text: () => 'Một thương đội cần người hộ tống qua Hắc Thạch Cốc. Tiền công hậu hĩnh, nhưng ai cũng biết trong cốc có cướp.',
     choices: () => [
@@ -312,7 +312,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'dau_gia', w: 2, cd: 6, title: 'Hội đấu giá Tứ Phương',
+    id: 'dau_gia', auto: () => -1, w: 2, cd: 6, title: 'Hội đấu giá Tứ Phương',
     when: (g) => g.P.realm >= 1 && g.P.money >= 80 * (1 + g.P.realm),
     text: () => 'Hội đấu giá Tứ Phương mở cửa. Trên đài là những món ngoài chợ không bao giờ có.',
     choices: (g) => {
@@ -333,7 +333,7 @@ export const EVENTS = [
 
   // ===== Bot: cứu, đấu, kết giao =====
   {
-    id: 'cuu_nguoi', w: 4, cd: 5, title: 'Tiếng kêu cứu',
+    id: 'cuu_nguoi', auto: (g, { data }) => (g.playerPower() >= data.m.pow * 0.8 * (g.P.realm ? 1.2 : 1) ? 'Lao vào cứu' : 'Làm như không thấy'), w: 4, cd: 5, title: 'Tiếng kêu cứu',
     when: (g) => g.P.age >= 12,
     bot: (g) => g.findBot((b) => b.age >= 10 && near(g, b)),
     prep: (g, b) => ({ m: g.monster(b.realm) }),
@@ -376,7 +376,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'khieu_chien', w: 4, cd: 4, title: 'Kẻ chặn đường',
+    id: 'khieu_chien', auto: (g, { bot }) => (g.playerPower() >= g.power(bot) * (bot.realm ? 1.2 : 1) * 1.05 ? 'Nhận lời' : 'Chắp tay từ chối'), w: 4, cd: 4, title: 'Kẻ chặn đường',
     when: (g) => g.P.dao && g.P.age >= 14,
     bot: (g) => g.findBot((b, r) => b.dao && b.age >= 14 && near(g, b) && (b.pers === 'cuong' || (r && r.met && r.v <= -20))),
     text: (g, { bot: b }) => `${g.nm(b)} chặn đường, mũi kiếm chĩa thẳng vào ngươi: "Nghe danh đã lâu. Hôm nay xem ngươi có xứng không!"\n\n${g.hint(g.power(b))}`,
@@ -404,7 +404,7 @@ export const EVENTS = [
     },
   },
   {
-    id: 'ket_bai', w: 4, cd: 5, title: 'Chén rượu trên đỉnh núi',
+    id: 'ket_bai', auto: () => 'Cạn chén', w: 4, cd: 5, title: 'Chén rượu trên đỉnh núi',
     when: (g) => g.P.age >= 14,
     bot: (g) => g.findBot((b, r) => r && r.met && r.v >= 45 && !r.tag),
     text: (g, { bot: b }) => `${b.name} mời ngươi lên đỉnh núi, rót hai chén rượu: "Đời người gặp được tri kỷ không dễ. Chi bằng ta kết nghĩa, sống chết có nhau?"`,
@@ -424,7 +424,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'song_tu', w: 3, cd: 5, title: 'Tử Trúc Lâm',
+    id: 'song_tu', auto: () => 'Đi cùng', w: 3, cd: 5, title: 'Tử Trúc Lâm',
     when: (g) => g.P.dao,
     bot: (g) => g.findBot((b, r) => b.dao && r && r.met && r.tag === 'dao_lu'),
     text: (g, { bot: b }) => `${b.name} rủ ngươi cùng vào Tử Trúc Lâm bế quan song tu một mùa.`,
@@ -455,7 +455,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'bi_canh', w: 3, cd: 10, title: 'Bí cảnh mở cửa',
+    id: 'bi_canh', auto: () => 'Rủ người đó cùng đi', w: 3, cd: 10, title: 'Bí cảnh mở cửa',
     when: (g) => g.P.dao && g.P.realm >= 1 && g.P.realm <= 5,
     bot: (g) => g.findBot((b) => b.dao && near(g, b)),
     text: (g, { bot: b }) => `Một bí cảnh thượng cổ vừa mở giữa sa mạc. Ở cửa vào, ngươi chạm mặt ${g.nm(b)}, cũng đang định bước vào.`,
@@ -480,7 +480,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'bao_vat', w: 3, cd: 6, title: 'Linh chi ngàn năm',
+    id: 'bao_vat', auto: () => 'Đề nghị chia đôi', w: 3, cd: 6, title: 'Linh chi ngàn năm',
     when: (g) => g.P.dao && g.P.realm >= 1,
     bot: (g) => g.findBot((b) => b.dao && near(g, b)),
     text: (g, { bot: b }) => `Trên vách núi mọc một gốc linh chi ngàn năm. ${g.nm(b)} cũng vừa tới nơi. Hai người nhìn nhau.`,
@@ -499,7 +499,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'tien_boi', w: 2, cd: 8, title: 'Người câu cá bên suối',
+    id: 'tien_boi', auto: () => 'Xin được chỉ điểm', w: 2, cd: 8, title: 'Người câu cá bên suối',
     when: (g) => g.P.dao && g.P.age >= 12,
     bot: (g) => g.findBot((b) => b.dao && b.realm >= g.P.realm + 2),
     text: (g, { bot: b }) => `Ngươi gặp ${g.nm(b)} đang ngồi câu cá bên suối. Khí tức người này sâu như biển.`,
@@ -517,7 +517,7 @@ export const EVENTS = [
     ],
   },
   {
-    id: 'thu_de_tu', w: 3, cd: 15, title: 'Đứa trẻ quỳ trước động phủ',
+    id: 'thu_de_tu', auto: () => 'Thu nhận', w: 3, cd: 15, title: 'Đứa trẻ quỳ trước động phủ',
     when: (g) => g.P.realm >= 3 && g.known().filter(({ r }) => r.tag === 'de_tu').length < 3,
     bot: (g) => g.findBot((b, r) => b.age >= 8 && b.age <= 18 && !(r && r.tag), 1),
     text: (g, { bot: b }) => `Một đứa trẻ tên ${b.name} quỳ trước động phủ của ngươi ba ngày ba đêm, nhất quyết xin làm đồ đệ.\nLinh căn: ${b.rootN}. Tính tình: ${b.pers === 'hien' ? 'hiền lành' : b.pers === 'tham' ? 'hơi tham' : b.pers === 'cuong' ? 'ngang ngược' : b.pers === 'an' ? 'lầm lì' : b.pers === 'muu' ? 'lanh lợi khó đoán' : 'thẳng thắn'}.`,
@@ -555,7 +555,7 @@ export const EVENTS = [
 
   // ===== Tâm ma =====
   {
-    id: 'tam_ma', w: 3, cd: 10, inClosed: true, title: 'Tâm ma',
+    id: 'tam_ma', auto: () => 'Nhìn thẳng', w: 3, cd: 10, inClosed: true, title: 'Tâm ma',
     when: (g) => g.P.realm >= 2,
     text: () => 'Đang vận công, trước mắt ngươi bỗng hiện ra những gương mặt cũ: kẻ từng làm nhục ngươi, người ngươi từng phụ. Chúng cười, chúng khóc, chúng gọi tên ngươi.',
     choices: (g) => {
@@ -577,7 +577,7 @@ export const EVENTS = [
 
   // ===== Tông môn (từ hàng đợi) =====
   {
-    id: 'tong_mon_chien', queued: true, title: 'Chiến hỏa sơn môn',
+    id: 'tong_mon_chien', auto: (g, { data }) => { const f = g.members(data.enemy).filter((b) => Math.abs(b.realm - g.P.realm) <= 1); const avg = f.length ? f.reduce((m, b) => m + g.power(b), 0) / f.length : REALMS[g.P.realm].pow; return g.P.hp >= 50 && g.playerPower() >= avg * 1.2 ? 'Xông ra tiền tuyến' : 'Ở hậu phương'; }, queued: true, title: 'Chiến hỏa sơn môn',
     text: (g, { data }) => `${g.sect(data.enemy).name} kéo người đánh lên sơn môn ${g.sect(g.P.sect).name}. Trống trận vang khắp núi.`,
     choices: (g, { data }) => [
       {

@@ -196,3 +196,9 @@ export function iconURL(o) {
 export const itemIconOpts = (it) => ({ kind: iconKind(it), q: it.q, col: it.slot === 'ao' ? armorColor(it) : null });
 
 export const PILL_COLORS = { hoi_xuan: '#c0392b', pha_canh: '#8e5bd0', dien_tho: '#d8a83c', tinh_tam: '#4f8fd6' };
+
+/** Mã nhúng biểu tượng vào chữ (giao diện thay bằng ảnh, nơi khác bỏ qua) */
+export const iconToken = (o) => `[[i|${o.kind}|${o.q || 0}|${o.col || '-'}]]`;
+export const itemToken = (it) => iconToken(itemIconOpts(it));
+export const ICON_TOKEN_RE = /\[\[i\|(\w+)\|(\d)\|(#[0-9a-fA-F]{6}|-)\]\]/g;
+export const stripIconTokens = (s) => String(s).replace(ICON_TOKEN_RE, '');
