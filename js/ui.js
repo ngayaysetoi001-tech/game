@@ -359,8 +359,13 @@ $('menuBtn').onclick = () => {
       document.documentElement.dataset.theme = nx;
       try { localStorage.setItem('tkps.theme', nx); } catch (e) { /* bỏ qua */ }
     };
-    $('newWorld').onclick = () => {
-      if (!confirm('Xóa toàn bộ thế giới hiện tại và tạo thế giới mới?')) return;
+    $('newWorld').onclick = (e) => {
+      const btn = e.currentTarget;
+      if (!btn.dataset.armed) {
+        btn.dataset.armed = '1';
+        btn.textContent = 'Bấm lần nữa để xóa thế giới hiện tại';
+        return;
+      }
       g = Game.create();
       save();
       $('sheet').hidden = true;

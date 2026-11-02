@@ -32,6 +32,7 @@
     --hp: #d4614f;
     --life: #b9a55a;
     --shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
   }
 }
 :root[data-theme='dark'] {
@@ -50,6 +51,7 @@
   --hp: #d4614f;
   --life: #b9a55a;
   --shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -66,7 +68,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 #app { max-width: 560px; margin: 0 auto; padding: 0 16px calc(24px + env(safe-area-inset-bottom)); }
 
 .top {
-  position: sticky; top: 0; z-index: 5;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
   display: flex; align-items: center; gap: 8px;
   padding: 10px 0; background: var(--bg); border-bottom: 1px solid var(--line);
 }

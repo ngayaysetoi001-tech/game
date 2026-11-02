@@ -13,7 +13,11 @@ python3 -m http.server 8000
 # mở http://localhost:8000
 ```
 
-Hoặc bật GitHub Pages cho repo này để chơi trên điện thoại.
+Hoặc gộp thành một file HTML duy nhất (CSS, JS nhúng sẵn) để đăng ở bất kỳ đâu:
+
+```bash
+node tools/build-artifact.mjs   # ra dist/tram-kiep-phu-sinh.html
+```
 
 ## Mô phỏng cân bằng
 
