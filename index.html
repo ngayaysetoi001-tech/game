@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1b1713" />
+  <title>Trăm Kiếp Phù Sinh</title>
+  <meta name="description" content="Game tu tiên luân hồi chơi một mình trong một thế giới bot tự sống." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="top">
+      <div class="brand">Trăm Kiếp Phù Sinh</div>
+      <div class="year" id="worldYear"></div>
+      <button class="icon" id="menuBtn" aria-label="Menu">☰</button>
+    </header>
+
+    <section id="scr-birth" class="screen" hidden></section>
+
+    <section id="scr-play" class="screen" hidden>
+      <div class="hero">
+        <canvas id="portrait" width="32" height="32"></canvas>
+        <div class="who" id="who"></div>
+      </div>
+      <div class="bars" id="bars"></div>
+      <div class="stats" id="stats"></div>
+      <div class="speed" id="speed"></div>
+      <div class="actions" id="actions"></div>
+      <nav class="tabs" id="tabs"></nav>
+      <div class="tabbody" id="tabbody"></div>
+    </section>
+
+    <section id="scr-dead" class="screen" hidden></section>
+  </div>
+
+  <div class="overlay" id="modal" hidden>
+    <div class="card event" role="dialog" aria-modal="true">
+      <h2 id="evTitle"></h2>
+      <div class="evText" id="evText"></div>
+      <div class="choices" id="evChoices"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="sheet" hidden>
+    <div class="card sheet" role="dialog" aria-modal="true">
+      <div id="sheetBody"></div>
+      <button class="btn ghost wide" id="sheetClose">Đóng</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/ui.js"></script>
+</body>
+</html>
