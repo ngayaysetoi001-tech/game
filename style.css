@@ -447,3 +447,11 @@ h3 { font-size: 15px; margin: 14px 0 6px; color: var(--muted); font-weight: 600;
   -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 2.2s linear infinite; }
 .ttActive { margin-top: 6px; font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; }
 @media (prefers-reduced-motion: reduce) { .ttName { animation: none; color: var(--r4); background: none; } }
+
+/* Thần khí kén chủ */
+.sealLine { margin-top: 4px; font-size: 13px; color: var(--muted); padding: 3px 8px; border-radius: 6px; background: var(--bar); }
+.ttLine.sealed { filter: grayscale(0.85); opacity: 0.7; }
+.ttLine.sealed .ttName { animation: none; }
+.legMyth { border: 2px solid var(--r4); background: color-mix(in srgb, var(--r4) 7%, var(--panel)); animation: blaze 1.6s ease-in-out infinite; }
+.legRow { display: flex; gap: 10px; align-items: center; text-align: left; }
+@media (prefers-reduced-motion: reduce) { .legMyth { animation: none; } }

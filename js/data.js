@@ -98,6 +98,7 @@ export const LEGACIES = [
   { id: 'duyen', n: 'Một sợi tơ duyên', desc: 'Người thân thiết nhất kiếp này sẽ sớm tìm thấy ngươi.' },
   { id: 'tai_san', n: 'Rương chôn dưới gốc đào', desc: 'Chôn lại một nửa linh thạch (tối đa 500) cho kiếp sau.' },
   { id: 'huyet_mach', n: 'Huyết mạch còn vương', desc: 'Kiếp sau giữ lại thể chất của kiếp này.' },
+  { id: 'than_khi', n: 'Thần khí nhận chủ', desc: 'Mang món đồ Thần thoại mạnh nhất sang kiếp sau. Phải tu lại tới cảnh giới của nó mới mở hết sức mạnh.' },
 ];
 
 export const STAT_NAMES = { can: 'Căn cốt', ngo: 'Ngộ tính', tam: 'Tâm tính', co: 'Cơ duyên' };

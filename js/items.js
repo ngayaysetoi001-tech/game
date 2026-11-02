@@ -105,12 +105,22 @@ export function makeItem(r, id, lv, q = null, slot = null) {
 }
 
 /** Tổng chỉ số từ các món đang mặc */
-export function gearStats(eq) {
+/** Thần khí kén chủ: đồ Thần thoại cao cảnh giới hơn chủ thì bị phong ấn */
+export const isSealed = (it, realm) => !!it && it.q >= 4 && realm !== undefined && it.lv > realm;
+
+export function gearStats(eq, realm) {
   const g = { atk: 0, def: 0, hp: 0, crit: 0, dodge: 0, ls: 0, rf: 0, sp: 0 };
   const seen = new Set();
   for (const k in eq) {
     const it = eq[k];
     if (!it) continue;
+    const sealed = isSealed(it, realm);
+    if (sealed) {
+      // bị áp chế: công, thủ, sinh lực ép về cảnh giới của chủ rồi còn một nửa; dòng % còn một nửa
+      const k2 = 0.5 * REALMS[Math.max(0, realm)].pow / REALMS[it.lv].pow;
+      for (const s in g) g[s] += (it[s] || 0) * (s === 'atk' || s === 'def' || s === 'hp' ? k2 : 0.5);
+      continue;
+    }
     for (const s in g) g[s] += it[s] || 0;
     // thần thông trùng nhau chỉ tính một lần
     const tt = it.tt && TT_MAP[it.tt];

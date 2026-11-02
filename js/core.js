@@ -14,7 +14,7 @@ const THE_MAP = Object.fromEntries(THE_CHAT.map((t) => [t.id, t]));
 const TP_MAP = Object.fromEntries(THIEN_PHU.map((t) => [t.id, t]));
 import { EVENTS, EVENT_MAP } from './events.js';
 import { SKILLS, SKILL_IDS, BEAST_SKILLS, fighter, battle, turnText } from './combat.js';
-import { makeItem, gearStats, itemScore, QUALITY, THAN_THONG, TT_MAP } from './items.js';
+import { makeItem, gearStats, itemScore, QUALITY, THAN_THONG, TT_MAP, isSealed } from './items.js';
 import { botSeed } from './sprite.js';
 import { armorColor, itemToken, iconToken } from './icons.js';
 
@@ -407,7 +407,7 @@ export class Game {
     const seen = new Set();
     for (const it of Object.values(P.eq || {})) {
       const tt = it && it.tt && TT_MAP[it.tt];
-      if (tt && tt.fx && !seen.has(tt.id)) { seen.add(tt.id); out.push({ n: tt.n, tt: true, fx: tt.fx }); }
+      if (tt && tt.fx && !seen.has(tt.id) && !isSealed(it, P.realm)) { seen.add(tt.id); out.push({ n: tt.n, tt: true, fx: tt.fx }); }
     }
     return out;
   }
@@ -463,6 +463,13 @@ export class Game {
       it.wt = 'kiem'; it.n = 'Thiết Kiếm của cha';
       P.eq.vu_khi = it;
     }
+    // thần khí tìm về chủ cũ
+    if (leg === 'than_khi' && this.s.legacy.item) {
+      const it = { ...this.s.legacy.item };
+      if (P.eq[it.slot]) P.bag.push(P.eq[it.slot]);
+      P.eq[it.slot] = it;
+      P.flags.thanKhi = it.n;
+    }
     this.s.draft = P;
   }
   reroll() {
@@ -499,6 +506,7 @@ export class Game {
     ]);
     this.log(`${omen} Ngươi tên ${P.name}, ${P.originN.toLowerCase()}. ${P.root.n}.`, 'big');
     if (P.lifeNo > 1) this.log(`Đây là kiếp thứ ${P.lifeNo} của linh hồn này.`, 'muted');
+    if (P.flags.thanKhi) this.log(`Thần khí ${P.flags.thanKhi} vượt qua luân hồi, tìm về bên ngươi. Đủ cảnh giới mới giải được phong ấn.`, 'big');
   }
   lifespan(P = this.P) {
     return Math.round(REALMS[P.realm].life * (1 + (P.stats.can - 50) / 250) * (1 + P.lifeBonus) * this.tmul('lifeMul'));
@@ -558,7 +566,7 @@ export class Game {
   /** Sức mạnh quy đổi gồm trang bị, dùng để so với đối thủ */
   rating() {
     const bp = this.basePower();
-    const gs = gearStats(this.P.eq || {});
+    const gs = gearStats(this.P.eq || {}, this.P.realm);
     return bp * Math.sqrt((1 + gs.atk / (10 * bp)) * (1 + (gs.hp + gs.def * 15) / (60 * bp)));
   }
   playerPower() {
@@ -576,7 +584,7 @@ export class Game {
     const w = P.eq && P.eq.vu_khi;
     return fighter({
       name: P.name, pw: this.basePower() * mul, hpPct: P.hp / 100,
-      skills: P.loadout, wep: w ? w.wt : null, tactic: P.tactic, gear: gearStats(P.eq || {}),
+      skills: P.loadout, wep: w ? w.wt : null, tactic: P.tactic, gear: gearStats(P.eq || {}, P.realm),
       spd: (P.stats.co - 50) / 25,
       look: { type: 'human', seed: P.look, g: P.g, age: P.age, life: this.lifespan(), realm: P.realm, robe: P.eq && P.eq.ao ? armorColor(P.eq.ao) : P.sect ? (this.sect(P.sect) || {}).color : null, wep: w ? w.wt : null },
     });
@@ -969,6 +977,12 @@ export class Game {
       if (P.realm >= 2 && P.daoHieu === undefined) this.s.queue.push({ id: 'dao_hieu', botId: null, data: { opts: this.genDaoHieuOpts() } });
       P.tuvi = 0;
       this.fame(P.realm * 3);
+      for (const it of Object.values(P.eq)) {
+        if (it && it.q >= 4 && it.lv === P.realm) {
+          this.log(`Phong ấn trên ${it.n} vỡ tan. Thần khí nhận ngươi làm chủ, phát huy toàn bộ sức mạnh${it.tt && TT_MAP[it.tt] ? ` và thần thông 「${TT_MAP[it.tt].n}」` : ''}.`, 'big');
+          (this.s.toasts = this.s.toasts || []).push({ n: `${it.n} giải phong`, tier: 4, bonus: it.tt && TT_MAP[it.tt] ? TT_MAP[it.tt].n : 'Toàn bộ sức mạnh' });
+        }
+      }
       const ob = this.tadd('ngoOnBreak');
       if (ob) this.stat('ngo', ob);
       this.log(`Đột phá thành công! Ngươi đã là tu sĩ ${REALMS[P.realm].n}. Thọ nguyên ${this.lifespan()}.`, 'big');
@@ -1188,14 +1202,16 @@ export class Game {
       r.met = false;
     }
     const hasBond = this.s.souls.some((b) => b.alive && this.s.rel[b.id] && this.s.rel[b.id].cn && this.s.rel[b.id].cn.v > 0);
-    const pool = LEGACIES.filter((l) => l.id !== 'duyen' || hasBond).filter((l) => l.id !== 'tai_san' || P.money >= 20).filter((l) => l.id !== 'huyet_mach' || (P.the && P.the !== 'pham'));
-    const opts = [];
+    // thần khí mạnh nhất đang có (mặc hoặc trong túi)
+    const myth = [...Object.values(P.eq || {}), ...(P.bag || [])].filter((it) => it && it.q >= 4).sort((a, b) => itemScore(b) - itemScore(a))[0] || null;
+    const pool = LEGACIES.filter((l) => l.id !== 'duyen' || hasBond).filter((l) => l.id !== 'tai_san' || P.money >= 20).filter((l) => l.id !== 'huyet_mach' || (P.the && P.the !== 'pham')).filter((l) => l.id !== 'than_khi');
+    const opts = myth ? ['than_khi'] : [];
     while (opts.length < 3 && pool.length) opts.push(pool.splice(this.r.int(0, pool.length - 1), 1)[0].id);
-    this.s.deadInfo = { rec, options: opts, money: P.money, the: P.the };
+    this.s.deadInfo = { rec, options: opts, money: P.money, the: P.the, myth };
   }
   chooseLegacy(id) {
     if (this.s.phase !== 'dead' || !this.s.deadInfo.options.includes(id)) return;
-    this.s.legacy = { id, money: id === 'tai_san' ? Math.min(500, Math.floor(this.s.deadInfo.money / 2)) : 0, the: id === 'huyet_mach' ? this.s.deadInfo.the : null };
+    this.s.legacy = { id, money: id === 'tai_san' ? Math.min(500, Math.floor(this.s.deadInfo.money / 2)) : 0, the: id === 'huyet_mach' ? this.s.deadInfo.the : null, item: id === 'than_khi' ? this.s.deadInfo.myth : null };
     this.s.pending = null;
     this.s.queue = [];
     this.s.player = null;

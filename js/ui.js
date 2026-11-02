@@ -3,7 +3,7 @@ import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITL
 import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, TACTICS, WEAPON_TYPES, turnText } from './combat.js';
-import { SLOTS, QUALITY, itemLine, TT_MAP } from './items.js';
+import { SLOTS, QUALITY, itemLine, TT_MAP, isSealed, gearStats } from './items.js';
 import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE } from './icons.js';
 
 const SAVE_KEY = 'tkps.save.v1';
@@ -126,6 +126,7 @@ function renderBirth() {
       ${traitBlock()}
       <div class="grid">${statGrid(P.stats)}<div><span>Linh thạch</span> <b>${fmt(P.money)}</b></div>${P.dao ? '<div><span>Gia truyền</span> <b>Đã nhập đạo</b></div>' : ''}</div>
       ${leg ? `<div class="legacyNote">Tàn niệm kiếp trước: ${esc(leg.n)}. ${esc(leg.desc)}</div>` : ''}
+      ${P.flags.thanKhi ? Object.values(P.eq).filter((it) => it && it.q >= 4).map((it) => itemCard(it)).join('') : ''}
       <div class="btns">
         <button class="btn ghost" id="rerollBtn" ${g.s.rerolls <= 0 ? 'disabled' : ''}>Gieo lại (${g.s.rerolls})</button>
         <button class="btn primary" id="startBtn">Đầu thai</button>
@@ -308,6 +309,10 @@ function renderDead() {
     <h3>Chọn một tàn niệm mang sang kiếp sau</h3>
     <div class="legacies">${d.options.map((id) => {
       const x = LEGACIES.find((q) => q.id === id);
+      if (id === 'than_khi' && d.myth) {
+        const it = d.myth;
+        return `<button class="btn legMyth" data-leg="${id}"><span class="legRow">${itemIco(it)}<span><b>${esc(x.n)}</b><small>Mang <span class="q4">${esc(it.n)}</span> (${esc(REALMS[it.lv].n)}) sang kiếp sau. Phải tu lại tới ${esc(REALMS[it.lv].n)} mới mở hết sức mạnh${it.tt && TT_MAP[it.tt] ? ` và thần thông ${esc(TT_MAP[it.tt].n)}` : ''}.</small></span></span></button>`;
+      }
       return `<button class="btn" data-leg="${id}"><b>${esc(x.n)}</b><small>${esc(x.desc)}</small></button>`;
     }).join('')}</div>
     <h3>Sổ kiếp</h3>${livesList()}${codex()}`;
@@ -482,12 +487,21 @@ const qCls = (q) => `q${q}`;
 function itemCard(it, btns) {
   const wt = it.wt ? ` · ${WEAPON_TYPES[it.wt].n}` : '';
   return `<div class="item withIco">${itemIco(it)}<div class="body"><div class="row"><b class="${qCls(it.q)}">${esc(it.n)}</b><span class="meta">${QUALITY[it.q].n} · ${SLOTS[it.slot]}${wt} · ${REALMS[it.lv].n}</span></div>
-    <div class="meta">${esc(itemLine(it))}</div>${ttLine(it)}${btns ? `<div class="row btnRow">${btns}</div>` : ''}</div></div>`;
+    <div class="meta">${esc(itemLine(it))}</div>${sealLine(it)}${ttLine(it)}${btns ? `<div class="row btnRow">${btns}</div>` : ''}</div></div>`;
 }
 /** Dòng thần thông của đồ Thần thoại */
 function ttLine(it) {
   const tt = it.tt && TT_MAP[it.tt];
-  return tt ? `<div class="ttLine"><span class="ttName">✦ ${esc(tt.n)}</span> ${esc(tt.t)}</div>` : '';
+  if (!tt) return '';
+  const sealed = g.P && isSealed(it, g.P.realm);
+  return `<div class="ttLine ${sealed ? 'sealed' : ''}"><span class="ttName">✦ ${esc(tt.n)}</span> ${esc(tt.t)}${sealed ? ' <b>(đang phong ấn)</b>' : ''}</div>`;
+}
+/** Thần khí kén chủ: cảnh giới chưa đủ */
+function sealLine(it) {
+  if (!g.P || !isSealed(it, g.P.realm)) return '';
+  const e = gearStats({ x: it }, g.P.realm);
+  const now = [e.atk ? `Công +${Math.round(e.atk)}` : '', e.def ? `Thủ +${Math.round(e.def)}` : '', e.hp ? `Sinh lực +${Math.round(e.hp)}` : ''].filter(Boolean).join(' · ');
+  return `<div class="sealLine">🔒 Thần khí kén chủ: cần ${REALMS[it.lv].n} mới phát huy toàn bộ, thần thông bị khóa. Hiện bị áp chế theo cảnh giới của ngươi, chỉ phát huy: <b>${now}</b>.</div>`;
 }
 function shopGear() {
   const P = g.P;
@@ -525,7 +539,7 @@ function openBag() {
     }).join('');
     openSheet(`<h2>Hành trang</h2>
       <div class="cstats"><span>Công <b>${fmt(F.atk)}</b></span><span>Thủ <b>${fmt(F.def)}</b></span><span>Sinh lực <b>${fmt(F.maxHp)}</b></span><span>Bạo kích <b>${Math.round(F.crit * 100)}%</b></span><span>Né <b>${Math.round(F.dodge * 100)}%</b></span></div>
-      ${(() => { const ids = [...new Set(Object.values(P.eq).filter((x) => x && x.tt).map((x) => x.tt))]; return ids.length ? `<div class="ttActive">Thần thông đang phát huy: ${ids.map((id) => `<span class="ttName">✦ ${esc(TT_MAP[id].n)}</span>`).join(' ')}</div>` : ''; })()}
+      ${(() => { const ids = [...new Set(Object.values(P.eq).filter((x) => x && x.tt && !isSealed(x, P.realm)).map((x) => x.tt))]; return ids.length ? `<div class="ttActive">Thần thông đang phát huy: ${ids.map((id) => `<span class="ttName">✦ ${esc(TT_MAP[id].n)}</span>`).join(' ')}</div>` : ''; })()}
       ${msg ? `<p class="intro">${esc(msg)}</p>` : ''}
       <h3>Đang mang</h3><div class="list">${eq}</div>
       <h3>Võ kỹ · mang theo ${P.loadout.length}/4</h3><div class="list">${sks}</div>

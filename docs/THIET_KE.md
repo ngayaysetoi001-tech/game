@@ -126,6 +126,10 @@ Ký ức đạo pháp, Thân thể kiếp trước, Dư âm cơ duyên, Tàn h�
 - Phụ kiện: Ngộ Đạo (tu luyện +25%), Thiên Cơ (đột phá +8%), Khí Vận Hộ Thân (kỳ ngộ +30%), Tụ Linh (bế quan x1,5), Chiêu Tài (mưu sinh x2), Vạn Duyên (thân thiết +50%), Dược Vương (đan x2), Linh Tuyền (linh lực hồi x2), Thiên Nhãn (thấy tiền kiếp, bạo kích +10%), Nghịch Thiên (đột phá từ Kim Đan +12%), Tâm Ma Bất Sinh (không gặp tâm ma), Phong Thần (hồi sinh lực ngoài trận x3, thọ +5%).
 - Thử 1.500 trận ngang sức: không thần thông thắng 28%, có một thần thông chiến đấu thắng 38-65%.
 
+**Thần khí kén chủ:** đồ Thần thoại có cảnh giới cao hơn chủ thì bị áp chế: công, thủ, sinh lực ép về cảnh giới của chủ rồi còn một nửa (ngang đồ Cực phẩm cùng cảnh giới), các dòng % còn một nửa, thần thông bị khóa. Lên tới cảnh giới của món thì phong ấn vỡ, có thông báo, phát huy toàn bộ.
+
+**Thần khí nhận chủ** (tàn niệm `than_khi`): chết lúc đang có đồ Thần thoại (mặc hoặc trong túi) thì tàn niệm này chắc chắn có trong 3 lựa chọn. Chọn thì món mạnh nhất (theo `itemScore`) theo sang kiếp sau, mặc sẵn từ lúc chào đời, chịu luật kén chủ.
+
 ## 6d. Tốc độ cao và tự quyết
 
 - Nút **Tự quyết** (bật sẵn, lưu theo bản lưu): từ 8× trở lên, kỳ ngộ nhỏ tự chọn phương án mặc định (`auto` trong từng sự kiện ở `js/events.js`, ví dụ yêu thú thì đánh nếu đủ sức, không thì chạy) và ghi vào nhật ký với tiền tố "(Tự quyết)", bỏ qua phần diễn trận.
