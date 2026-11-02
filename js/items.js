@@ -7,7 +7,10 @@ export const QUALITY = [
   { n: 'Trung phẩm', m: 1.35 },
   { n: 'Thượng phẩm', m: 1.8 },
   { n: 'Cực phẩm', m: 2.5 },
+  { n: 'Thần thoại', m: 3.4 },
 ];
+// tên riêng cho đồ Thần thoại
+const MYTH_PREFIX = ['Hồng Mông', 'Thái Sơ', 'Cửu U', 'Diệt Thế', 'Chư Thiên', 'Thái Cổ', 'Hỗn Nguyên', 'Vạn Kiếp'];
 const PREFIX = ['Thanh Phong', 'Lưu Hỏa', 'Hàn Thiết', 'Tử Điện', 'Bích Hải', 'Huyền Minh', 'Kinh Lôi', 'Tàn Dương', 'Vân Văn', 'Long Lân', 'Thu Thủy', 'Xích Viêm', 'Bạch Hồng', 'U Lan', 'Phá Quân', 'Trích Tinh'];
 const NOUN = {
   kiem: 'Kiếm', dao: 'Đao', thuong: 'Thương', quat: 'Phiến',
@@ -23,15 +26,15 @@ const AFFIX = [
   { k: 'sp', v: 4, t: 'Thân pháp +4' },
 ];
 
-/** Sinh một món. r: Rng, lv: cảnh giới, q: phẩm (0-3) hoặc null để gieo */
+/** Sinh một món. r: Rng, lv: cảnh giới, q: phẩm (0 Hạ - 4 Thần thoại) hoặc null để gieo */
 export function makeItem(r, id, lv, q = null, slot = null) {
   lv = Math.max(0, Math.min(REALMS.length - 1, lv));
-  if (q === null) q = r.weighted([0, 1, 2, 3], (x) => [60, 28, 10, 2][x]);
+  if (q === null) q = r.weighted([0, 1, 2, 3, 4], (x) => [60, 28, 9.6, 2, 0.4][x]);
   slot = slot || r.pick(['vu_khi', 'vu_khi', 'ao', 'phu_kien']);
   const pow = REALMS[lv].pow;
   const m = QUALITY[q].m * r.range(0.9, 1.1);
   const it = { id, slot, q, lv, n: '', atk: 0, def: 0, hp: 0, affix: [] };
-  const pre = r.pick(PREFIX);
+  const pre = q >= 4 ? r.pick(MYTH_PREFIX) : r.pick(PREFIX);
   if (slot === 'vu_khi') {
     it.wt = r.pick(['kiem', 'dao', 'thuong', 'quat']);
     it.n = `${pre} ${NOUN[it.wt]}`;
@@ -45,7 +48,7 @@ export function makeItem(r, id, lv, q = null, slot = null) {
     it.hp = Math.round(8 * pow * m);
     it.atk = Math.round(1 * pow * m);
   }
-  const nAff = q >= 3 ? 2 : q >= 2 ? 1 : 0;
+  const nAff = q >= 4 ? 3 : q >= 3 ? 2 : q >= 2 ? 1 : 0;
   const pool = AFFIX.slice();
   for (let i = 0; i < nAff; i++) {
     const a = pool.splice(r.int(0, pool.length - 1), 1)[0];

@@ -222,14 +222,14 @@ export const EVENTS2 = [
           t: data.room >= 3 ? 'Mở nắp quan tài' : 'Tiến vào gian trong', p, go: (g) => {
             if (g.r.chance(p)) {
               const loot = data.loot + data.room * 3;
-              if (data.room >= 3) { const t = yrs(g, loot); return `Trong quan tài chỉ có một bộ xương ôm chặt túi trữ vật. Ngươi khấn vái rồi nhận lấy.\nTu vi +${t}.\n${item(g, g.r.chance(0.4) ? 3 : 2)}`; }
+              if (data.room >= 3) { const t = yrs(g, loot); return `Trong quan tài chỉ có một bộ xương ôm chặt túi trữ vật. Ngươi khấn vái rồi nhận lấy.\nTu vi +${t}.\n${item(g, g.r.chance(0.06) ? 4 : g.r.chance(0.4) ? 3 : 2)}`; }
               g.next('co_mo_sau', { room: data.room + 1, loot });
               return data.room === 1 ? 'Ngươi lách qua bẫy tên, tìm thấy mấy viên linh thạch vụn và một quyển sổ ghi chép tu luyện.' : 'Trong bình gốm có đan dược đã hóa thạch, vẫn còn linh khí.';
             }
             if (data.room >= 3) {
               const m = { n: 'Thi Vương giữ mộ', pow: pw(g, 1) * 0.9, beast: true, r: Math.min(TOP_REALM, g.P.realm + 1), seed: 77 };
               const f = g.fightMonster(m);
-              if (f.win) { const t = yrs(g, data.loot + 12); return `Xác trong quan tài ngồi dậy.\n${f.text}\n\nTu vi +${t}.\n${item(g, 3)}`; }
+              if (f.win) { const t = yrs(g, data.loot + 12); return `Xác trong quan tài ngồi dậy.\n${f.text}\n\nTu vi +${t}.\n${item(g, g.r.chance(0.12) ? 4 : 3)}`; }
               return `Xác trong quan tài ngồi dậy.\n${f.text}`;
             }
             g.hurt(18 * data.room, 'chết trong cổ mộ');
@@ -515,7 +515,7 @@ export const EVENTS2 = [
       const p = xp(0.35 + (st(g, 'can') - 50) / 150 + g.P.realm * 0.03);
       const sword = (q) => { const it = makeItem(g.r, g.s.nextItem++, g.P.realm, q, 'vu_khi'); it.wt = 'kiem'; it.n = it.n.replace(/\S+$/, 'Kiếm'); return g.gainItem(it, 'Rút được'); };
       return [
-        { t: 'Rút thanh kiếm đang rung', p, go: (g) => { if (g.r.chance(p)) return `Thanh kiếm tuột ra dễ dàng, rêu rơi xuống để lộ lưỡi kiếm sáng như nước.\n${sword(g.r.chance(0.35) ? 3 : 2)}`; g.hurt(30, 'bị kiếm khí trong kiếm trủng xé nát'); return 'Kiếm khí bùng lên, chém vào người ngươi hàng chục vết.'; } },
+        { t: 'Rút thanh kiếm đang rung', p, go: (g) => { if (g.r.chance(p)) return `Thanh kiếm tuột ra dễ dàng, rêu rơi xuống để lộ lưỡi kiếm sáng như nước.\n${sword(g.r.chance(0.05) ? 4 : g.r.chance(0.35) ? 3 : 2)}`; g.hurt(30, 'bị kiếm khí trong kiếm trủng xé nát'); return 'Kiếm khí bùng lên, chém vào người ngươi hàng chục vết.'; } },
         { t: 'Rút đại một thanh gần nhất', p: 0.9, go: (g) => (g.r.chance(0.9) ? sword(g.r.chance(0.3) ? 1 : 0) : 'Thanh kiếm gãy làm đôi trong tay ngươi.') },
         { t: 'Bái ba bái rồi đi', go: (g) => { g.stat('ngo', 4); const sk = g.r.chance(0.3) ? ' ' + g.learnRandom(1, 2) : ''; return `Ngươi đứng giữa rừng kiếm, nghe tiếng kiếm ngân suốt một đêm. Ngộ tính +4.${sk}`; } },
       ];
@@ -535,7 +535,7 @@ export const EVENTS2 = [
       const pSolo = g.winOdds(() => g.monsterFighter(data.m));
       return [
         { t: `Lập đội cùng ${b.name}`, p: pTeam, go: (g) => { const f = g.fightMonster(data.m, 0.6); if (f.win) { g.relAdd(b, 20); g.fame(6); const m = 80 * (1 + g.P.realm); g.money(m); return `${b.name} cầm chân, ngươi ra đòn kết liễu.\n${f.text}\n\nTiền thưởng chia đôi: ${m} linh thạch.\n${item(g, 2)}`; } if (g.r.chance(0.4)) g.botDie(b, `chết dưới móng vuốt ${data.m.n}`); return f.text; } },
-        { t: 'Đi một mình, không chia thưởng', p: pSolo, go: (g) => { const f = g.fightMonster(data.m); if (f.win) { g.fame(12); const m = 200 * (1 + g.P.realm); g.money(m); return `${f.text}\n\nMột mình hạ yêu vương! Tiền thưởng ${m} linh thạch.\n${item(g, 3)}`; } return f.text; } },
+        { t: 'Đi một mình, không chia thưởng', p: pSolo, go: (g) => { const f = g.fightMonster(data.m); if (f.win) { g.fame(12); const m = 200 * (1 + g.P.realm); g.money(m); return `${f.text}\n\nMột mình hạ yêu vương! Tiền thưởng ${m} linh thạch.\n${item(g, g.r.chance(0.15) ? 4 : 3)}`; } return f.text; } },
         { t: 'Để người khác lo', go: (g) => { g.relAdd(b, -5); return 'Ngươi đóng cửa động phủ. Nghe nói mấy tháng sau yêu vương mới bị trừ.'; } },
       ];
     },

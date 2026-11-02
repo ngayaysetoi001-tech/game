@@ -1,14 +1,14 @@
 <!doctype html><meta charset="utf-8"><body style="background:#f1e8d6;margin:8px;font:11px serif">
-<div id="g" style="display:grid;grid-template-columns:repeat(8,64px);gap:6px"></div>
+<div id="g" style="display:grid;grid-template-columns:repeat(5,64px);gap:6px"></div>
 <script type="module">
 import { drawIcon } from '../js/icons.js';
 const kinds = ['kiem', 'dao', 'thuong', 'quat', 'dao_bao', 'chien_giap', 'phap_y', 'ho_tam', 'ngoc_boi', 'gioi_chi', 'ho_phu', 'linh_chau', 'dan', 'bi_kip'];
 const cols = ['#6d7f9a', '#8a4f4a', '#5f7d5a', '#7d6a9a'];
-for (const k of kinds) for (let q = 0; q < 4; q++) {
+for (const k of kinds) for (let q = 0; q < 5; q++) {
   const d = document.createElement('div'); d.style.cssText = 'text-align:center';
   const cv = document.createElement('canvas'); cv.width = 16; cv.height = 16;
   cv.style.cssText = 'width:64px;height:64px;image-rendering:pixelated;background:#fbf6ea;border:1px solid #d9cbb0;border-radius:8px';
-  drawIcon(cv, { kind: k, q, col: k === 'dan' ? ['#c0392b', '#8e5bd0', '#d8a83c', '#4f8fd6'][q] : cols[q] });
+  drawIcon(cv, { kind: k, q, col: k === 'dan' ? ['#c0392b', '#8e5bd0', '#d8a83c', '#4f8fd6', '#c0392b'][q] : cols[q % 4] });
   d.appendChild(cv); document.getElementById('g').appendChild(d);
 }
 </script>

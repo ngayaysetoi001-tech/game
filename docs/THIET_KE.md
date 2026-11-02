@@ -116,7 +116,9 @@ Ký ức đạo pháp, Thân thể kiếp trước, Dư âm cơ duyên, Tàn h�
 
 **Phẩm danh hiệu và hiệu ứng** (`TITLE_TIER` trong `js/data.js`): Thường (khung đơn), Hiếm (khung xanh), Truyền kỳ (chữ vàng ánh kim chạy ngang), Thần thoại (chữ ánh cầu vồng, khung tỏa sáng, tia lấp lánh hai bên). Danh hiệu có ô riêng (nút 🏅 Danh hiệu, hoặc chạm danh hiệu trên tên): đang đeo, đã đạt, chưa đạt kèm điều kiện. Đạt danh hiệu mới thì có thông báo trượt xuống từ trên màn hình. Hiệu ứng tắt khi máy bật giảm chuyển động.
 
-**Thang màu độ hiếm dùng chung** (biến `--r0`…`--r4` trong `style.css`): Thường xám, Khá lam, Hiếm tím, Truyền thuyết/Truyền kỳ vàng, Thần thoại đỏ rực (viền lửa chập chờn, chữ ánh đỏ-cam-vàng). Áp cho thể chất, thiên phú, Sổ thể chất, thể chất của bot, danh hiệu, Danh hiệu lục. Phẩm trang bị theo cùng thang: Hạ phẩm xám, Trung phẩm lam, Thượng phẩm tím, Cực phẩm vàng.
+**Thang màu độ hiếm dùng chung** (biến `--r0`…`--r4` trong `style.css`): Thường xám, Khá lam, Hiếm tím, Truyền thuyết/Truyền kỳ vàng, Thần thoại đỏ rực (viền lửa chập chờn, chữ ánh đỏ-cam-vàng). Áp cho thể chất, thiên phú, Sổ thể chất, thể chất của bot, danh hiệu, Danh hiệu lục. Phẩm trang bị theo cùng thang: Hạ phẩm xám, Trung phẩm lam, Thượng phẩm tím, Cực phẩm vàng, Thần thoại đỏ rực.
+
+**Trang bị Thần thoại:** chỉ số x3,4 so với Hạ phẩm (Cực phẩm x2,5), 3 thuộc tính đặc biệt, tên riêng (Hồng Mông, Thái Sơ, Cửu U, Diệt Thế, Chư Thiên, Thái Cổ, Hỗn Nguyên, Vạn Kiếp). Rơi ngẫu nhiên 0,4%; cơ hội riêng: hội đấu giá 3%, rương cuối cổ mộ 6%, Thi Vương giữ mộ 12%, kiếm trủng 5%, một mình hạ yêu vương 15%. Biểu tượng lưỡi đỏ, vầng sáng lửa hai lớp.
 
 ## 6d. Tốc độ cao và tự quyết
 

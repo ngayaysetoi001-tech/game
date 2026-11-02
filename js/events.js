@@ -324,7 +324,7 @@ const BASE_EVENTS = [
         {
           t: `Một món pháp khí Thượng phẩm (${p * 2})`, if: g.P.money >= p * 2, go: (g) => {
             g.money(-p * 2);
-            return 'Ngươi giơ bảng giá cuối cùng. ' + g.gainItem(makeItem(g.r, g.s.nextItem++, g.P.realm, g.r.chance(0.2) ? 3 : 2), 'Thắng đấu giá');
+            return 'Ngươi giơ bảng giá cuối cùng. ' + g.gainItem(makeItem(g.r, g.s.nextItem++, g.P.realm, g.r.chance(0.03) ? 4 : g.r.chance(0.2) ? 3 : 2), 'Thắng đấu giá');
           },
         },
         { t: 'Chỉ đứng xem', go: () => 'Giá cứ thế vọt lên. Ngươi lặng lẽ ra về.' },

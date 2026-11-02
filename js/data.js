@@ -205,7 +205,7 @@ export const TITLES = [
   { id: 'thap_dai', n: 'Thập Đại Cao Thủ', cond: 'Vào top 10 Bảng Thiên Kiêu khi đã Nguyên Anh', bonus: 'Chiến đấu +5%', fx: { fightMul: 1.05 }, check: (g) => g.P.realm >= 4 && g._rank <= 10 },
   { id: 'bang_thu', n: 'Thiên Kiêu Bảng Thủ', cond: 'Giữ ngôi đầu Bảng Thiên Kiêu 100 năm', bonus: 'Tu luyện +8%, chiến đấu +5%', fx: { gainMul: 1.08, fightMul: 1.05 }, check: (g) => g.P.cnt.top1 >= 100 },
   { id: 'tru_cot', n: 'Trụ Cột Sơn Môn', cond: 'Mạnh nhất tông môn của mình', bonus: 'Tu luyện +5%', fx: { gainMul: 1.05 }, check: (g) => !!g.P.sect && g.P.realm >= 2 && g.members(g.P.sect).every((b) => b.realm < g.P.realm || (b.realm === g.P.realm && b.tuvi <= g.P.tuvi)) },
-  { id: 'tang_bao', n: 'Tàng Bảo Các Chủ', cond: 'Mang một món Cực phẩm', bonus: 'Kỳ ngộ +5%', fx: { eventRate: 1.05 }, check: (g) => Object.values(g.P.eq || {}).some((it) => it && it.q >= 3) },
+  { id: 'tang_bao', n: 'Tàng Bảo Các Chủ', cond: 'Mang một món Cực phẩm trở lên', bonus: 'Kỳ ngộ +5%', fx: { eventRate: 1.05 }, check: (g) => Object.values(g.P.eq || {}).some((it) => it && it.q >= 3) },
   { id: 'vo_hoc', n: 'Võ Học Tông Sư', cond: 'Biết 8 võ kỹ', bonus: 'Chiến đấu +4%', fx: { fightMul: 1.04 }, check: (g) => g.P.skills.length >= 8 },
   { id: 'huyet_mach', n: 'Huyết Mạch Thức Tỉnh', cond: 'Mang thể chất Truyền thuyết trở lên', bonus: 'Đột phá +2%', fx: { brk: 0.02 }, check: (g) => g.traits()[0].tier >= 3 },
 ];

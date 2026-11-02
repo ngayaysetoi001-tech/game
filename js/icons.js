@@ -7,9 +7,9 @@ const idark = (c, t) => mix(c, '#1a1020', t);
 const ilite = (c, t) => mix(c, '#fff6e2', t);
 
 // màu theo phẩm: lưỡi, khảm, vầng sáng
-const I_STEEL = ['#8f969c', '#c3ccd5', '#d4c4f5', '#ffe39a'];
-const I_GUARD = ['#8a6a3a', '#b08d3a', '#c9ced8', '#f0c64a'];
-const I_GLOW = [null, null, '#b48cff', '#ffcf3d'];
+const I_STEEL = ['#8f969c', '#c3ccd5', '#d4c4f5', '#ffe39a', '#ff7a5a'];
+const I_GUARD = ['#8a6a3a', '#b08d3a', '#c9ced8', '#f0c64a', '#ffd24a'];
+const I_GLOW = [null, null, '#b48cff', '#ffcf3d', '#ff3b2f'];
 const I_CLOTH = ['#6d7f9a', '#8a4f4a', '#5f7d5a', '#7d6a9a', '#9a7a4a', '#4f7f86', '#86566f'];
 
 /** Màu áo của một món y phục, cố định theo món */
@@ -50,7 +50,7 @@ export function buildIcon(o) {
   const steel = I_STEEL[q], steelL = ilite(steel, 0.5), steelD = idark(steel, 0.25);
   const guard = I_GUARD[q], wood = '#7a5230', woodD = '#553820';
   const col = o.col || '#6d7f9a', colL = ilite(col, 0.3), colD = idark(col, 0.3);
-  const trim = q >= 3 ? '#f0c64a' : q >= 2 ? '#d9e2f0' : ilite(col, 0.55);
+  const trim = q >= 4 ? '#ff5a3a' : q >= 3 ? '#f0c64a' : q >= 2 ? '#d9e2f0' : ilite(col, 0.55);
   const k = o.kind;
 
   if (k === 'kiem') {
@@ -62,7 +62,7 @@ export function buildIcon(o) {
     set(4, 11, idark(guard, 0.2));
     line(1, 14, 3, 12, wood);
     set(0, 15, guard);
-    if (q >= 2) set(4, 11, q >= 3 ? '#e2413a' : '#a77bff');
+    if (q >= 2) set(4, 11, q >= 4 ? '#ffd24a' : q >= 3 ? '#e2413a' : '#a77bff');
   } else if (k === 'dao') {
     for (let t = 0; t < 3; t++) line(4 + t, 11 + t * 0.4, 12 + t * 0.6, 2 + t, t === 0 ? steelD : t === 1 ? steel : steelL);
     set(13, 1, steel); set(14, 2, steelL); set(14, 3, steelL);
@@ -76,7 +76,7 @@ export function buildIcon(o) {
     set(12, 3, steel); set(13, 4, steel); set(13, 2, steelL); set(14, 3, steelD);
     set(10, 5, '#c0392b'); set(11, 6, '#c0392b'); set(9, 6, '#a5302a'); set(10, 7, '#a5302a'); set(9, 8, '#c0392b');
   } else if (k === 'quat') {
-    const paper = q >= 3 ? '#fbe7a6' : q >= 2 ? '#eee4fb' : '#f3e6c4';
+    const paper = q >= 4 ? '#ffb38a' : q >= 3 ? '#fbe7a6' : q >= 2 ? '#eee4fb' : '#f3e6c4';
     for (let a = 0; a <= 24; a++) {
       const ang = Math.PI * (1.08 + (a / 24) * 0.84);
       const c = a % 4 === 0 ? (q >= 2 ? '#9a7fd0' : '#b89a5a') : a % 2 ? paper : ilite(paper, 0.2);
@@ -93,7 +93,7 @@ export function buildIcon(o) {
     rect(3, 14, 12, 14, trim);
     if (k === 'phap_y') { ell(8, 11, 2.2, 2.2, (x, y, d) => (d > 0.45 ? trim : col)); set(8, 11, trim); }
   } else if (k === 'chien_giap') {
-    const m = q >= 3 ? '#d8b44a' : q >= 2 ? '#c4b4e0' : '#8f969c';
+    const m = q >= 4 ? '#d8452f' : q >= 3 ? '#d8b44a' : q >= 2 ? '#c4b4e0' : '#8f969c';
     rect(4, 3, 11, 12, m);
     for (let y = 5; y <= 11; y += 2) rect(4, y, 11, y, idark(m, 0.3));
     rect(4, 3, 4, 12, ilite(m, 0.3));
@@ -106,22 +106,22 @@ export function buildIcon(o) {
     ell(7.5, 8, 3.2, 3.2, (x, y, d) => (d > 0.6 ? guard : d < 0.15 ? steelL : steel));
     set(6, 7, '#ffffff');
   } else if (k === 'ngoc_boi') {
-    const jade = q >= 3 ? '#f3d35a' : q >= 2 ? '#c9a8ff' : '#6fbf8f';
+    const jade = q >= 4 ? '#ff5a3a' : q >= 3 ? '#f3d35a' : q >= 2 ? '#c9a8ff' : '#6fbf8f';
     line(8, 0, 8, 3, '#c0392b');
     ell(8, 8, 5, 5, (x, y, d) => (d < 0.12 ? null : d > 0.75 ? idark(jade, 0.2) : x + y < 14 ? ilite(jade, 0.35) : jade));
     line(8, 13, 8, 15, '#c0392b'); set(7, 15, '#c0392b'); set(9, 15, '#c0392b');
   } else if (k === 'gioi_chi') {
-    const band = q >= 2 ? '#d9e2f0' : '#d0a040';
+    const band = q >= 4 ? '#f0c64a' : q >= 2 ? '#d9e2f0' : '#d0a040';
     ell(8, 10, 5, 4, (x, y, d) => (d > 0.5 ? (y < 10 ? ilite(band, 0.3) : band) : null));
-    const gem = q >= 3 ? '#e2413a' : q >= 2 ? '#a77bff' : q >= 1 ? '#5fbf7f' : '#a08060';
+    const gem = q >= 4 ? '#ff2a1a' : q >= 3 ? '#e2413a' : q >= 2 ? '#a77bff' : q >= 1 ? '#5fbf7f' : '#a08060';
     ell(8, 5, 2.5, 2.2, (x, y, d) => (d < 0.3 ? ilite(gem, 0.5) : gem));
   } else if (k === 'ho_phu') {
-    const paper = q >= 3 ? '#ffe48a' : '#f1d77a';
+    const paper = q >= 4 ? '#ff9a7a' : q >= 3 ? '#ffe48a' : '#f1d77a';
     rect(4, 1, 11, 14, paper); rect(4, 1, 11, 1, '#c0392b'); rect(4, 14, 11, 14, '#c0392b');
     line(8, 3, 8, 12, '#b0302a'); line(6, 5, 10, 5, '#b0302a'); line(6, 8, 10, 10, '#b0302a'); line(10, 8, 6, 10, '#b0302a');
     set(11, 2, idark(paper, 0.2));
   } else if (k === 'linh_chau') {
-    const orb = q >= 3 ? '#ffcf3d' : q >= 2 ? '#b48cff' : q >= 1 ? '#a77bd8' : '#7fa0b0';
+    const orb = q >= 4 ? '#ff4d3a' : q >= 3 ? '#ffcf3d' : q >= 2 ? '#b48cff' : q >= 1 ? '#a77bd8' : '#7fa0b0';
     ell(8, 7, 5.2, 5.2, (x, y, d) => (d < 0.08 ? '#ffffff' : x + y < 12 ? ilite(orb, 0.35) : d > 0.7 ? idark(orb, 0.25) : orb));
     set(6, 5, '#ffffff');
     rect(5, 12, 10, 13, guard); rect(4, 14, 11, 14, idark(guard, 0.3));
@@ -163,6 +163,10 @@ export function drawIcon(canvas, o) {
         if (xx >= 0 && xx < IW && yy >= 0 && yy < IW && s.px[yy * IW + xx]) { near = true; break; }
       }
       if (near) { ctx.globalAlpha = 0.45; ctx.fillRect(x, y, 1, 1); }
+      else if (o.q >= 4) {
+        for (let dy = -2; dy <= 2 && !near; dy++) for (let dx = -2; dx <= 2; dx++) { const xx = x + dx, yy = y + dy; if (xx >= 0 && xx < IW && yy >= 0 && yy < IW && s.px[yy * IW + xx]) { near = true; break; } }
+        if (near) { ctx.globalAlpha = 0.22; ctx.fillRect(x, y, 1, 1); }
+      }
     }
     ctx.globalAlpha = 1;
   }

@@ -433,3 +433,9 @@ h3 { font-size: 15px; margin: 14px 0 6px; color: var(--muted); font-weight: 600;
 @media (prefers-reduced-motion: reduce) {
   .trait.t4, .trait.t4 b, .cx.t4, .ttl.t4, .tcard.t4, .toast.t4 { animation: none !important; }
 }
+
+/* Trang bị Thần thoại: đỏ rực như thể chất Thần thoại */
+.q4 { background: linear-gradient(90deg, var(--r4), var(--r4b), #ffd54a, var(--r4b), var(--r4)); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 2.2s linear infinite; font-weight: 800; }
+.ico.q4 { border: 2px solid var(--r4); animation: blaze 1.6s ease-in-out infinite; }
+.withIco:has(.ico.q4) { border-color: var(--r4); background: color-mix(in srgb, var(--r4) 6%, var(--panel)); }
+@media (prefers-reduced-motion: reduce) { .q4, .ico.q4 { animation: none !important; } .q4 { color: var(--r4); background: none; } }
