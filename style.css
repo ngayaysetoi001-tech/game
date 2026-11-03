@@ -657,3 +657,9 @@ body.inPlay #scr-play > .dock { margin-top: auto; }
 .item .btnRow .cost { flex-basis: 100%; }
 .evKicker .lowHp { color: var(--bad); font-weight: 700; }
 .banner .ico { width: 20px; height: 20px; vertical-align: -4px; margin-right: 4px; }
+
+/* Thanh báo có bản mới */
+.updBar { position: fixed; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 8px); z-index: 60; display: flex; align-items: center; gap: 8px; background: var(--panel); border: 2px solid var(--accent); border-radius: 12px; padding: 6px 8px 6px 14px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3); max-width: calc(100% - 24px); font-size: 14px; }
+.updBar[hidden] { display: none; }
+.updBar .btn { min-height: 36px; padding: 4px 14px; }
+.updX { border: none; background: none; color: var(--muted); font-size: 16px; padding: 4px 6px; }

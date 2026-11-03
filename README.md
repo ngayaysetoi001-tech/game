@@ -29,6 +29,16 @@ Game cài được như một ứng dụng (có `manifest.webmanifest` và biể
 
 Bản lưu nằm trong trình duyệt của từng địa chỉ, nên bản lưu ở trang Claude không tự sang trang GitHub Pages.
 
+## Đẩy bản mới
+
+Trước mỗi lần đẩy bản mới, đánh số phiên bản để ứng dụng đã cài biết mà hiện nút **Cập nhật**:
+
+```bash
+node tools/bump-version.mjs   # ghi js/version.js và version.json
+```
+
+Ứng dụng so số phiên bản đang chạy với `version.json` trên máy chủ, lúc mở, lúc quay lại ứng dụng và mỗi 10 phút. Có bản mới thì hiện thanh "Có bản mới · Cập nhật". Bấm vào thì tải bản mới, thế giới đang chơi giữ nguyên. Trong menu ☰ có dòng phiên bản và nút Kiểm tra cập nhật.
+
 ## Mô phỏng cân bằng
 
 ```bash

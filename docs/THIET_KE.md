@@ -348,7 +348,12 @@ Trên màn hình rộng (từ 900px), bố cục chia 2 cột: trái là nhân v
   - Mã dạng `TKPS1:` + base64 của bản lưu, khoảng 30 nghìn ký tự.
   - Có nút chép mã và tải thành tệp.
   - Nhập sẽ thay thế thế giới hiện tại, có hỏi xác nhận.
-- **Ngoại tuyến:** trang riêng (GitHub Pages) có `sw.js` lưu sẵn 17 tệp. Mở game thì dùng bản đã lưu ngay cho nhanh, đồng thời tải bản mới ở nền, nên cập nhật có hiệu lực từ lần mở sau. Bản gộp một tệp trong Claude không dùng service worker.
+- **Ngoại tuyến và cập nhật:**
+  - Trang riêng (GitHub Pages) có `sw.js`. Có mạng thì luôn lấy tệp mới nhất từ máy chủ (bỏ qua bộ nhớ đệm của trình duyệt) rồi lưu lại; mất mạng thì dùng bản đã lưu.
+  - Mỗi bản có số phiên bản (`js/version.js`, `version.json`, ghi bằng `tools/bump-version.mjs`). Ứng dụng so với máy chủ lúc mở, lúc quay lại ứng dụng và mỗi 10 phút; có bản mới thì hiện thanh "Có bản mới · Cập nhật".
+  - Bấm Cập nhật thì lưu thế giới, xóa bộ nhớ đệm, tải lại trang.
+  - Menu ☰ có dòng phiên bản và nút Kiểm tra cập nhật.
+  - Bản gộp một tệp trong Claude không dùng service worker, tự cập nhật khi đăng lại.
 
 ## 6j. Biểu tượng võ kỹ, kỳ ngộ đợt 3
 

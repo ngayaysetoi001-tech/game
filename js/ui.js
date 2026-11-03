@@ -1,4 +1,5 @@
 // Giao diện trình duyệt. Mọi luật chơi nằm trong core.js.
+import { APP_VERSION } from './version.js';
 import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITLE_MAP, HL_PRICE, HL_REROLL, PATHS, clamp } from './core.js';
 import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEFAULT_MAP, realmLabel, subN } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
@@ -1067,10 +1068,16 @@ $('menuBtn').onclick = () => {
     <div class="opts">${Object.entries(BATTLE_VIEW).map(([k, n]) => `<button class="btn ${battleView === k ? 'on' : 'ghost'}" data-bv="${k}">${n}</button>`).join('')}</div>
     <p class="intro">Chỉ trận lớn: trận có thể mất mạng (yêu thú vùng khó, kẻ thù, ma tu...). Từ ${AUTO_SPEED}× luôn bỏ qua. Kết quả trận nào cũng ghi vào nhật ký.</p>
     ${fsInfo()}
+    <h3>Phiên bản</h3>
+    <p class="intro">Đang chạy bản <b>${APP_VERSION}</b>.${newVersion ? ` Có bản mới <b>${newVersion}</b>.` : ''}</p>
+    <div class="row btnRow"><button class="btn ghost" id="checkUpd">🔄 Kiểm tra cập nhật</button>${newVersion ? '<button class="btn primary" id="doUpd">Cập nhật ngay</button>' : ''}</div>
+    <p class="intro" id="updMsg"></p>
     <h3>Bản lưu</h3>
     <p class="intro">Chuyển thế giới đang chơi sang trang khác hoặc máy khác: Xuất ra một đoạn mã rồi Nhập ở bên kia.</p>
     <div class="row btnRow"><button class="btn ghost" id="exportBtn">📤 Xuất bản lưu</button><button class="btn ghost" id="importBtn">📥 Nhập bản lưu</button></div>
     <div class="list">${canFullscreen() ? `<button class="btn" id="fsBtn">${document.fullscreenElement ? 'Thoát toàn màn hình' : '⛶ Toàn màn hình'}</button>` : ''}<button class="btn" id="themeBtn">Đổi giao diện sáng / tối</button><button class="btn" id="newWorld">Tạo thế giới mới (xóa bản lưu)</button></div>`, () => {
+    $('checkUpd').onclick = async () => { $('updMsg').textContent = 'Đang kiểm tra...'; $('updMsg').textContent = await checkUpdate(true); if (newVersion && !$('doUpd')) $('menuBtn').onclick(); };
+    if ($('doUpd')) $('doUpd').onclick = applyUpdate;
     $('exportBtn').onclick = openExport;
     $('importBtn').onclick = openImport;
     if ($('fsBtn')) $('fsBtn').onclick = () => { toggleFullscreen(); $('sheet').hidden = true; };
@@ -1324,8 +1331,46 @@ try {
   if (th) document.documentElement.dataset.theme = th;
 } catch (e) { /* bỏ qua */ }
 // chơi không cần mạng: chỉ khi chạy từ trang riêng (có manifest), không đăng ký ở bản gộp một tệp
-if ('serviceWorker' in navigator && document.querySelector('link[rel="manifest"]') && location.protocol === 'https:') {
+const STANDALONE_SITE = !!document.querySelector('link[rel="manifest"]') && (location.protocol === 'https:' || location.hostname === 'localhost');
+if ('serviceWorker' in navigator && STANDALONE_SITE) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ---------- Cập nhật ----------
+// So số phiên bản đang chạy với version.json trên máy chủ. Có bản mới thì hiện thanh Cập nhật.
+let newVersion = null;
+async function checkUpdate(manual = false) {
+  if (!STANDALONE_SITE) return manual ? 'Bản trong khung Claude tự cập nhật khi có bản mới, chỉ cần tải lại trang.' : null;
+  try {
+    const r = await fetch(`version.json?t=${Date.now()}`, { cache: 'no-store' });
+    const { v } = await r.json();
+    if (v && v !== APP_VERSION) {
+      newVersion = v;
+      $('updText').textContent = `Có bản mới (${v})`;
+      $('updBar').hidden = false;
+      return `Có bản mới ${v}.`;
+    }
+    return 'Đang dùng bản mới nhất.';
+  } catch (e) {
+    return 'Không kiểm tra được (có thể đang mất mạng).';
+  }
+}
+async function applyUpdate() {
+  $('updBtn').disabled = true;
+  $('updText').textContent = 'Đang tải bản mới...';
+  save();
+  try {
+    if ('serviceWorker' in navigator) for (const reg of await navigator.serviceWorker.getRegistrations()) await reg.update().catch(() => {});
+    if (window.caches) for (const k of await caches.keys()) await caches.delete(k);
+  } catch (e) { /* bỏ qua */ }
+  location.reload();
+}
+$('updBtn').onclick = applyUpdate;
+$('updX').onclick = () => { $('updBar').hidden = true; };
+if (STANDALONE_SITE) {
+  setTimeout(() => checkUpdate(), 1500);
+  setInterval(() => checkUpdate(), 10 * 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(); });
 }
 load();
 document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
