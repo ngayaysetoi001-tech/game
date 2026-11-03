@@ -868,7 +868,7 @@ img.art[hidden] { display: none !important; }
 .hudLine { flex-wrap: wrap; row-gap: 2px; }
 .hudLine .ttl.mini { flex: none; max-width: none; }
 .hudPic { overflow: hidden; border-radius: 10px; }
-.hudPic img.art { transform: none; object-fit: contain; object-position: 50% 50%; padding: 3px; box-sizing: border-box; background: var(--panel); filter: drop-shadow(0 2px 3px rgba(0,0,0,.3)); }
+.hudPic img.art { transform: none; object-fit: cover; object-position: 50% 4%; padding: 0; background: var(--panel); }
 
 /* Túi trữ vật: 3 ô trang bị bên trái, 3 ô trống bên phải */
 .doll2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr); align-items: stretch; gap: 6px; padding: 8px; }
