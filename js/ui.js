@@ -4,7 +4,7 @@ import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITL
 import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEFAULT_MAP, realmLabel, subN, PLANES, mapsOf, WORLD_DIFF, mythMatOf, planeOf, THEME_BG, BOSS_KITS, TOWER_THEMES, TOWER_SHOP, TAM_PHAP, TAM_PHAP_IDS, NGHE, PHU, PLAN_TEMPLATES, PLAN_STEP_ACTS, PLAN_COND, PATH_BAR_N } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, BEAST_SKILLS, TACTICS, WEAPON_TYPES, turnText, PATH_RES, PATH_SKILLS, SKILL_MAX, skillLvMul } from './combat.js';
-import { heroArt, heroFilter, meditateArt, skillArt, monsterArt, needFlip } from './art.js';
+import { heroArt, heroFilter, meditateArt, skillArt, monsterArt, needFlip, uiIcon } from './art.js';
 import { SLOTS, QUALITY, itemLine, TT_MAP, isSealed, isSuppressed, gearStats, itemName, PLUS_MAX, AFFIX } from './items.js';
 import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE, matIconOpts, skillIconOpts } from './icons.js';
 
@@ -374,18 +374,18 @@ function renderPlay() {
       const ok = g.actionOk(id);
       const why = P.age < a.minAge ? `Từ ${a.minAge} tuổi` : a.needDao && !P.dao ? 'Cần nhập đạo' : a.desc;
       const m = id === 'lich_luyen' && ok ? MAP_MAP[P.map] || g.defaultMap() : null;
-      if (id === 'vuot_thap') return `<button class="btn act ${P.action === id ? 'on' : ''}" data-act="${id}" data-tip="${esc(ok ? `${a.desc} Đang ở tầng ${g.towerState().f}. Bấm để xem tháp.` : why)}" ${ok ? '' : 'disabled'}><span class="ai">${a.icon}</span><span>Tháp</span>${ok ? `<small>Tầng ${g.towerState().f}</small>` : ''}</button>`;
+      if (id === 'vuot_thap') return `<button class="btn act ${P.action === id ? 'on' : ''}" data-act="${id}" data-tip="${esc(ok ? `${a.desc} Đang ở tầng ${g.towerState().f}. Bấm để xem tháp.` : why)}" ${ok ? '' : 'disabled'}>${uiIcon('thap', a.icon)}<span>Tháp</span>${ok ? `<small>Tầng ${g.towerState().f}</small>` : ''}</button>`;
       const sub = m ? `${DIFF[m.d].ic} ${DIFF[m.d].n}` : id === 'muu_sinh' && P.nghe ? `${NGHE[P.nghe.id].icon} cấp ${P.nghe.lv}` : '';
-      return `<button class="btn act ${P.action === id ? 'on' : ''}" data-act="${id}" data-tip="${esc(m ? `${a.desc} Đang chọn: ${m.n} (${DIFF[m.d].n}). Bấm để đổi vùng.` : why)}" ${ok ? '' : 'disabled'}><span class="ai">${a.icon}</span><span>${a.n}</span>${sub ? `<small>${sub}</small>` : ''}</button>`;
+      return `<button class="btn act ${P.action === id ? 'on' : ''}" data-act="${id}" data-tip="${esc(m ? `${a.desc} Đang chọn: ${m.n} (${DIFF[m.d].n}). Bấm để đổi vùng.` : why)}" ${ok ? '' : 'disabled'}>${uiIcon(id, a.icon)}<span>${a.n}</span>${sub ? `<small>${sub}</small>` : ''}</button>`;
     }).join('');
   }
   setHTML($('actions'), html);
   setHTML($('utils'), `
-      <button class="btn ut" data-do="bag" data-tip="Trang bị, kỹ năng, chiến thuật, đan, nguyên liệu"><span class="ai">🎒</span><span>Hành trang</span></button>
-      <button class="btn ut" data-do="forge" data-tip="${g.forgeOpen() ? 'Cường hóa, thăng cấp, tẩy luyện, rèn mới' : 'Mở từ 12 tuổi'}" ${g.forgeOpen() ? '' : 'disabled'}><span class="ai">⚒</span><span>Lò rèn</span></button>
-      <button class="btn ut" data-do="shop" data-tip="Đan dược, pháp khí, bí kíp" ${P.age < 10 ? 'disabled' : ''}><span class="ai">🏮</span><span>Tụ Bảo</span></button>
-      <button class="btn ut" data-do="close" data-tip="Tu nhanh, ít kỳ ngộ" ${P.dao && P.age >= 12 && !canBreak && !(P.closed > 0) ? '' : 'disabled'}><span class="ai">🕯</span><span>Bế quan</span></button>
-      <button class="btn ut" data-do="more" data-tip="Nhân vật, danh hiệu, cài đặt"><span class="ai">⋯</span><span>Thêm</span></button>`);
+      <button class="btn ut" data-do="bag" data-tip="Trang bị, kỹ năng, chiến thuật, đan, nguyên liệu">${uiIcon('hanh_trang', '🎒')}<span>Hành trang</span></button>
+      <button class="btn ut" data-do="forge" data-tip="${g.forgeOpen() ? 'Cường hóa, thăng cấp, tẩy luyện, rèn mới' : 'Mở từ 12 tuổi'}" ${g.forgeOpen() ? '' : 'disabled'}>${uiIcon('lo_ren', '⚒')}<span>Lò rèn</span></button>
+      <button class="btn ut" data-do="shop" data-tip="Đan dược, pháp khí, bí kíp" ${P.age < 10 ? 'disabled' : ''}>${uiIcon('tu_bao', '🏮')}<span>Tụ Bảo</span></button>
+      <button class="btn ut" data-do="close" data-tip="Tu nhanh, ít kỳ ngộ" ${P.dao && P.age >= 12 && !canBreak && !(P.closed > 0) ? '' : 'disabled'}>${uiIcon('be_quan', '🕯')}<span>Bế quan</span></button>
+      <button class="btn ut" data-do="more" data-tip="Nhân vật, danh hiệu, cài đặt">${uiIcon('them', '⋯')}<span>Thêm</span></button>`);
 
   const tabs = [['log', 'Nhật ký'], ['rel', 'Quan hệ'], ['world', 'Thiên hạ'], ['rank', 'Xếp hạng'], ['lives', 'Sổ kiếp']];
   setHTML($('tabs'), tabs.map(([id, n]) => `<button class="${tab === id ? 'on' : ''}" data-tab="${id}">${n}</button>`).join(''));

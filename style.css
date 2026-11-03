@@ -888,3 +888,7 @@ img.art[hidden] { display: none !important; }
 .qRule { display: grid; grid-template-columns: 80px repeat(3, 1fr); gap: 4px; align-items: center; }
 .qRule > span { font-weight: 700; font-size: 13px; }
 .qRule .btn { padding: 4px 2px; font-size: 13px; white-space: nowrap; min-height: 0; }
+/* Biểu tượng nút bằng tranh */
+.btn .btnIco { width: 30px; height: 30px; object-fit: contain; display: block; pointer-events: none; filter: drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
+.btn.ut .btnIco { width: 26px; height: 26px; }
+.btn:disabled .btnIco { filter: grayscale(.85); opacity: .55; }
