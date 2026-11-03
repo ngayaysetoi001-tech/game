@@ -208,11 +208,14 @@ export const TITLES = [
   { id: 'tru_cot', n: 'Trụ Cột Sơn Môn', cond: 'Mạnh nhất tông môn của mình', bonus: 'Tu luyện +5%', fx: { gainMul: 1.05 }, check: (g) => !!g.P.sect && g.P.realm >= 2 && g.members(g.P.sect).every((b) => b.realm < g.P.realm || (b.realm === g.P.realm && b.tuvi <= g.P.tuvi)) },
   { id: 'tang_bao', n: 'Tàng Bảo Các Chủ', cond: 'Mang một món Cực phẩm trở lên', bonus: 'Kỳ ngộ +5%', fx: { eventRate: 1.05 }, check: (g) => Object.values(g.P.eq || {}).some((it) => it && it.q >= 3) },
   { id: 'vo_hoc', n: 'Võ Học Tông Sư', cond: 'Biết 8 võ kỹ', bonus: 'Chiến đấu +4%', fx: { fightMul: 1.04 }, check: (g) => g.P.skills.length >= 8 },
+  { id: 'tong_su_ren', n: 'Luyện Khí Tông Sư', cond: 'Tay nghề rèn đạt 100', bonus: 'Cường hóa, rèn +5%', fx: { forgeBonus: 0.05 }, check: (g) => (g.P.forge || 0) >= 100 },
+  { id: 'tu_dia', n: 'Tử Địa Hành Giả', cond: 'Sống sót 10 năm lịch luyện ở Tử địa trở lên', bonus: 'Chiến đấu +5%, chịu đòn -5%', fx: { fightMul: 1.05, hurtMul: 0.95 }, check: (g) => (g.P.cnt.hard || 0) >= 10 },
   { id: 'huyet_mach', n: 'Huyết Mạch Thức Tỉnh', cond: 'Mang thể chất Truyền thuyết trở lên', bonus: 'Đột phá +2%', fx: { brk: 0.02 }, check: (g) => g.traits()[0].tier >= 3 },
 ];
 
 // phẩm danh hiệu theo độ khó: 1 Thường, 2 Hiếm, 3 Truyền kỳ, 4 Thần thoại
 const TITLE_TIER = {
+  tong_su_ren: 3, tu_dia: 3,
   so_xuat: 1, danh_chan: 1, lao_thu: 1,
   bach_chien: 2, khac_tinh: 2, thien_kieu_tu: 2, phu_giap: 2, hiep_khach: 2, thu_dich: 2, than_tien: 2, bao_thu: 2, tru_cot: 2, vo_hoc: 2,
   thieu_nien: 3, lao_bat_tu: 3, vong_tinh: 3, bang_huu: 3, dao_ly: 3, cuu_tu: 3, danh_thien_ha: 3, thap_dai: 3, tang_bao: 3, huyet_mach: 3,
@@ -230,4 +233,35 @@ export const PATHS = {
   phat: { n: 'Phật tu', reqText: 'Cần Hữu tình từ 30', req: (P) => P.tinh >= 30, desc: 'Từ bi độ thế. Hộ thể và hồi phục +30%, đột phá +5%, thân thiết +20%, tâm ma ít tìm đến. Công -10%.', skill: 'dai_bi', pm: { atkPct: -0.1, cls: { ho: 1.3 } }, fx: { brk: 0.05, relMul: 1.2, evW: { tam_ma: 0.4 } } },
   ma: { n: 'Ma tu', reqText: 'Cần Vô tình từ -30', req: (P) => P.tinh <= -30, desc: 'Nghịch thiên mà đi. Tu luyện +25%, ma công +50%, hút máu +15%, tôn xưng ma đạo. Tâm ma tìm đến gấp đôi.', skill: 'huyet_hai', pm: { ls: 0.15, cls: { ma: 1.5 } }, fx: { gainMul: 1.25, evW: { tam_ma: 2 } } },
   ngu_thu: { n: 'Ngự thú tu', reqText: 'Cần có linh thú', req: (P) => !!P.flags.pet, desc: 'Cùng linh thú tu hành. Linh thú mạnh hơn (sức chiến đấu +15% thay vì +10%), dễ gặp linh thú và trứng lạ.', skill: 'van_thu', pm: { cls: { thu: 1.2 } }, fx: { evW: { linh_thu: 4, trung_la: 3 } } },
+};
+
+// ---------- Bản đồ lịch luyện ----------
+// Độ khó tính theo cảnh giới HIỆN TẠI của nhân vật: yêu thú cùng cảnh giới, sức mạnh nhân pow.
+// loot: hệ số thu hoạch, myth: tỉ lệ một món rơi ra là Thần thoại, lethal: hệ số nguy hiểm tính mạng khi thua,
+// haz: tai họa thiên nhiên mỗi năm (tỉ lệ, sát thương), mat: nguyên liệu đặc trưng
+export const DIFF = [
+  { n: 'Dễ', ic: '🟢' }, { n: 'Vừa', ic: '🟡' }, { n: 'Khó', ic: '🟠' },
+  { n: 'Nguy hiểm', ic: '🔴' }, { n: 'Tử địa', ic: '☠' }, { n: 'Luyện ngục', ic: '💀' },
+];
+export const MAPS = [
+  { id: 'ngoai_o', n: 'Ngoại ô Thanh Thạch', d: 0, pow: 0.6, loot: 0.6, myth: 0, lethal: 0.3, haz: null, mat: 'tinh_thiet', beast: 'Dã', desc: 'Đồng cỏ và rừng thưa quanh trấn. Yêu thú nhút nhát, người qua lại đông.' },
+  { id: 'hac_phong', n: 'Hắc Phong Lĩnh', d: 1, pow: 1, loot: 1, myth: 0, lethal: 1, haz: null, mat: 'thu_hach', beast: '', desc: 'Dãy núi gió đen, bầy sói và gấu sắt làm tổ.' },
+  { id: 'vu_an', n: 'Vụ Ẩn Đầm Lầy', d: 2, pow: 1.25, loot: 1.5, myth: 0.01, lethal: 1.3, haz: [0.06, 12, 'Sương độc tràn qua đầm, ngươi hít phải mấy hơi', 'trúng sương độc giữa đầm lầy'], mat: 'doc_nang', beast: 'Độc', desc: 'Sương độc quanh năm. Thảo dược quý mọc giữa bùn lầy.' },
+  { id: 'xich_diem', n: 'Xích Diệm Cốc', d: 3, pow: 1.5, loot: 2.2, myth: 0.025, lethal: 1.6, haz: [0.09, 18, 'Nham thạch phun trào, ngươi chạy không kịp, bỏng một mảng lưng', 'chết cháy trong dòng nham thạch'], mat: 'hoa_tinh', beast: 'Hỏa', desc: 'Lòng núi lửa, nham thạch chảy thành sông. Hỏa tinh kết trong đá.' },
+  { id: 'co_chien', n: 'Cổ Chiến Trường', d: 4, pow: 1.8, loot: 3, myth: 0.05, lethal: 2, haz: [0.12, 24, 'Oán hồn vạn năm quấn lấy ngươi suốt một đêm', 'bị oán hồn cổ chiến trường hút cạn sinh khí'], mat: 'binh_hon', beast: 'Huyết', desc: 'Nơi chư tiên đại chiến vạn năm trước. Oán hồn và binh khí cổ nằm la liệt.' },
+  { id: 'hu_khong', n: 'Hư Không Liệt Cốc', d: 5, pow: 2.1, loot: 4, myth: 0.09, lethal: 2.5, haz: [0.15, 32, 'Một vết nứt không gian lướt qua, suýt cắt ngươi làm đôi', 'bị vết nứt không gian xé nát'], mat: 'than_hon', beast: 'Hư Không', desc: 'Vết nứt của trời đất. Không gian vỡ vụn, mười người vào chỉ một trở về.' },
+];
+export const MAP_MAP = Object.fromEntries(MAPS.map((m) => [m.id, m]));
+export const DEFAULT_MAP = 'hac_phong';
+
+// ---------- Nguyên liệu rèn ----------
+// aff: dùng làm dẫn liệu để chắc chắn ra dòng thuộc tính đó
+export const MATS = {
+  tinh_thiet: { n: 'Tinh thiết', q: 0, col: '#9aa3ab', desc: 'Sắt tinh luyện, nguyên liệu cơ bản của mọi lò rèn.' },
+  linh_tinh: { n: 'Linh tinh', q: 2, col: '#8fd3ff', desc: 'Linh khí ngưng kết. Dùng để tẩy luyện và rèn đồ tốt.' },
+  thu_hach: { n: 'Thú hạch', q: 1, col: '#c0503a', aff: 'ls', desc: 'Lõi yêu lực trong thân yêu thú. Dẫn liệu cho dòng Hút máu.' },
+  doc_nang: { n: 'Độc nang', q: 1, col: '#6fbf4a', aff: 'dodge', desc: 'Túi độc của sinh vật đầm lầy. Dẫn liệu cho dòng Né tránh.' },
+  hoa_tinh: { n: 'Hỏa tinh', q: 2, col: '#ff7a2a', aff: 'crit', desc: 'Tinh thể kết trong đá núi lửa. Dẫn liệu cho dòng Bạo kích.' },
+  binh_hon: { n: 'Binh hồn', q: 3, col: '#d8c06a', aff: 'rf', desc: 'Tàn hồn của binh khí cổ. Dẫn liệu cho dòng Phản chấn.' },
+  than_hon: { n: 'Thần hồn', q: 4, col: '#ff3b5a', desc: 'Mảnh hồn của thần khí. Cần để rèn và thăng cấp đồ Thần thoại.' },
 };

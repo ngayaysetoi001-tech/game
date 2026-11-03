@@ -5,7 +5,7 @@ import {
   REALMS, TOP_REALM, baseGain, ROOTS, ORIGINS, PERSONALITIES, PERS_KEYS,
   SURNAMES, NAMES_M, NAMES_F, SECT_A, SECT_B, SECT_COLORS, MONSTERS, MOVES,
   ACTIONS, PILLS, LEGACIES, TAG_NAMES, THE_CHAT, THIEN_PHU, TP_WEIGHT,
-  DH_A, DH_B, DH_HON, DH_HON_NU, DH_HON_MA, TITLES, PATHS,
+  DH_A, DH_B, DH_HON, DH_HON_NU, DH_HON_MA, TITLES, PATHS, MAPS, MAP_MAP, DEFAULT_MAP, MATS,
 } from './data.js';
 
 const TITLE_MAP = Object.fromEntries(TITLES.map((t) => [t.id, t]));
@@ -20,14 +20,19 @@ const THE_MAP = Object.fromEntries(THE_CHAT.map((t) => [t.id, t]));
 const TP_MAP = Object.fromEntries(THIEN_PHU.map((t) => [t.id, t]));
 import { EVENTS, EVENT_MAP } from './events.js';
 import { SKILLS, SKILL_IDS, BEAST_SKILLS, fighter, battle, turnText } from './combat.js';
-import { makeItem, gearStats, itemScore, QUALITY, THAN_THONG, TT_MAP, isSealed } from './items.js';
+import { makeItem, gearStats, itemScore, QUALITY, THAN_THONG, TT_MAP, isSealed, rollQuality, itemVal, itemName, PLUS_MAX, AFFIX } from './items.js';
 import { botSeed } from './sprite.js';
-import { armorColor, itemToken, iconToken } from './icons.js';
+import { armorColor, itemToken, iconToken, matIconOpts } from './icons.js';
 
 // đối thủ coi như có sẵn trang bị (trừ hạng phàm nhân)
 const enemyGear = (realm) => (realm <= 0 ? 1 : 1.2);
 const BAG_MAX = 16;
 const WEP_KEYS = ['kiem', 'dao', 'thuong', 'quat'];
+const WEP_N = { kiem: 'Kiếm', dao: 'Đao', thuong: 'Thương', quat: 'Phiến' };
+// kỳ ngộ chịu ảnh hưởng của độ khó vùng lịch luyện
+const MAP_RARE_EV = new Set(['hang_dong', 'truyen_thua', 'co_mo', 'kiem_trung', 'bi_canh', 'linh_mach', 'yeu_vuong', 'ban_do', 'trung_la', 'bao_vat', 'linh_thu', 'ngoc_gian']);
+const MAP_FIGHT_EV = new Set(['khieu_chien', 'huyet_tran', 'bat_coc', 'ma_tu_tra_thu']);
+export const matToken = (k) => iconToken(matIconOpts(k, MATS[k]));
 
 export const SAVE_VERSION = 1;
 export const SOUL_COUNT = 40;
@@ -48,6 +53,7 @@ export class Game {
     if (state.player) this.ensureGear(state.player);
     if (state.draft) this.ensureGear(state.draft);
     if (!state.nextItem) state.nextItem = 1;
+    if (!state.opt) state.opt = { retreat: true, autoSalvage: false };
   }
 
   // ---------- Tạo, lưu, tải ----------
@@ -748,7 +754,7 @@ export class Game {
   monsterFighter(m, scale = 1) {
     const r = new Rng(m.seed || 1);
     const sk = ['can_xe', r.pick(Object.keys(BEAST_SKILLS).filter((k) => k !== 'can_xe'))];
-    if (m.r >= 3) sk.push(r.pick(['vay_giap', 'cuong_bao', 'gam_thet']));
+    if (m.r >= 3 || (m.d || 0) >= 3) sk.push(r.pick(['vay_giap', 'cuong_bao', 'gam_thet']));
     return fighter({ name: m.n, pw: m.pow * scale * enemyGear(m.r ?? this.P.realm), skills: [...new Set(sk)], beast: true, look: { type: 'beast', seed: m.seed, realm: m.r, name: m.n } });
   }
   botFighter(b) {
@@ -788,20 +794,294 @@ export class Game {
     return this.runBattle(this.playerFighter(mul), this.genericFighter(foeName, foePow), { lethal: 0.22, cause: `bị ${foeName} giết`, ...opts });
   }
   fightMonster(m, scale = 1, mul = 1, opts = {}) {
-    const res = this.runBattle(this.playerFighter(mul), this.monsterFighter(m, scale), { lethal: 0.35, cause: `bị ${m.n} giết chết`, ...opts });
+    const mp = m.d !== undefined ? MAPS[m.d] : null;
+    const res = this.runBattle(this.playerFighter(mul), this.monsterFighter(m, scale), { lethal: 0.35 * (mp ? mp.lethal : 1), cause: `bị ${m.n} giết chết`, ...opts });
     if (res.win) this.P.cnt.beast++;
-    if (res.win && this.r.chance(0.25)) res.text += '\n' + this.gainItem(makeItem(this.r, this.s.nextItem++, m.r ?? this.P.realm));
+    if (res.win && this.r.chance(mp ? Math.min(0.8, 0.25 * mp.loot) : 0.25)) res.text += '\n' + this.gainItem(this.dropItem(m.r ?? this.P.realm, null, mp));
+    if (res.win && mp && this.playing) { const t = this.gatherMats(mp, true); if (t) res.text += '\n' + t; }
     return res;
   }
   fightBot(b, mul = 1, opts = {}) {
     const res = this.runBattle(this.playerFighter(mul), this.botFighter(b), { lethal: this.botLethal(b), cause: `chết dưới tay ${b.name}`, ...opts });
     if (res.win && this.r.chance(0.15)) {
-      const it = makeItem(this.r, this.s.nextItem++, b.realm, null, 'vu_khi');
+      const it = this.dropItem(b.realm, 'vu_khi');
       it.wt = this.botWep(b);
-      it.n = it.n.replace(/\S+$/, { kiem: 'Kiếm', dao: 'Đao', thuong: 'Thương', quat: 'Phiến' }[it.wt]);
+      it.n = it.n.replace(/\S+$/, WEP_N[it.wt]);
       res.text += '\n' + this.gainItem(it, `Nhặt được binh khí của ${b.name}`);
     }
     return res;
+  }
+
+  // ---------- Bản đồ lịch luyện ----------
+  /** Vùng đang lịch luyện. Trong một kỳ ngộ thì là vùng lúc kỳ ngộ xảy ra. */
+  curMap() {
+    const P = this.P;
+    if (!P) return null;
+    const p = this.s.pending;
+    if (p && p.map !== undefined) return p.map ? MAP_MAP[p.map] : null;
+    if (this.effectiveAction() !== 'lich_luyen') return null;
+    return MAP_MAP[P.map] || MAP_MAP[DEFAULT_MAP];
+  }
+  setMap(id) {
+    if (!this.playing || !MAP_MAP[id]) return;
+    this.P.map = id;
+    this.P.flags.mapWarned = false;
+    this.setAction('lich_luyen');
+  }
+  /** Yêu thú của vùng: cùng cảnh giới với ngươi, sức mạnh nhân theo độ khó */
+  mapMonster(map = this.curMap(), rr = this.r) {
+    const P = this.P;
+    if (!map) return this.monster(P.realm);
+    const nr = clamp(P.realm + Math.floor(map.d / 2), 0, MONSTERS[MONSTERS.length - 1].r);
+    const opts = MONSTERS.filter((m) => m.r === nr);
+    const pick = rr.pick(opts.length ? opts : MONSTERS);
+    return { n: map.d >= 2 && map.beast ? `${map.beast} ${pick.n}` : pick.n, pow: REALMS[P.realm].pow * map.pow * rr.range(0.85, 1.15), beast: true, r: P.realm, d: map.d, seed: rr.int(1, 1e6) };
+  }
+  /** Tỉ lệ thắng một con yêu thú điển hình của vùng (dùng cho cảnh báo) */
+  mapOdds(id) {
+    const map = MAP_MAP[id];
+    const m = this.mapMonster(map, new Rng(7700 + map.d));
+    m.pow = REALMS[this.P.realm].pow * map.pow;
+    return this.winOdds(() => this.monsterFighter(m));
+  }
+  mapRisk(id) {
+    const map = MAP_MAP[id];
+    const m = this.mapMonster(map, new Rng(7700 + map.d));
+    m.pow = REALMS[this.P.realm].pow * map.pow;
+    const B = this.monsterFighter(m);
+    return this.deathChance(B.maxHp / this.playerFighter().maxHp, 0.35 * map.lethal);
+  }
+  /** Đồ rơi ngẫu nhiên, phẩm theo vùng đang ở */
+  dropItem(lv = this.P.realm, slot = null, map = this.curMap()) {
+    const q = rollQuality(this.r, map ? map.loot : 1, map ? map.myth : 0);
+    return makeItem(this.r, this.s.nextItem++, lv, q, slot);
+  }
+  mythOk() {
+    const mp = this.curMap();
+    return !!this._forging || (!!mp && mp.d >= 2);
+  }
+  /** Ngoài vùng Khó trở lên, đồ Thần thoại hạ xuống Cực phẩm */
+  demote(it) {
+    const n = makeItem(this.r, it.id, it.lv, 3, it.slot);
+    if (it.wt) { n.wt = it.wt; n.n = n.n.replace(/\S+$/, WEP_N[it.wt]); }
+    return n;
+  }
+  /** Nhặt nguyên liệu ở vùng lịch luyện. kill: hạ được yêu thú */
+  gatherMats(map, kill = false) {
+    const P = this.P;
+    const f = 1 + P.realm;
+    const got = {};
+    const add = (k, n) => { n = Math.max(0, Math.round(n)); if (!n) return; P.mats[k] = (P.mats[k] || 0) + n; got[k] = (got[k] || 0) + n; };
+    add('tinh_thiet', this.r.range(0.5, 1.5) * map.loot * f * (kill ? 1 : 0.6));
+    if (this.r.chance((kill ? 0.12 : 0.06) * map.loot)) add('linh_tinh', this.r.range(0.6, 1.4) * f);
+    if (map.mat !== 'tinh_thiet') {
+      const rare = map.mat === 'than_hon';
+      if (this.r.chance(rare ? (kill ? 0.15 : 0.03) : kill ? 0.5 : 0.25)) add(map.mat, rare ? 1 : this.r.int(1, 2));
+    }
+    return this.matText(got, 'Nhặt được');
+  }
+  matText(m, prefix = '') {
+    const parts = Object.entries(m).filter(([, n]) => n > 0).map(([k, n]) => `${matToken(k)}${MATS[k].n} x${n}`);
+    return parts.length ? `${prefix ? prefix + ': ' : ''}${parts.join(', ')}.` : '';
+  }
+
+  // ---------- Phân giải, lò rèn ----------
+  findItem(id) {
+    const P = this.P;
+    return P.bag.find((x) => x.id === id) || Object.values(P.eq).find((x) => x && x.id === id) || null;
+  }
+  salvageYield(it) {
+    const f = 1 + it.lv;
+    const base = [[1.5, 0], [3, 0], [5, 1], [8, 3], [4, 2]][it.q];
+    const y = { tinh_thiet: Math.max(1, Math.round(base[0] * f)), linh_tinh: Math.round(base[1] * f) };
+    if (it.q >= 4) y.than_hon = 1;
+    if (it.inv) for (const k in it.inv) y[k] = (y[k] || 0) + Math.floor(it.inv[k] * 0.5);
+    for (const k in y) if (!y[k]) delete y[k];
+    return y;
+  }
+  /** Phân giải một món trong túi, trả về câu mô tả nguyên liệu nhận được */
+  salvage(id) {
+    const P = this.P;
+    const i = P.bag.findIndex((x) => x.id === id);
+    if (i < 0) return '';
+    const it = P.bag.splice(i, 1)[0];
+    const y = this.salvageYield(it);
+    for (const k in y) P.mats[k] = (P.mats[k] || 0) + y[k];
+    return this.matText(y).replace(/\.$/, '');
+  }
+  /** Phân giải mọi món trong túi từ phẩm maxQ trở xuống */
+  salvageAll(maxQ = 1) {
+    const P = this.P;
+    const tot = {};
+    let n = 0;
+    for (const it of P.bag.filter((x) => x.q <= maxQ)) {
+      const y = this.salvageYield(it);
+      this.salvage(it.id);
+      n++;
+      for (const k in y) tot[k] = (tot[k] || 0) + y[k];
+    }
+    return n ? `Phân giải ${n} món: ${this.matText(tot).replace(/\.$/, '')}.` : 'Không có món nào để phân giải.';
+  }
+  canPay(c) {
+    const P = this.P;
+    for (const k in c) if (k === 'money' ? P.money < c[k] : (P.mats[k] || 0) < c[k]) return false;
+    return true;
+  }
+  pay(c, it = null) {
+    const P = this.P;
+    if (!this.canPay(c)) return false;
+    for (const k in c) {
+      if (k === 'money') { this.money(-c[k]); continue; }
+      P.mats[k] -= c[k];
+      if (it && (k === 'tinh_thiet' || k === 'linh_tinh')) { it.inv = it.inv || {}; it.inv[k] = (it.inv[k] || 0) + c[k]; }
+    }
+    return true;
+  }
+  forgeOpen() {
+    return this.playing && this.P.age >= 12;
+  }
+  /** Tay nghề rèn, Thể tu và danh hiệu cộng thêm tỉ lệ */
+  forgeBonus() {
+    const P = this.P;
+    return Math.min(0.15, (P.forge || 0) * 0.0015) + (P.path === 'the' ? 0.05 : 0) + this.tadd('forgeBonus');
+  }
+  addForge(n) {
+    this.P.forge = Math.min(100, (this.P.forge || 0) + n);
+  }
+  enhanceCost(it) {
+    const n = it.plus || 0;
+    const f = 1 + it.lv;
+    const c = { tinh_thiet: Math.ceil((2 + 1.5 * n) * f), money: Math.round(10 * (n + 1) * f) };
+    if (n >= 4) c.linh_tinh = (n - 3) * f;
+    if (it.q >= 4 && n >= 7) c.than_hon = 1;
+    return c;
+  }
+  enhanceChance(it) {
+    const n = it.plus || 0;
+    if (n < 4) return 1;
+    return Math.min(0.95, [0.85, 0.75, 0.65, 0.55, 0.45, 0.35][n - 4] + this.forgeBonus());
+  }
+  /** Cường hóa: từ +5 có thể hỏng, từ +8 hỏng thì tụt một cấp. Không bao giờ vỡ đồ. */
+  enhance(id) {
+    const it = this.findItem(id);
+    if (!it || !this.forgeOpen() || (it.plus || 0) >= PLUS_MAX) return null;
+    const n = it.plus || 0;
+    const p = this.enhanceChance(it);
+    if (!this.pay(this.enhanceCost(it), it)) return null;
+    this.addForge(1);
+    let msg;
+    if (this.r.chance(p)) {
+      it.plus = n + 1;
+      msg = `Lửa lò bùng lên, ${it.n} sáng rực. Cường hóa thành công: +${it.plus}.`;
+      if (it.plus >= 8) this.log(`Cường hóa ${itemToken(it)}${it.n} lên +${it.plus}.`, 'good');
+    } else if (n >= 7) {
+      it.plus = n - 1;
+      msg = `Tiếng kim loại rạn khẽ vang lên. Cường hóa thất bại, ${it.n} tụt xuống +${it.plus}.`;
+    } else msg = `Lửa lò chập chờn rồi tắt. Cường hóa thất bại, nguyên liệu tiêu tan, ${it.n} vẫn +${n}.`;
+    it.val = itemVal(it);
+    this.checkTitles();
+    return msg;
+  }
+  upgradeCost(it) {
+    const f = 1 + this.P.realm;
+    const c = { tinh_thiet: 4 * f * (1 + it.q), money: 25 * f * (1 + it.q) };
+    if (it.q >= 2) c.linh_tinh = it.q * f;
+    if (it.q >= 4) c.than_hon = 1;
+    return c;
+  }
+  /** Thăng cấp: kéo cảnh giới món đồ lên bằng cảnh giới hiện tại, giữ phẩm, dòng và thần thông */
+  upgrade(id) {
+    const P = this.P;
+    const it = this.findItem(id);
+    if (!it || !this.forgeOpen() || it.lv >= P.realm) return null;
+    if (!this.pay(this.upgradeCost(it), it)) return null;
+    const k = REALMS[P.realm].pow / REALMS[it.lv].pow;
+    for (const s of ['atk', 'def', 'hp']) if (it[s]) it[s] = Math.round(it[s] * k);
+    const from = REALMS[it.lv].n;
+    it.lv = P.realm;
+    it.val = itemVal(it);
+    this.addForge(2);
+    this.checkTitles();
+    return `Nấu lại ${it.n} bằng lửa ${REALMS[P.realm].n}. Món đồ từ cấp ${from} lên cấp ${REALMS[P.realm].n}.`;
+  }
+  rerollCost(it, cat = null) {
+    const c = { linh_tinh: (it.q - 1) * (1 + it.lv), money: 15 * (1 + it.lv) };
+    if (cat) c[cat] = 2;
+    return c;
+  }
+  /** Tẩy luyện một dòng thuộc tính. cat: dẫn liệu để chắc chắn ra dòng của nó */
+  reroll(id, idx, cat = null) {
+    const it = this.findItem(id);
+    if (!it || !this.forgeOpen() || it.q < 2 || !it.affix || idx < 0 || idx >= it.affix.length) return null;
+    const old = it.affix[idx];
+    let nk;
+    if (cat) {
+      nk = MATS[cat] && MATS[cat].aff;
+      if (!nk || (it.affix.includes(nk) && nk !== old)) return null;
+    } else {
+      const pool = AFFIX.filter((a) => !it.affix.includes(a.k));
+      if (!pool.length) return null;
+      nk = this.r.pick(pool).k;
+    }
+    if (!this.pay(this.rerollCost(it, cat), it)) return null;
+    const A = (k) => AFFIX.find((a) => a.k === k);
+    it[old] = (it[old] || 0) - A(old).v;
+    if (Math.abs(it[old]) < 1e-9) delete it[old];
+    it[nk] = (it[nk] || 0) + A(nk).v;
+    it.affix[idx] = nk;
+    this.addForge(2);
+    this.checkTitles();
+    return `Tẩy luyện: ${A(old).t} → ${A(nk).t}.`;
+  }
+  forgeCost(myth = false, cat = null) {
+    const f = 1 + this.P.realm;
+    const c = myth ? { tinh_thiet: 20 * f, linh_tinh: 5 * f, than_hon: 3, money: 200 * f } : { tinh_thiet: 6 * f, linh_tinh: f, money: 30 * f };
+    if (cat) c[cat] = (c[cat] || 0) + 2;
+    return c;
+  }
+  forgeMythChance() {
+    return Math.min(0.4, 0.15 + this.forgeBonus() * 0.5);
+  }
+  /** Rèn món mới hợp cảnh giới hiện tại */
+  forgeNew(slot, wt = null, cat = null, myth = false) {
+    const P = this.P;
+    if (!this.forgeOpen() || !['vu_khi', 'ao', 'phu_kien'].includes(slot)) return null;
+    if (cat && !(MATS[cat] && MATS[cat].aff)) return null;
+    if (!this.pay(this.forgeCost(myth, cat))) return null;
+    this.addForge(3);
+    const b = this.forgeBonus();
+    let q;
+    if (myth) q = this.r.chance(this.forgeMythChance()) ? 4 : 3;
+    else { const w = [35, 38, 20 * (1 + b * 3), 7 * (1 + b * 5)]; q = this.r.weighted([0, 1, 2, 3], (x) => w[x]); }
+    const it = makeItem(this.r, this.s.nextItem++, P.realm, q, slot);
+    if (slot === 'vu_khi' && WEP_KEYS.includes(wt)) { it.wt = wt; it.n = it.n.replace(/\S+$/, WEP_N[wt]); }
+    if (cat) {
+      const k = MATS[cat].aff;
+      if (!it.affix.includes(k)) {
+        const A = (x) => AFFIX.find((a) => a.k === x);
+        if (it.affix.length) { const i = this.r.int(0, it.affix.length - 1); const o = it.affix[i]; it[o] -= A(o).v; if (Math.abs(it[o]) < 1e-9) delete it[o]; it.affix[i] = k; }
+        else it.affix.push(k);
+        it[k] = (it[k] || 0) + A(k).v;
+      }
+    }
+    it.val = itemVal(it);
+    this._forging = true;
+    const msg = this.gainItem(it, myth && q < 4 ? 'Thần hồn tan đi một nửa, lò chỉ ra' : 'Rèn được');
+    this._forging = false;
+    if (q >= 4) this.log(`Lò rèn rung chuyển, thần khí xuất thế: ${itemToken(it)}${it.n}.`, 'big');
+    this.checkTitles();
+    return msg;
+  }
+  /** Mua Tinh thiết ở lò rèn */
+  buyIron(n = 10) {
+    const price = n * 4 * (1 + this.P.realm);
+    if (!this.playing || this.P.money < price) return null;
+    this.money(-price);
+    this.P.mats.tinh_thiet = (this.P.mats.tinh_thiet || 0) + n * (1 + this.P.realm);
+    return `Mua ${n * (1 + this.P.realm)} Tinh thiết.`;
+  }
+  ironPrice(n = 10) {
+    return n * 4 * (1 + this.P.realm);
   }
 
   // ---------- Trang bị, võ kỹ ----------
@@ -815,6 +1095,9 @@ export class Game {
     if (!P.titles) P.titles = [];
     if (P.title === undefined) P.title = null;
     if (!P.later) P.later = [];
+    if (!P.mats) P.mats = {};
+    if (!P.map || !MAP_MAP[P.map]) P.map = DEFAULT_MAP;
+    if (P.forge === undefined) P.forge = 0;
     // đồ Thần thoại từ bản cũ chưa có thần thông thì gán theo mã món
     for (const it of [...P.bag, ...Object.values(P.eq)]) {
       if (it && it.q >= 4 && !it.tt) { const pool = THAN_THONG[it.slot]; it.tt = pool[Math.abs(it.id) % pool.length].id; }
@@ -853,6 +1136,8 @@ export class Game {
   /** Bỏ một món vào túi, tự mặc nếu ô đang trống. Trả về câu thông báo. */
   gainItem(it, prefix = 'Thu được') {
     const P = this.P;
+    // đồ Thần thoại chỉ xuất hiện ở vùng lịch luyện từ Khó trở lên (hoặc tự rèn)
+    if (it.q >= 4 && !this.mythOk()) it = this.demote(it);
     const qn = QUALITY[it.q].n;
     const tk = itemToken(it);
     if (it.tt && TT_MAP[it.tt]) prefix = `${prefix} thần khí mang thần thông 「${TT_MAP[it.tt].n}」`;
@@ -866,9 +1151,14 @@ export class Game {
     let msg = `${prefix}: ${tk}${it.n} (${qn}).`;
     if (P.bag.length > BAG_MAX) {
       P.bag.sort((a, b) => a.val - b.val);
-      const sold = P.bag.shift();
-      this.money(sold.val);
-      msg += ` Túi đầy, bán ${sold.n} được ${sold.val} linh thạch.`;
+      const sold = P.bag[0];
+      if (this.s.opt && this.s.opt.autoSalvage) {
+        msg += ` Túi đầy, phân giải ${itemName(sold)}: ${this.salvage(sold.id)}.`;
+      } else {
+        P.bag.shift();
+        this.money(sold.val);
+        msg += ` Túi đầy, bán ${itemName(sold)} được ${sold.val} linh thạch.`;
+      }
     }
     this.log(msg, 'good');
     return msg;
@@ -1105,8 +1395,26 @@ export class Game {
     if (act === 'tu_luyen') this.addTuvi(g * this.r.range(0.85, 1.15));
     else if (act === 'be_quan') this.addTuvi(g * 1.6 * this.tmul('closedMul'));
     else if (act === 'lich_luyen') {
-      this.addTuvi(g * 0.35);
+      const mp = this.curMap();
+      this.addTuvi(g * 0.35 * Math.sqrt(mp.loot));
       if (this.r.chance(0.15)) this.stat('co', 1);
+      if (this.r.chance(0.35)) { const t = this.gatherMats(mp, false); if (t && /Linh tinh|Thú hạch|Độc nang|Hỏa tinh|Binh hồn|Thần hồn/.test(t)) this.log(t, 'muted'); }
+      if (mp.haz && this.r.chance(mp.haz[0])) {
+        const dmg = Math.round(mp.haz[1] * this.r.range(0.7, 1.3));
+        this.log(`${mp.haz[2]}. Sinh lực -${dmg}.`, 'bad');
+        if (this.hurt(dmg, mp.haz[3])) return true;
+      }
+      if (mp.d >= 4) P.cnt.hard = (P.cnt.hard || 0) + 1;
+      if (mp.d >= 2 && P.hp < 40) {
+        if (this.s.opt.retreat) {
+          P.map = DEFAULT_MAP;
+          this.log(`Sinh lực chỉ còn ${P.hp}, ngươi rút khỏi ${mp.n}, về ${MAP_MAP[DEFAULT_MAP].n} dưỡng thương.`, 'muted');
+        } else if (!P.flags.mapWarned) {
+          P.flags.mapWarned = true;
+          this.s.alert = { title: `Nguy hiểm ở ${mp.n}`, text: `Sinh lực chỉ còn ${P.hp}. Ở ${mp.n} lúc này, tỉ lệ thắng yêu thú chỉ khoảng ${Math.round(this.mapOdds(mp.id) * 100)}%. Nên về vùng dễ hơn dưỡng thương.` };
+        }
+      }
+      if (P.hp >= 70) P.flags.mapWarned = false;
     } else if (act === 'muu_sinh') {
       const m = Math.round(15 * (1 + P.realm * 1.5) * this.r.range(0.7, 1.3) * (1 + (P.stats.co - 50) / 200) * this.tmul('moneyMul'));
       this.money(m);
@@ -1172,6 +1480,7 @@ export class Game {
     if (!this.r.chance(rate)) return;
     const P = this.P;
     const cands = [];
+    const mapNow = this.curMap();
     for (const e of EVENTS) {
       if (e.queued) continue;
       if (act === 'be_quan' && !e.inClosed) continue;
@@ -1190,6 +1499,7 @@ export class Game {
       if (e.prep && !data) continue;
       let w = typeof e.w === 'function' ? e.w(this) : e.w ?? 1;
       if (e.acts && e.acts.includes(act)) w *= 3;
+      if (mapNow) w *= MAP_RARE_EV.has(e.id) ? 0.5 + 0.35 * mapNow.d : e.id === 'yeu_thu' ? 0.6 + 0.3 * mapNow.d : MAP_FIGHT_EV.has(e.id) ? 0.8 + 0.15 * mapNow.d : 1;
       w *= this.tevW(e.id);
       cands.push({ e, bot, data, w });
     }
@@ -1197,7 +1507,8 @@ export class Game {
     if (!pick) return;
     s.cd[pick.e.id] = P.age;
     if (pick.e.once) s.once[pick.e.id] = true;
-    s.pending = { id: pick.e.id, botId: pick.bot ? pick.bot.id : null, data: pick.data, act, age: P.age };
+    const mp0 = this.curMap();
+    s.pending = { id: pick.e.id, botId: pick.bot ? pick.bot.id : null, data: pick.data, act, age: P.age, map: mp0 ? mp0.id : null };
   }
   ctx(p = this.s.pending) {
     return { bot: p && p.botId ? this.soul(p.botId) : null, data: (p && p.data) || {} };

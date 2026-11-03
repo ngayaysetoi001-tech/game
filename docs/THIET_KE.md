@@ -187,6 +187,38 @@ Ký ức đạo pháp, Thân thể kiếp trước, Dư âm cơ duyên, Tàn h�
 - Lôi kiếp người khác: hộ pháp, quan sát ngộ đạo, đánh lén cướp bảo vật.
 - Bị vu oan trong tông môn, Linh mạch → bị đòi chia, Lão ăn mày (có thể là cao nhân), Thư nhà, Hắc Phong trại bắt cóc, Đấu rượu, Kiếm trủng, Yêu vương (lập đội hay đi một mình), Giấc mộng nồi kê, Ngọc giản dính máu → Mở ngọc giản, Vườn thuốc hoang, Lò đan cũ (3 mức lửa), Đứa trẻ móc túi.
 
+## 6f. Bản đồ lịch luyện theo độ khó
+
+Chọn Lịch luyện thì mở bảng chọn vùng. Độ khó **luôn tính theo cảnh giới hiện tại** của nhân vật: yêu thú cùng cảnh giới nhưng sức mạnh nhân theo độ khó, đồ rơi ra đúng cảnh giới của mình (đồ Thần thoại nhặt được không bị phong ấn). Phàm Nhân cũng vào được Luyện ngục nếu dám.
+
+| Vùng | Độ khó | Yêu thú | Thu hoạch | Thần thoại/món | Nguyên liệu | Tai họa/năm |
+|---|---|---|---|---|---|---|
+| Ngoại ô Thanh Thạch | Dễ | x0,6 | x0,6 | 0 | Tinh thiết | không |
+| Hắc Phong Lĩnh | Vừa (mặc định) | x1 | x1 | 0 | Thú hạch | không |
+| Vụ Ẩn Đầm Lầy | Khó | x1,25 | x1,5 | 1% | Độc nang | 6%, -12 |
+| Xích Diệm Cốc | Nguy hiểm | x1,5 | x2,2 | 2,5% | Hỏa tinh | 9%, -18 |
+| Cổ Chiến Trường | Tử địa | x1,8 | x3 | 5% | Binh hồn | 12%, -24 |
+| Hư Không Liệt Cốc | Luyện ngục | x2,1 | x4 | 9% | Thần hồn | 15%, -32 |
+
+- Đồ Thần thoại **chỉ** xuất hiện ở vùng Khó trở lên (hoặc tự rèn). Kỳ ngộ ở nơi khác vốn cho đồ Thần thoại thì hạ xuống Cực phẩm.
+- Thua yêu thú ở vùng khó dễ mất mạng hơn (hệ số 0,3 ở Dễ tới 2,5 ở Luyện ngục). Vùng khó gặp kỳ ngộ hiếm, yêu thú và cao thủ nhiều hơn.
+- Mỗi thẻ vùng hiện tỉ lệ thắng thật theo trang bị, võ kỹ, sinh lực đang có, và nguy hiểm tính mạng khi thua. Vào vùng Nguy hiểm trở lên phải xác nhận.
+- Sinh lực dưới 40% ở vùng Khó trở lên: nếu bật "tự lui" thì về Hắc Phong Lĩnh; nếu tắt thì game dừng lại cảnh báo một lần.
+- Hệ số được chỉnh theo mô phỏng: nhân vật trung bình thắng ~100% / 85% / 65% / 35% / 10% / 2% ở 6 vùng. Lối chơi "luôn vào vùng khó nhất còn thắng được 55%" mang về ~0,4 món Thần thoại mỗi kiếp nhưng 4 trên 10 kiếp chết dưới nanh yêu thú.
+
+## 6g. Phân giải và lò rèn
+
+**Nguyên liệu:** Tinh thiết (cơ bản), Linh tinh (tẩy luyện, đồ tốt), Thú hạch / Độc nang / Hỏa tinh / Binh hồn (dẫn liệu cho Hút máu / Né tránh / Bạo kích / Phản chấn), Thần hồn (đồ Thần thoại). Nhặt khi lịch luyện, hạ yêu thú, phân giải đồ; Tinh thiết mua được ở lò rèn. Tinh thiết và Linh tinh tính theo cảnh giới (nhiều hơn khi cảnh giới cao, chi phí cũng tăng theo).
+
+**Phân giải** (trong Hành trang): Hạ ~2, Trung 3, Thượng 5 Tinh thiết + 1 Linh tinh, Cực 8 + 3, Thần thoại 4 Tinh thiết + 2 Linh tinh + 1 Thần hồn; nhân (1 + cảnh giới món). Đồ đã cường hóa trả lại một nửa nguyên liệu đã bỏ vào. Có nút phân giải hết đồ Hạ, Trung phẩm và tùy chọn túi đầy thì tự phân giải thay vì tự bán.
+
+**Lò rèn** (từ 12 tuổi):
+- Cường hóa +1 đến +10, mỗi cấp +8% công, thủ, sinh lực. +1 đến +4 chắc chắn thành công, +5 trở đi 85% giảm dần tới 35%. Lên +8 trở lên thất bại thì tụt một cấp. Không bao giờ vỡ đồ.
+- Thăng cấp: kéo món đồ lên cảnh giới hiện tại, giữ phẩm, cường hóa, dòng, thần thông.
+- Tẩy luyện: đổi một dòng của đồ Thượng phẩm trở lên, ngẫu nhiên hoặc chắc chắn theo dẫn liệu (2 cái).
+- Rèn mới: chọn ô, loại binh khí, dẫn liệu. Phẩm 35/38/20/7% (Hạ/Trung/Thượng/Cực). Lò thần khí tốn 3 Thần hồn: ~15% ra Thần thoại, còn lại chắc Cực phẩm.
+- Tay nghề rèn (mỗi kiếp, tối đa 100) cộng tới +15% tỉ lệ; Thể tu +5%. Tay nghề 100 mở danh hiệu Luyện Khí Tông Sư. Sống sót 10 năm ở Tử địa trở lên mở danh hiệu Tử Địa Hành Giả.
+
 ## 7. Kỹ thuật
 
 - HTML, CSS, JavaScript thuần (ES module), không cần build, không cần máy chủ.

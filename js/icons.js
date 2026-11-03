@@ -131,6 +131,23 @@ export function buildIcon(o) {
     ell(8, 11, 4.5, 4, (x, y, d) => (x < 7 && y < 11 ? ilite(c, 0.35) : d > 0.7 ? idark(c, 0.25) : c));
     ell(8, 5.5, 2.6, 2.4, (x, y) => (x < 8 ? ilite(c, 0.35) : c));
     rect(7, 1, 9, 2, '#8a6a3a'); rect(6, 8, 10, 8, '#e2c46a');
+  } else if (k === 'thoi') {
+    // thỏi kim loại
+    const c = o.col || '#9aa3ab';
+    for (let y = 6; y <= 11; y++) { const i = y - 6; rect(2 + Math.floor(i / 2), y, 13 - Math.floor(i / 2), y, y === 6 ? ilite(c, 0.45) : y > 9 ? idark(c, 0.3) : c); }
+    for (let y = 9; y <= 13; y++) rect(1 + Math.floor((y - 9) / 2), y, 8 - Math.floor((y - 9) / 2), y, y === 9 ? ilite(c, 0.4) : y > 11 ? idark(c, 0.35) : c);
+    set(4, 7, '#ffffff'); set(3, 10, '#ffffff');
+  } else if (k === 'hach') {
+    // lõi tròn có vân
+    const c = o.col || '#c0503a';
+    ell(8, 8, 5.5, 5.5, (x, y, d) => (d < 0.1 ? ilite(c, 0.7) : x + y < 13 ? ilite(c, 0.3) : d > 0.72 ? idark(c, 0.35) : c));
+    line(5, 9, 10, 6, idark(c, 0.45)); set(6, 5, '#ffffff');
+  } else if (k === 'mat') {
+    // cụm tinh thể
+    const c = o.col || '#8fd3ff';
+    const crystal = (cx, top, w, h) => { for (let y = top; y <= top + h; y++) { const hw = y < top + 2 ? (y - top) : w; for (let x = cx - hw; x <= cx + hw; x++) set(x, y, x < cx ? ilite(c, 0.35) : x === cx ? c : idark(c, 0.25)); } };
+    crystal(8, 1, 2, 12); crystal(4, 6, 1, 8); crystal(12, 5, 1, 9);
+    rect(2, 14, 13, 14, idark(c, 0.55)); set(7, 3, '#ffffff');
   } else if (k === 'bi_kip') {
     rect(2, 3, 13, 12, '#e9dcbc');
     rect(2, 3, 2, 12, '#b89a6a'); rect(13, 3, 13, 12, '#b89a6a');
@@ -202,6 +219,7 @@ export const itemIconOpts = (it) => ({ kind: iconKind(it), q: it.q, col: it.slot
 export const PILL_COLORS = { hoi_xuan: '#c0392b', pha_canh: '#8e5bd0', dien_tho: '#d8a83c', tinh_tam: '#4f8fd6' };
 
 /** Mã nhúng biểu tượng vào chữ (giao diện thay bằng ảnh, nơi khác bỏ qua) */
+export const matIconOpts = (id, m) => ({ kind: id === 'tinh_thiet' ? 'thoi' : m.aff === 'ls' || m.aff === 'dodge' ? 'hach' : 'mat', q: Math.min(4, m.q), col: m.col });
 export const iconToken = (o) => `[[i|${o.kind}|${o.q || 0}|${o.col || '-'}]]`;
 export const itemToken = (it) => iconToken(itemIconOpts(it));
 export const ICON_TOKEN_RE = /\[\[i\|(\w+)\|(\d)\|(#[0-9a-fA-F]{6}|-)\]\]/g;

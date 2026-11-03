@@ -18,7 +18,7 @@ const NOUN = {
   phu_kien: ['Ngọc Bội', 'Giới Chỉ', 'Hộ Phù', 'Linh Châu'],
 };
 // thuộc tính đặc biệt của đồ Thượng phẩm trở lên
-const AFFIX = [
+export const AFFIX = [
   { k: 'ls', v: 0.08, t: 'Hút máu 8%' },
   { k: 'crit', v: 0.1, t: 'Bạo kích +10%' },
   { k: 'rf', v: 0.12, t: 'Phản chấn 12%' },
@@ -70,10 +70,27 @@ export const THAN_THONG = {
 };
 export const TT_MAP = Object.fromEntries(Object.values(THAN_THONG).flat().map((t) => [t.id, t]));
 
+/**
+ * Gieo phẩm cho đồ rơi. loot: hệ số thu hoạch (vùng càng khó càng dễ ra đồ tốt),
+ * myth: tỉ lệ ra Thần thoại. Đồ Thần thoại chỉ rơi ở vùng lịch luyện từ Khó trở lên nên mặc định 0.
+ */
+export function rollQuality(r, loot = 1, myth = 0) {
+  if (myth > 0 && r.chance(myth)) return 4;
+  const w = [60, 28 * loot, 9.6 * loot ** 1.5, 2 * loot ** 2];
+  return r.weighted([0, 1, 2, 3], (x) => w[x]);
+}
+/** Hệ số cường hóa: mỗi cấp +8% công, thủ, sinh lực */
+export const plusMul = (it) => 1 + 0.08 * ((it && it.plus) || 0);
+export const PLUS_MAX = 10;
+/** Tên hiển thị kèm cấp cường hóa */
+export const itemName = (it) => (it.plus ? `${it.n} +${it.plus}` : it.n);
+/** Giá bán lại theo cảnh giới, phẩm, cường hóa */
+export const itemVal = (it) => Math.round(20 * (1 + it.lv * 1.5) * QUALITY[it.q].m * QUALITY[it.q].m * (1 + 0.15 * (it.plus || 0)));
+
 /** Sinh một món. r: Rng, lv: cảnh giới, q: phẩm (0 Hạ - 4 Thần thoại) hoặc null để gieo */
 export function makeItem(r, id, lv, q = null, slot = null) {
   lv = Math.max(0, Math.min(REALMS.length - 1, lv));
-  if (q === null) q = r.weighted([0, 1, 2, 3, 4], (x) => [60, 28, 9.6, 2, 0.4][x]);
+  if (q === null) q = rollQuality(r);
   slot = slot || r.pick(['vu_khi', 'vu_khi', 'ao', 'phu_kien']);
   const pow = REALMS[lv].pow;
   const m = QUALITY[q].m * r.range(0.9, 1.1);
@@ -100,7 +117,7 @@ export function makeItem(r, id, lv, q = null, slot = null) {
     it[a.k] = (it[a.k] || 0) + a.v;
   }
   if (q >= 4) it.tt = r.pick(THAN_THONG[slot]).id;
-  it.val = Math.round(20 * (1 + lv * 1.5) * QUALITY[q].m * QUALITY[q].m);
+  it.val = itemVal(it);
   return it;
 }
 
@@ -115,13 +132,14 @@ export function gearStats(eq, realm) {
     const it = eq[k];
     if (!it) continue;
     const sealed = isSealed(it, realm);
+    const pm = plusMul(it);
     if (sealed) {
       // bị áp chế: công, thủ, sinh lực ép về cảnh giới của chủ rồi còn một nửa; dòng % còn một nửa
-      const k2 = 0.5 * REALMS[Math.max(0, realm)].pow / REALMS[it.lv].pow;
+      const k2 = 0.5 * pm * REALMS[Math.max(0, realm)].pow / REALMS[it.lv].pow;
       for (const s in g) g[s] += (it[s] || 0) * (s === 'atk' || s === 'def' || s === 'hp' ? k2 : 0.5);
       continue;
     }
-    for (const s in g) g[s] += it[s] || 0;
+    for (const s in g) g[s] += (it[s] || 0) * (s === 'atk' || s === 'def' || s === 'hp' ? pm : 1);
     // thần thông trùng nhau chỉ tính một lần
     const tt = it.tt && TT_MAP[it.tt];
     if (tt && tt.gear && !seen.has(tt.id)) {
@@ -135,9 +153,10 @@ export function gearStats(eq, realm) {
 /** Một dòng mô tả chỉ số */
 export function itemLine(it) {
   const p = [];
-  if (it.atk) p.push(`Công +${it.atk}`);
-  if (it.def) p.push(`Thủ +${it.def}`);
-  if (it.hp) p.push(`Sinh lực +${it.hp}`);
+  const pm = plusMul(it);
+  if (it.atk) p.push(`Công +${Math.round(it.atk * pm)}`);
+  if (it.def) p.push(`Thủ +${Math.round(it.def * pm)}`);
+  if (it.hp) p.push(`Sinh lực +${Math.round(it.hp * pm)}`);
   for (const k of it.affix || []) {
     const a = AFFIX.find((x) => x.k === k);
     if (a) p.push(a.t);
@@ -148,5 +167,6 @@ export function itemLine(it) {
 /** Điểm ước lượng sức mạnh để so sánh hai món cùng ô */
 export function itemScore(it) {
   if (!it) return 0;
-  return (it.atk || 0) * 3 + (it.def || 0) * 4 + (it.hp || 0) * 0.5 + ((it.crit || 0) + (it.ls || 0) + (it.rf || 0) + (it.dodge || 0)) * 40 * (1 + it.lv * 1.5) + (it.sp || 0) * 3;
+  const pm = plusMul(it);
+  return ((it.atk || 0) * 3 + (it.def || 0) * 4 + (it.hp || 0) * 0.5) * pm + ((it.crit || 0) + (it.ls || 0) + (it.rf || 0) + (it.dodge || 0)) * 40 * (1 + it.lv * 1.5) + (it.sp || 0) * 3;
 }

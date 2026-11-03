@@ -3,7 +3,7 @@
 //  inClosed (xảy ra cả khi bế quan), queued (chỉ vào qua hàng đợi),
 //  when(g), bot(g) chọn bot liên quan, prep(g, bot) chuẩn bị dữ liệu,
 //  text(g, ctx), choices(g, ctx) -> [{ t, if, go(g, ctx) -> chuỗi kết quả }]
-import { REALMS, TOP_REALM, TAG_NAMES, PATHS } from './data.js';
+import { REALMS, TOP_REALM, TAG_NAMES, PATHS, MAPS } from './data.js';
 import { makeItem } from './items.js';
 import { EVENTS2 } from './events2.js';
 
@@ -202,7 +202,7 @@ const BASE_EVENTS = [
             const t = g.addTuvi(g.gain() * 6);
             const m = g.r.int(10, 40) * (1 + g.P.realm);
             g.money(m);
-            const loot = g.r.chance(0.6) ? '\n' + g.gainItem(makeItem(g.r, g.s.nextItem++, g.P.realm), 'Trong túi còn có') : '';
+            const loot = g.r.chance(0.6) ? '\n' + g.gainItem(g.dropItem(), 'Trong túi còn có') : '';
             return `Cuối hang là một bộ hài cốt ngồi kiết già, trước mặt đặt một túi trữ vật. Ngươi vái ba vái rồi nhận lấy.\n\nTu vi +${t}, linh thạch +${m}.${loot}`;
           }
           g.hurt(g.r.int(15, 30), 'chết trong hang động sau thác nước');
@@ -216,16 +216,17 @@ const BASE_EVENTS = [
   {
     id: 'yeu_thu', auto: (g, { data }) => (g.winOdds(() => g.monsterFighter(data.m)) >= 0.6 ? 0 : 1), w: 5, cd: 3, acts: ['lich_luyen'], title: 'Yêu thú chặn đường',
     when: (g) => g.P.age >= 10,
-    prep: (g) => ({ m: g.monster(g.P.realm + (g.P.realm === 0 ? 0 : g.r.pick([-1, 0, 0, 1]))) }),
-    text: (g, { data }) => `Một con ${data.m.n} chặn ngang đường mòn, mắt đỏ ngầu, nước dãi nhỏ xuống đất.\n\n${g.hintMonster(data.m)}`,
+    prep: (g) => ({ m: g.curMap() ? g.mapMonster() : g.monster(g.P.realm + (g.P.realm === 0 ? 0 : g.r.pick([-1, 0, 0, 1]))) }),
+    text: (g, { data }) => `Một con ${data.m.n} chặn ngang đường mòn${data.m.d !== undefined ? ` ở ${MAPS[data.m.d].n}` : ''}, mắt đỏ ngầu, nước dãi nhỏ xuống đất.\n\n${g.hintMonster(data.m)}`,
     choices: (g, { data }) => [
       {
         t: 'Nghênh chiến', p: g.winOdds(() => g.monsterFighter(data.m)), go: (g) => {
           const m = data.m;
           const f = g.fightMonster(m);
           if (f.win) {
-            const t = g.addTuvi(g.gain() * 2);
-            const mo = g.r.int(8, 25) * (1 + g.P.realm);
+            const L = m.d !== undefined ? MAPS[m.d].loot : 1;
+            const t = g.addTuvi(g.gain() * 2 * L);
+            const mo = Math.round(g.r.int(8, 25) * (1 + g.P.realm) * L);
             g.money(mo); g.fame(1);
             return `${f.text}\n\nNgươi hạ được ${m.n}. Tu vi +${t}, linh thạch +${mo}.`;
           }
@@ -236,7 +237,7 @@ const BASE_EVENTS = [
       {
         t: 'Bỏ chạy', p: 0.55 + (g.P.stats.co - 50) / 150 + g.tadd('flee'), go: (g) => {
           if (g.r.chance(0.55 + (g.P.stats.co - 50) / 150 + g.tadd('flee'))) return 'Ngươi lao xuống dốc, lẩn vào bụi rậm. Thoát rồi.';
-          g.hurt(15, `bị ${data.m.n} đuổi kịp`);
+          g.hurt(Math.round(15 * (1 + 0.3 * (data.m.d || 0))), `bị ${data.m.n} đuổi kịp`);
           return 'Không thoát kịp. Lưng ngươi bị cào một vệt dài.';
         },
       },
