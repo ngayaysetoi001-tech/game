@@ -92,16 +92,23 @@ Thử với yêu thú Trúc Cơ mạnh hơn 60%, mỗi bên cầm binh khí hợ
 
 ## 4. Cảnh giới
 
-| Cảnh giới | Tu vi cần | Thọ gốc | Đột phá lên kế tiếp |
-|---|---|---|---|
-| Phàm Nhân | 60 | 60 | 90% |
-| Luyện Khí | 300 | 90 | 70% |
-| Trúc Cơ | 800 | 140 | 55% |
-| Kim Đan | 2.000 | 220 | 45% |
-| Nguyên Anh | 5.000 | 350 | 36% |
-| Hóa Thần | 12.000 | 550 | 30% |
-| Luyện Hư | 30.000 | 750 | 25% |
-| Đại Thừa | 90.000 | 1.000 | 18% (phi thăng) |
+Mỗi giới 9 cảnh giới. Phàm giới có thêm Phàm Nhân (chưa nhập đạo) ở đầu.
+
+| # | Phàm giới | Tu vi cần | Thọ gốc | Đột phá | | # | Linh giới | Tu vi cần | Thọ gốc | Đột phá |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | Phàm Nhân | 60 | 60 | 90% | | | | | | |
+| 1 | Luyện Khí | 300 | 90 | 70% | | 10 | Luyện Linh | 240.000 | 1.500 | 50% |
+| 2 | Trúc Cơ | 800 | 140 | 55% | | 11 | Chân Linh | 400.000 | 1.800 | 45% |
+| 3 | Kim Đan | 2.000 | 220 | 45% | | 12 | Huyền Linh | 650.000 | 2.200 | 40% |
+| 4 | Nguyên Anh | 5.000 | 350 | 36% | | 13 | Linh Hải | 1.000.000 | 2.700 | 36% |
+| 5 | Hóa Thần | 12.000 | 550 | 30% | | 14 | Linh Phách | 1.600.000 | 3.300 | 32% |
+| 6 | Luyện Hư | 30.000 | 750 | 25% | | 15 | Linh Vương | 2.600.000 | 4.000 | 28% |
+| 7 | Hợp Thể (mới) | 45.000 | 950 | 22% | | 16 | Linh Hoàng | 4.200.000 | 4.800 | 25% |
+| 8 | Đại Thừa | 90.000 | 1.250 | 18% | | 17 | Linh Tôn | 6.800.000 | 5.700 | 22% |
+| 9 | Độ Kiếp (mới) | 100.000 | 1.600 | lôi kiếp | | 18 | Linh Đế | 11.000.000 | 6.800 | lôi kiếp |
+
+- Sức mạnh gốc: Phàm giới 1 → 3.400 (Độ Kiếp); Linh giới 6.000 (Luyện Linh) → 420.000 (Linh Đế).
+- Bản lưu cũ (8 cảnh giới) được chuyển tự động: Đại Thừa từ số 7 thành số 8, cả nhân vật, bot, đồ, Sổ kiếp.
 
 - Tu vi mỗi năm = `6 × 1,5^cảnh giới × linh căn × (1 + (ngộ tính - 50)/200)`, x1,2 nếu có tông môn, x1,2 nếu vô tình, x0,6 khi sinh lực dưới 30.
 - Thọ = thọ gốc × (1 + (căn cốt - 50)/250) × (1 + Diên Thọ Đan).
@@ -404,6 +411,92 @@ Trên màn hình rộng (từ 900px), bố cục chia 2 cột: trái là nhân v
 | Lối chơi liều (200 kiếp) | khoảng 0,6 món Thần thoại mỗi kiếp |
 | Bị hỏi ở 1× (chế độ "Hỏi việc lớn") | khoảng 8 giây một lần |
 | Thử từng lựa chọn của 45 kỳ ngộ mới | 113 lựa chọn, không lỗi |
+
+## 10. Vị diện, tháp 1000 tầng, độ khó (bản 2)
+
+### Vị diện
+- **Phàm giới** (1 lượt = 1 năm) và **Linh giới** (1 lượt = 5 năm).
+- Mỗi giới có dân bản địa riêng (Phàm 40 linh hồn, Linh 30), tông môn, Bảng Thiên Kiêu, Thiên hạ ký sự riêng. Kỳ ngộ tìm bot đều lọc theo giới đang ở.
+- **Bot cũng phi thăng:** bot phi thăng ở Phàm giới sẽ đáp xuống Tiếp Dẫn Đài Linh giới và làm lại từ Luyện Linh, nên người quen cũ có thể gặp lại ở trên. Bot muốn phi thăng cũng phải leo hết tháp.
+- **Người chơi phi thăng:**
+  - Đi tiếp, giữ tuổi, võ kỹ, thể chất, danh hiệu. Bắt đầu ở Luyện Linh sơ kỳ.
+  - Đồ hạ giới bị **áp chế còn 20%** (dòng % còn một nửa). Linh hóa ở lò rèn cần Linh tủy.
+  - Đồ Thần thoại ở Linh giới cần Đạo văn thạch thay cho Thần hồn.
+- **Hồn Lực ở Linh giới:** cả kiếp nhân đôi, thêm +100 khi phi thăng Linh giới, +200 khi phi thăng khỏi Linh giới.
+- **Đầu thai:** đã phi thăng lên Linh giới một lần thì được chọn sinh ra ở Phàm giới hay làm dân bản địa Linh giới.
+
+### Tháp 1000 tầng (Thông Thiên Tháp ở Phàm giới, Vạn Linh Tháp ở Linh giới)
+- Khoảng 111 tầng ứng với 1 cảnh giới của giới đó, mạnh dần theo cả cảnh giới nhỏ.
+- **Trang bị của quái tháp** tăng theo tầng: x0,85 ở tầng 1, x1,6 ở tầng 1000.
+- **Nhịp tầng:**
+  - mỗi 10 tầng có **tinh anh**;
+  - mỗi 100 tầng có **trùm tầng**, đánh qua 2 giai đoạn liền, giai đoạn sau nổi giận;
+  - tầng 1000 là **Tháp chủ**, đánh qua 3 giai đoạn.
+- **10 tầng cảnh:** mỗi 100 tầng một tầng cảnh, có quái và trùm riêng.
+- **Tầng đặc biệt** (khoảng 1/14 tầng thường): Thử Tâm, Ảo Cảnh, Gương (đánh với bóng mình), Bảo Khố (chọn 1 trong 3 rương), Suối Linh (hồi đầy máu).
+- **Việc làm "Vượt tháp":** mỗi lượt leo 2–5 tầng.
+  - Tu vi bằng 60% lúc tu luyện.
+  - Sinh lực mất đi giữ nguyên giữa các tầng; dưới 35 thì ra nghỉ.
+  - Thua ở tầng thường thì bị đẩy ra, không chết. Trùm và Tháp chủ thì có thể mất mạng.
+- **Phần thưởng:**
+  - mỗi tầng: linh thạch;
+  - tinh anh: rương đồ, có Thần thoại từ tầng 500;
+  - trùm tầng: đồ Cực phẩm, bí kíp 50%, nguyên liệu, từ tầng 500 có 10–35% ra Thần thoại;
+  - Tháp chủ: đồ Thần thoại chắc chắn, và **lệnh bài** của tháp.
+- **Lệnh bài là bắt buộc để phi thăng.** Danh hiệu mốc: tầng 100, 500, 1000, Vạn Linh Chi Chủ.
+- **Mỗi kiếp leo lại từ đầu.** Hồi ức tháp: đi nhanh qua 30% kỷ lục mọi kiếp, không nhận thưởng.
+- **Quét tầng** đã qua (từ tầng 50, 10 năm một lần) để nhặt nguyên liệu.
+
+### Phi thăng
+- Ở cảnh giới cuối (Độ Kiếp, Linh Đế), đột phá không còn là gieo xác suất. Cần đủ tu vi viên mãn **và** lệnh bài.
+- **9 đợt lôi kiếp** là 9 trận liền, mạnh dần, giữa các đợt không hồi máu. Có thể uống Hồi Xuân Đan trước mỗi đợt, hoặc từ bỏ (tu vi còn 85%).
+- Thua một đợt: có thể chết; nếu sống thì tu vi còn 70%.
+- Đo bằng mô phỏng, với nhân vật Độ Kiếp viên mãn:
+
+  | Trang bị | Thắng Tháp chủ | Qua lôi kiếp |
+  |---|---|---|
+  | Cực phẩm +6 | ~40% | ~40% |
+  | Cực phẩm +10 | ~57% | ~53% |
+  | Thần thoại +6 | ~97% | ~100% |
+
+### Độ khó
+- **Quái vùng lịch luyện:**
+  - Mạnh theo cả cảnh giới nhỏ của người chơi, nên lợi thế chỉ còn ở trang bị, võ kỹ, cách xây nhân vật.
+  - Hệ số trang bị theo vùng: 1,2 / 1,2 / 1,25 / 1,35 / 1,4 / 1,5 (Dễ → Luyện ngục).
+- **Tinh anh ở vùng lịch luyện:** từ Khó trở lên, 15/25/35/50% mỗi con là tinh anh, mang 1–3 thiên phú: Cuồng Bạo, Hút Huyết, Thiết Giáp, Hộ Thuẫn, Phản Kích, Tái Sinh, Liên Kích, Bạo Liệt, Bất Động, Bất Tử.
+- **Vùng chủ:** hạ đủ 10 yêu thú ở một vùng từ Khó trở lên thì vùng chủ xuất hiện. Đánh 2 giai đoạn, chắc chắn rơi đồ Cực phẩm (Luyện ngục 25% Thần thoại).
+- **Trần cộng dồn:**
+  - sức chiến đấu cộng thẳng (kỳ ngộ, xuất thân, tàn niệm) tối đa +60%;
+  - hệ số không phải thể chất: chiến đấu tối đa x1,6, tu luyện tối đa x2,2.
+- **Độ khó thế giới** (chọn khi tạo thế giới mới):
+
+  | Độ khó | Quái | Nguy cơ mất mạng | Thưởng, Hồn Lực |
+  |---|---|---|---|
+  | Thường | x1 | x1 | x1 |
+  | Khó | x1,25 | x1,3 | x1,3 |
+  | Nghịch Thiên | x1,6 | x2 | x2 |
+
+- **Số liệu (mô phỏng):**
+
+  | Chỉ số | Kết quả |
+  |---|---|
+  | Thắng ở Luyện ngục lúc 300 tuổi | 21% (trước 71%) |
+  | Tầng tháp đạt được (trung vị) | Kim Đan ~230, Hóa Thần ~510, Hợp Thể ~800, Đại Thừa ~900 |
+  | Lối chỉ tu luyện, tới Độ Kiếp | 5% số kiếp, nhưng không phi thăng được vì không leo tháp |
+  | Lối leo tháp và rèn đồ, lên Linh giới | khoảng 2% số kiếp |
+
+### Kỳ ngộ Linh giới (`js/events4.js`, luật `plane`)
+- **Mỗi vùng một chuyện riêng:**
+  - Tiếp Dẫn Cốc: kẻ mới phi thăng.
+  - Vạn Linh Sâm Lâm: linh hầu trộm đào.
+  - Huyết Linh Hải: huyết triều.
+  - Lôi Minh Cao Nguyên: mạch lôi tinh.
+  - Linh Hư Chiến Trường: tàn hồn Linh tộc vương.
+  - Vẫn Linh Uyên: tiếng gọi từ đáy vực.
+- **Phi thăng giả và dân bản địa:** hộ tịch, thiếu gia bản địa, Hội Phi Thăng (tông môn riêng của người phi thăng), cố nhân ở thượng giới, di vật hạ giới.
+- **Đời sống:** tranh linh mạch, huyết mạch Linh tộc, đấu giá Vạn Bảo Các, chợ đen, khế ước linh thú, Linh Hải triều dâng, Linh Hoàng chiêu thân, Linh Tôn chỉ điểm, linh kiếp nhỏ.
+- **Chuỗi "Bí mật Tiếp Dẫn Đài" (3 bước):** người phi thăng mất tích, hầm linh nô, Tiếp Dẫn Sứ Giả.
+- **Tổng cộng 144 kỳ ngộ.** Chuyện chỉ hợp Phàm giới (ví dụ Huyết án trấn Thanh Thạch) có luật `plane: 0`.
 
 ## 7. Kỹ thuật
 

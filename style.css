@@ -663,3 +663,8 @@ body.inPlay #scr-play > .dock { margin-top: auto; }
 .updBar[hidden] { display: none; }
 .updBar .btn { min-height: 36px; padding: 4px 14px; }
 .updX { border: none; background: none; color: var(--muted); font-size: 16px; padding: 4px 6px; }
+
+/* Hàng việc làm có 5 nút (thêm Vượt tháp) */
+.dock .actions { grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.dock .actions .btn.act { font-size: 12px; padding: 4px 1px; }
+.item.me { border-color: var(--accent); }

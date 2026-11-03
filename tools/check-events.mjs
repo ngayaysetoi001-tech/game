@@ -35,6 +35,7 @@ for (let w = 0; w < worlds; w++) {
           if (ru.realm && P.realm < ru.realm) bad.push(`${p.id} khi cảnh giới ${P.realm} (cần từ ${ru.realm})`);
           if (ru.path && P.path !== ru.path) bad.push(`${p.id} khi con đường ${P.path} (chỉ ${ru.path})`);
           if (ru.sect && !P.sect) bad.push(`${p.id} khi không có tông môn`);
+          if (ru.plane !== undefined && (P.plane || 0) !== ru.plane) bad.push(`${p.id} ở giới ${P.plane} (chỉ giới ${ru.plane})`);
         }
         if (p.id === 'dao_do' && p.result === undefined) daoDo++;
         const v = g.eventView();

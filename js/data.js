@@ -2,7 +2,10 @@
 
 // need: tu vi cần để viên mãn cảnh giới này (rồi đột phá lên cảnh giới kế)
 // life: thọ nguyên gốc, pow: sức chiến đấu gốc, brk: tỉ lệ đột phá gốc LÊN cảnh giới kế
+// Mỗi giới 9 cảnh giới. Phàm giới có thêm Phàm Nhân (chưa nhập đạo) ở đầu.
+// Cảnh giới cuối mỗi giới (Độ Kiếp, Linh Đế) không đột phá bằng xác suất: cần lệnh bài của tháp và vượt lôi kiếp.
 export const REALMS = [
+  // Phàm giới (0..9)
   { n: 'Phàm Nhân', need: 60, life: 60, pow: 1, brk: 0.9 },
   { n: 'Luyện Khí', need: 300, life: 90, pow: 3, brk: 0.7 },
   { n: 'Trúc Cơ', need: 800, life: 140, pow: 9, brk: 0.55 },
@@ -10,9 +13,29 @@ export const REALMS = [
   { n: 'Nguyên Anh', need: 5000, life: 350, pow: 80, brk: 0.36 },
   { n: 'Hóa Thần', need: 12000, life: 550, pow: 240, brk: 0.3 },
   { n: 'Luyện Hư', need: 30000, life: 750, pow: 700, brk: 0.25 },
-  { n: 'Đại Thừa', need: 90000, life: 1000, pow: 2000, brk: 0.18 },
+  { n: 'Hợp Thể', need: 45000, life: 950, pow: 1200, brk: 0.22 },
+  { n: 'Đại Thừa', need: 90000, life: 1250, pow: 2000, brk: 0.18 },
+  { n: 'Độ Kiếp', need: 100000, life: 1600, pow: 3400, brk: 0 },
+  // Linh giới (10..18)
+  { n: 'Luyện Linh', need: 240000, life: 1500, pow: 6000, brk: 0.5 },
+  { n: 'Chân Linh', need: 400000, life: 1800, pow: 10000, brk: 0.45 },
+  { n: 'Huyền Linh', need: 650000, life: 2200, pow: 17000, brk: 0.4 },
+  { n: 'Linh Hải', need: 1000000, life: 2700, pow: 29000, brk: 0.36 },
+  { n: 'Linh Phách', need: 1600000, life: 3300, pow: 50000, brk: 0.32 },
+  { n: 'Linh Vương', need: 2600000, life: 4000, pow: 85000, brk: 0.28 },
+  { n: 'Linh Hoàng', need: 4200000, life: 4800, pow: 145000, brk: 0.25 },
+  { n: 'Linh Tôn', need: 6800000, life: 5700, pow: 250000, brk: 0.22 },
+  { n: 'Linh Đế', need: 11000000, life: 6800, pow: 420000, brk: 0 },
 ];
 export const TOP_REALM = REALMS.length - 1;
+
+// ---------- Vị diện ----------
+// first: cảnh giới đầu tiên, top: cảnh giới cuối (phi thăng từ đây), ypt: số năm mỗi lượt
+export const PLANES = [
+  { id: 0, n: 'Phàm giới', first: 1, top: 9, base: 0, ypt: 1, tower: 'Thông Thiên Tháp', token: 'Thông Thiên Lệnh', next: 'Linh giới', map: 'hac_phong' },
+  { id: 1, n: 'Linh giới', first: 10, top: 18, base: 10, ypt: 5, tower: 'Vạn Linh Tháp', token: 'Vạn Linh Lệnh', next: 'Tiên giới', map: 'van_linh_lam' },
+];
+export const planeOf = (realm) => (realm >= 10 ? 1 : 0);
 
 // ---------- Cảnh giới nhỏ ----------
 // Phàm Nhân không chia, Luyện Khí 9 tầng, từ Trúc Cơ: sơ kỳ, trung kỳ, hậu kỳ, đại viên mãn.
@@ -91,7 +114,20 @@ export const MONSTERS = [
   { n: 'Huyết Nha Bức Vương', r: 5 },
   { n: 'Phong Lôi Thú', r: 5 },
   { n: 'Thái Cổ Ma Long', r: 6 },
-  { n: 'Hư Không Trùng Mẫu', r: 7 },
+  { n: 'Kim Sí Đại Bằng', r: 7 },
+  { n: 'Cửu Anh Ma Xà', r: 7 },
+  { n: 'Hư Không Trùng Mẫu', r: 8 },
+  { n: 'Hỗn Độn Cự Thú', r: 9 },
+  { n: 'Lôi Kiếp Ma Thần', r: 9 },
+  // Linh giới
+  { n: 'Linh Hầu', r: 10 }, { n: 'Thụ Yêu', r: 10 },
+  { n: 'Huyết Linh Giao', r: 11 }, { n: 'Thanh Vân Lộc Thần', r: 11 },
+  { n: 'Lôi Văn Báo', r: 12 }, { n: 'Hải Yêu Vương', r: 12 },
+  { n: 'Cửu Vĩ Linh Hồ', r: 13 }, { n: 'Thạch Hoàng Cự Nhân', r: 13 },
+  { n: 'Phệ Hồn Ma Điệp', r: 14 }, { n: 'Kim Giáp Thần Quy', r: 14 },
+  { n: 'Lôi Đình Kỳ Lân', r: 15 }, { n: 'Huyết Hải Ma Long', r: 15 },
+  { n: 'Tử Vong Linh Vương', r: 16 }, { n: 'Thái Cổ Linh Phượng', r: 16 },
+  { n: 'Hỗn Độn Linh Thú', r: 17 }, { n: 'Vẫn Linh Cổ Thần', r: 18 },
 ];
 
 export const MOVES = ['Lưu Vân Chưởng', 'Phá Sơn Quyền', 'Hàn Băng Chỉ', 'Kinh Hồng Kiếm', 'Liệt Hỏa Đao', 'Bôn Lôi Cước', 'Tàn Nguyệt Trảm', 'Vạn Diệp Phi Hoa', 'Trấn Nhạc Ấn', 'Thanh Phong Bộ', 'Huyền Vũ Thuẫn', 'Truy Hồn Thích'];
@@ -101,6 +137,7 @@ export const ACTIONS = {
   lich_luyen: { n: 'Lịch luyện', icon: '⛰', minAge: 10, desc: 'Đi khắp nơi, gặp nhiều kỳ ngộ và hiểm nguy.' },
   muu_sinh: { n: 'Mưu sinh', icon: '⚖', minAge: 8, desc: 'Kiếm linh thạch.' },
   ket_giao: { n: 'Kết giao', icon: '☕', minAge: 8, desc: 'Gặp gỡ tu sĩ khác, kết bạn, tìm đạo lữ.' },
+  vuot_thap: { n: 'Vượt tháp', icon: '🗼', minAge: 10, needDao: true, desc: 'Leo tháp 1000 tầng. Hạ tầng cuối mới được phi thăng.' },
 };
 
 // Đan dược bán ở Tụ Bảo Lâu. price là giá ở Phàm Nhân, nhân (1 + cảnh giới) khi mua.
@@ -200,9 +237,9 @@ export const TP_WEIGHT = { 1: 10, 2: 4 };
 export const DH_A = ['Thanh', 'Huyền', 'Vân', 'Tử', 'Lăng', 'Mặc', 'Trường', 'Vô', 'Bích', 'Hư', 'Lạc', 'Tịch', 'Minh', 'Cô', 'Phong', 'Nguyệt', 'Tinh', 'Hàn', 'U', 'Tĩnh', 'Thái', 'Ngọc'];
 export const DH_B = ['Hư', 'Cơ', 'Dương', 'Trần', 'Nhai', 'Tùng', 'Hạc', 'Tuyền', 'Ngộ', 'Kiếm', 'Vân', 'Thủy', 'Sơn', 'Phong', 'Diệp', 'Huyền', 'Linh', 'Tâm', 'Uyên', 'Hà', 'Cốc'];
 // tôn xưng theo cảnh giới (từ Trúc Cơ)
-export const DH_HON = [null, null, 'Tử', 'Chân Nhân', 'Chân Quân', 'Đạo Quân', 'Tôn Giả', 'Đạo Tôn'];
-export const DH_HON_NU = [null, null, 'Tiên Tử', 'Chân Nhân', 'Chân Quân', 'Nguyên Quân', 'Tôn Giả', 'Đạo Tôn'];
-export const DH_HON_MA = [null, null, 'Tử', 'Ma Nhân', 'Ma Quân', 'Ma Quân', 'Ma Tôn', 'Ma Tôn'];
+export const DH_HON = [null, null, 'Tử', 'Chân Nhân', 'Chân Quân', 'Đạo Quân', 'Tôn Giả', 'Thánh Quân', 'Đạo Tôn', 'Thiên Tôn', 'Linh Quân', 'Linh Quân', 'Huyền Quân', 'Huyền Quân', 'Linh Tôn Giả', 'Linh Vương', 'Linh Hoàng', 'Linh Thánh Tôn', 'Linh Đế'];
+export const DH_HON_NU = [null, null, 'Tiên Tử', 'Chân Nhân', 'Chân Quân', 'Nguyên Quân', 'Tôn Giả', 'Thánh Nữ', 'Đạo Tôn', 'Thiên Tôn', 'Linh Tiên Tử', 'Linh Tiên Tử', 'Huyền Nữ', 'Huyền Nữ', 'Linh Tôn Giả', 'Linh Hậu', 'Linh Hoàng', 'Linh Thánh Tôn', 'Linh Đế'];
+export const DH_HON_MA = [null, null, 'Tử', 'Ma Nhân', 'Ma Quân', 'Ma Quân', 'Ma Tôn', 'Ma Tôn', 'Ma Tôn', 'Ma Tổ', 'Linh Ma', 'Linh Ma', 'Huyết Ma Quân', 'Huyết Ma Quân', 'Ma Tôn Giả', 'Ma Vương', 'Ma Hoàng', 'Ma Thánh', 'Ma Đế'];
 
 // ---------- Danh hiệu: giang hồ xưng tụng theo thành tích, mỗi kiếp mở lại ----------
 // cond: điều kiện (hiện cho người chơi), check(g): đạt chưa, fx: lợi ích khi đeo (dùng chung hệ với thể chất)
@@ -234,11 +271,17 @@ export const TITLES = [
   { id: 'vo_hoc', n: 'Võ Học Tông Sư', cond: 'Biết 8 võ kỹ', bonus: 'Chiến đấu +4%', fx: { fightMul: 1.04 }, check: (g) => g.P.skills.length >= 8 },
   { id: 'tong_su_ren', n: 'Luyện Khí Tông Sư', cond: 'Tay nghề rèn đạt 100', bonus: 'Cường hóa, rèn +5%', fx: { forgeBonus: 0.05 }, check: (g) => (g.P.forge || 0) >= 100 },
   { id: 'tu_dia', n: 'Tử Địa Hành Giả', cond: 'Sống sót 10 năm lịch luyện ở Tử địa trở lên', bonus: 'Chiến đấu +5%, chịu đòn -5%', fx: { fightMul: 1.05, hurtMul: 0.95 }, check: (g) => (g.P.cnt.hard || 0) >= 10 },
+  { id: 'thap_100', n: 'Bách Tầng Tháp Khách', cond: 'Vượt tầng 100 của tháp', bonus: 'Chiến đấu +3%', fx: { fightMul: 1.03 }, check: (g) => g.towerBest() >= 100 },
+  { id: 'thap_500', n: 'Ngũ Bách Tầng', cond: 'Vượt tầng 500 của tháp', bonus: 'Chiến đấu +6%', fx: { fightMul: 1.06 }, check: (g) => g.towerBest() >= 500 },
+  { id: 'thap_1000', n: 'Vấn Đỉnh Thông Thiên', cond: 'Vượt tầng 1000 Thông Thiên Tháp', bonus: 'Chiến đấu +8%, đột phá +3%', fx: { fightMul: 1.08, brk: 0.03 }, check: (g) => !!(g.P.tokens && g.P.tokens[0]) },
+  { id: 'phi_thang_gia', n: 'Phi Thăng Giả', cond: 'Phi thăng lên Linh giới', bonus: 'Tu luyện +8%', fx: { gainMul: 1.08 }, check: (g) => g.P.plane >= 1 && !!g.P.flags.ascendedFrom },
+  { id: 'van_linh_chu', n: 'Vạn Linh Chi Chủ', cond: 'Vượt tầng 1000 Vạn Linh Tháp', bonus: 'Chiến đấu +10%, tu luyện +10%', fx: { fightMul: 1.1, gainMul: 1.1 }, check: (g) => !!(g.P.tokens && g.P.tokens[1]) },
   { id: 'huyet_mach', n: 'Huyết Mạch Thức Tỉnh', cond: 'Mang thể chất Truyền thuyết trở lên', bonus: 'Đột phá +2%', fx: { brk: 0.02 }, check: (g) => g.traits()[0].tier >= 3 },
 ];
 
 // phẩm danh hiệu theo độ khó: 1 Thường, 2 Hiếm, 3 Truyền kỳ, 4 Thần thoại
 const TITLE_TIER = {
+  thap_100: 1, thap_500: 2, thap_1000: 3, phi_thang_gia: 3, van_linh_chu: 4,
   tong_su_ren: 3, tu_dia: 3,
   so_xuat: 1, danh_chan: 1, lao_thu: 1,
   bach_chien: 2, khac_tinh: 2, thien_kieu_tu: 2, phu_giap: 2, hiep_khach: 2, thu_dich: 2, than_tien: 2, bao_thu: 2, tru_cot: 2, vo_hoc: 2,
@@ -288,4 +331,78 @@ export const MATS = {
   hoa_tinh: { n: 'Hỏa tinh', q: 2, col: '#ff7a2a', aff: 'crit', desc: 'Tinh thể kết trong đá núi lửa. Dẫn liệu cho dòng Bạo kích.' },
   binh_hon: { n: 'Binh hồn', q: 3, col: '#d8c06a', aff: 'rf', desc: 'Tàn hồn của binh khí cổ. Dẫn liệu cho dòng Phản chấn.' },
   than_hon: { n: 'Thần hồn', q: 4, col: '#ff3b5a', desc: 'Mảnh hồn của thần khí. Cần để rèn và thăng cấp đồ Thần thoại.' },
+};
+
+// ---------- Linh giới: bản đồ, nguyên liệu ----------
+MAPS.push(
+  { id: 'tiep_dan_coc', plane: 1, n: 'Tiếp Dẫn Cốc', d: 0, pow: 0.6, loot: 0.6, myth: 0, lethal: 0.3, haz: null, mat: 'linh_moc', beast: '', desc: 'Thung lũng dưới chân Tiếp Dẫn Đài, nơi người phi thăng đáp xuống. Linh thú ở đây hiền lành.' },
+  { id: 'van_linh_lam', plane: 1, n: 'Vạn Linh Sâm Lâm', d: 1, pow: 1, loot: 1, myth: 0, lethal: 1, haz: null, mat: 'linh_tuy', beast: '', desc: 'Rừng cổ vạn năm, cây nào cũng có linh trí. Thụ yêu và linh hầu làm chủ.' },
+  { id: 'huyet_linh_hai', plane: 1, n: 'Huyết Linh Hải', d: 2, pow: 1.25, loot: 1.5, myth: 0.01, lethal: 1.3, haz: [0.06, 12, 'Huyết vụ bốc lên từ mặt biển, ngươi hít phải mấy hơi', 'bị huyết vụ ăn mòn ngũ tạng'], mat: 'huyet_linh_chau', beast: 'Huyết', desc: 'Biển nước đỏ như máu, hải yêu ẩn dưới sóng.' },
+  { id: 'loi_minh_nguyen', plane: 1, n: 'Lôi Minh Cao Nguyên', d: 3, pow: 1.5, loot: 2.2, myth: 0.025, lethal: 1.6, haz: [0.09, 18, 'Một đạo sét từ trời giáng xuống ngay cạnh chỗ ngươi đứng', 'bị sét cao nguyên đánh thành tro'], mat: 'loi_tinh', beast: 'Lôi', desc: 'Cao nguyên sấm sét quanh năm. Lôi thú sinh ra từ tia chớp.' },
+  { id: 'linh_hu_chien', plane: 1, n: 'Linh Hư Chiến Trường', d: 4, pow: 1.8, loot: 3, myth: 0.05, lethal: 2, haz: [0.12, 24, 'Tàn hồn linh tộc gào thét lao qua người ngươi', 'bị tàn hồn linh tộc xé nát thần hồn'], mat: 'linh_hon_tinh', beast: 'Tàn Hồn', desc: 'Cổ chiến trường nơi linh tộc diệt vong. Tàn hồn vẫn đánh nhau không ngừng.' },
+  { id: 'van_linh_uyen', plane: 1, n: 'Vẫn Linh Uyên', d: 5, pow: 2.1, loot: 4, myth: 0.09, lethal: 2.5, haz: [0.15, 32, 'Vực sâu hút lấy linh hồn ngươi, suýt nữa không về được', 'linh hồn tan biến dưới đáy Vẫn Linh Uyên'], mat: 'dao_van_thach', beast: 'Vẫn Linh', desc: 'Vực sâu không đáy, nơi linh hồn tiêu tán. Đá dưới đáy khắc đầy đạo văn.' },
+);
+for (const m of MAPS) if (m.plane === undefined) m.plane = 0;
+for (const m of MAPS) MAP_MAP[m.id] = m;
+export const mapsOf = (plane) => MAPS.filter((m) => m.plane === plane);
+Object.assign(MATS, {
+  linh_moc: { n: 'Linh mộc', q: 1, col: '#7fbf5a', aff: 'sp', desc: 'Gỗ cây linh vạn năm. Dẫn liệu cho dòng Thân pháp.' },
+  linh_tuy: { n: 'Linh tủy', q: 2, col: '#a8f0ff', desc: 'Tủy linh mạch. Dùng để linh hóa đồ hạ giới và rèn đồ Linh giới.' },
+  huyet_linh_chau: { n: 'Huyết linh châu', q: 2, col: '#e03040', aff: 'ls', desc: 'Ngọc kết từ huyết vụ. Dẫn liệu cho dòng Hút máu.' },
+  loi_tinh: { n: 'Lôi tinh', q: 3, col: '#ffe066', aff: 'crit', desc: 'Tinh thể kết từ tia sét. Dẫn liệu cho dòng Bạo kích.' },
+  linh_hon_tinh: { n: 'Linh hồn tinh', q: 3, col: '#b08cff', aff: 'rf', desc: 'Tàn hồn linh tộc kết tinh. Dẫn liệu cho dòng Phản chấn.' },
+  dao_van_thach: { n: 'Đạo văn thạch', q: 4, col: '#ff6a9a', desc: 'Đá khắc đạo văn từ đáy Vẫn Linh Uyên. Để rèn đồ Thần thoại ở Linh giới.' },
+});
+// nguyên liệu hiếm (rơi ít, chỉ 1 viên): dùng rèn đồ Thần thoại
+export const RARE_MATS = new Set(['than_hon', 'dao_van_thach']);
+export const mythMatOf = (plane) => (plane >= 1 ? 'dao_van_thach' : 'than_hon');
+
+// ---------- Tháp 1000 tầng ----------
+// Mỗi 100 tầng một tầng cảnh: tên, kiểu quái (beast: yêu thú, human: người/hồn), danh sách tên quái, trùm tầng
+export const TOWER_THEMES = [
+  [ // Thông Thiên Tháp
+    { n: 'Thú Lâm', beast: true, mobs: ['Hắc Lang', 'Thiết Giác Ngưu', 'Độc Hạt'], boss: 'Thú Lâm Chi Vương' },
+    { n: 'Thi Mộ', beast: true, mobs: ['Cương Thi', 'Thi Hổ', 'Quỷ Bộc'], boss: 'Thi Mộ Lão Tổ' },
+    { n: 'Băng Ngục', beast: true, mobs: ['Băng Lang', 'Hàn Giao', 'Tuyết Yêu'], boss: 'Băng Phách Long Hậu' },
+    { n: 'Hỏa Uyên', beast: true, mobs: ['Hỏa Linh', 'Dung Nham Thú', 'Viêm Ma'], boss: 'Viêm Ma Đại Vương' },
+    { n: 'Quỷ Vực', beast: false, mobs: ['Quỷ Tướng', 'Âm Hồn', 'Huyết Quỷ'], boss: 'Quỷ Vực Diêm Quân' },
+    { n: 'Kiếm Trủng', beast: false, mobs: ['Kiếm Hồn', 'Kiếm Nô', 'Tàn Kiếm Khách'], boss: 'Vạn Kiếm Chi Chủ' },
+    { n: 'Ma Thành', beast: false, mobs: ['Ma Binh', 'Ma Tướng', 'Huyết Ma'], boss: 'Ma Thành Thành Chủ' },
+    { n: 'Lôi Đài', beast: false, mobs: ['Lôi Vệ', 'Đấu Sĩ Bất Tử', 'Lôi Đài Tàn Ảnh'], boss: 'Lôi Đài Bá Chủ' },
+    { n: 'Hư Không', beast: true, mobs: ['Hư Không Trùng', 'Không Gian Thú', 'Hư Ảnh'], boss: 'Hư Không Trùng Mẫu' },
+    { n: 'Thiên Môn', beast: false, mobs: ['Thiên Binh', 'Thiên Tướng', 'Thủ Môn Thần Vệ'], boss: 'Tháp Linh Thông Thiên' },
+  ],
+  [ // Vạn Linh Tháp
+    { n: 'Linh Mộc Giới', beast: true, mobs: ['Thụ Yêu', 'Linh Hầu', 'Đằng Xà'], boss: 'Thiên Niên Thụ Vương' },
+    { n: 'Huyết Hải Tầng', beast: true, mobs: ['Huyết Giao', 'Hải Yêu', 'Huyết Sa'], boss: 'Huyết Hải Long Vương' },
+    { n: 'Lôi Vực', beast: true, mobs: ['Lôi Báo', 'Lôi Ưng', 'Lôi Linh'], boss: 'Lôi Đình Kỳ Lân' },
+    { n: 'Linh Tộc Cố Đô', beast: false, mobs: ['Linh Tộc Vệ Binh', 'Linh Tộc Pháp Sư', 'Linh Tộc Tàn Hồn'], boss: 'Linh Tộc Vong Quân' },
+    { n: 'Mộng Cảnh', beast: false, mobs: ['Mộng Yêu', 'Huyễn Ảnh', 'Tâm Ma Hóa Thân'], boss: 'Mộng Cảnh Chi Chủ' },
+    { n: 'Tinh Hải', beast: true, mobs: ['Tinh Không Cự Kình', 'Tinh Thú', 'Lưu Tinh Ưng'], boss: 'Tinh Hải Bá Chủ' },
+    { n: 'Thần Ma Chiến Địa', beast: false, mobs: ['Thần Ma Tàn Binh', 'Ma Thần Bộc', 'Thần Ma Hồn'], boss: 'Thần Ma Tàn Tướng' },
+    { n: 'Luân Hồi Lộ', beast: false, mobs: ['Luân Hồi Sứ', 'Vãng Sinh Hồn', 'Mạnh Bà Vệ'], boss: 'Luân Hồi Phán Quan' },
+    { n: 'Hỗn Độn Biên', beast: true, mobs: ['Hỗn Độn Thú', 'Hư Vô Trùng', 'Khai Thiên Tàn Ảnh'], boss: 'Hỗn Độn Cổ Thú' },
+    { n: 'Vạn Linh Đỉnh', beast: false, mobs: ['Linh Tổ Thị Vệ', 'Vạn Linh Thánh Vệ', 'Linh Đế Tàn Ảnh'], boss: 'Linh Tổ Tàn Hồn' },
+  ],
+];
+// thiên phú của quái tinh anh, trùm: k là khóa trong gear của fighter
+export const MOB_AFFIX = [
+  { id: 'cuong', n: 'Cuồng Bạo', gear: { atkPct: 0.3 } },
+  { id: 'hut', n: 'Hút Huyết', gear: { ls: 0.2 } },
+  { id: 'giap', n: 'Thiết Giáp', gear: { dmgRed: 0.22 } },
+  { id: 'khien', n: 'Hộ Thuẫn', gear: { startShield: 0.35 } },
+  { id: 'phan', n: 'Phản Kích', gear: { rf: 0.25 } },
+  { id: 'tai_sinh', n: 'Tái Sinh', gear: { regenTurn: 0.05 } },
+  { id: 'lien', n: 'Liên Kích', gear: { combo: 0.3 } },
+  { id: 'bao', n: 'Bạo Liệt', gear: { crit: 0.2, critDmg: 2.3 } },
+  { id: 'mien', n: 'Bất Động', gear: { immune: true } },
+  { id: 'bat_tu', n: 'Bất Tử', gear: { lastStand: true } },
+];
+export const MOB_AFFIX_MAP = Object.fromEntries(MOB_AFFIX.map((a) => [a.id, a]));
+
+// ---------- Độ khó thế giới ----------
+export const WORLD_DIFF = {
+  thuong: { n: 'Thường', pow: 1, lethal: 1, reward: 1, desc: 'Như bản gốc.' },
+  kho: { n: 'Khó', pow: 1.25, lethal: 1.3, reward: 1.3, desc: 'Quái mạnh hơn 25%, dễ mất mạng hơn 30%. Thưởng và Hồn Lực +30%.' },
+  nghich: { n: 'Nghịch Thiên', pow: 1.6, lethal: 2, reward: 2, desc: 'Quái mạnh hơn 60%, thua dễ chết gấp đôi. Thưởng và Hồn Lực x2.' },
 };

@@ -1,10 +1,10 @@
 // Giao diện trình duyệt. Mọi luật chơi nằm trong core.js.
 import { APP_VERSION } from './version.js';
 import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITLE_MAP, HL_PRICE, HL_REROLL, PATHS, clamp } from './core.js';
-import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEFAULT_MAP, realmLabel, subN } from './data.js';
+import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEFAULT_MAP, realmLabel, subN, PLANES, mapsOf, WORLD_DIFF, mythMatOf, planeOf } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, BEAST_SKILLS, TACTICS, WEAPON_TYPES, turnText } from './combat.js';
-import { SLOTS, QUALITY, itemLine, TT_MAP, isSealed, gearStats, itemName, PLUS_MAX, AFFIX } from './items.js';
+import { SLOTS, QUALITY, itemLine, TT_MAP, isSealed, isSuppressed, gearStats, itemName, PLUS_MAX, AFFIX } from './items.js';
 import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE, matIconOpts, skillIconOpts } from './icons.js';
 
 const SAVE_KEY = 'tkps.save.v1';
@@ -97,7 +97,7 @@ function show(id) {
   document.body.classList.toggle('inPlay', id === 'scr-play');
 }
 function render() {
-  $('worldYear').textContent = `Năm ${fmt(g.s.year)} Thiên Nguyên`;
+  $('worldYear').textContent = `Năm ${fmt(g.s.year)} · ${PLANES[g.plane].n}${g.s.diff && g.s.diff !== 'thuong' ? ` · ${WORLD_DIFF[g.s.diff].n}` : ''}`;
   const ph = g.s.phase;
   if (ph === 'birth') renderBirth();
   else if (ph === 'play' || (ph === 'dead' && g.s.pending)) renderPlay();
@@ -232,6 +232,14 @@ function openThe2() {
   draw();
 }
 
+/** Chọn giới để đầu thai (chỉ hiện khi đã từng phi thăng lên Linh giới) */
+function planePick(P) {
+  if (!g.s.unlock || !g.s.unlock[1]) return '';
+  const cur = P.plane || 0;
+  return `<div class="altar"><div class="row"><b>Đầu thai ở đâu?</b></div>
+    <div class="opts">${PLANES.filter((pl) => pl.id === 0 || g.s.unlock[pl.id]).map((pl) => `<button class="btn ${cur === pl.id ? 'on' : 'ghost'}" data-bp="${pl.id}">${pl.n}</button>`).join('')}</div>
+    <div class="meta">${cur ? 'Sinh ra làm dân bản địa Linh giới: bắt đầu ở Luyện Linh, thọ nguyên dài, quái mạnh. Hồn Lực cuối kiếp x2.' : 'Phàm giới: bắt đầu từ Phàm Nhân, dễ hơn. Muốn lên lại Linh giới thì phải phi thăng.'}</div></div>`;
+}
 function renderBirth() {
   show('scr-birth');
   const P = g.s.draft;
@@ -252,6 +260,7 @@ function renderBirth() {
       <div class="grid">${statGrid(P.stats)}<div><span>Linh thạch</span> <b>${fmt(P.money)}</b></div>${P.dao ? '<div><span>Gia truyền</span> <b>Đã nhập đạo</b></div>' : ''}</div>
       ${leg ? `<div class="legacyNote">Tàn niệm kiếp trước: ${esc(leg.n)}. ${esc(leg.desc)}</div>` : ''}
       ${P.flags.thanKhi ? Object.values(P.eq).filter((it) => it && it.q >= 4).map((it) => itemCard(it)).join('') : ''}
+      ${planePick(P)}
       ${altar(P)}
       <div class="btns">
         <button class="btn ghost" id="rerollBtn" ${g.s.rerolls <= 0 ? 'disabled' : ''}>Gieo lại (${g.s.rerolls})</button>
@@ -263,6 +272,7 @@ function renderBirth() {
   $('scr-birth').querySelectorAll('[data-rt]').forEach((b) => { b.onclick = () => { g.rerollThe(+b.dataset.rt); save(); dirty = true; }; });
   if ($('pickThe2')) $('pickThe2').onclick = openThe2;
   if ($('dropThe2')) $('dropThe2').onclick = () => { g.dropThe2(); save(); dirty = true; };
+  $('scr-birth').querySelectorAll('[data-bp]').forEach((b) => { b.onclick = () => { g.setBirthPlane(+b.dataset.bp); save(); dirty = true; }; });
   $('startBtn').onclick = () => { g.start(); paused = false; tab = 'log'; save(); dirty = true; };
 }
 
@@ -287,14 +297,16 @@ function renderPlay() {
     bar('Sinh lực', P.hp, 100, 'var(--hp)', `${P.hp}/100`, 'hp') +
     bar('Thọ', P.age, life, 'var(--life)', `${P.age}/${life}`, 'tho'));
   const act = g.effectiveAction();
-  const mp = act === 'lich_luyen' ? MAP_MAP[P.map] || MAP_MAP[DEFAULT_MAP] : null;
+  const mp = act === 'lich_luyen' ? MAP_MAP[P.map] || g.defaultMap() : null;
   const doing = P.closed > 0 ? `🕯 Bế quan, còn ${P.closed} năm`
     : act === 'lon_len' ? (P.age < 6 ? 'Còn nhỏ, cứ lớn lên đã' : 'Chưa nhập đạo, chưa thể tu luyện')
+    : act === 'vuot_thap' ? `🗼 ${PLANES[g.plane].tower} · tầng ${g.towerState().f}/1000`
     : `${ACTIONS[act].icon} ${ACTIONS[act].n}${mp ? ` · ${DIFF[mp.d].ic} ${mp.n}` : ''}${mp && P.flags.retreated && MAP_MAP[P.mapGoal] ? ` (dưỡng thương, hồi 80 về ${MAP_MAP[P.mapGoal].n})` : ''}`;
   const nPill = P.pills.hoi_xuan || 0;
   const warn = [];
   if (P.flags.neck && P.flags.neck.realm === P.realm) warn.push(`<button class="hudWarn" data-hw="neck">⛓ Bình cảnh nhỏ · ${Math.max(0, P.flags.neck.until - P.age)} năm</button>`);
   if (g.skillMismatch().length) warn.push('<button class="hudWarn" data-hw="wep">⚠ Võ kỹ lệch binh khí</button>');
+  if (g.atPlaneTop() && P.tuvi >= g.need() && !(P.tokens && P.tokens[P.plane])) warn.push(`<button class="hudWarn" data-hw="tower">🗼 Cần ${PLANES[P.plane].token}</button>`);
   setHTML($('hudSub'), `<span>${warn.length ? warn.join(' ') : esc(doing)}</span><span class="money">${g.s.opt.autoPill ? `<span title="Hồi Xuân Đan, tự uống khi sinh lực dưới 40" class="${nPill ? '' : 'noPill'}">💊${nPill}</span> · ` : ''}${fmt(P.money)} linh thạch</span>`);
 
   const canBreak = g.canBreak();
@@ -312,7 +324,8 @@ function renderPlay() {
     html = Object.entries(ACTIONS).map(([id, a]) => {
       const ok = g.actionOk(id);
       const why = P.age < a.minAge ? `Từ ${a.minAge} tuổi` : a.needDao && !P.dao ? 'Cần nhập đạo' : a.desc;
-      const m = id === 'lich_luyen' && ok ? MAP_MAP[P.map] || MAP_MAP[DEFAULT_MAP] : null;
+      const m = id === 'lich_luyen' && ok ? MAP_MAP[P.map] || g.defaultMap() : null;
+      if (id === 'vuot_thap') return `<button class="btn act ${P.action === id ? 'on' : ''}" data-act="${id}" data-tip="${esc(ok ? `${a.desc} Đang ở tầng ${g.towerState().f}. Bấm để xem tháp.` : why)}" ${ok ? '' : 'disabled'}><span class="ai">${a.icon}</span><span>Tháp</span>${ok ? `<small>Tầng ${g.towerState().f}</small>` : ''}</button>`;
       return `<button class="btn act ${P.action === id ? 'on' : ''}" data-act="${id}" data-tip="${esc(m ? `${a.desc} Đang chọn: ${m.n} (${DIFF[m.d].n}). Bấm để đổi vùng.` : why)}" ${ok ? '' : 'disabled'}><span class="ai">${a.icon}</span><span>${a.n}</span>${m ? `<small>${DIFF[m.d].ic} ${DIFF[m.d].n}</small>` : ''}</button>`;
     }).join('');
   }
@@ -423,13 +436,16 @@ function renderTab(t = tab) {
       return `<div class="item"><div class="row"><b><span class="sectDot" style="background:${sc.color}"></span>${esc(sc.name)}</b><span class="meta">${m.length} đệ tử</span></div>
         <div class="meta">${lead ? `Mạnh nhất: ${esc(lead.name)} (${REALMS[lead.realm].n})` : 'Không còn ai'} · Lập năm ${fmt(sc.founded)}${g.playing && g.P.sect === sc.id ? ' · Tông môn của ngươi' : ''}</div></div>`;
     }).join('');
-    const ch = g.s.chron.slice(-60).reverse();
-    return `<h3>Tông môn</h3><div class="list">${ss || '<p class="empty">Thiên hạ không còn tông môn nào.</p>'}</div>
-      <h3>Thiên hạ ký sự</h3><ul class="log">${ch.map((c) => `<li class="${c.imp >= 3 ? 'big' : ''}"><span class="age">Năm ${fmt(c.y)}</span>${esc(c.t)}</li>`).join('') || '<li class="empty">Thiên hạ thái bình.</li>'}</ul>`;
+    const pl = g.plane;
+    const ch = g.s.chron.filter((c) => (c.pl ?? 0) === pl || c.imp >= 3).slice(-60).reverse();
+    return `<h3>Tông môn · ${PLANES[pl].n}</h3><div class="list">${ss || '<p class="empty">Thiên hạ không còn tông môn nào.</p>'}</div>
+      <h3>Thiên hạ ký sự · ${PLANES[pl].n}</h3><ul class="log">${ch.map((c) => `<li class="${c.imp >= 3 ? 'big' : ''}"><span class="age">Năm ${fmt(c.y)}${(c.pl ?? 0) !== pl ? ` · ${PLANES[c.pl ?? 0].n}` : ''}</span>${esc(c.t)}</li>`).join('') || '<li class="empty">Thiên hạ thái bình.</li>'}</ul>`;
   }
   if (tab === 'rank') {
     const rk = g.ranking(20);
-    return `<h3>Bảng Thiên Kiêu</h3><div class="list">${rk.map((x, i) => {
+    const tw = g.towerRanking(10);
+    const towerBoard = `<h3>Bảng ${PLANES[g.plane].tower}</h3><div class="list">${tw.map((x, i) => `<div class="item ${x.me ? 'me' : ''}"><div class="row"><b>${i + 1}. ${esc(x.name)}${x.me ? ' (ngươi)' : ''}</b><span class="meta">Tầng ${x.f}/1000 · ${realmLabel(x.realm, x.tuvi)}</span></div></div>`).join('') || '<p class="empty">Chưa ai leo tháp.</p>'}</div>`;
+    return `<h3>Bảng Thiên Kiêu · ${PLANES[g.plane].n}</h3><div class="list">${rk.map((x, i) => {
       const sc = x.sect ? g.sect(x.sect) : null;
       const P = g.P;
       const av = x.me
@@ -440,7 +456,7 @@ function renderTab(t = tab) {
       const badge = i === 0 ? '<span class="tag gold">Bảng thủ</span>' : leader && leader.id === x.id ? '<span class="tag">Chưởng môn</span>' : '';
       return `<div class="item withAv ${x.me ? 'me' : ''}">${av}<div class="body"><div class="row"><b>${i + 1}. ${esc(x.name)}${x.me ? ' (ngươi)' : ''}${xh ? ` <span class="dhSmall">${esc(xh)}</span>` : ''}</b><span class="meta">${realmLabel(x.realm, x.prog * REALMS[x.realm].need)}</span></div>
         <div class="meta">${x.age} tuổi${sc ? ` · ${esc(sc.name)}` : ' · tán tu'} ${badge}</div>${x.me ? '' : botWhere(g.soul(x.id))}</div></div>`;
-    }).join('')}</div>`;
+    }).join('')}</div>${towerBoard}`;
   }
   if (tab === 'lives') return titleCodex() + codex() + '<h3>Các kiếp đã qua</h3>' + livesList();
   return '';
@@ -706,7 +722,7 @@ const qCls = (q) => `q${q}`;
 function itemCard(it, btns) {
   const wt = it.wt ? ` · ${WEAPON_TYPES[it.wt].n}` : '';
   return `<div class="item withIco">${itemIco(it)}<div class="body"><div class="row"><b class="${qCls(it.q)}">${esc(itemName(it))}</b><span class="meta">${QUALITY[it.q].n} · ${SLOTS[it.slot]}${wt} · ${REALMS[it.lv].n}</span></div>
-    <div class="meta">${esc(itemLine(it))}</div>${sealLine(it)}${ttLine(it)}${btns ? `<div class="row btnRow">${btns}</div>` : ''}</div></div>`;
+    <div class="meta">${esc(itemLine(it))}</div>${sealLine(it)}${g.P && isSuppressed(it, g.P.realm) ? `<div class="sealLine">⚠ Đồ hạ giới: bị pháp tắc ${PLANES[g.plane].n} áp chế, chỉ phát huy 20%. Linh hóa ở lò rèn (cần Linh tủy).</div>` : ''}${ttLine(it)}${btns ? `<div class="row btnRow">${btns}</div>` : ''}</div></div>`;
 }
 /** Dòng thần thông của đồ Thần thoại */
 function ttLine(it) {
@@ -758,6 +774,7 @@ function costText(c) {
 /** Bot đang lịch luyện ở đâu, có thần khí không */
 function botWhere(b) {
   if (!b) return '';
+  if ((b.plane || 0) !== g.plane) return `<div class="meta">✦ Đang ở ${PLANES[b.plane || 0].n}</div>`;
   const m = b.map && MAP_MAP[b.map];
   const tt = b.gq >= 4 && b.tt && TT_MAP[b.tt] ? ` · <span class="ttName">✦ thần khí 「${esc(TT_MAP[b.tt].n)}」</span>` : '';
   return m || tt ? `<div class="meta">${m ? `⛰ Đang lịch luyện ở ${esc(m.n)} <span class="diff d${m.d}">${DIFF[m.d].n}</span>` : ''}${tt}</div>` : '';
@@ -772,6 +789,39 @@ function bindPillOpts(redraw) {
   $('sheetBody').querySelectorAll('[data-opt]').forEach((b) => { b.onclick = () => { g.s.opt[b.dataset.opt] = !g.s.opt[b.dataset.opt]; save(); dirty = true; redraw(); }; });
 }
 const oddsCls = (p) => (p >= 0.8 ? 'o0' : p >= 0.55 ? 'o1' : p >= 0.3 ? 'o2' : p >= 0.12 ? 'o3' : 'o4');
+
+// ---------- Tháp 1000 tầng ----------
+function openTower() {
+  const draw = (msg = '') => {
+    const P = g.P;
+    const pl = g.plane;
+    const PL = PLANES[pl];
+    const T = g.towerState();
+    const nf = Math.min(1000, T.f + 1);
+    const th = g.floorTheme(pl, nf);
+    const kind = g.floorKind(nf);
+    const m = g.towerMonster(pl, nf, { pick: (a) => a[0], range: () => 1, int: (a) => a, chance: () => false });
+    const p = T.f >= 1000 ? 1 : g.winOdds(() => g.monsterFighter(m));
+    const { r } = g.floorRealm(pl, nf);
+    const milestones = [10, 100, 500, 1000].map((step) => Math.ceil(nf / step) * step).filter((v, i, a) => v <= 1000 && a.indexOf(v) === i);
+    const msText = (f) => (f >= 1000 ? `Tầng 1000: Tháp chủ (3 giai đoạn), rơi ${PL.token} và đồ Thần thoại` : f % 100 === 0 ? `Tầng ${f}: trùm tầng (2 giai đoạn), đồ Cực phẩm, bí kíp, nguyên liệu${f >= 500 ? ', có cơ hội ra Thần thoại' : ''}` : `Tầng ${f}: tinh anh, rương đồ`);
+    openSheet(`<h2>🗼 ${PL.tower}</h2>
+      <p class="intro">1000 tầng, mỗi khoảng 111 tầng ứng với một cảnh giới của ${PL.n}. Vượt hết tầng 1000 mới có ${PL.token}, có lệnh bài và tu vi ${REALMS[PL.top].n} viên mãn mới độ kiếp phi thăng được. Thua ở tầng thường thì bị cấm chế đẩy ra, không chết; trùm và Tháp chủ thì có thể mất mạng. Mỗi kiếp leo lại từ đầu.</p>
+      <div class="cstats"><span>Đang ở tầng <b>${T.f}</b>/1000</span><span>Kỷ lục mọi kiếp <b>${g.s.towerBest[pl] || 0}</b></span>${T.recall ? `<span>Hồi ức tháp: đi nhanh tới tầng <b>${T.recall}</b></span>` : ''}<span>${P.tokens && P.tokens[pl] ? `<b>Đã có ${PL.token}</b>` : `Chưa có ${PL.token}`}</span></div>
+      ${msg ? `<p class="forgeMsg">${rich(msg)}</p>` : ''}
+      ${T.f < 1000 ? `<div class="item"><div class="row"><b>Tầng ${nf} · ${esc(th.n)}</b><span class="meta">ngang ${REALMS[r].n}${kind === 'elite' ? ' · tinh anh' : kind === 'boss' ? ' · trùm tầng' : kind === 'final' ? ' · Tháp chủ' : ''}</span></div>
+        <div class="meta">${esc(m.n)}</div>
+        <div class="odds ${oddsCls(p)}">Tỉ lệ thắng (sinh lực ${P.hp}/100): ~${Math.round(p * 100)}%${kind === 'boss' || kind === 'final' ? ' cho giai đoạn đầu' : ''}</div></div>` : '<p class="intro"><b>Ngươi đã vượt hết 1000 tầng.</b></p>'}
+      <h3>Mốc sắp tới</h3><ul class="statList">${milestones.map((f) => `<li>${msText(f)}</li>`).join('')}</ul>
+      <div class="row btnRow">${T.f < 1000 ? `<button class="btn ${P.action === 'vuot_thap' ? 'on' : 'primary'}" data-climb="1">${P.action === 'vuot_thap' ? '🗼 Đang vượt tháp mỗi lượt' : '🗼 Vượt tháp mỗi lượt'}</button>` : ''}
+        <button class="btn ghost" data-sweep="1" ${T.f >= 50 && P.age - T.sweptAt >= 10 ? '' : 'disabled'}>Quét tầng đã qua${T.f < 50 ? ' (từ tầng 50)' : P.age - T.sweptAt < 10 ? ` (còn ${10 - (P.age - T.sweptAt)} năm)` : ''}</button></div>
+      <h3>Bảng ${PL.tower}</h3><div class="list">${g.towerRanking(10).map((x, i) => `<div class="item ${x.me ? 'me' : ''}"><div class="row"><b>${i + 1}. ${esc(x.name)}${x.me ? ' (ngươi)' : ''}</b><span class="meta">Tầng ${x.f} · ${realmLabel(x.realm, x.tuvi)}</span></div></div>`).join('')}</div>`, () => {
+      $('sheetBody').querySelectorAll('[data-climb]').forEach((b) => { b.onclick = () => { g.setAction('vuot_thap'); save(); dirty = true; $('sheet').hidden = true; }; });
+      $('sheetBody').querySelectorAll('[data-sweep]').forEach((b) => { b.onclick = () => { const t = g.sweepTower(); save(); dirty = true; draw(t || ''); }; });
+    });
+  };
+  draw();
+}
 
 // ---------- Bản đồ lịch luyện ----------
 function openMaps() {
@@ -789,7 +839,7 @@ function openMaps() {
         <div class="row btnRow"><button class="btn primary" data-go="${m.id}">Vào ${esc(m.n)}</button><button class="btn ghost" data-back="1">Thôi</button></div>`, bind);
       return;
     }
-    const cards = MAPS.map((m) => {
+    const cards = mapsOf(g.plane).map((m) => {
       const p = g.mapOdds(m.id);
       const risk = g.mapRisk(m.id);
       return `<button class="mapCard d${m.d} ${cur === m.id ? 'on' : ''}" data-map="${m.id}">
@@ -806,9 +856,10 @@ function openMaps() {
       <p class="intro">Các tu sĩ khác cũng tự chọn vùng theo sức mình và tính cách: kẻ liều lĩnh vào vùng khó, người cẩn trọng ở vùng dễ. Cùng vùng thì dễ chạm mặt nhau hơn, và hạ được kẻ mang thần khí thì có thể đoạt lấy.</p>
       <p class="intro">Độ khó luôn tính theo cảnh giới hiện tại của ngươi: yêu thú cùng cảnh giới nhưng mạnh hơn theo độ khó, đồ rơi ra hợp với cảnh giới của ngươi. Đồ Thần thoại chỉ xuất hiện từ vùng Khó trở lên. Tỉ lệ thắng tính theo trang bị, võ kỹ và sinh lực hiện tại (${P.hp}/100).</p>
       <div class="row btnRow"><button class="btn ${g.s.opt.retreat ? 'on' : 'ghost'}" data-retreat="1">Tự lui khi sinh lực dưới 40, hồi lên 80 tự quay lại: ${g.s.opt.retreat ? 'bật' : 'tắt'}</button></div>
+      ${g.plane ? `<p class="intro">Đây là các vùng của ${PLANES[g.plane].n}.</p>` : ''}
       ${pillOpts()}
       <p class="intro">Còn ${P.pills.hoi_xuan || 0} viên Hồi Xuân Đan. Đan được uống trước khi xét tự lui, nên còn đan thì ngươi ở lại vùng đã chọn.</p>
-      ${P.flags.retreated && MAP_MAP[P.mapGoal] ? `<p class="intro"><b>Đang tạm lui</b> về ${MAP_MAP[DEFAULT_MAP].n} dưỡng thương (sinh lực ${P.hp}/100). Hồi lên 80 sẽ quay lại ${esc(MAP_MAP[P.mapGoal].n)}. Uống Hồi Xuân Đan để quay lại sớm, hoặc tắt tự lui để ở lại mặc kệ nguy hiểm.</p>` : ''}
+      ${P.flags.retreated && MAP_MAP[P.mapGoal] ? `<p class="intro"><b>Đang tạm lui</b> về ${g.defaultMap().n} dưỡng thương (sinh lực ${P.hp}/100). Hồi lên 80 sẽ quay lại ${esc(MAP_MAP[P.mapGoal].n)}. Uống Hồi Xuân Đan để quay lại sớm, hoặc tắt tự lui để ở lại mặc kệ nguy hiểm.</p>` : ''}
       <div class="list">${cards}</div>`, bind);
   };
   const pick = (id) => { g.setMap(id); save(); $('sheet').hidden = true; dirty = true; };
@@ -861,11 +912,11 @@ function openForge() {
       const S = forgeSel;
       const cats = Object.keys(MATS).filter((m) => MATS[m].aff);
       const c = g.forgeCost(S.myth, S.cat || null);
-      body = `<p class="intro">Rèn một món mới cấp ${REALMS[P.realm].n}. Phẩm gieo ngẫu nhiên nhưng dễ ra Thượng, Cực phẩm hơn đồ rơi, tay nghề càng cao càng tốt. Rèn thần khí cần 3 Thần hồn: ~${Math.round(g.forgeMythChance() * 100)}% ra Thần thoại, còn lại chắc chắn Cực phẩm.</p>
+      body = `<p class="intro">Rèn một món mới cấp ${REALMS[P.realm].n}. Phẩm gieo ngẫu nhiên nhưng dễ ra Thượng, Cực phẩm hơn đồ rơi, tay nghề càng cao càng tốt. Rèn thần khí cần 3 ${MATS[mythMatOf(g.plane)].n}: ~${Math.round(g.forgeMythChance() * 100)}% ra Thần thoại, còn lại chắc chắn Cực phẩm.</p>
         <h3>Loại đồ</h3><div class="opts">${Object.entries(SLOTS).map(([k, n]) => `<button class="btn ${S.slot === k ? 'on' : 'ghost'}" data-fs="${k}">${n}</button>`).join('')}</div>
         ${S.slot === 'vu_khi' ? `<div class="opts">${Object.entries(WEAPON_TYPES).filter(([k]) => k !== 'tay').map(([k, w]) => `<button class="btn ${S.wt === k ? 'on' : 'ghost'}" data-fw="${k}">${w.n}</button>`).join('')}</div>` : ''}
         <h3>Dẫn liệu (tùy chọn)</h3><div class="opts wide2"><button class="btn ${!S.cat ? 'on' : 'ghost'}" data-fc="">Không</button>${cats.map((m) => `<button class="btn ${S.cat === m ? 'on' : 'ghost'}" data-fc="${m}">${matIco(m)} ${MATS[m].n} → ${esc(AFFIX.find((y) => y.k === MATS[m].aff).t)}</button>`).join('')}</div>
-        <h3>Lò</h3><div class="opts"><button class="btn ${!S.myth ? 'on' : 'ghost'}" data-fm="0">Lò thường</button><button class="btn ${S.myth ? 'on' : 'ghost'}" data-fm="1">Lò thần khí (3 Thần hồn)</button></div>
+        <h3>Lò</h3><div class="opts"><button class="btn ${!S.myth ? 'on' : 'ghost'}" data-fm="0">Lò thường</button><button class="btn ${S.myth ? 'on' : 'ghost'}" data-fm="1">Lò thần khí (3 ${MATS[mythMatOf(g.plane)].n})</button></div>
         <div class="cost">${costText(c)}</div>
         <button class="btn primary wide" data-forge="1" ${g.canPay(c) ? '' : 'disabled'}>⚒ Rèn</button>`;
     }
@@ -906,7 +957,8 @@ function forgeBtns(it) {
   }
   if (it.lv < P.realm) {
     const c = g.upgradeCost(it);
-    h += `<button class="btn ghost" data-up="${it.id}" ${g.canPay(c) ? '' : 'disabled'}>⬆ Thăng lên ${REALMS[P.realm].n}</button><div class="cost">Thăng cấp: ${costText(c)}</div>`;
+    const lh = planeOf(it.lv) < g.plane;
+    h += `<button class="btn ghost" data-up="${it.id}" ${g.canPay(c) ? '' : 'disabled'}>${lh ? '✦ Linh hóa' : '⬆ Thăng'} lên ${REALMS[P.realm].n}</button><div class="cost">${lh ? 'Linh hóa' : 'Thăng cấp'}: ${costText(c)}</div>`;
   }
   return h;
 }
@@ -1088,18 +1140,7 @@ $('menuBtn').onclick = () => {
       document.documentElement.dataset.theme = nx;
       try { localStorage.setItem('tkps.theme', nx); } catch (e) { /* bỏ qua */ }
     };
-    $('newWorld').onclick = (e) => {
-      const btn = e.currentTarget;
-      if (!btn.dataset.armed) {
-        btn.dataset.armed = '1';
-        btn.textContent = 'Bấm lần nữa để xóa thế giới hiện tại';
-        return;
-      }
-      g = Game.create();
-      save();
-      $('sheet').hidden = true;
-      dirty = true;
-    };
+    $('newWorld').onclick = openNewWorld;
   });
 };
 
@@ -1165,6 +1206,7 @@ function dockClick(e) {
   if (tipShown) { tipShown = false; return; }
   if (b.dataset.do === 'more') { openMore(); return; }
   if (b.dataset.act === 'lich_luyen') openMaps();
+  else if (b.dataset.act === 'vuot_thap') openTower();
   else if (b.dataset.act) { g.setAction(b.dataset.act); save(); }
   else if (b.dataset.do === 'forge') openForge();
   else if (b.dataset.do === 'shop') openShop();
@@ -1184,6 +1226,7 @@ $('hudSub').addEventListener('click', (e) => {
   const b = e.target.closest('[data-hw]');
   if (!b) return;
   if (b.dataset.hw === 'wep') openBag();
+  else if (b.dataset.hw === 'tower') openTower();
   else openSheet(`<h2>⛓ Bình cảnh nhỏ</h2><p class="intro">Tu vi đang kẹt ở ${esc(g.subRealmName())}. Còn khoảng ${Math.max(0, g.P.flags.neck.until - g.P.age)} năm sẽ tự thông. Uống Tĩnh Tâm Đan (Tụ Bảo Lâu) để phá ngay. Ngộ tính cao thì dễ bỗng ngộ ra sớm.</p>
     <div class="row btnRow"><button class="btn primary" id="neckPill" ${(g.P.pills.tinh_tam || 0) > 0 ? '' : 'disabled'}>Uống Tĩnh Tâm Đan (có ${g.P.pills.tinh_tam || 0})</button><button class="btn ghost" id="neckShop">🏮 Tụ Bảo Lâu</button></div>`, () => {
     $('neckPill').onclick = () => { g.usePill('tinh_tam'); save(); $('sheet').hidden = true; dirty = true; };
@@ -1207,6 +1250,20 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.key === ' ' && !(e.target.closest && e.target.closest('button'))) { e.preventDefault(); paused = !paused; dirty = true; }
 });
+
+// ---------- Thế giới mới: chọn độ khó ----------
+function openNewWorld() {
+  let pick = 'thuong';
+  const draw = () => openSheet(`<h2>Tạo thế giới mới</h2>
+    <p class="intro"><b>Thế giới hiện tại sẽ bị xóa</b> (cả Sổ kiếp và Hồn Lực). Muốn giữ thì vào ☰ → Xuất bản lưu trước.</p>
+    <h3>Độ khó</h3><div class="list">${Object.entries(WORLD_DIFF).map(([k, d]) => `<button class="btn ${pick === k ? 'on' : ''}" data-wd="${k}">${d.n}<small>${esc(d.desc)}</small></button>`).join('')}</div>
+    <div class="row btnRow"><button class="btn primary" id="nwGo">Xóa và tạo thế giới ${WORLD_DIFF[pick].n}</button><button class="btn ghost" id="nwBack">Thôi</button></div>`, () => {
+    $('sheetBody').querySelectorAll('[data-wd]').forEach((b) => { b.onclick = () => { pick = b.dataset.wd; draw(); }; });
+    $('nwBack').onclick = () => { $('sheet').hidden = true; };
+    $('nwGo').onclick = () => { g = Game.create(undefined, pick); paused = false; save(); $('sheet').hidden = true; dirty = true; };
+  });
+  draw();
+}
 
 // ---------- Xuất / nhập bản lưu ----------
 const SAVE_TAG = 'TKPS1:';

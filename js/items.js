@@ -1,5 +1,5 @@
 // Trang bị: vũ khí, y phục, phụ kiện. Sinh ngẫu nhiên theo cảnh giới và phẩm.
-import { REALMS } from './data.js';
+import { REALMS, planeOf } from './data.js';
 
 export const SLOTS = { vu_khi: 'Vũ khí', ao: 'Y phục', phu_kien: 'Phụ kiện' };
 export const QUALITY = [
@@ -124,6 +124,8 @@ export function makeItem(r, id, lv, q = null, slot = null) {
 /** Tổng chỉ số từ các món đang mặc */
 /** Thần khí kén chủ: đồ Thần thoại cao cảnh giới hơn chủ thì bị phong ấn */
 export const isSealed = (it, realm) => !!it && it.q >= 4 && realm !== undefined && it.lv > realm;
+/** Đồ hạ giới đang bị áp chế ở giới trên */
+export const isSuppressed = (it, realm) => !!it && realm !== undefined && planeOf(it.lv) < planeOf(realm);
 
 export function gearStats(eq, realm) {
   const g = { atk: 0, def: 0, hp: 0, crit: 0, dodge: 0, ls: 0, rf: 0, sp: 0 };
@@ -132,14 +134,16 @@ export function gearStats(eq, realm) {
     const it = eq[k];
     if (!it) continue;
     const sealed = isSealed(it, realm);
-    const pm = plusMul(it);
+    // đồ hạ giới mang lên giới trên bị pháp tắc áp chế, chỉ còn 20% (dòng % còn một nửa) cho tới khi linh hóa
+    const low = realm !== undefined && planeOf(it.lv) < planeOf(realm);
+    const pm = plusMul(it) * (low ? 0.2 : 1);
     if (sealed) {
       // bị áp chế: công, thủ, sinh lực ép về cảnh giới của chủ rồi còn một nửa; dòng % còn một nửa
       const k2 = 0.5 * pm * REALMS[Math.max(0, realm)].pow / REALMS[it.lv].pow;
       for (const s in g) g[s] += (it[s] || 0) * (s === 'atk' || s === 'def' || s === 'hp' ? k2 : 0.5);
       continue;
     }
-    for (const s in g) g[s] += (it[s] || 0) * (s === 'atk' || s === 'def' || s === 'hp' ? pm : 1);
+    for (const s in g) g[s] += (it[s] || 0) * (s === 'atk' || s === 'def' || s === 'hp' ? pm : low ? 0.5 : 1);
     // thần thông trùng nhau chỉ tính một lần
     const tt = it.tt && TT_MAP[it.tt];
     if (tt && tt.gear && !seen.has(tt.id)) {

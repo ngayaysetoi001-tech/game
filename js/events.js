@@ -7,6 +7,7 @@ import { REALMS, TOP_REALM, TAG_NAMES, PATHS, MAPS } from './data.js';
 import { makeItem } from './items.js';
 import { EVENTS2 } from './events2.js';
 import { EVENTS3 } from './events3.js';
+import { EVENTS4 } from './events4.js';
 
 const RN = (r) => REALMS[r].n;
 // gần cảnh giới; nếu cùng lịch luyện một vùng thì nới thêm một bậc
@@ -219,14 +220,14 @@ const BASE_EVENTS = [
     id: 'yeu_thu', auto: (g, { data }) => (g.winOdds(() => g.monsterFighter(data.m)) >= 0.6 ? 0 : 1), w: 5, cd: 3, acts: ['lich_luyen'], title: 'Yêu thú chặn đường',
     when: (g) => g.P.age >= 10,
     prep: (g) => ({ m: g.curMap() ? g.mapMonster() : g.monster(g.P.realm + (g.P.realm === 0 ? 0 : g.r.pick([-1, 0, 0, 1]))) }),
-    text: (g, { data }) => `Một con ${data.m.n} chặn ngang đường mòn${data.m.d !== undefined ? ` ở ${MAPS[data.m.d].n}` : ''}, mắt đỏ ngầu, nước dãi nhỏ xuống đất.\n\n${g.hintMonster(data.m)}`,
+    text: (g, { data }) => `Một con ${data.m.n} chặn ngang đường mòn${g.monsterMap(data.m) ? ` ở ${g.monsterMap(data.m).n}` : ''}, mắt đỏ ngầu, nước dãi nhỏ xuống đất.\n\n${g.hintMonster(data.m)}`,
     choices: (g, { data }) => [
       {
         t: 'Nghênh chiến', p: g.winOdds(() => g.monsterFighter(data.m)), go: (g) => {
           const m = data.m;
           const f = g.fightMonster(m);
           if (f.win) {
-            const L = m.d !== undefined ? MAPS[m.d].loot : 1;
+            const L = g.monsterMap(m) ? g.monsterMap(m).loot : 1;
             const t = g.addTuvi(g.gain() * 2 * L);
             const mo = Math.round(g.r.int(8, 25) * (1 + g.P.realm) * L);
             g.money(mo); g.fame(1);
@@ -805,6 +806,6 @@ export const EVENT_RULES = {
   huyet_tran: { age: 16, place: 'xa' }, dao_lu: { age: 16 }, song_tu: { age: 16 }, ho_ly: { age: 16 }, de_tu_nan: { age: 16 },
   thu_kiep_truoc: { age: 16 }, thu_nha: { age: 16 }, yeu_vuong: { age: 16 }, co_duyen_muon: { age: 16 }, luyen_dan: { age: 16 }, mong: { age: 20 },
 };
-export const EVENTS = BASE_EVENTS.concat(EVENTS2, EVENTS3);
+export const EVENTS = BASE_EVENTS.concat(EVENTS2, EVENTS3, EVENTS4);
 for (const e of EVENTS) e.rule = EVENT_RULES[e.id] || e.r3 || {};
 export const EVENT_MAP = Object.fromEntries(EVENTS.map((e) => [e.id, e]));

@@ -1,11 +1,11 @@
 // Cho game mở được khi không có mạng (cài ra Màn hình chính).
 // Có mạng: luôn lấy bản mới nhất từ máy chủ (bỏ qua bộ nhớ đệm của trình duyệt), rồi lưu lại.
 // Mất mạng: dùng bản đã lưu.
-const CACHE = 'tkps-v2';
+const CACHE = 'tkps-v3';
 const SHELL = [
   './', 'index.html', 'style.css', 'manifest.webmanifest',
   'js/rng.js', 'js/version.js', 'js/data.js', 'js/items.js', 'js/combat.js', 'js/sprite.js', 'js/icons.js',
-  'js/events3.js', 'js/events2.js', 'js/events.js', 'js/core.js', 'js/ui.js',
+  'js/events4.js', 'js/events3.js', 'js/events2.js', 'js/events.js', 'js/core.js', 'js/ui.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
 ];
 self.addEventListener('install', (e) => {

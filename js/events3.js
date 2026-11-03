@@ -530,7 +530,7 @@ export const EVENTS3 = [
 
   // ================= Chuỗi: Huyết án trấn Thanh Thạch =================
   {
-    id: 'huyet_an_1', w: 2, cd: 80, title: 'Huyết án trấn Thanh Thạch', r3: { place: 'thanh', age: 16 },
+    id: 'huyet_an_1', w: 2, cd: 80, title: 'Huyết án trấn Thanh Thạch', r3: { place: 'thanh', age: 16, plane: 0 },
     auto: () => 'Báo',
     text: () => 'Sáng sớm, cả trấn xôn xao: nhà họ Lâm bảy người chết không một vết thương, mặt ai cũng trắng bệch như bị hút hết máu. Quan phủ đóng cửa nha môn không dám điều tra.',
     choices: (g) => {
