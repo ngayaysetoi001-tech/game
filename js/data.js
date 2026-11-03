@@ -220,3 +220,14 @@ const TITLE_TIER = {
 };
 for (const t of TITLES) t.tier = TITLE_TIER[t.id] || 1;
 export const TITLE_TIER_N = ['', 'Thường', 'Hiếm', 'Truyền kỳ', 'Thần thoại'];
+
+// ---------- Con đường tu hành (chọn khi lên Trúc Cơ) ----------
+// req(P): điều kiện, pm: hệ số trong trận, fx: hiệu ứng ngoài trận (chung hệ với thể chất)
+export const PATHS = {
+  kiem: { n: 'Kiếm tu', reqText: '', desc: 'Lấy kiếm làm đạo. Kiếm pháp +30%, cầm kiếm bạo kích +10%. Thủ -10%.', skill: 'nhat_kiem', pm: { cls: { kiem: 1.3 }, kiemCrit: 0.1, defPct: -0.1 }, fx: {} },
+  the: { n: 'Thể tu', reqText: '', desc: 'Luyện thân thành pháp bảo. Sinh lực +25%, thủ +15%, quyền cước +25%, tay không công +15%, thọ +10%, chịu đòn ngoài trận -15%. Tu luyện -10%.', skill: 'ba_the', pm: { hpPct: 0.25, defPct: 0.15, unarmedAtk: 0.15, cls: { the: 1.25 } }, fx: { gainMul: 0.9, lifeMul: 1.1, hurtMul: 0.85 } },
+  phap: { n: 'Pháp tu', reqText: '', desc: 'Mượn sức trời đất. Chưởng pháp, ấn pháp, lôi pháp +50%, linh lực hồi nhanh hơn. Sinh lực -10%.', skill: 'cuu_thien', pm: { hpPct: -0.1, mpRegen: 8, cls: { phap: 1.5 } }, fx: {} },
+  phat: { n: 'Phật tu', reqText: 'Cần Hữu tình từ 30', req: (P) => P.tinh >= 30, desc: 'Từ bi độ thế. Hộ thể và hồi phục +30%, đột phá +5%, thân thiết +20%, tâm ma ít tìm đến. Công -10%.', skill: 'dai_bi', pm: { atkPct: -0.1, cls: { ho: 1.3 } }, fx: { brk: 0.05, relMul: 1.2, evW: { tam_ma: 0.4 } } },
+  ma: { n: 'Ma tu', reqText: 'Cần Vô tình từ -30', req: (P) => P.tinh <= -30, desc: 'Nghịch thiên mà đi. Tu luyện +25%, ma công +50%, hút máu +15%, tôn xưng ma đạo. Tâm ma tìm đến gấp đôi.', skill: 'huyet_hai', pm: { ls: 0.15, cls: { ma: 1.5 } }, fx: { gainMul: 1.25, evW: { tam_ma: 2 } } },
+  ngu_thu: { n: 'Ngự thú tu', reqText: 'Cần có linh thú', req: (P) => !!P.flags.pet, desc: 'Cùng linh thú tu hành. Linh thú mạnh hơn (sức chiến đấu +15% thay vì +10%), dễ gặp linh thú và trứng lạ.', skill: 'van_thu', pm: { cls: { thu: 1.2 } }, fx: { evW: { linh_thu: 4, trung_la: 3 } } },
+};

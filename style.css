@@ -479,3 +479,5 @@ h3 { font-size: 15px; margin: 14px 0 6px; color: var(--muted); font-weight: 600;
 .altarRow .btn { font-size: 14px; padding: 8px; text-align: center; }
 .trait.lockT { opacity: 0.55; filter: grayscale(0.6); }
 .hlGain { margin-top: 12px; background: color-mix(in srgb, var(--r2) 8%, var(--panel)); }
+
+.pathTag { font: inherit; font-size: 14px; color: var(--r2); font-weight: 700; background: none; border: none; border-bottom: 1px dashed currentColor; padding: 0; cursor: pointer; }

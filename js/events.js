@@ -3,7 +3,7 @@
 //  inClosed (xảy ra cả khi bế quan), queued (chỉ vào qua hàng đợi),
 //  when(g), bot(g) chọn bot liên quan, prep(g, bot) chuẩn bị dữ liệu,
 //  text(g, ctx), choices(g, ctx) -> [{ t, if, go(g, ctx) -> chuỗi kết quả }]
-import { REALMS, TOP_REALM, TAG_NAMES } from './data.js';
+import { REALMS, TOP_REALM, TAG_NAMES, PATHS } from './data.js';
 import { makeItem } from './items.js';
 import { EVENTS2 } from './events2.js';
 
@@ -59,7 +59,7 @@ const BASE_EVENTS = [
     text: () => 'Ngươi lên cơn sốt bảy ngày bảy đêm, người nóng như hòn than. Thầy lang trong làng lắc đầu.',
     choices: (g) => [
       {
-        t: 'Mẹ thức trắng đêm chăm sóc', go: (g) => {
+        t: g.P.origin === 'coi' ? 'Bà lão hàng xóm thức trắng đêm chăm sóc' : 'Mẹ thức trắng đêm chăm sóc', go: (g) => {
           if (g.r.chance(0.6)) { g.stat('tam', 5); return 'Sáng ngày thứ tám ngươi hạ sốt. Ngươi nhớ mãi bàn tay mát lạnh trên trán mình. Tâm tính +5.'; }
           g.stat('can', -4); return 'Ngươi qua khỏi nhưng người yếu hẳn đi. Căn cốt -4.';
         },
@@ -165,6 +165,20 @@ const BASE_EVENTS = [
     ],
   },
 
+  // ===== Chọn con đường tu hành (vào qua hàng đợi khi lên Trúc Cơ) =====
+  {
+    id: 'dao_do', queued: true, title: 'Ngã rẽ đạo đồ',
+    text: (g) => {
+      const P = g.P;
+      const locked = Object.values(PATHS).filter((pa) => pa.req && !pa.req(P));
+      return `Trúc Cơ đã thành, đạo cơ vững vàng. Đã đến lúc chọn con đường sẽ đi suốt đời này. Chọn rồi không đổi được.${locked.length ? `\n\nChưa đủ duyên: ${locked.map((pa) => `${pa.n} (${pa.reqText.toLowerCase()})`).join(', ')}.` : ''}`;
+    },
+    choices: (g) => [
+      ...Object.entries(PATHS).filter(([, pa]) => !pa.req || pa.req(g.P)).map(([id, pa]) => ({ t: `${pa.n}: ${pa.desc}`, go: (g) => g.setPath(id) })),
+      { t: 'Chưa quyết, đi thêm một đoạn rồi tính', go: (g) => { g.P.pathRetry = g.P.age + 10; return 'Ngươi gác lại ngã rẽ. Mười năm sau sẽ lại phải chọn. Biết đâu khi ấy duyên phận đã khác.'; } },
+    ],
+  },
+
   // ===== Đạo hiệu (vào qua hàng đợi khi lên Trúc Cơ) =====
   {
     id: 'dao_hieu', queued: true, title: 'Đạo hiệu',
@@ -177,7 +191,7 @@ const BASE_EVENTS = [
 
   // ===== Lịch luyện =====
   {
-    id: 'hang_dong', auto: (g) => (g.P.hp >= 60 && g.P.stats.co >= 55 ? 0 : 1), w: 5, acts: ['lich_luyen'], title: 'Hang động sau thác',
+    id: 'hang_dong', cd: 20, auto: (g) => (g.P.hp >= 60 && g.P.stats.co >= 55 ? 0 : 1), w: 5, acts: ['lich_luyen'], title: 'Hang động sau thác',
     when: (g) => g.P.dao && g.P.age >= 12,
     text: () => 'Sau một thác nước có cửa hang tối om. Hơi lạnh và linh khí từ bên trong tỏa ra từng đợt.',
     choices: (g) => [
@@ -406,7 +420,7 @@ const BASE_EVENTS = [
   {
     id: 'ket_bai', auto: () => 'Cạn chén', w: 4, cd: 5, title: 'Chén rượu trên đỉnh núi',
     when: (g) => g.P.age >= 14,
-    bot: (g) => g.findBot((b, r) => r && r.met && r.v >= 45 && !r.tag),
+    bot: (g) => g.findBot((b, r) => b.age >= 14 && r && r.met && r.v >= 45 && !r.tag),
     text: (g, { bot: b }) => `${b.name} mời ngươi lên đỉnh núi, rót hai chén rượu: "Đời người gặp được tri kỷ không dễ. Chi bằng ta kết nghĩa, sống chết có nhau?"`,
     choices: (g, { bot: b }) => [
       { t: 'Cạn chén, kết nghĩa', go: (g) => { g.relSet(b, relOf(g, b).v + 15, 'huynh_de'); g.tinh(6); return `Hai người quỳ xuống trước trời đất. Từ nay ${b.name} là người kết nghĩa của ngươi.`; } },
@@ -581,7 +595,7 @@ const BASE_EVENTS = [
     text: (g, { data }) => `${g.sect(data.enemy).name} kéo người đánh lên sơn môn ${g.sect(g.P.sect).name}. Trống trận vang khắp núi.`,
     choices: (g, { data }) => [
       {
-        t: 'Xông ra tiền tuyến', go: (g) => {
+        t: 'Xông ra tiền tuyến', if: g.P.age >= 14, go: (g) => {
           const foes = g.members(data.enemy).filter((b) => near(g, b, 1));
           const foe = foes.length ? g.r.pick(foes) : null;
           const f = foe ? g.fightBot(foe) : g.fight('đệ tử địch', REALMS[g.P.realm].pow * g.r.range(0.8, 1.2));
@@ -773,5 +787,20 @@ const BASE_EVENTS = [
   },
 ];
 
+// Luật xuất hiện: age = tuổi tối thiểu (mặc định 14), child = được xảy ra trước 6 tuổi,
+// place: 'xa' chỉ khi Lịch luyện, 'thanh' chỉ khi Mưu sinh hoặc Kết giao, không ghi = mọi lúc
+export const EVENT_RULES = {
+  lac_rung: { age: 3, child: true }, sot_cao: { age: 2, child: true }, ban_thuo_nho: { age: 4, child: true }, co_nhan_tim: { age: 5, child: true },
+  lao_gia_gieng: { age: 6 }, khao_hach: { age: 8 }, an_may: { age: 8, place: 'thanh' }, duyen_no: { age: 8 },
+  yeu_thu: { age: 10 }, linh_thu: { age: 10, place: 'xa' }, cuu_nguoi: { age: 12 }, vuon_thuoc: { age: 12, place: 'xa' }, tien_boi: { age: 12, place: 'xa' },
+  hang_dong: { place: 'xa' }, truyen_thua: { place: 'xa' }, bi_canh: { place: 'xa' }, bao_vat: { place: 'xa' }, trung_la: { place: 'xa' },
+  co_mo: { place: 'xa' }, kiep_nguoi: { place: 'xa' }, linh_mach: { place: 'xa' }, kiem_trung: { place: 'xa' },
+  cho_dem: { place: 'thanh' }, ho_tong: { place: 'thanh' }, ban_do: { place: 'thanh' }, moc_tui: { place: 'thanh' },
+  dau_gia: { age: 16, place: 'thanh' }, bat_coc: { place: 'xa' }, ngoc_gian: { place: 'xa' }, dau_tu: { age: 16, place: 'thanh' }, song_bac: { age: 16, place: 'thanh' }, loi_dai: { age: 16, place: 'thanh' },
+  cho_no_le: { age: 16, place: 'thanh' }, tuu_lau: { age: 16, place: 'thanh' },
+  huyet_tran: { age: 16, place: 'xa' }, dao_lu: { age: 16 }, song_tu: { age: 16 }, ho_ly: { age: 16 }, de_tu_nan: { age: 16 },
+  thu_kiep_truoc: { age: 16 }, thu_nha: { age: 16 }, yeu_vuong: { age: 16 }, co_duyen_muon: { age: 16 }, luyen_dan: { age: 16 }, mong: { age: 20 },
+};
 export const EVENTS = BASE_EVENTS.concat(EVENTS2);
+for (const e of EVENTS) e.rule = EVENT_RULES[e.id] || {};
 export const EVENT_MAP = Object.fromEntries(EVENTS.map((e) => [e.id, e]));

@@ -71,6 +71,25 @@ Tàn niệm mới **Huyết mạch còn vương**: giữ thể chất sang kiế
 - Gieo lại riêng thể chất chính: 5. Bảo đảm Hiếm trở lên: 40. Bảo đảm Truyền thuyết trở lên: 150.
 - Giới hạn cộng dồn từ thể chất: tu luyện tối đa x1,8, chiến đấu x1,7, đột phá +15%.
 
+## 3d. Con đường tu hành (chọn khi lên Trúc Cơ)
+
+Sự kiện "Ngã rẽ đạo đồ" (`dao_do`) hiện khi lên Trúc Cơ, chọn một lần mỗi kiếp, có thể hoãn 10 năm. Mỗi con đường có tuyệt học riêng không học được ở đâu khác (`path` trong `SKILLS`). Dữ liệu ở `PATHS` trong `js/data.js`; hệ số theo trường phái chiêu (`cls`: the quyền cước, phap chưởng/ấn/lôi, ma ma công, ho hộ thể/hồi phục, thu linh thú, hoặc loại binh khí).
+
+| Con đường | Yêu cầu | Tác dụng | Tuyệt học |
+|---|---|---|---|
+| Kiếm tu | | Kiếm pháp +30%, cầm kiếm bạo kích +10%, thủ -10% | Nhất Kiếm Đoạn Giang |
+| Thể tu | | Sinh lực +25%, thủ +15%, quyền cước +25%, tay không công +15%, thọ +10%, chịu đòn ngoài trận -15%, tu luyện -10% | Bá Thể Quyền |
+| Pháp tu | | Chưởng, ấn, lôi pháp +50%, linh lực hồi +8/lượt, sinh lực -10% | Cửu Thiên Lôi Ấn |
+| Phật tu | Hữu tình từ 30 | Hộ thể, hồi phục +30%, đột phá +5%, thân thiết +20%, tâm ma x0,4, công -10% | Đại Bi Kim Thân |
+| Ma tu | Vô tình từ -30 | Tu luyện +25%, ma công +50%, hút máu +15%, tôn xưng ma đạo từ Kim Đan, tâm ma x2 | Huyết Hải Ma Công |
+| Ngự thú tu | Có linh thú | Linh thú cho +15% sức chiến đấu (thường +10%), gặp linh thú x4, trứng lạ x3 | Vạn Thú Triều Bái |
+
+Thử với yêu thú Trúc Cơ mạnh hơn 60%, mỗi bên cầm binh khí hợp con đường: không con đường 5%, Kiếm 41%, Ngự thú 37%, Thể 27%, Pháp 23%, Phật 16%, Ma 8% (Phật và Ma bù bằng lợi ích ngoài trận).
+
+## 3e. Luật xuất hiện kỳ ngộ
+
+`EVENT_RULES` trong `js/events.js`: mỗi kỳ ngộ có tuổi tối thiểu (mặc định 14), cờ `child` (được xảy ra trước 6 tuổi), và nơi chốn: `xa` chỉ khi Lịch luyện (hang động, linh mạch, cổ mộ, kiếm trủng, bí cảnh, truyền thừa, trứng lạ, linh thú, vườn thuốc, lôi kiếp người khác, huyết trận, Hắc Phong trại, ngọc giản), `thanh` chỉ khi Mưu sinh hoặc Kết giao (chợ đêm, sòng bạc, tửu lâu, đấu giá, thương hội, hộ tống, chợ người, móc túi, ăn mày, lôi đài, bản đồ). Từ 16 tuổi: sòng bạc, tửu lâu, đấu giá, đầu tư, chợ người, đạo lữ, song tu, hồ ly, luyện đan, huyết trận, yêu vương (cần Trúc Cơ). Kết nghĩa cần người kia từ 14 tuổi, đạo lữ từ 16. Dưới 14 tuổi không được ra tiền tuyến khi tông môn bị đánh. Cô nhi không có lựa chọn "mẹ chăm sóc". Kiểm tra tự động: `node tools/check-events.mjs`.
+
 ## 4. Cảnh giới
 
 | Cảnh giới | Tu vi cần | Thọ gốc | Đột phá lên kế tiếp |

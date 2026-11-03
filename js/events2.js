@@ -204,7 +204,7 @@ export const EVENTS2 = [
 
   // ===== Cổ mộ: càng vào sâu càng nhiều báu, càng nguy =====
   ...['co_mo', 'co_mo_sau'].map((id) => ({
-    id, queued: id === 'co_mo_sau', w: 2, cd: 20, acts: ['lich_luyen'], title: id === 'co_mo' ? 'Cổ mộ dưới rừng tùng' : 'Sâu hơn trong cổ mộ',
+    id, queued: id === 'co_mo_sau', w: 2, cd: 30, acts: ['lich_luyen'], title: id === 'co_mo' ? 'Cổ mộ dưới rừng tùng' : 'Sâu hơn trong cổ mộ',
     when: (g) => g.P.dao && g.P.realm >= 1,
     prep: () => ({ room: 1, loot: 0 }),
     auto: (g, { data }) => (xp(0.85 - data.room * 0.15 + (st(g, 'co') - 50) / 200) >= 0.65 ? 0 : 'Rút lui'),
@@ -428,7 +428,7 @@ export const EVENTS2 = [
 
   // ===== Linh mạch (chuỗi) =====
   {
-    id: 'linh_mach', w: 2, cd: 25, acts: ['lich_luyen'], title: 'Mạch linh thạch lộ thiên', auto: () => 'Chia',
+    id: 'linh_mach', w: 2, cd: 35, acts: ['lich_luyen'], title: 'Mạch linh thạch lộ thiên', auto: () => 'Chia',
     when: (g) => g.P.dao,
     text: () => 'Sau trận lở đất, chân núi Lạc Phượng lộ ra một mạch linh thạch lấp lánh. Chưa ai phát hiện ra.',
     choices: (g) => [
@@ -475,7 +475,8 @@ export const EVENTS2 = [
 
   // ===== Sơn tặc bắt cóc =====
   {
-    id: 'bat_coc', w: 3, cd: 12, title: 'Hắc Phong trại',
+    id: 'bat_coc', w: 2, cd: 25, title: 'Hắc Phong trại',
+    auto: (g) => (g.winOdds(() => g.genericFighter('trại chủ Hắc Phong', pw(g) * 1.3)) >= 0.65 ? 'Xông' : g.P.money >= 100 ? 'Bỏ tiền' : 'Lắc đầu'),
     when: (g) => g.P.age >= 14,
     text: () => 'Sơn tặc Hắc Phong trại bắt mười mấy dân làng lên núi, đòi chuộc mỗi người năm mươi lạng bạc. Bà con khóc lóc nhờ ngươi.',
     choices: (g) => {
@@ -508,7 +509,7 @@ export const EVENTS2 = [
 
   // ===== Kiếm trủng =====
   {
-    id: 'kiem_trung', w: 1, cd: 40, acts: ['lich_luyen'], title: 'Kiếm trủng', auto: () => 'Rút đại',
+    id: 'kiem_trung', w: 1, cd: 60, acts: ['lich_luyen'], title: 'Kiếm trủng', auto: () => 'Rút đại',
     when: (g) => g.P.dao && g.P.realm >= 1,
     text: () => 'Hàng nghìn thanh kiếm cắm la liệt trên một ngọn đồi trọc. Gió thổi qua, kiếm ngân lên như tiếng khóc. Khi ngươi bước lại gần, một thanh kiếm phủ rêu bỗng rung lên bần bật.',
     choices: (g) => {
@@ -525,7 +526,7 @@ export const EVENTS2 = [
   // ===== Yêu vương =====
   {
     id: 'yeu_vuong', w: 2, cd: 30, title: 'Yêu vương xuất thế',
-    when: (g) => g.P.dao && g.P.realm >= 1,
+    when: (g) => g.P.dao && g.P.realm >= 2,
     prep: (g) => ({ m: { n: g.r.pick(['Xích Diễm Hổ Vương', 'Cửu Đầu Xà Vương', 'Thiết Dực Bằng Vương']), pow: pw(g, 1), beast: true, r: Math.min(TOP_REALM, g.P.realm + 1), seed: g.r.int(1, 1e6) } }),
     bot: (g) => g.findBot((b) => b.dao && Math.abs(b.realm - g.P.realm) <= 1),
     auto: (g, { data }) => (g.winOdds(() => g.monsterFighter(data.m, 0.6)) >= 0.65 ? 0 : 'Để'),
@@ -555,7 +556,8 @@ export const EVENTS2 = [
 
   // ===== Ngọc giản của người chết (chuỗi) =====
   {
-    id: 'ngoc_gian', w: 2, cd: 25, title: 'Ngọc giản dính máu',
+    id: 'ngoc_gian', w: 2, cd: 30, title: 'Ngọc giản dính máu',
+    auto: (g) => (g.winOdds(() => g.genericFighter('kẻ truy sát', pw(g) * 1.1)) >= 0.65 ? 'Ở lại' : 'Giao'),
     when: (g) => g.P.age >= 14 && g.P.dao,
     text: () => 'Một tu sĩ máu me đầy người lảo đảo tới, dúi vào tay ngươi một ngọc giản rồi tắt thở. Xa xa có tiếng người đuổi tới, rất gần.',
     choices: (g) => {

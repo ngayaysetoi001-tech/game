@@ -5,7 +5,7 @@
 // wep: binh khí hợp (null = tay không / mọi binh khí). mp: linh lực tốn (tối đa 100).
 // kind: 'atk' tấn công, 'shield' hộ thể, 'heal' hồi phục, 'buff' tăng thế
 export const SKILLS = {
-  quyen: { n: 'Quyền cước', tier: 0, kind: 'atk', wep: null, mp: 0, mult: 1, desc: 'Đòn đánh thường, không tốn linh lực.' },
+  quyen: { n: 'Quyền cước', tier: 0, kind: 'atk', wep: null, cls: 'the', mp: 0, mult: 1, desc: 'Đòn đánh thường, không tốn linh lực.' },
   // Kiếm
   luu_van: { n: 'Lưu Vân Kiếm Pháp', tier: 1, kind: 'atk', wep: 'kiem', mp: 20, mult: 0.75, hits: 2, desc: 'Kiếm pháp. Hai nhát liền như mây trôi.' },
   kinh_hong: { n: 'Kinh Hồng Nhất Kiếm', tier: 2, kind: 'atk', wep: 'kiem', mp: 40, mult: 2.2, crit: 0.25, desc: 'Kiếm pháp. Một kiếm duy nhất, tỉ lệ bạo kích +25%.' },
@@ -20,15 +20,24 @@ export const SKILLS = {
   thanh_phong: { n: 'Thanh Phong Phiến', tier: 1, kind: 'atk', wep: 'quat', mp: 20, mult: 1.2, evade: 2, desc: 'Phiến pháp. Gió cuốn thân, né tránh +35% trong 2 lượt.' },
   me_hon: { n: 'Mê Hồn Phiến Ảnh', tier: 2, kind: 'atk', wep: 'quat', mp: 35, mult: 1.0, stun: 0.5, desc: 'Phiến pháp. 50% làm địch choáng 1 lượt.' },
   // Chưởng, ấn (tay không cũng dùng được)
-  han_bang: { n: 'Hàn Băng Chưởng', tier: 1, kind: 'atk', wep: null, mp: 25, mult: 1.3, stun: 0.35, stunName: 'đóng băng', desc: 'Chưởng pháp. 35% đóng băng địch 1 lượt.' },
-  tran_nhac: { n: 'Trấn Nhạc Ấn', tier: 2, kind: 'atk', wep: null, mp: 40, mult: 1.8, stun: 0.3, desc: 'Ấn pháp. Đè xuống như núi, 30% choáng.' },
-  huyet_anh: { n: 'Huyết Ảnh Trảo', tier: 2, kind: 'atk', wep: null, mp: 30, mult: 1.4, drain: 0.5, desc: 'Ma công. Hút 50% sát thương thành sinh lực.' },
-  ngu_loi: { n: 'Ngũ Lôi Chính Pháp', tier: 3, kind: 'atk', wep: null, mp: 60, mult: 2.8, desc: 'Lôi pháp. Năm đạo sấm giáng xuống một chỗ.' },
+  han_bang: { n: 'Hàn Băng Chưởng', tier: 1, kind: 'atk', wep: null, cls: 'phap', mp: 25, mult: 1.3, stun: 0.35, stunName: 'đóng băng', desc: 'Chưởng pháp. 35% đóng băng địch 1 lượt.' },
+  tran_nhac: { n: 'Trấn Nhạc Ấn', tier: 2, kind: 'atk', wep: null, cls: 'phap', mp: 40, mult: 1.8, stun: 0.3, desc: 'Ấn pháp. Đè xuống như núi, 30% choáng.' },
+  huyet_anh: { n: 'Huyết Ảnh Trảo', tier: 2, kind: 'atk', wep: null, cls: 'ma', mp: 30, mult: 1.4, drain: 0.5, desc: 'Ma công. Hút 50% sát thương thành sinh lực.' },
+  ngu_loi: { n: 'Ngũ Lôi Chính Pháp', tier: 3, kind: 'atk', wep: null, cls: 'phap', mp: 60, mult: 2.8, desc: 'Lôi pháp. Năm đạo sấm giáng xuống một chỗ.' },
   // Hộ thể, hồi phục
-  huyen_vu: { n: 'Huyền Vũ Hộ Thể', tier: 1, kind: 'shield', wep: null, mp: 30, shield: 0.25, desc: 'Khiên linh lực bằng 25% sinh lực tối đa.' },
-  hoi_nguyen: { n: 'Hồi Nguyên Quyết', tier: 1, kind: 'heal', wep: null, mp: 35, heal: 0.25, desc: 'Hồi 25% sinh lực tối đa.' },
-  kim_cang: { n: 'Kim Cang Bất Hoại', tier: 3, kind: 'shield', wep: null, mp: 55, shield: 0.4, thorns: 3, desc: 'Khiên 40% sinh lực, phản 30% sát thương trong 3 lượt.' },
+  huyen_vu: { n: 'Huyền Vũ Hộ Thể', tier: 1, kind: 'shield', wep: null, cls: 'ho', mp: 30, shield: 0.25, desc: 'Khiên linh lực bằng 25% sinh lực tối đa.' },
+  hoi_nguyen: { n: 'Hồi Nguyên Quyết', tier: 1, kind: 'heal', wep: null, cls: 'ho', mp: 35, heal: 0.25, desc: 'Hồi 25% sinh lực tối đa.' },
+  kim_cang: { n: 'Kim Cang Bất Hoại', tier: 3, kind: 'shield', wep: null, cls: 'ho', mp: 55, shield: 0.4, thorns: 3, desc: 'Khiên 40% sinh lực, phản 30% sát thương trong 3 lượt.' },
+  // Tuyệt học của từng con đường tu hành (path: chỉ có được khi chọn con đường đó)
+  nhat_kiem: { n: 'Nhất Kiếm Đoạn Giang', tier: 3, path: 'kiem', kind: 'atk', wep: 'kiem', mp: 60, mult: 2.5, crit: 0.2, desc: 'Tuyệt học Kiếm tu. Một kiếm chém đứt dòng sông, bạo kích +20%.' },
+  ba_the: { n: 'Bá Thể Quyền', tier: 3, path: 'the', kind: 'atk', wep: null, cls: 'the', mp: 40, mult: 1.5, hits: 2, armorBreak: 2, desc: 'Tuyệt học Thể tu. Hai quyền liền, phá giáp địch 2 lượt.' },
+  cuu_thien: { n: 'Cửu Thiên Lôi Ấn', tier: 3, path: 'phap', kind: 'atk', wep: null, cls: 'phap', mp: 50, mult: 2.4, stun: 0.35, desc: 'Tuyệt học Pháp tu. Ấn sấm chín tầng trời, 35% làm choáng.' },
+  dai_bi: { n: 'Đại Bi Kim Thân', tier: 3, path: 'phat', kind: 'shield', wep: null, cls: 'ho', mp: 50, shield: 0.3, heal: 0.12, desc: 'Tuyệt học Phật tu. Khiên 30% sinh lực và hồi 12% sinh lực.' },
+  huyet_hai: { n: 'Huyết Hải Ma Công', tier: 3, path: 'ma', kind: 'atk', wep: null, cls: 'ma', mp: 50, mult: 1.8, drain: 0.6, burn: 3, burnName: 'huyết độc', desc: 'Tuyệt học Ma tu. Hút 60% sát thương thành sinh lực, gây huyết độc 3 lượt.' },
+  van_thu: { n: 'Vạn Thú Triều Bái', tier: 3, path: 'ngu_thu', kind: 'atk', wep: null, cls: 'thu', mp: 55, mult: 0.55, hits: 4, desc: 'Tuyệt học Ngự thú tu. Linh thú cùng bầy thú hoang lao vào cắn xé 4 lần.' },
 };
+// trường phái của chiêu: theo binh khí, hoặc cls với chiêu tay không / hộ thể
+export const skillCls = (sk) => sk.cls || sk.wep || 'the';
 export const SKILL_IDS = Object.keys(SKILLS);
 
 // Chiêu của yêu thú
@@ -62,15 +71,16 @@ const findSkill = (id) => SKILLS[id] || BEAST_SKILLS[id];
 export function fighter(o) {
   const gear = o.gear || {};
   const wt = o.wep ? WEAPON_TYPES[o.wep] : null;
-  const maxHp = 60 * o.pw + (gear.hp || 0);
+  const pm = o.pm || {};
+  const maxHp = (60 * o.pw + (gear.hp || 0)) * (1 + (pm.hpPct || 0));
   return {
     name: o.name, beast: !!o.beast, look: o.look || null,
     maxHp, hp: Math.max(1, maxHp * (o.hpPct ?? 1)),
-    atk: (10 * o.pw * (1 + (wt && wt.atk ? wt.atk : 0)) + (gear.atk || 0)) * (1 + (gear.atkPct || 0)),
-    def: 4 * o.pw + (gear.def || 0),
-    crit: 0.05 + (gear.crit || 0) + (wt && wt.crit ? wt.crit : 0),
+    atk: (10 * o.pw * (1 + (wt && wt.atk ? wt.atk : 0)) + (gear.atk || 0)) * (1 + (gear.atkPct || 0) + (pm.atkPct || 0) + (!o.wep ? pm.unarmedAtk || 0 : 0)),
+    def: (4 * o.pw + (gear.def || 0)) * (1 + (pm.defPct || 0)),
+    crit: 0.05 + (gear.crit || 0) + (wt && wt.crit ? wt.crit : 0) + (o.wep === 'kiem' ? pm.kiemCrit || 0 : 0),
     dodge: 0.05 + (gear.dodge || 0) + (wt && wt.dodge ? wt.dodge : 0),
-    ls: gear.ls || 0, rf: gear.rf || 0,
+    ls: (gear.ls || 0) + (pm.ls || 0), rf: gear.rf || 0,
     pierce: (gear.pierce || 0) + (wt && wt.pierce ? wt.pierce : 0),
     spd: 10 + (gear.sp || 0) + (o.spd || 0),
     mp: 100, wep: o.wep || null,
@@ -81,7 +91,9 @@ export function fighter(o) {
     atkPct: gear.atkPct || 0, takenPct: gear.takenPct || 0, dmgRed: gear.dmgRed || 0,
     combo: gear.combo || 0, execute: gear.execute || 0, first: !!gear.first, firstCrit: !!gear.first,
     stunHit: gear.stunHit || 0, critDmg: gear.critDmg || 1.7, mpDrain: gear.mpDrain || 0,
-    immune: !!gear.immune, lastStand: !!gear.lastStand, usedLS: false, regenTurn: gear.regenTurn || 0, mpRegen: gear.mpRegen || 0,
+    immune: !!gear.immune, lastStand: !!gear.lastStand, usedLS: false, regenTurn: gear.regenTurn || 0, mpRegen: (gear.mpRegen || 0) + ((o.pm && o.pm.mpRegen) || 0),
+    // con đường tu hành: hệ số theo trường phái chiêu
+    clsMul: (o.pm && o.pm.cls) || {},
   };
 }
 
@@ -131,7 +143,7 @@ function hit(att, def, sk, r, ev) {
   const crit = att.firstCrit || r.chance(att.crit + (sk.crit || 0));
   att.firstCrit = false;
   if (crit) dmg *= att.critDmg;
-  dmg *= (1 + def.takenPct) * (1 - def.dmgRed);
+  dmg *= (att.clsMul[skillCls(sk)] || 1) * (1 + def.takenPct) * (1 - def.dmgRed);
   dmg = Math.max(1, Math.round(dmg));
   let absorbed = 0;
   if (def.st.shield > 0) {
@@ -208,12 +220,13 @@ export function battle(A, B, r) {
         }
         if (sk.evade) { f.st.evade = sk.evade; ev.self = 'thân pháp'; }
       } else if (sk.kind === 'heal') {
-        const h = Math.round(f.maxHp * sk.heal);
+        const h = Math.round(f.maxHp * sk.heal * (f.clsMul.ho || 1));
         f.hp = Math.min(f.maxHp, f.hp + h);
         ev.heal = h;
       } else if (sk.kind === 'shield') {
-        f.st.shield = Math.round(f.maxHp * sk.shield);
+        f.st.shield = Math.round(f.maxHp * sk.shield * (f.clsMul.ho || 1));
         f.st.shieldT = 4;
+        if (sk.heal) { const h = Math.round(f.maxHp * sk.heal * (f.clsMul.ho || 1)); f.hp = Math.min(f.maxHp, f.hp + h); ev.heal = h; }
         if (sk.thorns) f.st.thorns = sk.thorns;
         ev.shield = f.st.shield;
       } else if (sk.kind === 'buff') {

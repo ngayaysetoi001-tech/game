@@ -1,5 +1,5 @@
 // Giao diện trình duyệt. Mọi luật chơi nằm trong core.js.
-import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITLE_MAP, HL_PRICE, HL_REROLL, clamp } from './core.js';
+import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITLE_MAP, HL_PRICE, HL_REROLL, PATHS, clamp } from './core.js';
 import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, TACTICS, WEAPON_TYPES, turnText } from './combat.js';
@@ -135,6 +135,10 @@ function statInfo(k, P) {
       up: ['Hữu tình tăng: kết giao, cứu người, chữa dịch, giải cứu dân làng, tha thứ, kết nghĩa, có đạo lữ', 'Vô tình tăng: bỏ mặc người gặp nạn, cướp của, đánh lén, học lén ma trận, chém tâm ma bằng sát niệm', 'Đạt 70 hoặc -70 mở danh hiệu riêng'],
     };
   }
+  if (k === 'path' && P.path && PATHS[P.path]) {
+    const pa = PATHS[P.path];
+    return { n: pa.n, val: '', about: 'Con đường tu hành chọn khi lên Trúc Cơ, theo suốt kiếp này.', now: [pa.desc, `Tuyệt học: ${SKILLS[pa.skill].n}. ${SKILLS[pa.skill].desc}`], up: ['Kiếp sau lên Trúc Cơ sẽ được chọn lại'], upTitle: 'Ghi chú' };
+  }
   if (k === 'money') return { n: 'Linh thạch', val: fmt(P.money), about: 'Tiền tệ của giới tu tiên.', now: ['Mua đan dược, pháp khí, bí kíp ở Tụ Bảo Lâu; đấu giá; chuộc người; cược', 'Có 5.000 mở danh hiệu Phú Giáp Nhất Phương'], up: ['Mưu sinh (tăng theo cảnh giới và cơ duyên)', 'Hộ tống thương đội, đầu tư thương hội, linh mạch, kho báu, bán đồ thừa'] };
   if (k === 'fame') return { n: 'Danh vọng', val: fmt(P.fame), about: 'Tiếng tăm trên giang hồ.', now: ['Giúp tự minh oan khi bị vu cáo', 'Đạt 50 và 200 mở danh hiệu'], up: ['Thắng trận, đột phá, cứu người, thắng lôi đài, hạ yêu vương, trừ huyết trận'] };
   if (k === 'tuvi') return { n: 'Tu vi', val: playing ? `${fmt(P.tuvi)}/${fmt(g.need())}` : '-', about: 'Công lực tích lũy ở cảnh giới hiện tại. Đầy thì có thể đột phá.', now: playing ? [`Mỗi năm tu luyện được khoảng ${fmt(g.gain())} tu vi`, `Tỉ lệ đột phá hiện tại ~${Math.round(g.breakChance() * 100)}%`] : [], up: ['Tu luyện (đủ), bế quan (x1,6), các việc khác (25-35%)', 'Linh căn, ngộ tính, tông môn (+20%), thể chất, Vô tình, thần thông'] };
@@ -149,13 +153,13 @@ function openStat(k, P = g.P || g.s.draft) {
   openSheet(`<h2>${esc(x.n)} <span class="statVal">${esc(String(x.val))}</span></h2>
     <p class="intro">${esc(x.about)}</p>
     ${x.now.length ? `<h3>Tác dụng hiện tại</h3><ul class="statList">${li(x.now)}</ul>` : ''}
-    <h3>Cách tăng</h3><ul class="statList up">${li(x.up)}</ul>`);
+    <h3>${esc(x.upTitle || 'Cách tăng')}</h3><ul class="statList up">${li(x.up)}</ul>`);
 }
 
 const TIER_N = ['Thường', 'Khá', 'Hiếm', 'Truyền thuyết', 'Thần thoại'];
 /** Khối thể chất + thiên phú cho màn đầu thai */
 function traitBlock() {
-  const ts = g.traits().filter((t) => !t.cond && !t.tt);
+  const ts = g.traits().filter((t) => !t.cond && !t.tt && !t.path);
   const P0 = g.P || g.s.draft;
   const the2 = P0 && P0.the2 ? THE_MAP[P0.the2] : null;
   const [the, ...rest] = ts;
@@ -264,7 +268,7 @@ function renderPlay() {
     <h1>${esc(P.name)}</h1>
     ${hon ? `<div class="daohieu">${esc(hon)}</div>` : ''}
     <div class="sub">${P.age} tuổi · Kiếp ${P.lifeNo} · ${esc(P.root.n)}</div>
-    <div class="sub"><span class="realm">${REALMS[P.realm].n}</span>${P.dao ? '' : ' · chưa nhập đạo'}${sc ? ` · ${esc(sc.name)}` : P.dao ? ' · tán tu' : ''}</div>
+    <div class="sub"><span class="realm">${REALMS[P.realm].n}</span>${P.path && PATHS[P.path] ? ` · <button class="pathTag" data-stat="path">${esc(PATHS[P.path].n)}</button>` : ''}${P.dao ? '' : ' · chưa nhập đạo'}${sc ? ` · ${esc(sc.name)}` : P.dao ? ' · tán tu' : ''}</div>
     <button class="eqStrip" id="eqStrip" aria-label="Mở hành trang">${Object.keys(SLOTS).map((sl) => (P.eq && P.eq[sl] ? itemIco(P.eq[sl]) : icoImg({ kind: SLOT_KIND[sl], faded: true }, 'empty'))).join('')}</button>`;
   $('eqStrip').onclick = openBag;
   if ($('ttlBtn')) $('ttlBtn').onclick = openTitles;
@@ -280,7 +284,7 @@ function renderPlay() {
     `<button class="chip chipBtn" data-stat="money">Linh thạch <b>${fmt(P.money)}</b></button>` +
     `<button class="chip chipBtn" data-stat="fame">Danh vọng <b>${fmt(P.fame)}</b></button>` +
     (P.flags.pet ? `<span class="chip">Linh thú: ${esc(P.flags.pet)}</span>` : '') +
-    `<button class="chip chipBtn" id="traitChip">${esc(g.traits().filter((t) => !t.cond && !t.tt).map((t) => t.n).join(' · '))} ›</button>`;
+    `<button class="chip chipBtn" id="traitChip">${esc(g.traits().filter((t) => !t.cond && !t.tt && !t.path).map((t) => t.n).join(' · '))} ›</button>`;
   $('traitChip').onclick = openTraits;
 
   const canBreak = g.canBreak();
@@ -775,7 +779,7 @@ $('menuBtn').onclick = () => {
 
 // Chạm chỉ số để xem giải thích. Dùng pointerdown vì chỉ số được vẽ lại liên tục khi thời gian trôi.
 let statTap = null;
-for (const id of ['stats', 'bars', 'scr-birth']) {
+for (const id of ['stats', 'bars', 'scr-birth', 'who']) {
   $(id).addEventListener('pointerdown', (e) => {
     const b = e.target.closest('[data-stat]');
     statTap = b ? { k: b.dataset.stat, x: e.clientX, y: e.clientY } : null;
