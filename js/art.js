@@ -16,7 +16,7 @@ export const heroArt = (path, g = 'nam') => {
 /** Tranh ngồi thiền (bế quan) */
 export const meditateArt = (g = 'nam') => (g === 'nu' && ART['heroes/meditate_nu']) || ART['heroes/meditate'];
 /** Hào quang vẽ thêm cho tranh không có sẵn hào quang */
-export const heroFilter = (path, g = 'nam') => (path === 'the' && g === 'nu' && ART['heroes/the_nu'] ? 'drop-shadow(0 0 6px #d8e85a) drop-shadow(0 0 14px #b8d040)' : '');
+export const heroFilter = () => '';
 /** Biểu tượng kỹ năng (tên tệp trùng mã kỹ năng) */
 export const skillArt = (id) => ART[`skills/${id}`] || '';
 // quái: theo từ khóa trong tên, không khớp thì chọn theo seed; mỗi biến thể đổi màu nhẹ
