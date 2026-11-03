@@ -799,13 +799,15 @@ body.inPlay #scr-play > .dock { margin-top: auto; }
 img.art { image-rendering: auto; }
 .ico.art { border-radius: 50%; object-fit: cover; }
 .fighter img.art { width: 120px; height: 130px; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(0,0,0,0.45)); transition: transform 0.2s; }
-.fighter.foe img.art { transform: scaleX(-1); }
-.fighter.foe img.art[style*="hue-rotate"] { transform: scaleX(-1); }
+/* hướng quay: --sx = -1 thì lật tranh để nhìn về phía đối thủ (art.js ghi hướng gốc của từng tranh) */
+.fighter img.art { transform: scaleX(var(--sx, 1)); }
 .isBoss #fB img.art { width: 160px; height: 170px; filter: drop-shadow(0 0 10px rgba(255, 70, 40, 0.6)); }
-.lunge img.art { animation: lungeR 0.4s ease-out; }
-.foe.lunge img.art { animation: lungeL 0.4s ease-out; }
-.hit img.art { animation: shake 0.35s; }
-.foe.hit img.art { animation: shakeF 0.35s; }
+.lunge img.art { animation: artLungeR 0.4s ease-out; }
+.foe.lunge img.art { animation: artLungeL 0.4s ease-out; }
+.hit img.art { animation: artShake 0.35s; }
+@keyframes artLungeR { 40% { transform: translateX(28px) scaleX(var(--sx, 1)); } }
+@keyframes artLungeL { 40% { transform: translateX(-28px) scaleX(var(--sx, 1)); } }
+@keyframes artShake { 20% { transform: translateX(-5px) scaleX(var(--sx, 1)); filter: brightness(2.2); } 50% { transform: translateX(4px) scaleX(var(--sx, 1)); } 80% { transform: translateX(-2px) scaleX(var(--sx, 1)); } }
 .fighter.down img.art { filter: grayscale(1); opacity: 0.6; }
 .fighter.shielded img.art { filter: drop-shadow(0 0 8px var(--tuvi)); }
 .gauge.ch { height: 12px; }

@@ -4,7 +4,7 @@ import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITL
 import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEFAULT_MAP, realmLabel, subN, PLANES, mapsOf, WORLD_DIFF, mythMatOf, planeOf, THEME_BG, BOSS_KITS, TOWER_THEMES, TOWER_SHOP, TAM_PHAP, TAM_PHAP_IDS, NGHE, PHU, PLAN_TEMPLATES, PLAN_STEP_ACTS, PLAN_COND, PATH_BAR_N } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, BEAST_SKILLS, TACTICS, WEAPON_TYPES, turnText, PATH_RES, PATH_SKILLS, SKILL_MAX, skillLvMul } from './combat.js';
-import { heroArt, heroFilter, meditateArt, skillArt, monsterArt } from './art.js';
+import { heroArt, heroFilter, meditateArt, skillArt, monsterArt, needFlip } from './art.js';
 import { SLOTS, QUALITY, itemLine, TT_MAP, isSealed, isSuppressed, gearStats, itemName, PLUS_MAX, AFFIX } from './items.js';
 import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE, matIconOpts, skillIconOpts } from './icons.js';
 
@@ -94,8 +94,8 @@ function artOf(look) {
   if (look.path) return { src: heroArt(look.path, look.g), filter: heroFilter(look.path, look.g) };
   return null;
 }
-function setArt(img, a, canvas) {
-  if (a && a.src) { img.src = a.src; img.style.filter = a.filter || ''; img.hidden = false; if (canvas) canvas.hidden = true; }
+function setArt(img, a, canvas, want = null) {
+  if (a && a.src) { img.src = a.src; img.style.filter = a.filter || ''; img.style.setProperty('--sx', want && needFlip(a.src, want) ? -1 : 1); img.hidden = false; if (canvas) canvas.hidden = true; }
   else { img.hidden = true; if (canvas) canvas.hidden = false; }
 }
 
@@ -715,7 +715,8 @@ function startBattle(res, fast = false, onClose = null) {
     box.querySelectorAll('.float').forEach((x) => x.remove());
     box.classList.remove('lunge', 'hit', 'down');
     drawSprite(box.querySelector('canvas'), lookOf(f.look));
-    setArt(box.querySelector('img.art'), artOf(f.look), box.querySelector('canvas'));
+    // bên trái nhìn sang phải, bên phải nhìn sang trái
+    setArt(box.querySelector('img.art'), artOf(f.look), box.querySelector('canvas'), side === 'A' ? 'R' : 'L');
     box.querySelector('.fname').textContent = f.name;
     const chg = box.querySelector('.gauge.ch');
     chg.hidden = !f.chMax;

@@ -31,13 +31,22 @@ const MON_RULES = [
   [/Thụ|Mộc|Đằng|Linh Hầu/, ['monsters/moc_yeu', 'monsters/moc_linh']],
   [/Hỏa|Viêm|Dung Nham|Lửa/, ['monsters/hon_don_linh']], [/Băng|Tuyết|Hàn/, ['monsters/bang_yeu', 'monsters/bang_hoang']],
   [/Ma Thần|Ma Tôn|Ma Long|Thần Ma|Ma Tướng/, ['monsters/thai_co_ma_than']], [/Ma|Huyết/, ['monsters/huyet_ma']],
-  [/Hư Không|Long|Kình/, ['monsters/hu_khong_thu']], [/Kỳ Lân/, ['pets/ky_lan']], [/Quy|Rùa/, ['pets/quy_giap']],
-  [/Báo|Hổ/, ['pets/kim_ho', 'pets/tieu_ho']], [/Hồ/, ['pets/van_ho', 'pets/bang_ly']],
-  [/Bằng|Ưng|Điểu|Phượng|Hạc|Tinh/, ['monsters/bang_hoang', 'pets/hoa_phuong']],
+  [/Hư Không|Long|Kình/, ['monsters/hu_khong_thu']], [/Kỳ Lân|Quy|Rùa/, ['monsters/hon_don_thu']],
+  [/Báo|Hổ|Hồ/, ['monsters/soi_yeu', 'monsters/huyet_lang']],
+  [/Bằng|Ưng|Điểu|Phượng|Hạc|Tinh/, ['monsters/bang_hoang']],
   [/Ngưu|Giác|Lộc|Hỗn Độn|Thú/, ['monsters/hon_don_thu']],
   [/Tướng|Binh|Vệ|Sĩ|Khách|Pháp Sư|Cự Nhân|Thạch|Đế|Tổ|Chủ|Linh Tộc/, ['monsters/hon_don_de_quan']],
 ];
 const MON_ALL = () => ART_LIST.filter((k) => k.startsWith('monsters/'));
+// hướng gốc của tranh: L = nhìn sang trái, R = nhìn sang phải, không ghi = nhìn thẳng
+const FACE = {
+  'heroes/kiem': 'L', 'heroes/kiem_nu': 'L', 'heroes/phu': 'R', 'heroes/phu_nu': 'R',
+  'monsters/bang_hoang': 'L', 'monsters/bang_xa': 'L', 'monsters/hac_thi': 'L', 'monsters/hau_yeu': 'L', 'monsters/hon_don_thu': 'L',
+  'monsters/hu_khong_thu': 'L', 'monsters/hu_xa': 'L', 'monsters/huyet_lang': 'L', 'monsters/lang_vuong': 'L', 'monsters/soi_yeu': 'L', 'monsters/xa_yeu': 'L',
+};
+const keyOf = (src) => Object.keys(ART).find((k) => ART[k] === src);
+/** Có cần lật tranh để nhìn về phía want ('L' hoặc 'R') không */
+export const needFlip = (src, want) => { const f = FACE[keyOf(src)]; return !!f && f !== want; };
 const HUES = [0, 0, 0, 25, -25, 60, -60, 150];
 /** { src, filter } cho một con quái */
 export function monsterArt(name = '', seed = 1) {
