@@ -6,36 +6,55 @@
 // kind: 'atk' tấn công, 'shield' hộ thể, 'heal' hồi phục, 'buff' tăng thế
 export const SKILLS = {
   quyen: { n: 'Quyền cước', tier: 0, kind: 'atk', wep: null, cls: 'the', mp: 0, mult: 1, desc: 'Đòn đánh thường, không tốn linh lực.' },
-  // Kiếm
-  luu_van: { n: 'Lưu Vân Kiếm Pháp', tier: 1, kind: 'atk', wep: 'kiem', mp: 20, mult: 0.75, hits: 2, desc: 'Kiếm pháp. Hai nhát liền như mây trôi.' },
-  kinh_hong: { n: 'Kinh Hồng Nhất Kiếm', tier: 2, kind: 'atk', wep: 'kiem', mp: 40, mult: 2.2, crit: 0.25, desc: 'Kiếm pháp. Một kiếm duy nhất, tỉ lệ bạo kích +25%.' },
-  van_kiem: { n: 'Vạn Kiếm Triều Tông', tier: 3, kind: 'atk', wep: 'kiem', mp: 70, mult: 0.62, hits: 5, desc: 'Kiếm pháp. Năm đạo kiếm khí cùng lúc.' },
-  // Đao
-  liet_hoa: { n: 'Liệt Hỏa Đao Pháp', tier: 1, kind: 'atk', wep: 'dao', mp: 25, mult: 1.3, burn: 3, desc: 'Đao pháp. Thiêu đốt địch 3 lượt.' },
-  pha_son: { n: 'Phá Sơn Trảm', tier: 2, kind: 'atk', wep: 'dao', mp: 35, mult: 1.6, armorBreak: 3, desc: 'Đao pháp. Phá giáp: thủ của địch -40% trong 3 lượt.' },
-  // Thương
-  truy_hon: { n: 'Truy Hồn Thương', tier: 1, kind: 'atk', wep: 'thuong', mp: 30, mult: 1.5, pierce: true, desc: 'Thương pháp. Xuyên giáp, bỏ qua phần lớn phòng thủ.' },
-  bach_dieu: { n: 'Bách Điểu Thương', tier: 2, kind: 'atk', wep: 'thuong', mp: 35, mult: 0.62, hits: 3, desc: 'Thương pháp. Ba mũi thương như chim vỡ tổ.' },
-  // Quạt
-  thanh_phong: { n: 'Thanh Phong Phiến', tier: 1, kind: 'atk', wep: 'quat', mp: 20, mult: 1.2, evade: 2, desc: 'Phiến pháp. Gió cuốn thân, né tránh +35% trong 2 lượt.' },
-  me_hon: { n: 'Mê Hồn Phiến Ảnh', tier: 2, kind: 'atk', wep: 'quat', mp: 35, mult: 1.0, stun: 0.5, desc: 'Phiến pháp. 50% làm địch choáng 1 lượt.' },
-  // Chưởng, ấn (tay không cũng dùng được)
-  han_bang: { n: 'Hàn Băng Chưởng', tier: 1, kind: 'atk', wep: null, cls: 'phap', mp: 25, mult: 1.3, stun: 0.35, stunName: 'đóng băng', desc: 'Chưởng pháp. 35% đóng băng địch 1 lượt.' },
-  tran_nhac: { n: 'Trấn Nhạc Ấn', tier: 2, kind: 'atk', wep: null, cls: 'phap', mp: 40, mult: 1.8, stun: 0.3, desc: 'Ấn pháp. Đè xuống như núi, 30% choáng.' },
-  huyet_anh: { n: 'Huyết Ảnh Trảo', tier: 2, kind: 'atk', wep: null, cls: 'ma', mp: 30, mult: 1.4, drain: 0.5, desc: 'Ma công. Hút 50% sát thương thành sinh lực.' },
-  ngu_loi: { n: 'Ngũ Lôi Chính Pháp', tier: 3, kind: 'atk', wep: null, cls: 'phap', mp: 60, mult: 2.8, desc: 'Lôi pháp. Năm đạo sấm giáng xuống một chỗ.' },
-  // Hộ thể, hồi phục
-  huyen_vu: { n: 'Huyền Vũ Hộ Thể', tier: 1, kind: 'shield', wep: null, cls: 'ho', mp: 30, shield: 0.25, desc: 'Khiên linh lực bằng 25% sinh lực tối đa.' },
-  hoi_nguyen: { n: 'Hồi Nguyên Quyết', tier: 1, kind: 'heal', wep: null, cls: 'ho', mp: 35, heal: 0.25, desc: 'Hồi 25% sinh lực tối đa.' },
-  kim_cang: { n: 'Kim Cang Bất Hoại', tier: 3, kind: 'shield', wep: null, cls: 'ho', mp: 55, shield: 0.4, thorns: 3, desc: 'Khiên 40% sinh lực, phản 30% sát thương trong 3 lượt.' },
-  // Tuyệt học của từng con đường tu hành (path: chỉ có được khi chọn con đường đó)
-  nhat_kiem: { n: 'Nhất Kiếm Đoạn Giang', tier: 3, path: 'kiem', kind: 'atk', wep: 'kiem', mp: 60, mult: 2.5, crit: 0.2, desc: 'Tuyệt học Kiếm tu. Một kiếm chém đứt dòng sông, bạo kích +20%.' },
-  ba_the: { n: 'Bá Thể Quyền', tier: 3, path: 'the', kind: 'atk', wep: null, cls: 'the', mp: 40, mult: 1.5, hits: 2, armorBreak: 2, desc: 'Tuyệt học Thể tu. Hai quyền liền, phá giáp địch 2 lượt.' },
-  cuu_thien: { n: 'Cửu Thiên Lôi Ấn', tier: 3, path: 'phap', kind: 'atk', wep: null, cls: 'phap', mp: 50, mult: 2.4, stun: 0.35, desc: 'Tuyệt học Pháp tu. Ấn sấm chín tầng trời, 35% làm choáng.' },
-  dai_bi: { n: 'Đại Bi Kim Thân', tier: 3, path: 'phat', kind: 'shield', wep: null, cls: 'ho', mp: 50, shield: 0.3, heal: 0.12, desc: 'Tuyệt học Phật tu. Khiên 30% sinh lực và hồi 12% sinh lực.' },
-  huyet_hai: { n: 'Huyết Hải Ma Công', tier: 3, path: 'ma', kind: 'atk', wep: null, cls: 'ma', mp: 50, mult: 1.8, drain: 0.6, burn: 3, burnName: 'huyết độc', desc: 'Tuyệt học Ma tu. Hút 60% sát thương thành sinh lực, gây huyết độc 3 lượt.' },
-  van_thu: { n: 'Vạn Thú Triều Bái', tier: 3, path: 'ngu_thu', kind: 'atk', wep: null, cls: 'thu', mp: 55, mult: 0.55, hits: 4, desc: 'Tuyệt học Ngự thú tu. Linh thú cùng bầy thú hoang lao vào cắn xé 4 lần.' },
+  // ===== Kiếm tu: Kiếm ý 0-10, đủ thì tung Tru Tiên Nhất Kiếm =====
+  kiem_1: { n: 'Ngự Kiếm Quyết', path: 'kiem', slot: 'co', kind: 'atk', wep: 'kiem', cls: 'kiem', mp: 0, mult: 1.2, fly: 0.4, realm: 0, desc: 'Đòn cơ bản. Chém 120% công, bản mệnh phi kiếm chém theo 40% (cấp 10: 70%). +2 Kiếm ý.' },
+  kiem_2: { n: 'Phi Kiếm Liên Hoàn', path: 'kiem', slot: 'c1', kind: 'atk', wep: 'kiem', cls: 'kiem', mp: 30, mult: 0.4, hits: 5, critCharge: true, realm: 2, desc: '5 phi kiếm, mỗi thanh 40% công, bạo kích riêng. Mỗi lần bạo kích +1 Kiếm ý.' },
+  kiem_3: { cd: 2, n: 'Phong Lôi Kiếm Quyết', path: 'kiem', slot: 'c2', kind: 'atk', wep: 'kiem', cls: 'kiem', mp: 35, mult: 1.5, stun: 0.4, armorBreak: 3, realm: 3, desc: '150% công, 40% choáng, Phá giáp 3 lượt (thủ địch -40%).' },
+  kiem_4: { cd: 2, n: 'Vạn Kiếm Quy Tông', path: 'kiem', slot: 'chot', kind: 'atk', wep: 'kiem', cls: 'kiem', mp: 55, mult: 0.95, hits: 3, defStack: 0.1, combo: 'armor', realm: 5, desc: '3 đợt kiếm rơi, mỗi đợt 95% công, đợt sau thủ địch yếu thêm 10%. Liên kích: địch đang Phá giáp thì +40%.' },
+  kiem_5: { n: 'Tru Tiên Nhất Kiếm', path: 'kiem', slot: 'ult', kind: 'atk', wep: 'kiem', cls: 'kiem', mp: 0, mult: 6, ignoreDef: 0.5, combo: 'armor', comboMul: 1.5, clearCombo: true, realm: 3, desc: 'Tuyệt kỹ, tự tung khi Kiếm ý đủ 10: 600% công, bỏ qua 50% thủ. Địch đang Phá giáp: +50% và chém tan giáp.' },
+  kiem_6: { n: 'Kiếm Tâm Thông Minh', path: 'kiem', slot: 'p1', kind: 'passive', realm: 2, pas: { crit: 0.12, critPerCharge: 0.05 }, desc: 'Bị động. Bạo kích +12%. Mỗi điểm Kiếm ý: sát thương bạo kích +5%.' },
+  kiem_7: { n: 'Đạp Vân Bộ', path: 'kiem', slot: 'p2', kind: 'passive', realm: 4, pas: { dodge: 0.08, first: true, dodgeCharge: true }, desc: 'Bị động. Né +8%, luôn ra tay trước lượt đầu, né được đòn thì +1 Kiếm ý.' },
+  kiem_8: { n: 'Kiếm Ý Hộ Thể', path: 'kiem', slot: 'p3', kind: 'passive', realm: 6, pas: { startShield: 0.2, rf: 0.15 }, desc: 'Bị động. Vào trận có khiên kiếm khí 20% sinh lực, phản 15% sát thương nhận vào.' },
+  // ===== Thể tu: Nộ huyết 0-100 (bị đánh +6, đánh trúng +4), chiêu mạnh tốn máu =====
+  the_1: { n: 'Bách Lôi Quyền', path: 'the', slot: 'co', kind: 'atk', wep: 'quyen', cls: 'the', mp: 0, mult: 0.6, hits: 2, dizzy: 2, realm: 0, desc: 'Đòn cơ bản. 2 quyền, mỗi quyền 60% công, gây Choáng váng 2 lượt (địch ra đòn yếu 10%).' },
+  the_2: { cd: 1, n: 'Đoạn Kim Chưởng', path: 'the', slot: 'c1', kind: 'atk', wep: 'quyen', cls: 'the', mp: 0, hpCost: 0.05, mult: 2, pierce: true, shieldBreak: 2, dizzy: 2, realm: 2, desc: 'Tốn 5% máu. 200% công, xuyên giáp, đánh vào khiên gấp đôi. Gây Choáng váng.' },
+  the_3: { cd: 1, n: 'Hắc Hổ Đào Tâm', path: 'the', slot: 'c2', kind: 'atk', wep: 'quyen', cls: 'the', mp: 0, hpCost: 0.04, mult: 1.8, exec: [0.35, 2], healHit: 0.1, realm: 3, desc: 'Tốn 4% máu. 180% công, gấp đôi khi địch dưới 35% máu. Trúng thì hồi 10% máu.' },
+  the_4: { cd: 3, n: 'Chưởng Tâm Lôi', path: 'the', slot: 'chot', kind: 'atk', wep: 'quyen', cls: 'the', mp: 0, hpCost: 0.1, mult: 2.4, stun: 1, combo: 'dizzy', realm: 5, desc: 'Tốn 10% máu. 240% công, choáng chắc chắn 1 lượt. Liên kích: địch đang Choáng váng thì +40%.' },
+  the_5: { n: 'Thái Sơn Áp Đỉnh', path: 'the', slot: 'ult', kind: 'atk', wep: 'quyen', cls: 'the', mp: 0, mult: 4.5, defAdd: 0.6, stun: 1, combo: 'dizzy', realm: 3, desc: 'Tuyệt kỹ, tự tung khi Nộ huyết đủ 100: 450% công cộng thêm 60% thủ của mình, choáng 1 lượt.' },
+  the_6: { n: 'Kim Cương Nộ Mục', path: 'the', slot: 'p1', kind: 'passive', realm: 2, pas: { ragePerCharge: 0.03, lowHpAtk: 0.3 }, desc: 'Bị động. Mỗi 10 Nộ huyết: công +3%. Dưới 30% máu: công +30%.' },
+  the_7: { n: 'Huyền Quy Tế Thể', path: 'the', slot: 'p2', kind: 'passive', realm: 4, pas: { regenTurn: 0.02, defPct: 0.12 }, desc: 'Bị động. Hồi 2% máu mỗi lượt, thủ +12%. Từ cấp 5 miễn choáng, đóng băng.' },
+  the_8: { n: 'Bất Hoại Kim Thân', path: 'the', slot: 'p3', kind: 'passive', realm: 6, pas: { dmgRed: 0.12, rf: 0.2 }, desc: 'Bị động. Giảm 12% mọi sát thương, phản 20%. Cấp 10: Bất Diệt, gục một lần thì đứng dậy với 40% máu.' },
+  // ===== Tinh thần lực: Thần thức 0-100 (mỗi lượt +6, mỗi chiêu +20), sát thương chuẩn, khống chế =====
+  phu_1: { n: 'Thần Niệm Phù', path: 'tinh', slot: 'co', kind: 'atk', wep: 'phap', cls: 'tinh', mp: 0, mult: 0.7, trueDmg: true, burn: 2, burnName: 'thiêu hồn', realm: 0, desc: 'Đòn cơ bản. 70% công sát thương chuẩn (bỏ qua thủ), thiêu hồn 2 lượt.' },
+  phu_2: { cd: 1, n: 'Lôi Niệm Chấn Hồn', path: 'tinh', slot: 'c1', kind: 'atk', wep: 'phap', cls: 'tinh', mp: 30, mult: 1.6, trueDmg: true, stun: 0.35, mpDrainS: 15, realm: 2, desc: '160% sát thương chuẩn, 35% choáng, rút 15 linh lực của địch.' },
+  phu_3: { cd: 3, n: 'Băng Phách Phong Hồn', path: 'tinh', slot: 'c2', kind: 'atk', wep: 'phap', cls: 'tinh', mp: 30, mult: 1.3, confuse: 2, realm: 3, desc: '130% công, địch Loạn thần 2 lượt: mỗi lượt 50% mất lượt.' },
+  phu_4: { cd: 3, n: 'Ngũ Hành Mê Hồn Trận', path: 'tinh', slot: 'chot', kind: 'atk', wep: 'phap', cls: 'tinh', mp: 50, mult: 1.2, trueDmg: true, chaos: 0.45, combo: 'confuse', realm: 5, desc: '120% sát thương chuẩn, 45% làm địch hỗn loạn tự đánh mình. Liên kích: địch đang Loạn thần thì +40%.' },
+  phu_5: { n: 'Thiên Lôi Thần Phạt', path: 'tinh', slot: 'ult', kind: 'atk', wep: 'phap', cls: 'tinh', mp: 0, mult: 4, trueDmg: true, combo: 'confuse', realm: 3, desc: 'Tuyệt kỹ, tự tung khi Thần thức đầy 100: 400% sát thương chuẩn. Từ Hợp Thể có phân thần đánh thêm một lần 50%.' },
+  phu_6: { n: 'Linh Phù Hộ Thần', path: 'tinh', slot: 'p1', kind: 'passive', realm: 2, pas: { startShield: 0.12, foresee: 4 }, desc: 'Bị động. Vào trận có khiên 12% sinh lực. Tiên tri: cứ 4 đòn của địch thì né chắc chắn 1 đòn.' },
+  phu_7: { n: 'Tĩnh Tâm Minh Thần', path: 'tinh', slot: 'p2', kind: 'passive', realm: 4, pas: { immuneMind: true, mpRegen: 4, chargeTurn: 3 }, desc: 'Bị động. Miễn hỗn loạn, loạn thần. Thần thức, linh lực hồi nhanh hơn. Ngoài trận: đột phá +6%, kỳ ngộ hiện tỉ lệ thật.' },
+  phu_8: { n: 'Liên Tâm Hồi Thần', path: 'tinh', slot: 'p3', kind: 'passive', realm: 6, pas: { regenTurn: 0.025 }, desc: 'Bị động. Hồi 2,5% máu mỗi lượt. Nghề phụ mạnh hơn 2 cấp.' },
 };
+// thanh tài nguyên của từng đường
+export const PATH_RES = { kiem: { n: 'Kiếm ý', max: 10, col: '#8fd3ff' }, the: { n: 'Nộ huyết', max: 100, col: '#e0503a' }, tinh: { n: 'Thần thức', max: 100, col: '#b48cff' } };
+export const PATH_SKILLS = { kiem: [], the: [], tinh: [] };
+for (const [id, sk] of Object.entries(SKILLS)) if (sk.path) PATH_SKILLS[sk.path].push(id);
+export const SKILL_MAX = (id) => (SKILLS[id].slot === 'ult' ? 5 : 10);
+/** Hệ số theo cấp kỹ năng: chiêu +8%/cấp, tuyệt kỹ +15%/cấp, bị động +10%/cấp */
+export const skillLvMul = (id, lv = 1) => 1 + (SKILLS[id].slot === 'ult' ? 0.15 : SKILLS[id].kind === 'passive' ? 0.1 : 0.08) * (Math.max(1, lv) - 1);
+/** Chỉ số cộng thêm từ các kỹ năng bị động đã mở (theo cấp) */
+export function pathPassives(path, lvs) {
+  const g = {};
+  for (const id of PATH_SKILLS[path] || []) {
+    const sk = SKILLS[id];
+    const lv = lvs[id];
+    if (sk.kind !== 'passive' || !lv) continue;
+    const m = skillLvMul(id, lv);
+    for (const k in sk.pas) g[k] = typeof sk.pas[k] === 'number' && !['foresee', 'chargeTurn'].includes(k) ? (g[k] || 0) + sk.pas[k] * m : sk.pas[k];
+    if (id === 'the_7' && lv >= 5) g.immuneStun = true;
+    if (id === 'the_8' && lv >= 10) g.lastStand = true;
+  }
+  return g;
+}
 // trường phái của chiêu: theo binh khí, hoặc cls với chiêu tay không / hộ thể
 export const skillCls = (sk) => sk.cls || sk.wep || 'the';
 export const SKILL_IDS = Object.keys(SKILLS);
@@ -67,9 +86,8 @@ export const BEAST_SKILLS = {
 
 export const WEAPON_TYPES = {
   kiem: { n: 'Kiếm', crit: 0.05 },
-  dao: { n: 'Đao', atk: 0.1 },
-  thuong: { n: 'Thương', pierce: 0.15 },
-  quat: { n: 'Phiến', dodge: 0.05 },
+  quyen: { n: 'Quyền sáo', atk: 0.1 },
+  phap: { n: 'Pháp khí', mpRegen: 3 },
 };
 
 export const TACTICS = {
@@ -82,40 +100,59 @@ const findSkill = (id) => SKILLS[id] || BEAST_SKILLS[id];
 
 /**
  * Tạo một bên giao chiến.
- * o: { name, pw, hpPct, skills, wep, tactic, gear: { atk, def, hp, crit, dodge, ls, rf, pierce, sp }, beast, look }
+ * o: { name, pw, hpPct, skills, wep, tactic, gear, beast, look, path, lv (cấp kỹ năng), mindless }
  */
 export function fighter(o) {
-  const gear = o.gear || {};
+  const gear = { ...(o.gear || {}) };
   const wt = o.wep ? WEAPON_TYPES[o.wep] : null;
   const pm = o.pm || {};
+  const lv = o.lv || {};
+  // bị động của đường tu cộng vào như trang bị
+  const pas = o.path ? pathPassives(o.path, lv) : {};
+  for (const k in pas) gear[k] = typeof pas[k] === 'number' && typeof gear[k] !== 'boolean' ? (gear[k] || 0) + pas[k] : pas[k];
   const maxHp = (60 * o.pw + (gear.hp || 0)) * (1 + (pm.hpPct || 0));
+  const res = o.path ? PATH_RES[o.path] : null;
+  const ult = o.path ? (o.skills || []).find((id) => SKILLS[id] && SKILLS[id].slot === 'ult') : null;
   return {
     name: o.name, beast: !!o.beast, look: o.look || null,
     maxHp, hp: Math.max(1, maxHp * (o.hpPct ?? 1)),
     atk: (10 * o.pw * (1 + (wt && wt.atk ? wt.atk : 0)) + (gear.atk || 0)) * (1 + (gear.atkPct || 0) + (pm.atkPct || 0) + (!o.wep ? pm.unarmedAtk || 0 : 0)),
-    def: (4 * o.pw + (gear.def || 0)) * (1 + (pm.defPct || 0)),
+    def: (4 * o.pw + (gear.def || 0)) * (1 + (pm.defPct || 0) + (gear.defPct || 0)),
     crit: 0.05 + (gear.crit || 0) + (wt && wt.crit ? wt.crit : 0) + (o.wep === 'kiem' ? pm.kiemCrit || 0 : 0),
     dodge: 0.05 + (gear.dodge || 0) + (wt && wt.dodge ? wt.dodge : 0),
     ls: (gear.ls || 0) + (pm.ls || 0), rf: gear.rf || 0,
     pierce: (gear.pierce || 0) + (wt && wt.pierce ? wt.pierce : 0),
     spd: 10 + (gear.sp || 0) + (o.spd || 0),
     mp: 100, wep: o.wep || null,
-    skills: (o.skills && o.skills.length ? o.skills : ['quyen']).slice(0, 4),
+    skills: (o.skills && o.skills.length ? o.skills : ['quyen']).filter((id) => findSkill(id) && findSkill(id).kind !== 'passive' && id !== ult).slice(0, 6),
     tactic: o.tactic || 'can_bang',
-    st: { burn: 0, burnDmg: 0, burnName: '', stun: false, stunName: '', shield: Math.round(maxHp * (gear.startShield || 0)), shieldT: gear.startShield ? 99 : 0, armor: 0, evade: 0, rage: 0, thorns: 0 },
+    st: { burn: 0, burnDmg: 0, burnName: '', stun: false, stunName: '', shield: Math.round(maxHp * (gear.startShield || 0)), shieldT: gear.startShield ? 99 : 0, armor: 0, evade: 0, rage: 0, thorns: 0, dizzy: 0, confuse: 0, chaos: false },
     // thần thông từ đồ Thần thoại
     atkPct: gear.atkPct || 0, takenPct: gear.takenPct || 0, dmgRed: gear.dmgRed || 0,
-    combo: gear.combo || 0, execute: gear.execute || 0, first: !!gear.first, firstCrit: !!gear.first,
+    combo: gear.combo || 0, execute: gear.execute || 0, first: !!gear.first, firstCrit: !!(o.gear && o.gear.first),
     stunHit: gear.stunHit || 0, critDmg: gear.critDmg || 1.7, mpDrain: gear.mpDrain || 0,
-    immune: !!gear.immune, lastStand: !!gear.lastStand, usedLS: false, regenTurn: gear.regenTurn || 0, mpRegen: (gear.mpRegen || 0) + ((o.pm && o.pm.mpRegen) || 0),
-    // con đường tu hành: hệ số theo trường phái chiêu
+    immune: !!gear.immune, lastStand: !!gear.lastStand, usedLS: false, regenTurn: gear.regenTurn || 0, mpRegen: (gear.mpRegen || 0) + ((o.pm && o.pm.mpRegen) || 0) + (wt && wt.mpRegen ? wt.mpRegen : 0),
     clsMul: (o.pm && o.pm.cls) || {},
+    // đường tu: thanh tài nguyên, tuyệt kỹ, cấp kỹ năng
+    path: o.path || null, lv, ult, ch: 0, chMax: res ? res.max : 0, twin: !!o.twin,
+    critPerCharge: gear.critPerCharge || 0, dodgeCharge: !!gear.dodgeCharge, ragePerCharge: gear.ragePerCharge || 0, lowHpAtk: gear.lowHpAtk || 0,
+    immuneStun: !!gear.immuneStun, immuneMind: !!gear.immuneMind, foresee: gear.foresee || 0, seen: 0, chargeTurn: gear.chargeTurn || 0,
+    mindless: !!o.mindless, cdl: {},
+    fly: o.path === 'kiem' && lv.kiem_1 ? 0.4 + 0.0333 * (lv.kiem_1 - 1) : 0,
   };
 }
 
 /** Hệ số khi dùng chiêu không hợp binh khí */
 function wepFit(f, sk) {
-  return !sk.wep || sk.wep === f.wep ? 1 : 0.6;
+  if (!sk.wep || sk.wep === f.wep) return 1;
+  if (sk.wep === 'quyen' && !f.wep) return 1;
+  if (sk.wep === 'phap') return 0.85;
+  return 0.6;
+}
+const skMul = (f, id) => (f.lv && f.lv[id] ? skillLvMul(id, f.lv[id]) : 1);
+function gainCh(f, n) {
+  if (!f.chMax) return;
+  f.ch = Math.min(f.chMax, f.ch + n);
 }
 
 function choose(f, foe, r) {
@@ -123,14 +160,21 @@ function choose(f, foe, r) {
   const hpP = f.hp / f.maxHp;
   for (const id of f.skills) {
     const sk = findSkill(id);
-    if (!sk || sk.mp > f.mp) continue;
+    if (!sk || sk.mp > f.mp || sk.kind === 'passive') continue;
+    if (sk.hpCost && hpP < sk.hpCost * 2.5) continue;
+    if (sk.cd && f.cdl[id] > 0) continue;
     let s = 0;
     if (sk.kind === 'atk') {
-      s = (sk.mult || 1) * (sk.hits || 1) * wepFit(f, sk);
+      s = (sk.mult || 1) * (sk.hits || 1) * wepFit(f, sk) * skMul(f, id);
       if (sk.stun) s += 0.5;
       if (sk.burn) s += 0.4;
+      if (sk.confuse && !foe.st.confuse && !foe.mindless && !foe.immuneMind) s += 0.8;
+      if (sk.chaos && !foe.mindless && !foe.immuneMind) s += 0.6;
+      if (sk.combo && foe.st[sk.combo]) s *= 1.4;
       if (sk.armorBreak && !foe.st.armor) s += 0.5;
+      if (sk.exec && foe.hp / foe.maxHp < sk.exec[0]) s *= sk.exec[1];
       if (sk.drain && hpP < 0.6) s += 0.6;
+      if (sk.trueDmg && foe.mindless) s *= 0.5;
       if (f.tactic === 'cuong_cong') s *= 1.3;
       if (f.tactic === 'phong_thu' && sk.mp > 0) s *= 0.8;
     } else if (sk.kind === 'heal') {
@@ -149,34 +193,70 @@ function choose(f, foe, r) {
   return best || (f.beast ? 'can_xe' : 'quyen');
 }
 
-function hit(att, def, sk, r, ev) {
+function hit(att, def, sk, r, ev, extra = {}) {
   const fit = wepFit(att, sk);
   let atk = att.atk * (att.st.rage ? 1.5 : 1);
-  let d = def.def * (def.st.armor ? 0.6 : 1) * (1 - Math.min(0.8, (sk.pierce ? 0.7 : 0) + att.pierce));
-  if (r.chance(def.dodge + (def.st.evade ? 0.35 : 0))) { ev.hits.push({ miss: true }); return 0; }
-  let dmg = atk * (sk.mult || 1) * fit * r.range(0.9, 1.1) * (1 - d / (d + atk * 1.5));
+  if (att.ragePerCharge) atk *= 1 + Math.floor(att.ch / 10) * att.ragePerCharge;
+  if (att.lowHpAtk && att.hp / att.maxHp < 0.3) atk *= 1 + att.lowHpAtk;
+  if (att.st.dizzy) atk *= 0.9;
+  const pierceX = (sk.pierce ? 0.7 : 0) + att.pierce + (extra.pierce || 0) + (sk.ignoreDef || 0);
+  const trueD = !!sk.trueDmg;
+  let d = trueD ? 0 : def.def * (def.st.armor ? 0.6 : 1) * (1 - Math.min(0.85, pierceX));
+  // tiên tri: cứ vài đòn thì né chắc chắn một đòn
+  if (def.foresee && ++def.seen % def.foresee === 0) { ev.hits.push({ miss: true, foresee: true }); return 0; }
+  if (r.chance(def.dodge + (def.st.evade ? 0.35 : 0))) {
+    ev.hits.push({ miss: true });
+    if (def.dodgeCharge) gainCh(def, 1);
+    return 0;
+  }
+  let base = atk + (sk.defAdd ? att.def * sk.defAdd : 0);
+  let dmg = base * (sk.mult || 1) * fit * (extra.mul || 1) * r.range(0.9, 1.1) * (1 - d / (d + base * 1.5));
+  if (trueD && def.mindless) dmg *= 0.5;
   if (att.execute && def.hp / def.maxHp < 0.3) { dmg *= att.execute; ev.execute = true; }
+  if (sk.exec && def.hp / def.maxHp < sk.exec[0]) { dmg *= sk.exec[1]; ev.execute = true; }
   const crit = att.firstCrit || r.chance(att.crit + (sk.crit || 0));
   att.firstCrit = false;
-  if (crit) dmg *= att.critDmg;
+  if (crit) dmg *= att.critDmg + att.critPerCharge * att.ch;
   dmg *= (att.clsMul[skillCls(sk)] || 1) * (1 + def.takenPct) * (1 - def.dmgRed);
   dmg = Math.max(1, Math.round(dmg));
   let absorbed = 0;
-  if (def.st.shield > 0) {
-    absorbed = Math.min(def.st.shield, dmg);
-    def.st.shield -= absorbed;
+  if (def.st.shield > 0 && !trueD) {
+    const sb = sk.shieldBreak || 1;
+    absorbed = Math.min(def.st.shield, dmg * sb) / sb;
+    def.st.shield -= absorbed * sb;
+    absorbed = Math.round(absorbed);
   }
   const real = dmg - absorbed;
   def.hp = Math.max(0, def.hp - real);
-  if (def.hp <= 0 && def.lastStand && !def.usedLS) { def.usedLS = true; def.hp = Math.round(def.maxHp * 0.3); ev.lastStand = true; }
+  if (def.hp <= 0 && def.lastStand && !def.usedLS) { def.usedLS = true; def.hp = Math.round(def.maxHp * (def.path === 'the' ? 0.4 : 0.3)); ev.lastStand = true; }
   if (att.mpDrain && real > 0) { const m = Math.min(def.mp, att.mpDrain); def.mp -= m; att.mp = Math.min(100, att.mp + m); }
   ev.hits.push({ dmg: real, crit, absorbed });
+  // nộ huyết của Thể tu: bị đánh +8, đánh trúng +4
+  if (real > 0 && def.path === 'the') gainCh(def, 6);
+  if (real > 0 && att.path === 'the') gainCh(att, 4);
+  if (crit && sk.critCharge) gainCh(att, 1);
   const thorn = def.st.thorns ? 0.3 : 0;
   const reflect = Math.round(real * (def.rf + thorn));
   if (reflect > 0) { att.hp = Math.max(0, att.hp - reflect); ev.reflect = (ev.reflect || 0) + reflect; }
   const drain = Math.round(real * ((sk.drain || 0) + att.ls));
   if (drain > 0) { att.hp = Math.min(att.maxHp, att.hp + drain); ev.drain = (ev.drain || 0) + drain; }
   return real;
+}
+
+/** Ra một chiêu (cả tuyệt kỹ, phân thần) */
+function cast(f, foe, id, r, ev, k = 1) {
+  const sk = findSkill(id);
+  const m = skMul(f, id) * k;
+  const comboOn = sk.combo && foe.st[sk.combo] > 0;
+  const mul = m * (comboOn ? sk.comboMul || 1.4 : 1);
+  if (comboOn) ev.comboHit = true;
+  const before = ev.hits.length;
+  for (let i = 0; i < (sk.hits || 1) && foe.hp > 0; i++) hit(f, foe, sk, r, ev, { mul, pierce: sk.defStack ? sk.defStack * i : 0 });
+  if (comboOn && sk.clearCombo) foe.st[sk.combo] = 0;
+  const landed = ev.hits.slice(before).some((h) => !h.miss && h.dmg > 0);
+  if (landed && sk.healHit) { const h = Math.round(f.maxHp * sk.healHit); f.hp = Math.min(f.maxHp, f.hp + h); ev.heal = (ev.heal || 0) + h; }
+  if (landed && sk.mpDrainS) { const d = Math.min(foe.mp, sk.mpDrainS); foe.mp -= d; ev.applied = ev.applied || 'mất linh lực'; }
+  return landed;
 }
 
 /**
@@ -188,11 +268,11 @@ export function battle(A, B, r) {
   // phong độ hôm nay: cho phép kẻ yếu hơn đôi chút vẫn có cửa lật kèo
   A.atk *= r.range(0.78, 1.22);
   B.atk *= r.range(0.78, 1.22);
-  const snap = () => ({ aHp: Math.round(A.hp), bHp: Math.round(B.hp), aMp: Math.round(A.mp), bMp: Math.round(B.mp), aSh: Math.round(A.st.shield), bSh: Math.round(B.st.shield) });
+  const snap = () => ({ aHp: Math.round(A.hp), bHp: Math.round(B.hp), aMp: Math.round(A.mp), bMp: Math.round(B.mp), aSh: Math.round(A.st.shield), bSh: Math.round(B.st.shield), aCh: A.ch, bCh: B.ch });
   let round = 0;
   while (A.hp > 0 && B.hp > 0 && round < 14) {
     round++;
-    const aFirst = A.first && !B.first ? true : B.first && !A.first ? false : A.spd + r.range(-3, 3) >= B.spd + r.range(-3, 3);
+    const aFirst = A.first && !B.first ? true : B.first && !A.first ? false : A.spd * (A.st.confuse ? 0.7 : 1) + r.range(-3, 3) >= B.spd * (B.st.confuse ? 0.7 : 1) + r.range(-3, 3);
     const order = aFirst ? [[A, B, 'a'], [B, A, 'b']] : [[B, A, 'b'], [A, B, 'a']];
     for (const [f, foe, side] of order) {
       if (f.hp <= 0 || foe.hp <= 0) break;
@@ -205,34 +285,65 @@ export function battle(A, B, r) {
         ev.dot = { dmg: bd, name: f.st.burnName };
         if (f.hp <= 0) { Object.assign(ev, snap()); ev.skill = null; turns.push(ev); break; }
       }
-      for (const k of ['armor', 'evade', 'rage', 'thorns']) if (f.st[k] > 0) f.st[k]--;
+      for (const k of ['armor', 'evade', 'rage', 'thorns', 'dizzy', 'stunImm']) if (f.st[k] > 0) f.st[k]--;
+      for (const k in f.cdl) if (f.cdl[k] > 0) f.cdl[k]--;
       if (f.st.shieldT > 0 && --f.st.shieldT === 0) f.st.shield = 0;
       f.mp = Math.min(100, f.mp + 12 + f.mpRegen);
+      if (f.path === 'tinh') gainCh(f, 6 + f.chargeTurn);
       if (f.regenTurn && f.hp < f.maxHp) { const h = Math.round(f.maxHp * f.regenTurn); f.hp = Math.min(f.maxHp, f.hp + h); ev.regen = h; }
       if (f.st.stun) {
         f.st.stun = false;
+        // vừa bị choáng thì kháng choáng 2 lượt, không bị khóa mãi
+        f.st.stunImm = 2;
         ev.stunned = f.st.stunName || 'choáng';
         Object.assign(ev, snap());
         turns.push(ev);
         continue;
       }
-      const id = choose(f, foe, r);
+      if (f.st.confuse > 0) {
+        f.st.confuse--;
+        if (r.chance(0.5)) { ev.stunned = 'loạn thần'; Object.assign(ev, snap()); turns.push(ev); continue; }
+      }
+      if (f.st.chaos) {
+        // hỗn loạn: tự đánh mình
+        f.st.chaos = false;
+        const d = Math.max(1, Math.round(f.atk * 0.6 * r.range(0.9, 1.1)));
+        f.hp = Math.max(1, f.hp - d);
+        ev.self = `hỗn loạn tự đánh mình ${d}`;
+        Object.assign(ev, snap());
+        turns.push(ev);
+        continue;
+      }
+      // tuyệt kỹ: thanh tài nguyên đầy thì tự tung
+      const ultNow = f.ult && f.ch >= f.chMax;
+      const id = ultNow ? f.ult : choose(f, foe, r);
       const sk = findSkill(id);
-      f.mp -= sk.mp;
+      if (!ultNow) f.mp -= sk.mp;
+      if (sk.cd && !ultNow) f.cdl[id] = sk.cd + 1;
+      if (sk.hpCost) { const c = Math.round(f.maxHp * sk.hpCost); f.hp = Math.max(1, f.hp - c); ev.hpCost = c; }
       ev.skill = id;
       ev.skillN = sk.n;
-      ev.misfit = sk.wep && sk.wep !== f.wep;
+      if (ultNow) { ev.ult = true; f.ch = 0; }
+      ev.misfit = sk.wep && wepFit(f, sk) < 1;
       if (sk.kind === 'atk') {
-        for (let i = 0; i < (sk.hits || 1) && foe.hp > 0; i++) hit(f, foe, sk, r, ev);
+        const landed = cast(f, foe, id, r, ev);
+        if (ultNow && f.twin && foe.hp > 0) { cast(f, foe, id, r, ev, 0.5); ev.twin = true; }
         // Liên Hoàn: thêm một đòn
         if (f.combo && foe.hp > 0 && r.chance(f.combo)) { hit(f, foe, { mult: 0.8 }, r, ev); ev.combo = true; }
-        const landed = ev.hits.some((h) => !h.miss && h.dmg > 0);
-        if (landed && foe.hp > 0 && !foe.immune && f.stunHit && r.chance(f.stunHit)) { foe.st.stun = true; foe.st.stunName = 'choáng vì sấm'; ev.applied = 'choáng vì sấm'; }
+        // bản mệnh phi kiếm chém theo
+        if (f.fly && foe.hp > 0 && f.path === 'kiem' && !sk.beast) { hit(f, foe, { mult: f.fly, cls: 'kiem', wep: 'kiem' }, r, ev); ev.fly = true; }
+        if (landed && f.path === 'kiem' && sk.path === 'kiem' && !ultNow) gainCh(f, 2 + (ev.hits.some((h) => h.crit) ? 1 : 0));
+        if (f.path === 'tinh' && sk.path === 'tinh' && !ultNow) gainCh(f, 20);
+        const mind = !foe.mindless && !foe.immuneMind;
+        if (landed && foe.hp > 0 && !foe.immune && !foe.st.stunImm && f.stunHit && r.chance(f.stunHit)) { foe.st.stun = true; foe.st.stunName = 'choáng vì sấm'; ev.applied = 'choáng vì sấm'; }
         if (landed && foe.hp > 0 && foe.immune && (sk.burn || sk.stun)) ev.applied = 'miễn nhiễm';
         if (landed && foe.hp > 0 && !foe.immune) {
           if (sk.burn) { foe.st.burn = sk.burn; foe.st.burnDmg = f.atk * 0.15; foe.st.burnName = sk.burnName || 'thiêu đốt'; ev.applied = foe.st.burnName; }
           if (sk.armorBreak) { foe.st.armor = sk.armorBreak; ev.applied = 'phá giáp'; }
-          if (sk.stun && r.chance(sk.stun)) { foe.st.stun = true; foe.st.stunName = sk.stunName || 'choáng'; ev.applied = foe.st.stunName; }
+          if (sk.dizzy) { foe.st.dizzy = sk.dizzy; ev.applied = ev.applied || 'choáng váng'; }
+          if (sk.stun && !foe.immuneStun && !foe.st.stunImm && r.chance(sk.stun)) { foe.st.stun = true; foe.st.stunName = sk.stunName || 'choáng'; ev.applied = foe.st.stunName; }
+          if (sk.confuse) { if (mind) { foe.st.confuse = sk.confuse; ev.applied = 'loạn thần'; } else ev.applied = foe.mindless ? 'vô hồn, miễn' : 'miễn'; }
+          if (sk.chaos && mind && r.chance(sk.chaos)) { foe.st.chaos = true; ev.applied = 'hỗn loạn'; }
         }
         if (sk.evade) { f.st.evade = sk.evade; ev.self = 'thân pháp'; }
       } else if (sk.kind === 'heal') {
@@ -254,7 +365,7 @@ export function battle(A, B, r) {
     }
   }
   const win = B.hp <= 0 ? true : A.hp <= 0 ? false : A.hp / A.maxHp >= B.hp / B.maxHp;
-  const sum = (f) => ({ name: f.name, maxHp: Math.round(f.maxHp), beast: f.beast, look: f.look, wep: f.wep });
+  const sum = (f) => ({ name: f.name, maxHp: Math.round(f.maxHp), beast: f.beast, look: f.look, wep: f.wep, path: f.path, chMax: f.chMax });
   return { a: { ...sum(A), hp0: turns.length ? null : Math.round(A.hp) }, b: sum(B), aStart: null, turns, win, aHpPct: A.hp / A.maxHp, rounds: round };
 }
 
@@ -266,7 +377,7 @@ export function turnText(t, aName, bName) {
   if (t.dot) parts.push(`${who} bị ${t.dot.name}, mất ${t.dot.dmg}.`);
   if (t.stunned) { parts.push(`${who} bị ${t.stunned}, không ra tay được.`); return parts.join(' '); }
   if (!t.skill) return parts.join(' ');
-  let s = `${who} dùng ${t.skillN}${t.misfit ? ' (không hợp binh khí)' : ''}`;
+  let s = `${who} ${t.ult ? 'tung tuyệt kỹ' : 'dùng'} ${t.skillN}${t.misfit ? ' (không hợp binh khí)' : ''}${t.hpCost ? ` (đốt ${t.hpCost} máu)` : ''}`;
   if (t.hits.length) {
     const hs = t.hits.map((h) => (h.miss ? 'trượt' : `${h.dmg}${h.crit ? ' bạo kích' : ''}`));
     s += `: ${hs.join(', ')}`;
@@ -279,6 +390,10 @@ export function turnText(t, aName, bName) {
   if (t.drain) s += ` Hút ${t.drain} sinh lực.`;
   if (t.reflect) s += ` Bị phản ${t.reflect}.`;
   if (t.combo) s += ' Liên hoàn thêm một đòn!';
+  if (t.comboHit) s += ' Liên kích!';
+  if (t.fly) s += ' Phi kiếm chém theo.';
+  if (t.twin) s += ' Phân thần đánh thêm một lần!';
+  if (t.hits.some((h) => h.foresee)) s += ' Bị tiên tri né trước.';
   if (t.execute) s += ' Đoạn Mệnh!';
   if (t.lastStand) s += ` ${foe} gục xuống rồi đứng dậy, Bất Tử Thân!`;
   if (t.regen) s = `Hồi ${t.regen} sinh lực. ` + s;

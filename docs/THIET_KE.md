@@ -547,6 +547,25 @@ Mô phỏng 30 kiếp mỗi cách chơi (Phàm giới, có rèn đồ):
 - Bán, phân giải đồ Cực phẩm trở lên phải bấm hai lần. Có **↶ Hoàn tác** lần bán/phân giải gần nhất trong 10 giây.
 - Túi mở rộng 16 → 24 → 32 ô bằng linh thạch hoặc Tháp tệ. Xếp theo lực chiến, lọc "Thăng được", "Đã khóa".
 
+## 12. Ba đạo lộ, kỹ năng thay võ kỹ, tranh vẽ tay (bản 4)
+
+- Bỏ 4 đường cũ (Pháp, Phật, Ma, Ngự thú), bỏ võ kỹ, bí kíp, tâm pháp. Còn 3 đạo lộ (`PATHS` trong data.js), chọn **ngay khi nhập đạo (6 tuổi)** ở màn riêng có tranh, biểu đồ, điểm mạnh yếu, nút **Thử đạo** (một trận mẫu giả như ở Kim Đan). Gợi ý theo thiên tư: căn cốt → Thể, ngộ tính, tâm tính → Tinh thần, cơ duyên, trận thắng → Kiếm; chọn đúng +3 ngộ đạo điểm. Chọn xong được tặng binh khí đúng loại. Mỗi kiếp được **chuyển tu** một lần (mất 50% tu vi, hoàn nửa điểm đã dùng).
+- Mỗi đạo 8 kỹ năng (`SKILLS` trong combat.js, mã `kiem_1..8`, `the_1..8`, `phu_1..8` trùng tên tranh): đòn cơ bản, 3 chiêu (chiêu chốt có liên kích), 1 tuyệt kỹ, 3 bị động. Mở theo cảnh giới (Phàm Nhân, Trúc Cơ, Kim Đan, Nguyên Anh, Hóa Thần, Luyện Hư; Linh giới mở hết). Tự dùng hết trong trận. Cấp 1-10 (tuyệt kỹ 1-5), nâng bằng **ngộ đạo điểm ◈**: đột phá +5, nấc nhỏ +1, trùm tháp +2 (Tháp chủ +10), tông môn +3, Bia ngộ đạo, kỳ ngộ (trước cho võ kỹ), ngọc giản ở Tụ Bảo Lâu và Tháp thương điếm. Có tùy chọn tự nâng.
+- Thanh tài nguyên trong trận, đầy thì tự tung tuyệt kỹ: **Kiếm ý** 0-10 (nhát kiếm trúng +2, bạo kích +1), **Nộ huyết** 0-100 (bị đánh +6, đánh trúng +4), **Thần thức** 0-100 (mỗi lượt +6, mỗi chiêu +20).
+- Cơ chế mới trong trận: phi kiếm chém theo, sát thương chuẩn (bỏ qua thủ, khiên), chiêu đốt máu, kết liễu, Choáng váng / Phá giáp / Loạn thần làm trạng thái liên kích (+40%), hỗn loạn (địch tự đánh mình), tiên tri (né chắc chắn mỗi 4 đòn), phân thần (tuyệt kỹ thêm 50% từ Hợp Thể), hồi chiêu, kháng choáng 2 lượt sau khi bị choáng. Quái vô hồn (cương thi, xương, khôi lỗi, trùng, nham thạch…) miễn khống chế tinh thần, chịu sát thương tinh thần -50%.
+- Binh khí còn 3 loại: Kiếm, Quyền Sáo, Pháp Ấn. Đồ cũ: đao, thương thành kiếm; quạt thành pháp ấn. Đồ rơi 70% đúng loại của đạo đang đi. Tương khắc khi đấu bot: Kiếm > Tinh thần > Thể > Kiếm (±15%). Bot cũng theo 3 đạo.
+- Lôi kiếp: Kiếm tu 25% chém tan bớt 20% một đợt; Thể tu có Kim Thân thì lôi kiếp -15%; Tinh thần lực đợt 9 +15%.
+- Bản lưu cũ: võ kỹ đã học quy thành ngộ đạo điểm (3 mỗi chiêu) cộng tầng tâm pháp; đường cũ thì được chọn lại.
+- Tranh vẽ tay của tác giả (repo `tutien`), nén WebP trong `assets/` (khoảng 600KB): nhân vật theo đạo (`heroes/`, Kiếm tu có 6 khung vung kiếm), 24 quái (`monsters/`), 10 linh thú (`pets/`, cũng dùng làm quái hổ, báo, rùa, kỳ lân, hồ ly…), 24 biểu tượng kỹ năng (`skills/`). `js/art.js` chọn tranh quái theo tên, đổi màu nhẹ theo seed. `tools/gen-art.mjs` cập nhật danh sách cho art.js và sw.js; bản gộp một tệp nhúng tranh dạng data URI.
+
+Mô phỏng 42 kiếp mỗi đạo (lịch trình Leo tháp, có rèn đồ):
+
+| Đạo | Cảnh giới TB | Tầng tháp TB | Tuổi TB | Tới Kim Đan (tuổi trung vị) | Tới Độ Kiếp |
+|---|---|---|---|---|---|
+| Kiếm Tu | 5,55 | 569 | 760 | 93 | 8/42 |
+| Thể Tu | 6,17 | 573 | 1203 | 103 | 8/42 |
+| Tinh Thần Lực | 5,98 | 554 | 1079 | 87 | 10/42 |
+
 ## 7. Kỹ thuật
 
 - HTML, CSS, JavaScript thuần (ES module), không cần build, không cần máy chủ.

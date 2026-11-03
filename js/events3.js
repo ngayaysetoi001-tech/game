@@ -119,7 +119,7 @@ export const EVENTS3 = [
     auto: (g) => (odds3(g, mapM3(g, 1.1, 'Hỏa Linh')) >= 0.6 ? 'Đánh' : 'Tránh'),
     text: () => 'Một đốm lửa có hình người nhỏ xíu nhảy nhót trên dòng nham thạch, tò mò nhìn ngươi. Hỏa linh trời sinh, thứ mà pháp tu cả đời mong một lần gặp.',
     choices: (g) => {
-      const pTame = xp3(0.3 + (st3(g, 'ngo') - 50) / 120 + (g.P.path === 'phap' ? 0.25 : 0));
+      const pTame = xp3(0.3 + (st3(g, 'ngo') - 50) / 120 + (g.P.path === 'tinh' ? 0.25 : 0));
       const m = mapM3(g, 1.1, 'Hỏa Linh');
       return [
         { t: 'Thu phục bằng thần thức', p: pTame, go: (g) => { if (g.r.chance(pTame)) { g.P.fight += 0.024; const t = yrs3(g, 6); return `Hỏa linh chui vào đan điền, cuộn tròn ngủ. Linh lực của ngươi nóng rực. Sức chiến đấu +2,5%, tu vi +${t}.`; } g.hurt(20, 'bị hỏa linh thiêu thành tro'); return 'Hỏa linh nổi giận, phun lửa vào mặt ngươi rồi lặn xuống nham thạch.'; } },
@@ -321,7 +321,7 @@ export const EVENTS3 = [
     },
   },
   {
-    id: 'tran_phap', w: 4, cd: 25, title: 'Trận pháp thượng cổ', r3: { path: 'phap', age: 20 },
+    id: 'tran_phap', w: 4, cd: 25, title: 'Trận pháp thượng cổ', r3: { path: 'tinh', age: 20 },
     auto: () => 'Chép',
     text: () => 'Trong một sơn cốc vắng, đá xếp thành một trận pháp khổng lồ, đến chim cũng không bay qua được. Giữa trận có một chiếc rương đá.',
     choices: (g) => {

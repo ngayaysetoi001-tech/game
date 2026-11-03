@@ -133,7 +133,7 @@ export const MONSTERS = [
 export const MOVES = ['Lưu Vân Chưởng', 'Phá Sơn Quyền', 'Hàn Băng Chỉ', 'Kinh Hồng Kiếm', 'Liệt Hỏa Đao', 'Bôn Lôi Cước', 'Tàn Nguyệt Trảm', 'Vạn Diệp Phi Hoa', 'Trấn Nhạc Ấn', 'Thanh Phong Bộ', 'Huyền Vũ Thuẫn', 'Truy Hồn Thích'];
 
 export const ACTIONS = {
-  tu_luyen: { n: 'Tu luyện', icon: '☯', minAge: 6, needDao: true, desc: 'Tu vi tăng nhanh nhất, củng cố căn cơ, xả sát khí chậm, tâm pháp lên tầng.' },
+  tu_luyen: { n: 'Tu luyện', icon: '☯', minAge: 6, needDao: true, desc: 'Tu vi tăng nhanh nhất, củng cố căn cơ, xả sát khí chậm.' },
   lich_luyen: { n: 'Lịch luyện', icon: '⛰', minAge: 10, desc: 'Đi khắp nơi, gặp nhiều kỳ ngộ và hiểm nguy. Tích sát khí, tu vi chưa vững.' },
   muu_sinh: { n: 'Mưu sinh', icon: '⚖', minAge: 8, desc: 'Kiếm linh thạch, luyện nghề phụ (luyện đan, luyện khí, phù sư, thương nhân). Bấm để chọn nghề.' },
   ket_giao: { n: 'Kết giao', icon: '☕', minAge: 8, desc: 'Gặp gỡ tu sĩ khác, kết bạn, tìm đạo lữ, xả sát khí. Bạn thân trợ chiến trận lớn, hộ pháp lôi kiếp.' },
@@ -295,14 +295,38 @@ export const TITLE_TIER_N = ['', 'Thường', 'Hiếm', 'Truyền kỳ', 'Thần
 
 // ---------- Con đường tu hành (chọn khi lên Trúc Cơ) ----------
 // req(P): điều kiện, pm: hệ số trong trận, fx: hiệu ứng ngoài trận (chung hệ với thể chất)
+// Ba con đường tu hành: chọn khi nhập đạo (6 tuổi). Mỗi đường một bộ 8 kỹ năng (combat.js: PATH_SKILLS).
+// pm: hệ số chỉ số trong trận, fx: hiệu ứng ngoài trận (như thể chất)
 export const PATHS = {
-  kiem: { n: 'Kiếm tu', reqText: '', desc: 'Lấy kiếm làm đạo. Kiếm pháp +30%, cầm kiếm bạo kích +10%. Thủ -10%.', skill: 'nhat_kiem', pm: { cls: { kiem: 1.3 }, kiemCrit: 0.1, defPct: -0.1 }, fx: {} },
-  the: { n: 'Thể tu', reqText: '', desc: 'Luyện thân thành pháp bảo. Sinh lực +25%, thủ +15%, quyền cước +25%, tay không công +15%, thọ +10%, chịu đòn ngoài trận -15%. Tu luyện -10%.', skill: 'ba_the', pm: { hpPct: 0.25, defPct: 0.15, unarmedAtk: 0.15, cls: { the: 1.25 } }, fx: { gainMul: 0.9, lifeMul: 1.1, hurtMul: 0.85 } },
-  phap: { n: 'Pháp tu', reqText: '', desc: 'Mượn sức trời đất. Chưởng pháp, ấn pháp, lôi pháp +50%, linh lực hồi nhanh hơn. Sinh lực -10%.', skill: 'cuu_thien', pm: { hpPct: -0.1, mpRegen: 8, cls: { phap: 1.5 } }, fx: {} },
-  phat: { n: 'Phật tu', reqText: 'Cần Hữu tình từ 30', req: (P) => P.tinh >= 30, desc: 'Từ bi độ thế. Hộ thể và hồi phục +30%, đột phá +5%, thân thiết +20%, tâm ma ít tìm đến. Công -10%.', skill: 'dai_bi', pm: { atkPct: -0.1, cls: { ho: 1.3 } }, fx: { brk: 0.05, relMul: 1.2, evW: { tam_ma: 0.4 } } },
-  ma: { n: 'Ma tu', reqText: 'Cần Vô tình từ -30', req: (P) => P.tinh <= -30, desc: 'Nghịch thiên mà đi. Tu luyện +25%, ma công +50%, hút máu +15%, tôn xưng ma đạo. Tâm ma tìm đến gấp đôi.', skill: 'huyet_hai', pm: { ls: 0.15, cls: { ma: 1.5 } }, fx: { gainMul: 1.25, evW: { tam_ma: 2 } } },
-  ngu_thu: { n: 'Ngự thú tu', reqText: 'Cần có linh thú', req: (P) => !!P.flags.pet, desc: 'Cùng linh thú tu hành. Linh thú mạnh hơn (sức chiến đấu +15% thay vì +10%), dễ gặp linh thú và trứng lạ.', skill: 'van_thu', pm: { cls: { thu: 1.2 } }, fx: { evW: { linh_thu: 4, trung_la: 3 } } },
+  kiem: {
+    n: 'Kiếm Tu', icon: '⚔', res: 'Kiếm ý', wep: 'kiem', hero: 'kiem',
+    tag: 'Một kiếm phá vạn pháp', short: 'Sát thương dồn dập, kết liễu nhanh, mỏng manh.',
+    desc: 'Bản mệnh phi kiếm chém theo mỗi đòn. Kiếm ý tích theo nhát kiếm, đủ 10 tung Tru Tiên Nhất Kiếm. Công +5%, sinh lực -5%, thủ -5%. Cần cầm kiếm.',
+    good: ['Sát thương cao nhất, leo tháp nhanh', 'Bạo kích, né tránh, ra tay trước', 'Lôi kiếp: kiếm trảm lôi, mỗi đợt 25% yếu đi 20%'],
+    bad: ['Máu mỏng, thủ thấp', 'Sợ giáp dày, phản đòn', 'Không cầm kiếm thì chiêu chỉ còn 60%'],
+    bars: { cong: 5, thu: 2, khong: 3, tu: 3, ky: 3 },
+    pm: { hpPct: -0.05, defPct: -0.05, atkPct: 0.05 }, fx: {},
+  },
+  the: {
+    n: 'Thể Tu', icon: '🛡', res: 'Nộ huyết', wep: 'quyen', hero: 'the',
+    tag: 'Lấy thân làm pháp bảo', short: 'Trâu bò, đánh lâu, càng đau càng mạnh.',
+    desc: 'Không cần linh lực: chiêu mạnh đốt máu của chính mình. Bị đánh tích Nộ huyết (+6, đánh trúng +4), đủ 100 tung Thái Sơn Áp Đỉnh. Sinh lực +15%, thọ +20%, chịu tai họa -50%. Tu vi -12%.',
+    good: ['Sống dai nhất, hồi máu mỗi lượt', 'Miễn choáng, phản đòn, Bất Diệt', 'Lịch luyện vùng hiểm an toàn, thọ cao'],
+    bad: ['Tu vi chậm nhất', 'Không có sát thương chuẩn', 'Sợ địch né cao và đòn tinh thần'],
+    bars: { cong: 3, thu: 5, khong: 3, tu: 2, ky: 2 },
+    pm: { hpPct: 0.15, defPct: 0.05 }, fx: { gainMul: 0.88, lifeMul: 1.2, hurtMul: 0.5 },
+  },
+  tinh: {
+    n: 'Tinh Thần Lực', icon: '👁', res: 'Thần thức', wep: 'phap', hero: 'phu',
+    tag: 'Thần niệm ngự phù', short: 'Sát thương chuẩn, khống chế, nhìn thấu.',
+    desc: 'Dùng thần thức vẽ phù văn giữa không trung: đòn bỏ qua thủ, loạn thần, hỗn loạn. Thần thức đầy 100 tung Thiên Lôi Thần Phạt. Đột phá +6%, nghề phụ và kỳ ngộ tốt nhất. Sinh lực, thủ -20%.',
+    good: ['Sát thương chuẩn xuyên giáp, khiên', 'Khống chế: loạn thần, hỗn loạn, tiên tri', 'Đột phá, tu luyện, nghề phụ, kỳ ngộ tốt nhất'],
+    bad: ['Máu, thủ thấp nhất', 'Quái vô hồn (cương thi, khôi lỗi, trùng) miễn khống chế, chịu -50%', 'Lôi kiếp đợt 9 đánh vào hồn nặng hơn'],
+    bars: { cong: 3, thu: 2, khong: 5, tu: 5, ky: 5 },
+    pm: { hpPct: -0.2, defPct: -0.2 }, fx: { brk: 0.06, gainMul: 1.05 },
+  },
 };
+export const PATH_BAR_N = { cong: 'Công', thu: 'Thủ', khong: 'Khống chế', tu: 'Tốc tu', ky: 'Kỳ ngộ, nghề' };
 
 // ---------- Bản đồ lịch luyện ----------
 // Độ khó tính theo cảnh giới HIỆN TẠI của nhân vật: yêu thú cùng cảnh giới, sức mạnh nhân pow.
@@ -426,7 +450,7 @@ export const BOSS_KITS = [
 // màu nền trận đấu theo khu của tháp
 export const THEME_BG = ['#1f3a24', '#2b2636', '#1b3448', '#4a1d12', '#241733', '#353a44', '#3c1219', '#3b3315', '#150f2e', '#3d3420'];
 
-// ---------- Tâm pháp: một môn chủ tu, cấp 1-9, chỉ lên cấp khi tu luyện / bế quan ----------
+// ---------- Tâm pháp (đã bỏ ở bản 4, giữ dữ liệu cho bản lưu cũ) ----------
 // fx theo mỗi cấp
 export const TAM_PHAP = {
   thanh_tam: { n: 'Thanh Tâm Quyết', fx: { gainMul: 0.03 }, desc: 'Tốc độ tu luyện +3% mỗi cấp.' },
@@ -459,8 +483,7 @@ export const TOWER_SHOP = [
   { id: 'bk', n: 'Bạo Khí Đan', price: 25, pill: ['bao_khi', 1] },
   { id: 'pc', n: 'Phá Cảnh Đan', price: 40, pill: ['pha_canh', 1] },
   { id: 'tt', n: 'Đá cường hóa (Tinh thiết, Linh tinh)', price: 20, mats: true },
-  { id: 'vk', n: 'Bí kíp tháp (võ kỹ phẩm 2-3)', price: 80, book: true },
-  { id: 'tp', n: 'Tâm pháp tàn quyển', price: 120, tamPhap: true },
+  { id: 'vk', n: 'Ngọc giản ngộ đạo (◈ +5)', price: 70, book: true },
 ];
 
 // ---------- Lịch trình tự động ----------

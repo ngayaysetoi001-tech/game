@@ -12,8 +12,18 @@ export const QUALITY = [
 // tên riêng cho đồ Thần thoại
 const MYTH_PREFIX = ['Hồng Mông', 'Thái Sơ', 'Cửu U', 'Diệt Thế', 'Chư Thiên', 'Thái Cổ', 'Hỗn Nguyên', 'Vạn Kiếp'];
 const PREFIX = ['Thanh Phong', 'Lưu Hỏa', 'Hàn Thiết', 'Tử Điện', 'Bích Hải', 'Huyền Minh', 'Kinh Lôi', 'Tàn Dương', 'Vân Văn', 'Long Lân', 'Thu Thủy', 'Xích Viêm', 'Bạch Hồng', 'U Lan', 'Phá Quân', 'Trích Tinh'];
+let wepBias = null;
+/** Loại binh khí ưu tiên khi đồ rơi (theo con đường của người chơi) */
+export function setWepBias(w) { wepBias = w; }
+const WEP_NOUNS = ['Quyền Sáo', 'Pháp Ấn', 'Kiếm', 'Đao', 'Thương', 'Phiến'];
+/** Đổi tên binh khí sang loại khác (bỏ danh từ cũ ở cuối tên) */
+export function wepName(n, wt) {
+  let base = n;
+  for (const w of WEP_NOUNS) if (base.endsWith(' ' + w)) { base = base.slice(0, -w.length - 1); break; }
+  return `${base} ${NOUN[wt]}`;
+}
 const NOUN = {
-  kiem: 'Kiếm', dao: 'Đao', thuong: 'Thương', quat: 'Phiến',
+  kiem: 'Kiếm', quyen: 'Quyền Sáo', phap: 'Pháp Ấn',
   ao: ['Đạo Bào', 'Chiến Giáp', 'Pháp Y', 'Hộ Tâm Giáp'],
   phu_kien: ['Ngọc Bội', 'Giới Chỉ', 'Hộ Phù', 'Linh Châu'],
 };
@@ -97,7 +107,8 @@ export function makeItem(r, id, lv, q = null, slot = null) {
   const it = { id, slot, q, lv, n: '', atk: 0, def: 0, hp: 0, affix: [] };
   const pre = q >= 4 ? r.pick(MYTH_PREFIX) : r.pick(PREFIX);
   if (slot === 'vu_khi') {
-    it.wt = r.pick(['kiem', 'dao', 'thuong', 'quat']);
+    // binh khí rơi ra 70% đúng loại của con đường đang đi
+    it.wt = wepBias && r.chance(0.7) ? wepBias : r.pick(['kiem', 'quyen', 'phap']);
     it.n = `${pre} ${NOUN[it.wt]}`;
     it.atk = Math.round(3 * pow * m);
   } else if (slot === 'ao') {

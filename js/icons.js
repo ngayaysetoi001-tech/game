@@ -20,7 +20,7 @@ export function armorColor(it) {
 
 /** Loại hình của món: kiem/dao/thuong/quat, dao_bao/chien_giap/phap_y/ho_tam, ngoc_boi/gioi_chi/ho_phu/linh_chau */
 export function iconKind(it) {
-  if (it.slot === 'vu_khi') return it.wt || 'kiem';
+  if (it.slot === 'vu_khi') return { quyen: 'quyen_sao', phap: 'phap_an' }[it.wt] || it.wt || 'kiem';
   const n = it.n || '';
   if (it.slot === 'ao') return /Giáp/.test(n) ? (/Hộ Tâm/.test(n) ? 'ho_tam' : 'chien_giap') : /Pháp Y/.test(n) ? 'phap_y' : 'dao_bao';
   return /Giới Chỉ/.test(n) ? 'gioi_chi' : /Hộ Phù/.test(n) ? 'ho_phu' : /Linh Châu/.test(n) ? 'linh_chau' : 'ngoc_boi';
@@ -62,7 +62,7 @@ export function skillIconOpts(id, sk = {}) {
   const [kind, col] = SKILL_ICON[id] || ['sk_quyen', '#c9a27a'];
   return { kind, q: sk.path ? 4 : Math.min(3, sk.tier ?? 1), col };
 }
-export const skillToken = (id, sk) => iconToken(skillIconOpts(id, sk));
+export const skillToken = (id, sk) => (/^(kiem|the|phu)_\d$/.test(id) ? `[[i|art_${id}|0|-]]` : iconToken(skillIconOpts(id, sk)));
 // vũ khí làm nền cho chiêu binh khí
 const SK_WEP = { sk_kiem: 'kiem', sk_dao: 'dao', sk_thuong: 'thuong', sk_quat: 'quat' };
 function drawSkill(k, o, { px, set, rect, line, ell }) {
@@ -224,6 +224,18 @@ export function buildIcon(o) {
     const crystal = (cx, top, w, h) => { for (let y = top; y <= top + h; y++) { const hw = y < top + 2 ? (y - top) : w; for (let x = cx - hw; x <= cx + hw; x++) set(x, y, x < cx ? ilite(c, 0.35) : x === cx ? c : idark(c, 0.25)); } };
     crystal(8, 1, 2, 12); crystal(4, 6, 1, 8); crystal(12, 5, 1, 9);
     rect(2, 14, 13, 14, idark(c, 0.55)); set(7, 3, '#ffffff');
+  } else if (k === 'quyen_sao') {
+    // hộ thủ quyền sáo
+    const m = q >= 4 ? '#ff6a3a' : q >= 3 ? '#f0c64a' : q >= 2 ? '#c4b4e0' : '#9aa3ab';
+    rect(3, 5, 12, 12, m); rect(3, 5, 12, 5, ilite(m, 0.4)); rect(3, 12, 12, 12, idark(m, 0.35));
+    for (const x of [4, 6, 8, 10]) { rect(x, 3, x + 1, 5, ilite(m, 0.2)); set(x, 3, ilite(m, 0.6)); }
+    rect(5, 13, 10, 15, '#7a5230'); rect(11, 7, 13, 10, idark(m, 0.2));
+  } else if (k === 'phap_an') {
+    // pháp ấn: khối ngọc có núm
+    const jade = q >= 4 ? '#ff5a3a' : q >= 3 ? '#f3d35a' : q >= 2 ? '#b48cff' : '#6fbf8f';
+    rect(3, 8, 12, 14, jade); rect(3, 8, 12, 8, ilite(jade, 0.4)); rect(3, 14, 12, 14, idark(jade, 0.35));
+    ell(8, 5, 3, 3, (x, y, d) => (d > 0.6 ? idark(jade, 0.2) : ilite(jade, 0.25)));
+    line(5, 10, 10, 10, idark(jade, 0.5)); line(5, 12, 10, 12, idark(jade, 0.5)); line(7, 9, 7, 13, idark(jade, 0.5));
   } else if (k === 'st_atk') {
     // nắm đấm / lưỡi kiếm chéo
     line(3, 12, 12, 3, '#e2e8ee'); line(4, 12, 13, 3, '#9aa3ab'); line(3, 3, 12, 12, '#e2e8ee'); line(3, 4, 12, 13, '#9aa3ab');

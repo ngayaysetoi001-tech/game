@@ -173,16 +173,13 @@ const BASE_EVENTS = [
 
   // ===== Chọn con đường tu hành (vào qua hàng đợi khi lên Trúc Cơ) =====
   {
-    id: 'dao_do', queued: true, title: 'Ngã rẽ đạo đồ',
+    id: 'dao_do', queued: true, title: 'Chọn đạo lộ',
     text: (g) => {
       const P = g.P;
-      const locked = Object.values(PATHS).filter((pa) => pa.req && !pa.req(P));
-      return `Trúc Cơ đã thành, đạo cơ vững vàng. Đã đến lúc chọn con đường sẽ đi suốt đời này. Chọn rồi không đổi được.${locked.length ? `\n\nChưa đủ duyên: ${locked.map((pa) => `${pa.n} (${pa.reqText.toLowerCase()})`).join(', ')}.` : ''}`;
+      const sug = g.pathSuggest();
+      return `${P.flags.pathReset ? 'Pháp tắc thiên địa đổi thay, con đường cũ của ngươi không còn. Hãy chọn lại.\n\n' : 'Nhập đạo rồi, phải chọn con đường sẽ đi suốt đời này. '}Ba đại đạo: Kiếm Tu, Thể Tu, Tinh Thần Lực. Mỗi đường một bộ kỹ năng riêng, mở dần theo cảnh giới.\n\nThiên tư của ngươi hợp nhất với ${PATHS[sug[0]].n} (chọn đúng được thêm 3 ngộ đạo điểm). Mỗi kiếp được chuyển tu một lần, cái giá là mất nửa tu vi.`;
     },
-    choices: (g) => [
-      ...Object.entries(PATHS).filter(([, pa]) => !pa.req || pa.req(g.P)).map(([id, pa]) => ({ t: `${pa.n}: ${pa.desc}`, go: (g) => g.setPath(id) })),
-      { t: 'Chưa quyết, đi thêm một đoạn rồi tính', go: (g) => { g.P.pathRetry = g.P.age + 10; return 'Ngươi gác lại ngã rẽ. Mười năm sau sẽ lại phải chọn. Biết đâu khi ấy duyên phận đã khác.'; } },
-    ],
+    choices: (g) => Object.entries(PATHS).map(([id, pa]) => ({ t: `${pa.icon} ${pa.n}: ${pa.short}`, go: (g) => { g.P.flags.pathReset = false; return g.setPath(id); } })),
   },
 
   // ===== Đạo hiệu (vào qua hàng đợi khi lên Trúc Cơ) =====

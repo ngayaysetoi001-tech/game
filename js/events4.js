@@ -1,6 +1,6 @@
 // Kỳ ngộ đợt 4: tháp 1000 tầng (trùm, tầng đặc biệt), lôi kiếp phi thăng, vùng chủ, và Linh giới.
 // r3.plane: chỉ xảy ra ở vị diện đó (0 Phàm giới, 1 Linh giới).
-import { REALMS, PLANES, MAP_MAP, BOSS_KITS, THEME_BG, TAM_PHAP, TOWER_SHOP, MOB_AFFIX_MAP } from './data.js';
+import { REALMS, PLANES, MAP_MAP, BOSS_KITS, THEME_BG, TOWER_SHOP, MOB_AFFIX_MAP } from './data.js';
 import { makeItem } from './items.js';
 
 const xp4 = (p) => Math.max(0.03, Math.min(0.97, p));
@@ -232,8 +232,8 @@ Ngươi bị đẩy ra ngoài. ${bot.name} vẫn kẹt trong trận, nhưng nh�
       if (T === 'bia_ngo') {
         const pv = xp4(0.4 + (st4(g, 'ngo') - 50) / 100);
         return [
-          { t: 'Lĩnh ngộ võ kỹ trên bia', p: pv, go: (g) => { clearFloor(g, data); if (g.r.chance(pv)) { const t = g.learnRandom(2, 3); return t || 'Võ kỹ trên bia ngươi đều đã biết. Ngộ tính +1.'; } g.stat('ngo', 1); return 'Chữ trên bia nhòe đi trước mắt. Ngươi chỉ hiểu được chút ít. Ngộ tính +1.'; } },
-          { t: 'Lĩnh ngộ tâm pháp', go: (g) => { clearFloor(g, data); const P = g.P; if (g.r.chance(0.4)) { const t = g.learnTamPhap(); if (t) return t; } if (P.tp && g.tpLevelUp(P.tp, 'Đối chiếu với bia đá, ')) return `Ngươi hiểu sâu thêm ${TAM_PHAP[P.tp].n}.`; g.stat('ngo', 1); return 'Ngộ tính +1.'; } },
+          { t: 'Lĩnh ngộ chiêu thức trên bia', p: pv, go: (g) => { clearFloor(g, data); if (g.r.chance(pv)) return g.learnRandom(2, 3); g.stat('ngo', 1); return 'Chữ trên bia nhòe đi trước mắt. Ngươi chỉ hiểu được chút ít. Ngộ tính +1.'; } },
+          { t: 'Tham ngộ đạo văn', go: (g) => { clearFloor(g, data); const n = g.P.path === 'tinh' ? 5 : 3; g.addSP(n); return `Đạo văn trên bia tan vào thức hải. Ngộ đạo điểm +${n}.`; } },
           { t: 'Tĩnh tọa trước bia', go: (g) => { clearFloor(g, data); g.stat('ngo', 2); g.stat('tam', 1); g.purgeSat(15); return 'Ngồi trước bia ba ngày, lòng lặng như nước. Ngộ tính +2, tâm tính +1, sát khí giảm.'; } },
         ];
       }
@@ -257,7 +257,9 @@ Ngươi bị đẩy ra ngoài. ${bot.name} vẫn kẹt trong trận, nhưng nh�
     choices: (g, { data }) => {
       const k = data.wave;
       const fightWave = (g, pre = '') => {
-        const f = g.fight(`Đạo lôi thứ ${k}`, g.kiepPow(k), 1, { lethal: 0.45, big: true, cause: 'tan biến dưới lôi kiếp phi thăng', tag: { boss: true, label: `Lôi kiếp · đợt ${k}/9`, bg: '#1d1a3a' } });
+        const cut = g.P.path === 'kiem' && g.r.chance(0.25);
+        if (cut) pre += 'Kiếm trảm lôi! Ngươi vung kiếm chém tan một phần đạo lôi trước khi nó giáng xuống, lực sét yếu đi 20%.\n';
+        const f = g.fight(`Đạo lôi thứ ${k}`, g.kiepPow(k) * (cut ? 0.8 : 1), 1, { lethal: 0.45, big: true, cause: 'tan biến dưới lôi kiếp phi thăng', tag: { boss: true, label: `Lôi kiếp · đợt ${k}/9`, bg: '#1d1a3a' } });
         if (f.win) {
           if (k >= 9) return `${pre}${f.text}\n\n${g.ascendPlane()}`;
           g.next('loi_kiep', { wave: k + 1, hp: data.hp });
@@ -358,7 +360,7 @@ Ngươi bị đẩy ra ngoài. ${bot.name} vẫn kẹt trong trận, nhưng nh�
       const p = xp4(0.5 + (st4(g, 'co') - 50) / 100);
       return [
         { t: 'Đào lôi tinh', p, go: (g) => { if (g.r.chance(p)) return mats4(g, { loi_tinh: 3 + g.r.int(0, 2) }); g.hurt(25, 'bị sét đánh khi đào lôi tinh'); return 'Một đạo sét giáng đúng lúc ngươi chạm vào mạch tinh.'; } },
-        { t: 'Ngồi giữa mạch, hấp thu sét', p: xp4(0.4 + (st4(g, 'ngo') - 50) / 100 + (g.P.path === 'phap' ? 0.25 : 0)), go: (g) => { if (g.r.chance(xp4(0.4 + (st4(g, 'ngo') - 50) / 100 + (g.P.path === 'phap' ? 0.25 : 0)))) { const t = yrs4(g, 8); g.stat('ngo', 2); return `Sét chạy khắp kinh mạch, thiêu sạch tạp chất. Tu vi +${t}, ngộ tính +2.`; } g.hurt(35, 'bị lôi mạch thiêu thành tro'); return 'Dòng sét quá mạnh, ngươi bị hất văng mấy trượng.'; } },
+        { t: 'Ngồi giữa mạch, hấp thu sét', p: xp4(0.4 + (st4(g, 'ngo') - 50) / 100 + (g.P.path === 'tinh' ? 0.25 : 0)), go: (g) => { if (g.r.chance(xp4(0.4 + (st4(g, 'ngo') - 50) / 100 + (g.P.path === 'tinh' ? 0.25 : 0)))) { const t = yrs4(g, 8); g.stat('ngo', 2); return `Sét chạy khắp kinh mạch, thiêu sạch tạp chất. Tu vi +${t}, ngộ tính +2.`; } g.hurt(35, 'bị lôi mạch thiêu thành tro'); return 'Dòng sét quá mạnh, ngươi bị hất văng mấy trượng.'; } },
       ];
     },
   },

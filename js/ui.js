@@ -1,9 +1,10 @@
 // Giao diện trình duyệt. Mọi luật chơi nằm trong core.js.
 import { APP_VERSION } from './version.js';
 import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITLE_MAP, HL_PRICE, HL_REROLL, PATHS, clamp, planStepText } from './core.js';
-import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEFAULT_MAP, realmLabel, subN, PLANES, mapsOf, WORLD_DIFF, mythMatOf, planeOf, THEME_BG, BOSS_KITS, TOWER_THEMES, TOWER_SHOP, TAM_PHAP, TAM_PHAP_IDS, NGHE, PHU, PLAN_TEMPLATES, PLAN_STEP_ACTS, PLAN_COND } from './data.js';
+import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEFAULT_MAP, realmLabel, subN, PLANES, mapsOf, WORLD_DIFF, mythMatOf, planeOf, THEME_BG, BOSS_KITS, TOWER_THEMES, TOWER_SHOP, TAM_PHAP, TAM_PHAP_IDS, NGHE, PHU, PLAN_TEMPLATES, PLAN_STEP_ACTS, PLAN_COND, PATH_BAR_N } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
-import { SKILLS, BEAST_SKILLS, TACTICS, WEAPON_TYPES, turnText } from './combat.js';
+import { SKILLS, BEAST_SKILLS, TACTICS, WEAPON_TYPES, turnText, PATH_RES, PATH_SKILLS, SKILL_MAX, skillLvMul } from './combat.js';
+import { heroArt, skillArt, monsterArt, artURL } from './art.js';
 import { SLOTS, QUALITY, itemLine, TT_MAP, isSealed, isSuppressed, gearStats, itemName, PLUS_MAX, AFFIX } from './items.js';
 import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE, matIconOpts, skillIconOpts } from './icons.js';
 
@@ -84,8 +85,19 @@ const playerRobe = (P) => (P.eq && P.eq.ao ? armorColor(P.eq.ao) : sectRobe(P.se
 const SLOT_KIND = { vu_khi: 'kiem', ao: 'dao_bao', phu_kien: 'ngoc_boi' };
 const icoImg = (o, cls = '') => `<img class="ico ${cls}" alt="" src="${iconURL(o)}">`;
 const itemIco = (it) => icoImg(itemIconOpts(it), `q${it.q}`);
-/** Biểu tượng võ kỹ (cả chiêu yêu thú) */
-const skIco = (id, cls = '') => { const sk = SKILLS[id] || BEAST_SKILLS[id]; if (!sk) return ''; const o = skillIconOpts(id, sk); return icoImg(o, `q${o.q} ${cls}`); };
+/** Biểu tượng kỹ năng (cả chiêu yêu thú) */
+const skIco = (id, cls = '') => { const a = skillArt(id); if (a) return `<img class="ico art ${cls}" alt="" src="${a}">`; const sk = SKILLS[id] || BEAST_SKILLS[id]; if (!sk) return ''; const o = skillIconOpts(id, sk); return icoImg(o, `q${o.q} ${cls}`); };
+/** Tranh cho một bên giao chiến / chân dung: { src, filter } hoặc null */
+function artOf(look) {
+  if (!look) return null;
+  if (look.type === 'beast') return monsterArt(look.name, look.seed || 1);
+  if (look.path) return { src: heroArt(look.path), filter: '' };
+  return null;
+}
+function setArt(img, a, canvas) {
+  if (a && a.src) { img.src = a.src; img.style.filter = a.filter || ''; img.hidden = false; if (canvas) canvas.hidden = true; }
+  else { img.hidden = true; if (canvas) canvas.hidden = false; }
+}
 
 /** Chỉ thay DOM khi nội dung đổi, để nút không bị dựng lại giữa lúc đang chạm */
 function setHTML(el, html) {
@@ -157,24 +169,24 @@ function statInfo(k, P) {
   }
   if (k === 'path' && P.path && PATHS[P.path]) {
     const pa = PATHS[P.path];
-    return { n: pa.n, val: '', about: 'Con đường tu hành chọn khi lên Trúc Cơ, theo suốt kiếp này.', now: [pa.desc, `Tuyệt học: ${SKILLS[pa.skill].n}. ${SKILLS[pa.skill].desc}`], up: ['Kiếp sau lên Trúc Cơ sẽ được chọn lại'], upTitle: 'Ghi chú' };
+    return { n: pa.n, val: '', about: `${pa.tag}. ${pa.desc}`, now: [...pa.good.map((x) => `Mạnh: ${x}`), ...pa.bad.map((x) => `Yếu: ${x}`)], up: ['Kỹ năng: Túi trữ vật → Kỹ năng', 'Mỗi kiếp được chuyển tu một lần'], upTitle: 'Ghi chú' };
   }
   if (k === 'money') return { n: 'Linh thạch', val: fmt(P.money), about: 'Tiền tệ của giới tu tiên.', now: ['Mua đan dược, pháp khí, bí kíp ở Tụ Bảo Lâu; đấu giá; chuộc người; cược', 'Có 5.000 mở danh hiệu Phú Giáp Nhất Phương'], up: ['Mưu sinh (tăng theo cảnh giới và cơ duyên)', 'Hộ tống thương đội, đầu tư thương hội, linh mạch, kho báu, bán đồ thừa'] };
   if (k === 'fame') return { n: 'Danh vọng', val: fmt(P.fame), about: 'Tiếng tăm trên giang hồ.', now: ['Giúp tự minh oan khi bị vu cáo', 'Đạt 50 và 200 mở danh hiệu'], up: ['Thắng trận, đột phá, cứu người, thắng lôi đài, hạ yêu vương, trừ huyết trận'] };
-  if (k === 'tuvi') return { n: 'Tu vi', val: playing ? `${fmt(P.tuvi)}/${fmt(g.need())}` : '-', about: 'Công lực tích lũy ở cảnh giới hiện tại. Đầy thì có thể đột phá. Phần màu cam cuối thanh là tu vi chưa vững (có từ vượt tháp, lịch luyện): tu luyện, bế quan sẽ củng cố. Đột phá khi còn nhiều tu vi chưa vững thì tỉ lệ giảm tới 30%.', now: playing ? [`Mỗi năm tu luyện được khoảng ${fmt(g.gain())} tu vi`, `Chưa vững: ${fmt(P.loose || 0)} (${Math.round(((P.loose || 0) / Math.max(1, g.need())) * 100)}% tu vi cần)`, `Tỉ lệ đột phá hiện tại ~${Math.round(g.breakChance() * 100)}%`, ...g.brkMods().map((x) => `${x.n}: ${pc(x.v)} đột phá`)] : [], up: ['Tu luyện (đủ, củng cố căn cơ), bế quan (x1,6, củng cố rất nhanh; tử quan từ 50 năm x2)', 'Vượt tháp, lịch luyện cho tu vi chưa vững', 'Linh căn, ngộ tính, tông môn (+20%), thể chất, Vô tình, thần thông, tâm pháp'] };
+  if (k === 'tuvi') return { n: 'Tu vi', val: playing ? `${fmt(P.tuvi)}/${fmt(g.need())}` : '-', about: 'Công lực tích lũy ở cảnh giới hiện tại. Đầy thì có thể đột phá. Phần màu cam cuối thanh là tu vi chưa vững (có từ vượt tháp, lịch luyện): tu luyện, bế quan sẽ củng cố. Đột phá khi còn nhiều tu vi chưa vững thì tỉ lệ giảm tới 30%.', now: playing ? [`Mỗi năm tu luyện được khoảng ${fmt(g.gain())} tu vi`, `Chưa vững: ${fmt(P.loose || 0)} (${Math.round(((P.loose || 0) / Math.max(1, g.need())) * 100)}% tu vi cần)`, `Tỉ lệ đột phá hiện tại ~${Math.round(g.breakChance() * 100)}%`, ...g.brkMods().map((x) => `${x.n}: ${pc(x.v)} đột phá`)] : [], up: ['Tu luyện (đủ, củng cố căn cơ), bế quan (x1,6, củng cố rất nhanh; tử quan từ 50 năm x2)', 'Vượt tháp, lịch luyện cho tu vi chưa vững', 'Linh căn, ngộ tính, tông môn (+20%), thể chất, Vô tình, thần thông, đạo lộ'] };
   if (k.startsWith('f_') && playing) {
     const F = g.playerFighter();
     const gs = gearStats(P.eq || {}, P.realm);
     const X = {
-      f_atk: ['Công', fmt(F.atk), 'Sát thương mỗi đòn trước khi trừ thủ của địch.', [`Từ trang bị: +${fmt(gs.atk || 0)}`, 'Võ kỹ nhân thêm theo hệ số của chiêu'], ['Vũ khí tốt, cường hóa, thăng cấp', 'Cảnh giới, nấc nhỏ, căn cốt, thể chất, con đường tu hành']],
-      f_def: ['Thủ', fmt(F.def), 'Giảm sát thương nhận vào. Thủ càng cao so với công của địch thì càng ít đau.', [`Từ trang bị: +${fmt(gs.def || 0)}`], ['Y phục, phụ kiện tốt, cường hóa', 'Tâm pháp Bất Động Minh Vương Kinh (giảm sát thương)']],
-      f_hp: ['Sinh lực trong trận', fmt(F.maxHp), 'Lượng máu tối đa trong một trận. Vào trận theo % sinh lực đang có.', [`Từ trang bị: +${fmt(gs.hp || 0)}`], ['Y phục, phụ kiện', 'Kim Thân Quyết, Thể tu']],
-      f_crit: ['Bạo kích', `${Math.round(F.crit * 100)}%`, 'Xác suất đòn gây sát thương x1,7.', ['Kiếm có sẵn +5%'], ['Dòng Bạo kích trên trang bị (dẫn liệu Lôi tinh, Kiếm hồn...)', 'Kiếm Tâm Quyết, Kiếm tu']],
-      f_dodge: ['Né', `${Math.round(F.dodge * 100)}%`, 'Xác suất tránh hẳn một đòn.', ['Phiến có sẵn +5%'], ['Dòng Né tránh trên trang bị', 'Võ kỹ thân pháp (Thanh Phong Phiến)']],
+      f_atk: ['Công', fmt(F.atk), 'Sát thương mỗi đòn trước khi trừ thủ của địch.', [`Từ trang bị: +${fmt(gs.atk || 0)}`, 'Kỹ năng nhân thêm theo hệ số của chiêu'], ['Vũ khí tốt, cường hóa, thăng cấp', 'Cảnh giới, nấc nhỏ, căn cốt, thể chất, con đường tu hành']],
+      f_def: ['Thủ', fmt(F.def), 'Giảm sát thương nhận vào. Thủ càng cao so với công của địch thì càng ít đau.', [`Từ trang bị: +${fmt(gs.def || 0)}`], ['Y phục, phụ kiện tốt, cường hóa', 'Bất Hoại Kim Thân (Thể Tu)']],
+      f_hp: ['Sinh lực trong trận', fmt(F.maxHp), 'Lượng máu tối đa trong một trận. Vào trận theo % sinh lực đang có.', [`Từ trang bị: +${fmt(gs.hp || 0)}`], ['Y phục, phụ kiện', 'Thể Tu']],
+      f_crit: ['Bạo kích', `${Math.round(F.crit * 100)}%`, 'Xác suất đòn gây sát thương x1,7.', ['Kiếm có sẵn +5%'], ['Dòng Bạo kích trên trang bị (dẫn liệu Lôi tinh, Kiếm hồn...)', 'Kiếm Tâm Thông Minh (Kiếm Tu)']],
+      f_dodge: ['Né', `${Math.round(F.dodge * 100)}%`, 'Xác suất tránh hẳn một đòn.', ['Né gốc 5%'], ['Dòng Né tránh trên trang bị', 'Đạp Vân Bộ (Kiếm Tu)']],
     }[k];
     if (X) return { n: X[0], val: X[1], about: X[2], now: X[3], up: X[4] };
   }
-  if (k === 'sat') return { n: 'Sát khí', val: playing ? Math.round(P.sat) : '-', about: 'Tích tụ khi vượt tháp, lịch luyện, chiến đấu. Vùng càng khó tích càng nhanh.', now: [`Từ ${g.satLine(50)}: tu vi từ chiến đấu -20%`, `Từ ${g.satLine(70)}: đột phá -10%, dễ gặp tâm ma`, '100: tẩu hỏa nhập ma (trọng thương, mất 20% tu vi)', P.path === 'ma' ? 'Ma tu: chịu được cao hơn 20, sát khí tăng sức mạnh (tối đa +25%)' : P.path === 'phat' ? 'Phật tu: xả sát khí nhanh gấp đôi' : 'Ma tu chịu được sát khí cao hơn và mạnh lên nhờ nó; Phật tu xả nhanh gấp đôi'], up: ['Tu luyện (xả chậm), bế quan (xả rất nhanh, đủ 10 năm thì sạch), kết giao (vừa), mưu sinh (ít)', 'Đạo lữ song tu, Tĩnh Thần Quyết, Ngưng Thần Đan (-40)'], upTitle: 'Cách giảm' };
+  if (k === 'sat') return { n: 'Sát khí', val: playing ? Math.round(P.sat) : '-', about: 'Tích tụ khi vượt tháp, lịch luyện, chiến đấu. Vùng càng khó tích càng nhanh.', now: [`Từ ${g.satLine(50)}: tu vi từ chiến đấu -20%`, `Từ ${g.satLine(70)}: đột phá -10%, dễ gặp tâm ma`, '100: tẩu hỏa nhập ma (trọng thương, mất 20% tu vi)', 'Tinh Thần Lực xả sát khí nhanh hơn 30%'], up: ['Tu luyện (xả chậm), bế quan (xả rất nhanh, đủ 10 năm thì sạch), kết giao (vừa), mưu sinh (ít)', 'Đạo lữ song tu, Ngưng Thần Đan (-40)'], upTitle: 'Cách giảm' };
   if (k === 'hp') return { n: 'Sinh lực', val: `${P.hp}/100`, about: 'Về 0 là chết.', now: [`Sức chiến đấu x${(0.5 + P.hp / 200).toFixed(2)} (sinh lực càng thấp càng yếu)`, P.hp < 30 ? 'Dưới 30: tu luyện chậm 40%' : 'Dưới 30 thì tu luyện chậm 40%', 'Vào trận với đúng lượng sinh lực đang có'], up: ['Tự hồi 4 mỗi năm (bế quan 6)', 'Hồi Xuân Đan (+40)', 'Thể chất, thần thông hồi phục'] };
   if (k === 'tho') return { n: 'Thọ nguyên', val: playing ? `${P.age}/${g.lifespan()}` : '-', about: 'Hết thọ là tọa hóa.', now: ['Mỗi lần đột phá lên cảnh giới mới thì thọ nguyên tăng mạnh', 'Căn cốt cao thì sống lâu hơn'], up: ['Đột phá cảnh giới', 'Diên Thọ Đan (+5%, mỗi cảnh giới một viên)', 'Tìm thuốc trường sinh lúc tuổi già, Huyền Quy, thể chất, thần thông Trường Sinh'] };
   return null;
@@ -317,6 +329,7 @@ function renderPlay() {
   const life = g.lifespan();
   const sc = P.sect ? g.sect(P.sect) : null;
   drawPortrait($('portrait'), P, { life, robe: playerRobe(P), dead: g.s.phase === 'dead' });
+  setArt($('portraitArt'), PATHS[P.path] ? { src: heroArt(P.path) } : null, $('portrait'));
   const ttl = P.title && TITLE_MAP[P.title] ? TITLE_MAP[P.title] : null;
   setHTML($('hudLine'), `${ttl ? `<span class="ttl t${ttl.tier} mini"><span>${esc(ttl.n)}</span></span>` : ''}<b class="hudName">${esc(P.name)}</b> <span class="realm">${esc(g.subRealmName())}</span><span class="meta"> · ${P.age} tuổi${sc ? ` · ${esc(sc.name)}` : ''}</span><span class="more">›</span>`);
   const need = g.need();
@@ -333,7 +346,7 @@ function renderPlay() {
   const nPill = P.pills.hoi_xuan || 0;
   const warn = [];
   if (P.flags.neck && P.flags.neck.realm === P.realm) warn.push(`<button class="hudWarn" data-hw="neck">⛓ Bình cảnh nhỏ · ${Math.max(0, P.flags.neck.until - P.age)} năm</button>`);
-  if (g.skillMismatch().length) warn.push('<button class="hudWarn" data-hw="wep">⚠ Võ kỹ lệch binh khí</button>');
+  if (g.skillMismatch().length) warn.push('<button class="hudWarn" data-hw="wep">⚠ Binh khí không hợp đạo</button>');
   if (strongerGear()) warn.push('<button class="hudWarn" data-hw="gear">⚠ Có đồ mạnh hơn</button>');
   if (g.atPlaneTop() && P.tuvi >= g.need() && !(P.tokens && P.tokens[P.plane])) warn.push(`<button class="hudWarn" data-hw="tower">🗼 Cần ${PLANES[P.plane].token}</button>`);
   // chip trạng thái: tháp, sát khí, lịch trình
@@ -362,13 +375,13 @@ function renderPlay() {
       const why = P.age < a.minAge ? `Từ ${a.minAge} tuổi` : a.needDao && !P.dao ? 'Cần nhập đạo' : a.desc;
       const m = id === 'lich_luyen' && ok ? MAP_MAP[P.map] || g.defaultMap() : null;
       if (id === 'vuot_thap') return `<button class="btn act ${P.action === id ? 'on' : ''}" data-act="${id}" data-tip="${esc(ok ? `${a.desc} Đang ở tầng ${g.towerState().f}. Bấm để xem tháp.` : why)}" ${ok ? '' : 'disabled'}><span class="ai">${a.icon}</span><span>Tháp</span>${ok ? `<small>Tầng ${g.towerState().f}</small>` : ''}</button>`;
-      const sub = m ? `${DIFF[m.d].ic} ${DIFF[m.d].n}` : id === 'muu_sinh' && P.nghe ? `${NGHE[P.nghe.id].icon} cấp ${P.nghe.lv}` : id === 'tu_luyen' && P.tp && TAM_PHAP[P.tp] ? `tâm pháp ${P.tpLv[P.tp] || 1}` : '';
+      const sub = m ? `${DIFF[m.d].ic} ${DIFF[m.d].n}` : id === 'muu_sinh' && P.nghe ? `${NGHE[P.nghe.id].icon} cấp ${P.nghe.lv}` : id === 'tu_luyen' && PATHS[P.path] ? `${PATHS[P.path].icon} ${PATHS[P.path].n}` : '';
       return `<button class="btn act ${P.action === id ? 'on' : ''}" data-act="${id}" data-tip="${esc(m ? `${a.desc} Đang chọn: ${m.n} (${DIFF[m.d].n}). Bấm để đổi vùng.` : why)}" ${ok ? '' : 'disabled'}><span class="ai">${a.icon}</span><span>${a.n}</span>${sub ? `<small>${sub}</small>` : ''}</button>`;
     }).join('');
   }
   setHTML($('actions'), html);
   setHTML($('utils'), `
-      <button class="btn ut" data-do="bag" data-tip="Trang bị, võ kỹ, chiến thuật, phân giải"><span class="ai">🎒</span><span>Hành trang</span></button>
+      <button class="btn ut" data-do="bag" data-tip="Trang bị, kỹ năng, chiến thuật, đan, nguyên liệu"><span class="ai">🎒</span><span>Hành trang</span></button>
       <button class="btn ut" data-do="forge" data-tip="${g.forgeOpen() ? 'Cường hóa, thăng cấp, tẩy luyện, rèn mới' : 'Mở từ 12 tuổi'}" ${g.forgeOpen() ? '' : 'disabled'}><span class="ai">⚒</span><span>Lò rèn</span></button>
       <button class="btn ut" data-do="shop" data-tip="Đan dược, pháp khí, bí kíp" ${P.age < 10 ? 'disabled' : ''}><span class="ai">🏮</span><span>Tụ Bảo</span></button>
       <button class="btn ut" data-do="close" data-tip="Tu nhanh, ít kỳ ngộ" ${P.dao && P.age >= 12 && !canBreak && !(P.closed > 0) ? '' : 'disabled'}><span class="ai">🕯</span><span>Bế quan</span></button>
@@ -577,7 +590,10 @@ function renderEvent() {
   if (fighting && !bt) startBattle(p.battles[p.bi], p.fast);
   $('battle').hidden = !bt;
   const ask = !!(v && !v.done);
-  const showCard = ask && !bt;
+  // chọn đạo lộ: màn riêng, không dùng thẻ kỳ ngộ
+  const pick = ask && p.id === 'dao_do' && !bt;
+  renderPathPick(pick);
+  const showCard = ask && !bt && !pick;
   $('evPanel').hidden = !showCard;
   document.body.classList.toggle('evOpen', showCard || !!bt);
   if (!showCard) return;
@@ -588,6 +604,44 @@ function renderEvent() {
   setHTML($('evText'), rich(v.text));
   setHTML($('evChoices'), v.choices.map((c, i) => `<button class="btn" data-ch="${i}"><span class="chNo">${i + 1}</span>${esc(c)}</button>`).join(''));
 }
+// ---------- Màn chọn đạo lộ ----------
+let ppShown = false;
+function renderPathPick(on) {
+  let el = $('pathPick');
+  if (!on) { if (el) el.hidden = true; ppShown = false; return; }
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'pathPick';
+    el.className = 'pathPick';
+    document.body.appendChild(el);
+    el.addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      if (b.dataset.pp) { const i = Object.keys(PATHS).indexOf(b.dataset.pp); el.hidden = true; ppShown = false; pickChoice(i); }
+      if (b.dataset.pt) { const res = g.trialPath(b.dataset.pt); el.hidden = true; startBattle(res, false, () => { ppShown = false; dirty = true; }); }
+    });
+  }
+  if (ppShown && !el.hidden) return;
+  ppShown = true;
+  const P = g.P;
+  const sug = g.pathSuggest()[0];
+  const sc = g.pathScores();
+  el.innerHTML = `<div class="ppBox"><h2>Chọn đạo lộ</h2>
+    <p class="intro">${P.flags.pathReset ? 'Pháp tắc thiên địa đổi thay, con đường cũ không còn. ' : ''}Mỗi đường một bộ 8 kỹ năng riêng (chiêu, tuyệt kỹ, bị động), mở dần theo cảnh giới. Chọn đúng đường hợp thiên tư được thêm 3 ngộ đạo điểm. Mỗi kiếp được chuyển tu một lần.</p>
+    <div class="ppCards">${Object.entries(PATHS).map(([id, pa]) => `<div class="ppCard ${id === sug ? 'sug' : ''} pp_${id}">
+      ${id === sug ? '<span class="ppSug">Hợp thiên tư nhất</span>' : ''}
+      <img class="ppHero" alt="" src="${heroArt(id)}">
+      <h3>${pa.icon} ${esc(pa.n)}</h3><div class="ppTag">${esc(pa.tag)}</div>
+      <div class="ppBars">${Object.entries(pa.bars).map(([k, v]) => `<div><span>${PATH_BAR_N[k]}</span><i>${'<b></b>'.repeat(v)}${'<u></u>'.repeat(5 - v)}</i></div>`).join('')}</div>
+      <div class="ppSk">${PATH_SKILLS[id].map((k) => skIco(k)).join('')}</div>
+      <ul class="ppGood">${pa.good.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
+      <ul class="ppBad">${pa.bad.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
+      <div class="meta">Thanh ${esc(pa.res)} · binh khí: ${WEAPON_TYPES[pa.wep].n.toLowerCase()} · thiên tư ${Math.round(sc[id])}</div>
+      <div class="row btnRow"><button class="btn ghost" data-pt="${id}">⚔ Thử đạo</button><button class="btn primary" data-pp="${id}">Chọn ${esc(pa.n)}</button></div>
+    </div>`).join('')}</div></div>`;
+  el.hidden = false;
+}
+
 /** Chọn xong: kết quả vào nhật ký, diễn trận nếu cần, rồi chạy tiếp ngay */
 function pickChoice(i) {
   const p = g.s.pending;
@@ -621,7 +675,7 @@ function markFresh() { freshFrom = Math.min(freshFrom || Infinity, g.s.log.lengt
 
 /** Chữ có mã biểu tượng: thoát HTML rồi thay mã bằng ảnh */
 function rich(t) {
-  return esc(t).replace(ICON_TOKEN_RE, (m, kind, q, col) => `<img class="ico inl q${q}" alt="" src="${iconURL({ kind, q: +q, col: col === '-' ? null : col })}">`);
+  return esc(t).replace(ICON_TOKEN_RE, (m, kind, q, col) => (kind.startsWith('art_') ? `<img class="ico inl art" alt="" src="${skillArt(kind.slice(4))}">` : `<img class="ico inl q${q}" alt="" src="${iconURL({ kind, q: +q, col: col === '-' ? null : col })}">`));
 }
 
 // ---------- Diễn lại trận đấu ----------
@@ -645,6 +699,15 @@ function floatText(side, text, cls) {
   host.appendChild(el);
   setTimeout(() => el.remove(), 1100);
 }
+const SWING = [0, 1, 2, 3, 4, 5].map((i) => artURL(`heroes/kiem_atk_${i}`)).filter(Boolean);
+function swingFrames(img, fast) {
+  if (!img || img.hidden || !SWING.length || img.dataset.swing) return;
+  const base = img.src;
+  img.dataset.swing = '1';
+  img.classList.add('swing');
+  SWING.forEach((u, i) => setTimeout(() => { img.src = u; }, i * (fast ? 35 : 60)));
+  setTimeout(() => { img.src = base; img.classList.remove('swing'); delete img.dataset.swing; }, SWING.length * (fast ? 35 : 60) + 40);
+}
 function startBattle(res, fast = false, onClose = null) {
   bt = { res, i: 0, timer: null, closeT: null, fast: btFast || fast || (!!res.tower && fastNow()), done: false, onClose };
   $('battle').hidden = false;
@@ -661,7 +724,11 @@ function startBattle(res, fast = false, onClose = null) {
     box.querySelectorAll('.float').forEach((x) => x.remove());
     box.classList.remove('lunge', 'hit', 'down');
     drawSprite(box.querySelector('canvas'), lookOf(f.look));
+    setArt(box.querySelector('img.art'), artOf(f.look), box.querySelector('canvas'));
     box.querySelector('.fname').textContent = f.name;
+    const chg = box.querySelector('.gauge.ch');
+    chg.hidden = !f.chMax;
+    if (f.chMax) { chg.querySelector('i').style.background = PATH_RES[f.path].col; chg.dataset.max = f.chMax; chg.dataset.n = PATH_RES[f.path].n; setCh(chg, 0); }
   }
   const aHp0 = Math.round((res.a.maxHp * (res.a.hp0 ?? 100)) / 100);
   setGauge($('fA').querySelector('.hp'), aHp0, res.a.maxHp);
@@ -687,8 +754,16 @@ function startBattle(res, fast = false, onClose = null) {
   }
   bt.timer = setTimeout(stepBattle, delay);
 }
+function setCh(el, v) {
+  const max = +el.dataset.max || 1;
+  el.querySelector('i').style.width = clamp((v / max) * 100, 0, 100) + '%';
+  el.querySelector('span').textContent = `${el.dataset.n} ${v}/${max}`;
+  el.classList.toggle('full', v >= max);
+}
 function applySnap(t) {
   const r = bt.res;
+  if (r.a.chMax && t.aCh !== undefined) setCh($('fA').querySelector('.gauge.ch'), t.aCh);
+  if (r.b.chMax && t.bCh !== undefined) setCh($('fB').querySelector('.gauge.ch'), t.bCh);
   setGauge($('fA').querySelector('.hp'), t.aHp, r.a.maxHp);
   setGauge($('fB').querySelector('.hp'), t.bHp, r.b.maxHp);
   setGauge($('fA').querySelector('.mp'), t.aMp, 100);
@@ -708,8 +783,12 @@ function stepBattle() {
   if (t.stunned) floatText(t.side, t.stunned, 'status');
   if (t.skill) {
     const big = t.skill !== 'quyen' && t.skill !== 'can_xe';
-    $('btBanner').innerHTML = `${skIco(t.skill, 'inl')}${esc(t.skillN)}`;
-    $('btBanner').className = 'banner show ' + (big ? 'big ' : '') + (t.side === 'a' ? 'left' : 'right');
+    $('btBanner').innerHTML = `${skIco(t.skill, 'inl')}${t.ult ? 'Tuyệt kỹ · ' : ''}${esc(t.skillN)}`;
+    $('btBanner').className = 'banner show ' + (big ? 'big ' : '') + (t.ult ? 'ult ' : '') + (t.side === 'a' ? 'left' : 'right');
+    if (t.ult) { const ar = $('battle').querySelector('.arena'); ar.classList.remove('ultFx'); void ar.offsetWidth; ar.classList.add('ultFx'); }
+    // Kiếm tu: hoạt ảnh vung kiếm
+    const fx = t.side === 'a' ? bt.res.a : bt.res.b;
+    if (fx.path === 'kiem' && fx.look && fx.look.type === 'human') swingFrames(me.querySelector('img.art'), bt.fast);
     me.classList.remove('lunge'); void me.offsetWidth; me.classList.add('lunge');
     const foeEl = $(foe === 'a' ? 'fA' : 'fB');
     setTimeout(() => {
@@ -811,13 +890,10 @@ function shopGear() {
   const gear = st.gear.map((it) => itemCard(it, bought.includes(it.key)
     ? '<span class="meta">Đã bán hết</span>'
     : `<button class="btn ghost" data-bg="${it.key}" ${P.money < it.price ? 'disabled' : ''}>Mua · ${fmt(it.price)}</button>${g.betterThanEquipped(it) ? '<span class="tag pos">Tốt hơn đồ đang mang</span>' : ''}`)).join('');
-  const books = st.books.map((b) => {
-    const sk = SKILLS[b.id];
-    const has = P.skills.includes(b.id);
-    return `<div class="item withIco">${skIco(b.id)}<div class="body"><div class="row"><b>Bí kíp: ${esc(sk.n)}</b><span class="meta">Linh lực ${sk.mp}</span></div><div class="meta">${esc(sk.desc)}</div>
-      <div class="row btnRow">${has ? '<span class="meta">Đã học</span>' : `<button class="btn ghost" data-bk="${b.id}" ${P.money < b.price ? 'disabled' : ''}>Mua · ${fmt(b.price)}</button>`}</div></div></div>`;
-  }).join('');
-  return `<h3>Pháp khí · đổi hàng mỗi 5 năm</h3><div class="list">${gear}</div><h3>Bí kíp võ kỹ</h3><div class="list">${books}</div>`;
+  const sg = g.sageStock();
+  const sage = `<div class="item withIco">${icoImg({ kind: 'bi_kip', q: 3 })}<div class="body"><div class="row"><b>Ngọc giản ngộ đạo</b><span class="meta">Còn ${sg.left}/2 · đổi hàng mỗi 5 năm</span></div><div class="meta">Đọc xong được 3 ngộ đạo điểm (◈) để nâng kỹ năng.</div>
+    <div class="row btnRow"><button class="btn ghost" data-sage="1" ${sg.left && P.money >= sg.price ? '' : 'disabled'}>Mua · ${fmt(sg.price)}</button></div></div></div>`;
+  return `<h3>Pháp khí · đổi hàng mỗi 5 năm</h3><div class="list">${gear}</div><h3>Ngọc giản</h3><div class="list">${sage}</div>`;
 }
 
 const stripTok = (t) => String(t).replace(ICON_TOKEN_RE, '');
@@ -896,7 +972,7 @@ function openTower() {
       <div class="row btnRow"><button class="btn ${resume ? 'on' : 'ghost'}" data-resume="1">Thua thì tu luyện, đủ sức tự leo lại: ${resume ? 'bật' : 'tắt'}</button></div>
       <h3>Trùm kế tiếp · tầng ${nb}</h3>
       <div class="item"><div class="row"><b>${esc(nb >= 1000 ? `${PL.tower} chi chủ` : g.floorTheme(pl, nb).boss)}</b><span class="meta">${nb >= 1000 ? '3 giai đoạn · có thể mất mạng' : `2 giai đoạn · ${nb < 500 ? 'thua chỉ trọng thương' : 'có thể mất mạng'}`}</span></div><div class="meta">Cơ chế: ${esc(kit.mech)}. Tự đánh khi chắc thắng từ 75%, thấp hơn thì luôn dừng lại hỏi.</div></div>
-      <p class="intro">Mỗi 10 tầng có tinh anh (rương đồ), mỗi 100 tầng có trùm (đồ Cực phẩm, bí kíp, tâm pháp${'' }, từ tầng 500 có thể ra Thần thoại). Đôi khi gặp tầng đặc biệt: thương nhân, thử thách liên hoàn, đối thủ leo tháp, người kẹt trong tháp, bia ngộ đạo... Vượt tháp tích sát khí, tu vi có được chưa vững.</p>
+      <p class="intro">Mỗi 10 tầng có tinh anh (rương đồ), mỗi 100 tầng có trùm (đồ Cực phẩm, ngộ đạo điểm, từ tầng 500 có thể ra Thần thoại). Đôi khi gặp tầng đặc biệt: thương nhân, thử thách liên hoàn, đối thủ leo tháp, người kẹt trong tháp, bia ngộ đạo... Vượt tháp tích sát khí, tu vi có được chưa vững.</p>
       <h3>Tháp thương điếm · ${fmt(coin)} Tháp tệ</h3>
       <div class="grid5 shopGrid">${TOWER_SHOP.map((x) => {
         const ic = x.pill ? icoImg({ kind: 'dan', q: x.pill[0] === 'pha_canh' ? 2 : 0, col: PILL_COLORS[x.pill[0]] }) : x.mats ? icoImg({ kind: 'thoi', q: 1 }) : x.book ? icoImg({ kind: 'bi_kip', q: 2 }) : icoImg({ kind: 'tam', q: 2 });
@@ -1101,7 +1177,7 @@ function openForge() {
     }
     const tabs = [['cuong', 'Cường hóa'], ['thang', 'Thăng cấp'], ['tay', 'Tẩy luyện'], ['moi', 'Rèn mới']];
     openSheet(`<h2>Lò rèn</h2>
-      <p class="intro">Tay nghề rèn: <b>${P.forge || 0}/100</b> (+${Math.round(g.forgeBonus() * 100)}% tỉ lệ thành công)${P.path === 'the' ? ', Thể tu được cộng thêm' : ''}. Linh thạch: <b>${fmt(P.money)}</b>.</p>
+      <p class="intro">Tay nghề rèn: <b>${P.forge || 0}/100</b> (+${Math.round(g.forgeBonus() * 100)}% tỉ lệ thành công)${P.path === 'tinh' ? ', Tinh Thần Lực được cộng thêm' : ''}. Linh thạch: <b>${fmt(P.money)}</b>.</p>
       ${matChips(P)}
       <div class="row btnRow"><button class="btn ghost" data-iron="1" ${P.money >= g.ironPrice() ? '' : 'disabled'}>Mua ${10 * (1 + P.realm)} Tinh thiết · ${fmt(g.ironPrice())}</button></div>
       ${msg ? `<p class="forgeMsg">${rich(msg)}</p>` : ''}
@@ -1149,7 +1225,7 @@ function forgeBtns(it) {
   return h;
 }
 // ---------- Túi trữ vật ----------
-const BAG_TABS = [['eq', 'Trang bị', { kind: 'kiem', q: 2 }], ['cp', 'Công pháp', { kind: 'bi_kip', q: 2 }], ['dan', 'Đan, phù', { kind: 'dan', q: 0, col: '#c0392b' }], ['nl', 'Nguyên liệu', { kind: 'mat', q: 2, col: '#8fd3ff' }], ['set', 'Cài đặt', { kind: 'cog', q: 0 }]];
+const BAG_TABS = [['eq', 'Trang bị', { kind: 'kiem', q: 2 }], ['cp', 'Kỹ năng', { kind: 'bi_kip', q: 2 }], ['dan', 'Đan, phù', { kind: 'dan', q: 0, col: '#c0392b' }], ['nl', 'Nguyên liệu', { kind: 'mat', q: 2, col: '#8fd3ff' }], ['set', 'Cài đặt', { kind: 'cog', q: 0 }]];
 const STAT_ICO = { atk: 'st_atk', def: 'st_def', hp: 'st_hp', crit: 'st_crit', dodge: 'st_dodge' };
 const WEP_ICO = { kiem: 'kiem', dao: 'dao', thuong: 'thuong', quat: 'quat' };
 const bag = { tab: 'eq', sel: null, slot: 'all', sort: 'power', filt: '', multi: false, picked: new Set(), confirm: null, trial: 'map', trialRes: null };
@@ -1231,7 +1307,7 @@ function bagEq() {
     : `<button class="btn primary" data-eq="${sel.id}">Mang</button>${lockB}${sellB}${forgeBtns(sel)}`)}${compareLine(sel)}</div>` : '';
   const pinWarn = ['vu_khi', 'ao', 'phu_kien'].filter((sl) => P.pin[sl] && P.bag.some((x) => x.slot === sl && g.swapGain(x) >= 0.1));
   const picked = [...bag.picked].filter((id) => P.bag.some((x) => x.id === id));
-  return `<div class="doll"><div class="dollCol">${slotTile('vu_khi')}</div><div class="dollFig"><canvas id="dollCv" width="32" height="40"></canvas></div><div class="dollCol">${slotTile('ao')}${slotTile('phu_kien')}</div></div>
+  return `<div class="doll"><div class="dollCol">${slotTile('vu_khi')}</div><div class="dollFig"><canvas id="dollCv" width="32" height="40"></canvas><img id="dollArt" class="art" alt="" hidden></div><div class="dollCol">${slotTile('ao')}${slotTile('phu_kien')}</div></div>
     <div class="statIcons">${stats.map(([k, n, v]) => `<button class="si" data-stat="f_${k}">${icoImg({ kind: STAT_ICO[k] })}<span>${n}</span><b>${v}</b></button>`).join('')}</div>
     ${tt.length ? `<div class="ttActive">Thần thông: ${tt.map((id) => `<span class="ttName">✦ ${esc(TT_MAP[id].n)}</span>`).join(' ')}</div>` : ''}
     ${detail}
@@ -1245,33 +1321,46 @@ function bagEq() {
 }
 function bagCp() {
   const P = g.P;
-  const wep = P.eq.vu_khi ? P.eq.vu_khi.wt : null;
-  const mism = g.skillMismatch().length;
-  const hot = [0, 1, 2, 3].map((i) => {
-    const id = P.loadout[i];
-    if (!id) return `<button class="tile empty hot" data-hs="${i}"><span class="tn">Ô ${i + 1}</span></button>`;
-    const sk = SKILLS[id];
-    const bad = sk.wep && sk.wep !== wep;
-    return `<button class="tile hot ${bad ? 'bad' : ''} ${bag.sel === id ? 'sel' : ''}" data-skt="${id}">${skIco(id)}${bad ? `<span class="bdg sup">${icoImg({ kind: WEP_ICO[sk.wep], q: 0 }, 'mini')}</span>` : ''}<span class="tn">${esc(sk.n)}</span></button>`;
-  }).join('');
-  const lib = P.skills.map((id) => `<button class="tile ${P.loadout.includes(id) ? 'on' : ''} ${bag.sel === id ? 'sel' : ''}" data-skt="${id}">${skIco(id)}${P.loadout.includes(id) ? `<span class="bdg up">${P.loadout.indexOf(id) + 1}</span>` : ''}<span class="tn">${esc(SKILLS[id].n)}</span></button>`).join('');
-  const sk = typeof bag.sel === 'string' && SKILLS[bag.sel] ? SKILLS[bag.sel] : null;
-  const detail = sk ? `<div class="detail"><div class="item withIco">${skIco(bag.sel)}<div class="body"><div class="row"><b>${esc(sk.n)}</b><span class="meta">${sk.mp ? `Linh lực ${sk.mp}` : 'Không tốn linh lực'}${sk.wep ? ` · cần ${WEAPON_TYPES[sk.wep].n.toLowerCase()}` : ''}</span></div><div class="meta">${esc(sk.desc)}</div>
-    ${sk.wep && sk.wep !== wep ? `<div class="sealLine">Đang cầm ${wep ? WEAPON_TYPES[wep].n.toLowerCase() : 'tay không'}: chiêu này yếu 40%.</div>` : ''}
-    <div class="row btnRow">${[0, 1, 2, 3].map((i) => `<button class="btn ${P.loadout[i] === bag.sel ? 'on' : 'ghost'} sm" data-put="${i}">Ô ${i + 1}</button>`).join('')}${P.loadout.includes(bag.sel) && P.loadout.length > 1 ? '<button class="btn ghost sm" data-rm="1">Bỏ ra</button>' : ''}</div></div></div></div>` : '';
-  const tps = TAM_PHAP_IDS.filter((id) => P.tpLv[id]);
-  const tpTiles = tps.map((id) => { const lv = P.tpLv[id]; return `<button class="tile ${P.tp === id ? 'sel' : ''} q${Math.min(4, Math.floor(lv / 2))}" data-tp="${id}">${icoImg({ kind: 'tam', q: Math.min(4, Math.floor(lv / 2)) })}<span class="bdg plus">${lv}</span><span class="tn">${esc(TAM_PHAP[id].n)}</span></button>`; }).join('');
-  const cur = P.tp && TAM_PHAP[P.tp];
+  const pa = PATHS[P.path];
   const TAC_ICO = { cuong_cong: 'st_atk', can_bang: 'tam', phong_thu: 'st_def' };
-  return `<h3>Võ kỹ mang theo</h3><div class="hotbar">${hot}</div>
-    <div class="row btnRow"><button class="btn ${mism ? 'primary' : 'ghost'}" data-autosk="1">⚔ Xếp hợp binh khí</button>${mism ? `<span class="tag neg">${mism} chiêu lệch binh khí (viền đỏ)</span>` : ''}</div>
+  const tac = `<h3>Chiến thuật</h3><div class="tacCards">${Object.entries(TACTICS).map(([k, t]) => `<button class="tile tac ${P.tactic === k ? 'sel' : ''}" data-tc="${k}">${icoImg({ kind: TAC_ICO[k] })}<b>${t.n}</b><span class="tn">${t.desc}</span></button>`).join('')}</div>`;
+  if (!pa) return `<p class="empty">Chưa chọn đạo lộ. Nhập đạo (6 tuổi) sẽ được chọn Kiếm Tu, Thể Tu hoặc Tinh Thần Lực.</p>${tac}`;
+  const lv = g.skillLvs();
+  const ids = PATH_SKILLS[P.path];
+  const SLOT_N = { co: 'Đòn cơ bản', c1: 'Chiêu', c2: 'Chiêu', chot: 'Chiêu chốt', ult: 'Tuyệt kỹ', p1: 'Bị động', p2: 'Bị động', p3: 'Bị động' };
+  const tile = (id) => {
+    const sk = SKILLS[id];
+    const open = !!lv[id];
+    const L = (P.skLv && P.skLv[id]) || 1;
+    const up = open && L < SKILL_MAX(id) && (P.sp || 0) >= g.skillCost(id);
+    return `<button class="tile sk ${sk.slot === 'ult' ? 'ultT' : sk.kind === 'passive' ? 'pasT' : ''} ${bag.sel === id ? 'sel' : ''} ${open ? '' : 'locked'}" data-skt="${id}">${skIco(id)}${open ? `<span class="bdg plus">${L}</span>` : '<span class="bdg lk">🔒</span>'}${up ? '<span class="bdg up">▲</span>' : ''}<span class="tn">${esc(sk.n)}</span></button>`;
+  };
+  const col = (slots) => ids.filter((id) => slots.includes(SKILLS[id].slot)).map(tile).join('');
+  const sel = typeof bag.sel === 'string' && ids.includes(bag.sel) ? bag.sel : null;
+  let detail = '';
+  if (sel) {
+    const sk = SKILLS[sel];
+    const L = (P.skLv && P.skLv[sel]) || 1;
+    const open = !!lv[sel];
+    const max = SKILL_MAX(sel);
+    const c = g.skillCost(sel);
+    const need = sk.realm >= 10 ? '' : REALMS[Math.max(0, sk.realm || 0)].n;
+    detail = `<div class="detail"><div class="item withIco skDetail">${skIco(sel, 'big')}<div class="body"><div class="row"><b>${esc(sk.n)}</b><span class="meta">${SLOT_N[sk.slot]}${open ? ` · cấp ${L}/${max}` : ` · mở ở ${need}`}</span></div>
+      <div class="meta">${esc(sk.desc)}</div>
+      <div class="meta">${sk.kind === 'passive' ? `Hiệu lực x${skillLvMul(sel, L).toFixed(2)}` : `Sức chiêu x${skillLvMul(sel, L).toFixed(2)}`}${sk.mp ? ` · linh lực ${sk.mp}` : ''}${sk.hpCost ? ` · đốt ${Math.round(sk.hpCost * 100)}% máu` : ''}${sk.cd ? ` · hồi ${sk.cd} lượt` : ''}${sk.slot === 'ult' ? ` · tự tung khi ${PATH_RES[P.path].n} đầy` : ''}</div>
+      ${open && L < max ? `<div class="row btnRow"><button class="btn primary" data-sku="${sel}" ${(P.sp || 0) >= c ? '' : 'disabled'}>◈ Nâng lên cấp ${L + 1} · ${c} điểm</button></div>` : open ? '<div class="meta pos">Đã tối đa.</div>' : ''}</div></div></div>`;
+  }
+  const mism = g.skillMismatch().length;
+  const others = Object.keys(PATHS).filter((k) => k !== P.path);
+  return `<div class="pathHead"><img class="pathPic" alt="" src="${heroArt(P.path)}"><div><b>${pa.icon} ${esc(pa.n)}</b><div class="meta">${esc(pa.tag)} · thanh ${esc(pa.res)}</div><div class="spBox">◈ Ngộ đạo điểm: <b>${P.sp || 0}</b></div></div></div>
+    ${mism ? `<p class="forgeMsg">⚠ ${esc(pa.n)} cần ${WEAPON_TYPES[pa.wep].n.toLowerCase()}: binh khí đang cầm làm chiêu yếu đi.</p>` : ''}
+    <div class="skTree"><div class="skCol"><h4>Chiêu thức</h4>${col(['co', 'c1', 'c2', 'chot'])}</div><div class="skCol"><h4>Tuyệt kỹ</h4>${col(['ult'])}</div><div class="skCol"><h4>Bị động</h4>${col(['p1', 'p2', 'p3'])}</div></div>
     ${detail}
-    <h3>Võ kỹ đã học · ${P.skills.length}</h3><div class="grid5">${lib}</div>
-    <h3>Chiến thuật</h3><div class="tacCards">${Object.entries(TACTICS).map(([k, t]) => `<button class="tile tac ${P.tactic === k ? 'sel' : ''}" data-tc="${k}">${icoImg({ kind: TAC_ICO[k] })}<b>${t.n}</b><span class="tn">${t.desc}</span></button>`).join('')}</div>
-    <h3>Tâm pháp chủ tu</h3>
-    ${cur ? `<div class="item"><div class="row"><b>${esc(cur.n)} · tầng ${P.tpLv[P.tp]}/9</b><span class="meta">${P.tpLv[P.tp] < 9 ? `${Math.floor(P.tpXp[P.tp] || 0)}/${g.tpNeed(P.tpLv[P.tp])}` : 'đại thành'}</span></div><div class="meta">${esc(cur.desc)} Lên tầng khi tu luyện (bế quan nhanh gấp 2,5). Chạm để đổi chủ tu.</div></div>` : '<p class="empty">Chưa có tâm pháp.</p>'}
-    <div class="grid5">${tpTiles}</div>
-    <p class="intro">Học thêm tâm pháp: trùm tháp, Bia ngộ đạo, Tháp thương điếm.</p>`;
+    <div class="row btnRow"><button class="btn ${g.s.opt.autoSkill !== false ? 'on' : 'ghost'}" data-opt2="autoSkill">Tự nâng kỹ năng khi có điểm: ${g.s.opt.autoSkill !== false ? 'bật' : 'tắt'}</button></div>
+    <p class="intro">Ngộ đạo điểm có từ: đột phá (+5), lên nấc nhỏ (+1), trùm tháp, tông môn, Bia ngộ đạo, kỳ ngộ, ngọc giản ở Tụ Bảo Lâu và Tháp thương điếm.</p>
+    ${tac}
+    <h3>Chuyển tu</h3>
+    ${P.flags.changedPath ? '<p class="meta">Kiếp này đã chuyển tu một lần.</p>' : `<p class="intro">Mỗi kiếp được đổi đạo lộ một lần: mất 50% tu vi, kỹ năng đường cũ về cấp 1, hoàn lại một nửa ngộ đạo điểm đã dùng.</p><div class="row btnRow">${others.map((k) => `<button class="btn ${bag.confirm === `cp:${k}` ? 'danger' : 'ghost'}" data-cpath="${k}">${bag.confirm === `cp:${k}` ? `Bấm lần nữa: chuyển sang ${PATHS[k].n}` : `${PATHS[k].icon} Chuyển sang ${PATHS[k].n}`}</button>`).join('')}</div>`}`;
 }
 function bagDan() {
   const P = g.P;
@@ -1325,7 +1414,7 @@ function openBag(tabId) {
       ${body}`, () => {
       const B = $('sheetBody');
       const cv = $('dollCv');
-      if (cv) drawPortrait(cv, P, { life: g.lifespan(), robe: playerRobe(P) });
+      if (cv) { drawPortrait(cv, P, { life: g.lifespan(), robe: playerRobe(P) }); setArt($('dollArt'), PATHS[P.path] ? { src: heroArt(P.path) } : null, cv); }
       const q = (sel, fn) => B.querySelectorAll(sel).forEach((b) => { b.onclick = () => { const cf0 = bag.confirm; const m = fn(b); if (bag.confirm === cf0) bag.confirm = null; save(); dirty = true; draw(typeof m === 'string' ? m : ''); }; });
       // bán, phân giải: đồ Cực phẩm trở lên phải bấm hai lần; xong thì có Hoàn tác trong 10 giây
       const undoable = (fn) => { g.undoStart(); const m = fn(); if (g.undoEnd()) undoUntil = performance.now() + 10000; return m; };
@@ -1372,16 +1461,17 @@ function openBag(tabId) {
       q('[data-enh]', (b) => g.enhance(+b.dataset.enh) || 'Không đủ nguyên liệu.');
       q('[data-up]', (b) => g.upgrade(+b.dataset.up) || 'Không đủ nguyên liệu.');
       q('[data-skt]', (b) => { bag.sel = bag.sel === b.dataset.skt ? null : b.dataset.skt; });
+      q('[data-sku]', (b) => g.upgradeSkill(b.dataset.sku) || 'Chưa đủ ngộ đạo điểm.');
+      q('[data-cpath]', (b) => { const k = b.dataset.cpath; if (bag.confirm !== `cp:${k}`) { bag.confirm = `cp:${k}`; return ''; } bag.confirm = null; bag.sel = null; return g.changePath(k) || ''; });
       q('[data-hs]', () => 'Chạm một võ kỹ bên dưới rồi chọn ô để đặt vào.');
       q('[data-put]', (b) => { g.setSkillSlot(+b.dataset.put, bag.sel); });
       q('[data-rm]', () => { g.toggleSkill(bag.sel); });
       q('[data-autosk]', () => (g.autoLoadout() ? `Đã xếp: ${g.P.loadout.map((id) => SKILLS[id].n).join(', ')}.` : 'Bộ võ kỹ đang mang đã hợp nhất rồi.'));
       q('[data-tc]', (b) => g.setTactic(b.dataset.tc));
-      q('[data-tp]', (b) => { g.setTamPhap(b.dataset.tp); return `Chủ tu ${TAM_PHAP[b.dataset.tp].n}.`; });
-      q('[data-pl]', (b) => { bag.sel = bag.sel === b.dataset.pl ? null : b.dataset.pl; });
+            q('[data-pl]', (b) => { bag.sel = bag.sel === b.dataset.pl ? null : b.dataset.pl; });
       q('[data-mt]', (b) => { bag.sel = bag.sel === b.dataset.mt ? null : b.dataset.mt; });
       q('[data-use]', (b) => g.usePill(b.dataset.use) || '');
-      q('[data-opt2]', (b) => { const k = b.dataset.opt2; g.s.opt[k] = k === 'towerResume' || k === 'autoBaoKhi' ? g.s.opt[k] === false : !g.s.opt[k]; });
+      q('[data-opt2]', (b) => { const k = b.dataset.opt2; g.s.opt[k] = k === 'towerResume' || k === 'autoBaoKhi' || k === 'autoSkill' ? g.s.opt[k] === false : !g.s.opt[k]; if (k === 'autoSkill' && g.s.opt.autoSkill !== false) g.autoSpendSP(); });
       bindPillOpts(draw);
       B.querySelectorAll('[data-goshop]').forEach((b) => { b.onclick = openShop; });
       B.querySelectorAll('[data-goforge]').forEach((b) => { b.onclick = () => { const [sl, wt] = b.dataset.goforge.split(':'); if (sl) { forgeTab = 'moi'; forgeSel.slot = sl; if (wt) forgeSel.wt = wt; } openForge(); }; });
@@ -1459,7 +1549,7 @@ function openShop() {
       $('sheetBody').querySelectorAll('[data-ps]').forEach((b) => { b.onclick = () => { shopSel = b.dataset.ps; draw(); }; });
       $('sheetBody').querySelectorAll('[data-buy]').forEach((b) => { b.onclick = () => { g.buy(b.dataset.buy); save(); draw(); }; });
       $('sheetBody').querySelectorAll('[data-bg]').forEach((b) => { b.onclick = () => { const m = g.buyGear(b.dataset.bg); save(); draw(m || ''); }; });
-      $('sheetBody').querySelectorAll('[data-bk]').forEach((b) => { b.onclick = () => { const m = g.buyBook(b.dataset.bk); save(); draw(m || ''); }; });
+      $('sheetBody').querySelectorAll('[data-sage]').forEach((b) => { b.onclick = () => { const m = g.buySage(); save(); draw(m || ''); }; });
       $('sheetBody').querySelectorAll('[data-use]').forEach((b) => { b.onclick = () => { const m = g.usePill(b.dataset.use); save(); draw(m || ''); }; });
     });
   };
@@ -1468,7 +1558,7 @@ function openShop() {
 function openClose() {
   const P = g.P;
   openSheet(`<h2>Bế quan</h2><p class="intro">Phong bế động phủ, tu vi tăng gấp 1,6 lần, gần như không gặp kỳ ngộ. Thời gian trôi nhanh gấp ba. Có chút rủi ro tẩu hỏa. Tu vi viên mãn thì tự xuất quan.</p>
-    <ul class="statList"><li>Bế quan đủ 10 năm: lần đột phá kế tiếp +15%, xuất quan sinh lực đầy, sát khí tan hết, căn cơ vững chắc.</li><li>Tử quan (50 năm trở lên): tu vi x2, xuất quan 50% đốn ngộ (tâm pháp lên một tầng).</li><li>Tâm pháp chủ tu lên tầng nhanh gấp 2,5 lần tu luyện.</li></ul>
+    <ul class="statList"><li>Bế quan đủ 10 năm: lần đột phá kế tiếp +15%, xuất quan sinh lực đầy, sát khí tan hết, căn cơ vững chắc.</li><li>Tử quan (50 năm trở lên): tu vi x2, xuất quan 50% đốn ngộ (ngộ đạo điểm +4).</li></ul>
     <div class="cstats"><span>Sát khí <b>${Math.round(P.sat || 0)}</b></span><span>Chưa vững <b>${fmt(P.loose || 0)}</b></span>${P.brkBonus ? `<span>Đang có <b>+15%</b> đột phá</span>` : ''}</div>
     <div class="list">${[5, 10, 20, 50, 100].map((y) => `<button class="btn" data-y="${y}">${y >= 50 ? 'Tử quan' : 'Bế quan'} ${y} năm${y >= 10 ? `<small>${y >= 50 ? 'x2 tu vi, có thể đốn ngộ' : '+15% đột phá, xả sạch sát khí'}</small>` : ''}</button>`).join('')}</div>`, () => {
     $('sheetBody').querySelectorAll('[data-y]').forEach((b) => {

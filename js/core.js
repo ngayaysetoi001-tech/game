@@ -21,8 +21,8 @@ const THE_CAP_ADD = { brk: 0.15 };
 const THE_MAP = Object.fromEntries(THE_CHAT.map((t) => [t.id, t]));
 const TP_MAP = Object.fromEntries(THIEN_PHU.map((t) => [t.id, t]));
 import { EVENTS, EVENT_MAP } from './events.js';
-import { SKILLS, SKILL_IDS, BEAST_SKILLS, fighter, battle, turnText, skillCls } from './combat.js';
-import { makeItem, gearStats, itemScore, QUALITY, THAN_THONG, TT_MAP, isSealed, rollQuality, itemVal, itemName, PLUS_MAX, AFFIX } from './items.js';
+import { SKILLS, SKILL_IDS, BEAST_SKILLS, fighter, battle, turnText, skillCls, PATH_SKILLS, PATH_RES, SKILL_MAX, skillLvMul } from './combat.js';
+import { makeItem, gearStats, itemScore, QUALITY, THAN_THONG, TT_MAP, isSealed, rollQuality, itemVal, itemName, PLUS_MAX, AFFIX, wepName, setWepBias } from './items.js';
 import { botSeed } from './sprite.js';
 import { armorColor, itemToken, iconToken, matIconOpts, skillToken } from './icons.js';
 
@@ -34,8 +34,12 @@ const ENEMY_GEAR_D = [1.2, 1.2, 1.25, 1.35, 1.4, 1.5];
 const FIGHT_ADD_CAP = 0.6;
 const OTHER_CAP_MUL = { fightMul: 1.6, gainMul: 2.2 };
 const BAG_MAX = 16;
-const WEP_KEYS = ['kiem', 'dao', 'thuong', 'quat'];
-const WEP_N = { kiem: 'Kiếm', dao: 'Đao', thuong: 'Thương', quat: 'Phiến' };
+const WEP_KEYS = ['kiem', 'quyen', 'phap'];
+const PATH_IDS = ['kiem', 'the', 'tinh'];
+// quái vô hồn: miễn khống chế tinh thần, chịu sát thương tinh thần -50%
+const MINDLESS_RE = /Cương Thi|Thi Hổ|Thi Mộ|Khôi|Xương|Trùng|Nham|Thạch|Dung Nham|Quỷ Bộc|Tàn Ảnh|Kiếm Nô|Kiếm Hồn|Hư Ảnh|Đá/;
+// đồ cũ (4 loại binh khí) đổi sang 3 loại mới
+const OLD_WEP = { dao: 'kiem', thuong: 'kiem', quat: 'phap' };
 // kỳ ngộ chịu ảnh hưởng của độ khó vùng lịch luyện
 const MAP_RARE_EV = new Set(['hang_dong', 'truyen_thua', 'co_mo', 'kiem_trung', 'bi_canh', 'linh_mach', 'yeu_vuong', 'ban_do', 'trung_la', 'bao_vat', 'linh_thu', 'ngoc_gian']);
 // kỳ ngộ tự quyết được nhưng đủ quan trọng để hỏi người chơi khi chạy chậm
@@ -84,6 +88,7 @@ export class Game {
     if (state.opt.autoBuyPill === undefined) state.opt.autoBuyPill = false;
     if (state.opt.autoEquip === undefined) state.opt.autoEquip = true;
     if (state.opt.towerResume === undefined) state.opt.towerResume = true;
+    if (state.player && PATHS[state.player.path]) setWepBias(PATHS[state.player.path].wep);
     if (state.opt.autoSell === undefined) state.opt.autoSell = false;
     if (!state.opt.autoEquipMode) state.opt.autoEquipMode = state.opt.autoEquip === false ? 'off' : 'gain';
   }
@@ -224,7 +229,6 @@ export class Game {
       id: this.s.nextId++, name, alive: true, founded: this.s.year,
       founder: founder ? founder.name : null,
       color: SECT_COLORS[this.s.sects.length % SECT_COLORS.length],
-      skill: this.r.pick(SKILL_IDS.filter((k) => SKILLS[k].tier >= 1 && SKILLS[k].tier <= 2)),
       plane,
     };
     this.s.sects.push(sc);
@@ -252,6 +256,7 @@ export class Game {
     b.rootM = root.m; b.rootN = root.n;
     b.dao = false; b.sect = null; b.life = b.plane ? Math.round(REALMS[b.realm].life * this.r.range(0.7, 1.1)) : this.r.int(50, 72);
     b.map = null; b.mapUntil = 0; b.gq = 0; b.tt = null; b.tower = 0;
+    b.path = this.r.pick(PATH_IDS);
     b.alive = true; b.lives++; b.fame = 0; b.kills = 0; b.cause = null;
     // linh hồn giữ tính cách cũ phần lớn thời gian
     if (this.r.chance(0.3)) b.pers = this.r.pick(PERS_KEYS);
@@ -823,7 +828,7 @@ export class Game {
     // chỉ báo khi lần đầu lên tới nấc này (đột phá hỏng tụt lùi rồi tu lại thì không báo lại)
     const key = `${P.realm}`;
     P.flags.subMax = P.flags.subMax || {};
-    if (ka > kb && ka > (P.flags.subMax[key] ?? 0)) { P.flags.subMax[key] = ka; this.log(`Tu vi tăng tiến, ngươi bước vào ${realmLabel(P.realm, P.tuvi)}.`, 'good'); }
+    if (ka > kb && ka > (P.flags.subMax[key] ?? 0)) { P.flags.subMax[key] = ka; this.addSP(1); this.log(`Tu vi tăng tiến, ngươi bước vào ${realmLabel(P.realm, P.tuvi)}. Ngộ đạo điểm +1.`, 'good'); }
     if (loose) P.loose = Math.min(P.tuvi, (P.loose || 0) + (P.tuvi - before));
     return Math.round(P.tuvi - before);
   }
@@ -841,7 +846,7 @@ export class Game {
   basePower() {
     const P = this.P;
     const R = REALMS[P.realm];
-    return R.pow * (1 + subFrac(P.realm, P.tuvi) * 0.5) * (1 + (P.stats.can - 50) / 200) * (1 + Math.min(FIGHT_ADD_CAP, P.fight)) * (P.flags.pet ? (P.path === 'ngu_thu' ? 1.15 : 1.1) : 1) * this.tmul('fightMul');
+    return R.pow * (1 + subFrac(P.realm, P.tuvi) * 0.5) * (1 + (P.stats.can - 50) / 200) * (1 + Math.min(FIGHT_ADD_CAP, P.fight)) * (P.flags.pet ? 1.1 : 1) * this.tmul('fightMul');
   }
   /** Sức mạnh quy đổi gồm trang bị, dùng để so với đối thủ */
   rating() {
@@ -866,31 +871,34 @@ export class Game {
     // tâm pháp chủ tu
     for (const k of ['crit', 'regenTurn', 'mpRegen', 'dmgRed']) { const v = this.tpFx(k); if (v) gear[k] = (gear[k] || 0) + v; }
     const pm = { ...(P.path && PATHS[P.path] ? PATHS[P.path].pm : {}) };
+    const lv = this.skillLvs();
     const hpx = this.tpFx('hpPct');
     if (hpx) pm.hpPct = (pm.hpPct || 0) + hpx;
     // Ma tu: sát khí hóa thành sức mạnh
-    if (P.path === 'ma' && P.sat > 0) mul *= 1 + Math.min(0.25, P.sat / 400);
     return fighter({
       name: P.name, pw: this.basePower() * mul, hpPct: (hp ?? P.hp) / 100,
-      skills: P.loadout, wep: w ? w.wt : null, tactic: P.tactic, gear, pm,
+      skills: this.activeSkills(), wep: w ? w.wt : null, tactic: P.tactic, gear, pm, path: PATHS[P.path] ? P.path : null, lv, twin: P.path === 'tinh' && P.realm % 10 >= 7 || (P.plane || 0) >= 1 && P.path === 'tinh',
       spd: (P.stats.co - 50) / 25,
-      look: { type: 'human', seed: P.look, g: P.g, age: P.age, life: this.lifespan(), realm: P.realm, robe: P.eq && P.eq.ao ? armorColor(P.eq.ao) : P.sect ? (this.sect(P.sect) || {}).color : null, wep: w ? w.wt : null },
+      look: { type: 'human', path: PATHS[P.path] ? P.path : null, seed: P.look, g: P.g, age: P.age, life: this.lifespan(), realm: P.realm, robe: P.eq && P.eq.ao ? armorColor(P.eq.ao) : P.sect ? (this.sect(P.sect) || {}).color : null, wep: w ? w.wt : null },
     });
   }
+  botPath(b) {
+    return PATH_IDS.includes(b.path) ? b.path : PATH_IDS[botSeed(b) % 3];
+  }
   botWep(b) {
-    return WEP_KEYS[botSeed(b) % 4];
+    return PATHS[this.botPath(b)].wep;
+  }
+  /** Cấp kỹ năng của bot theo cảnh giới */
+  botLv(b) {
+    const out = {};
+    const r = (b.realm % 10) + (b.plane ? 9 : 0);
+    for (const id of PATH_SKILLS[this.botPath(b)]) if (b.realm >= 1 && this.skillRealmOk(id, b.realm)) out[id] = Math.min(SKILL_MAX(id), 1 + Math.floor(r / 2));
+    return out;
   }
   botSkills(b) {
-    const r = new Rng(botSeed(b) ^ 0x9e3779b9);
-    const wep = this.botWep(b);
-    const out = [];
-    const m = SKILL_IDS.filter((k) => SKILLS[k].wep === wep && SKILLS[k].tier === 1);
-    if (b.realm >= 1 && m.length) out.push(r.pick(m));
-    const maxT = Math.min(3, 1 + Math.floor(b.realm / 2));
-    if (b.realm >= 2) out.push(r.pick(SKILL_IDS.filter((k) => SKILLS[k].kind === 'atk' && !SKILLS[k].path && SKILLS[k].tier >= 1 && SKILLS[k].tier <= maxT && (!SKILLS[k].wep || SKILLS[k].wep === wep))));
-    if (b.realm >= 4) out.push(r.pick(['huyen_vu', 'hoi_nguyen']));
-    out.push('quyen');
-    return [...new Set(out)];
+    const lv = this.botLv(b);
+    const out = Object.keys(lv);
+    return out.length ? out : ['quyen'];
   }
   /** Ghi trận đấu để giao diện diễn lại, trả về kết quả gọn cho sự kiện */
   /**
@@ -976,7 +984,7 @@ export class Game {
   genericFighter(foeName, foePow) {
     const r = new Rng([...foeName].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7));
     return fighter({
-      name: foeName, pw: foePow * enemyGear(this.P.realm) * this.diffPow(), skills: ['quyen', r.pick(['han_bang', 'luu_van', 'liet_hoa', 'truy_hon'])], wep: r.pick(WEP_KEYS),
+      name: foeName, pw: foePow * enemyGear(this.P.realm) * this.diffPow(), skills: ['quyen', r.pick(['doc_nha', 'gam_thet', 'cuong_bao'])], wep: r.pick(WEP_KEYS),
       look: { type: 'human', seed: r.int(1, 1e6), g: 'nam', age: 35, life: 80, realm: 0, robe: '#4a3f3a', wep: 'dao' },
     });
   }
@@ -992,12 +1000,12 @@ export class Game {
     for (const id of m.aff || []) { const a = MOB_AFFIX_MAP[id]; if (a) for (const k in a.gear) gear[k] = typeof a.gear[k] === 'number' ? (gear[k] || 0) + a.gear[k] : a.gear[k]; }
     if (m.kitGear) for (const k in m.kitGear) gear[k] = (gear[k] || 0) + m.kitGear[k];
     if (m.rage) gear.atkPct = (gear.atkPct || 0) + m.rage;
-    return fighter({ name: m.n, pw: m.pow * scale * eg * this.diffPow(), skills: [...new Set(sk)], beast: true, gear, look: { type: 'beast', seed: m.seed, realm: Math.min(m.r ?? 0, 7), name: m.n } });
+    return fighter({ name: m.n, pw: m.pow * scale * eg * this.diffPow(), skills: [...new Set(sk)], beast: true, gear, mindless: MINDLESS_RE.test(m.n), look: { type: 'beast', seed: m.seed, realm: Math.min(m.r ?? 0, 7), name: m.n } });
   }
   botFighter(b) {
     return fighter({
-      name: b.name, pw: this.power(b) * enemyGear(b.realm) * this.diffPow(), skills: this.botSkills(b), wep: this.botWep(b), tactic: b.pers === 'cuong' ? 'cuong_cong' : b.pers === 'an' ? 'phong_thu' : 'can_bang',
-      look: { type: 'human', seed: botSeed(b), g: b.g, age: b.age, life: b.life, realm: b.realm, robe: b.sect ? (this.sect(b.sect) || {}).color : null, wep: this.botWep(b) },
+      name: b.name, pw: this.power(b) * enemyGear(b.realm) * this.diffPow(), skills: this.botSkills(b), wep: this.botWep(b), path: this.botPath(b), lv: this.botLv(b), pm: PATHS[this.botPath(b)].pm, twin: b.realm >= 7 && this.botPath(b) === 'tinh', tactic: b.pers === 'cuong' ? 'cuong_cong' : b.pers === 'an' ? 'phong_thu' : 'can_bang',
+      look: { type: 'human', path: this.botPath(b), seed: botSeed(b), g: b.g, age: b.age, life: b.life, realm: b.realm, robe: b.sect ? (this.sect(b.sect) || {}).color : null, wep: this.botWep(b) },
     });
   }
   /** Bot có ra tay giết người thua không */
@@ -1024,6 +1032,7 @@ export class Game {
     return this.oddsText(this.winOdds(() => this.monsterFighter(m, scale)), 0.35, B.maxHp / this.playerFighter().maxHp);
   }
   hintBot(b, mul = 1) {
+    mul *= this.pathEdge(b);
     const B = this.botFighter(b);
     return this.oddsText(this.winOdds(() => this.botFighter(b), mul), this.botLethal(b), B.maxHp / this.playerFighter(mul).maxHp);
   }
@@ -1048,13 +1057,20 @@ export class Game {
     }
     return res;
   }
+  /** Tương khắc giữa 3 đường: Kiếm thắng Tinh thần, Tinh thần thắng Thể, Thể thắng Kiếm (±15%) */
+  pathEdge(b) {
+    const me = this.P.path, him = this.botPath(b);
+    const BEAT = { kiem: 'tinh', tinh: 'the', the: 'kiem' };
+    return !PATHS[me] ? 1 : BEAT[me] === him ? 1.15 : BEAT[him] === me ? 0.87 : 1;
+  }
   fightBot(b, mul = 1, opts = {}) {
+    mul *= this.pathEdge(b);
     const res = this.runBattle(this.playerFighter(mul), this.botFighter(b), { lethal: this.botLethal(b), cause: `chết dưới tay ${b.name}`, ...opts });
     if (res.win && (b.gq || 0) >= 2 && this.r.chance(b.gq >= 4 ? 0.08 : 0.25)) {
       // đoạt được món tốt nhất của đối thủ (kể cả thần khí bot đoạt được ở vùng khó)
       const it = makeItem(this.r, this.s.nextItem++, b.realm, b.gq, 'vu_khi');
       it.wt = this.botWep(b);
-      it.n = it.n.replace(/\S+$/, WEP_N[it.wt]);
+      it.n = wepName(it.n, it.wt);
       if (b.gq >= 4 && b.tt) { const tt = TT_MAP[b.tt]; const slot = Object.keys(THAN_THONG).find((k) => THAN_THONG[k].includes(tt)); if (slot === 'vu_khi') it.tt = b.tt; }
       this._forging = true;
       res.text += '\n' + this.gainItem(it, `Đoạt được ${b.gq >= 4 ? 'thần khí' : 'bảo vật'} của ${b.name}`);
@@ -1064,7 +1080,7 @@ export class Game {
     } else if (res.win && this.r.chance(0.15)) {
       const it = this.dropItem(b.realm, 'vu_khi');
       it.wt = this.botWep(b);
-      it.n = it.n.replace(/\S+$/, WEP_N[it.wt]);
+      it.n = wepName(it.n, it.wt);
       res.text += '\n' + this.gainItem(it, `Nhặt được binh khí của ${b.name}`);
     }
     return res;
@@ -1295,8 +1311,7 @@ export class Game {
     let msg = '';
     if (it.pill) { P.pills[it.pill[0]] = (P.pills[it.pill[0]] || 0) + it.pill[1]; msg = `Đổi được ${it.n}.`; }
     else if (it.mats) { const m = { tinh_thiet: 10 * (1 + P.realm), linh_tinh: 3 * (1 + P.realm) }; for (const k in m) P.mats[k] = (P.mats[k] || 0) + m[k]; msg = this.matText(m, 'Đổi được'); }
-    else if (it.book) { msg = this.learnRandom(2, 3); if (!msg) return 'Bí kíp ở đây ngươi đã học hết.'; }
-    else if (it.tamPhap) { msg = this.learnTamPhap(true); if (!msg) return 'Tâm pháp ở đây ngươi đã biết hết.'; }
+    else if (it.book) msg = this.addSP(5, 'Ngọc giản tháp: ');
     P.towerCoin -= it.price;
     return msg;
   }
@@ -1311,7 +1326,7 @@ export class Game {
     this._forging = true;
     out.push(this.gainItem(makeItem(this.r, this.s.nextItem++, P.realm, this.r.chance(mythP) ? 4 : 3), f >= 1000 ? 'Tháp chủ để lại' : `Trùm tầng ${f} rơi`));
     this._forging = false;
-    if (this.r.chance(0.5) || f >= 1000) { const sk = this.learnRandom(2, 3); if (sk) out.push(sk); }
+    out.push(this.addSP(f >= 1000 ? 10 : 2, 'Lĩnh ngộ từ trận chiến: '));
     const m = { tinh_thiet: Math.round(5 * fr * dr), linh_tinh: Math.round(2 * fr * dr) };
     if (f >= 500) m[mythMatOf(plane)] = f >= 1000 ? 3 : 1;
     for (const k in m) P.mats[k] = (P.mats[k] || 0) + m[k];
@@ -1322,7 +1337,6 @@ export class Game {
     P.towerCoin = (P.towerCoin || 0) + coin;
     out.push(`Tháp tệ +${coin}.`);
     if (f < 1000) this.toast(`Hạ trùm tầng ${f} ${PL.tower}.`, `🗼 Tầng ${f}/1000`, 2);
-    if (this.r.chance(0.3)) { const t = this.learnTamPhap(); if (t) out.push(t); }
     this.fame(Math.round(f / 50));
     out.push(`Linh thạch +${money}.`);
     if (f >= 1000) {
@@ -1451,7 +1465,7 @@ export class Game {
   /** Ngoài vùng Khó trở lên, đồ Thần thoại hạ xuống Cực phẩm */
   demote(it) {
     const n = makeItem(this.r, it.id, it.lv, 3, it.slot);
-    if (it.wt) { n.wt = it.wt; n.n = n.n.replace(/\S+$/, WEP_N[it.wt]); }
+    if (it.wt) { n.wt = it.wt; n.n = wepName(n.n, it.wt); }
     return n;
   }
   /** Nhặt nguyên liệu ở vùng lịch luyện. kill: hạ được yêu thú */
@@ -1532,7 +1546,7 @@ export class Game {
   /** Tay nghề rèn, Thể tu và danh hiệu cộng thêm tỉ lệ */
   forgeBonus() {
     const P = this.P;
-    return Math.min(0.15, (P.forge || 0) * 0.0015) + (P.path === 'the' ? 0.05 : 0) + this.tadd('forgeBonus');
+    return Math.min(0.15, (P.forge || 0) * 0.0015) + (P.path === 'tinh' ? 0.05 : 0) + this.tadd('forgeBonus');
   }
   addForge(n) {
     this.P.forge = Math.min(100, (this.P.forge || 0) + n);
@@ -1647,7 +1661,7 @@ export class Game {
     if (myth) q = this.r.chance(this.forgeMythChance()) ? 4 : 3;
     else { const w = [35, 38, 20 * (1 + b * 3), 7 * (1 + b * 5)]; q = this.r.weighted([0, 1, 2, 3], (x) => w[x]); }
     const it = makeItem(this.r, this.s.nextItem++, P.realm, q, slot);
-    if (slot === 'vu_khi' && WEP_KEYS.includes(wt)) { it.wt = wt; it.n = it.n.replace(/\S+$/, WEP_N[wt]); }
+    if (slot === 'vu_khi' && WEP_KEYS.includes(wt)) { it.wt = wt; it.n = wepName(it.n, wt); }
     if (cat) {
       const k = MATS[cat].aff;
       if (!it.affix.includes(k)) {
@@ -1708,61 +1722,130 @@ export class Game {
     if (P.brkBonus === undefined) P.brkBonus = 0;
     if (P.sanNghiep === undefined) P.sanNghiep = 0;
     if (!P.pin) P.pin = {};
+    // bản 4: ba đường tu, bỏ võ kỹ, tâm pháp, 4 đường cũ
+    if (P.sp === undefined) {
+      const old = (P.skills || []).filter((id) => !SKILLS[id] || !SKILLS[id].path);
+      P.sp = old.reduce((m, id) => m + (id === 'quyen' ? 0 : 3), 0) + Object.values(P.tpLv || {}).reduce((m, l) => m + l, 0);
+      P.skills = ['quyen'];
+      if (P.path && !PATHS[P.path]) { P.path = undefined; P.flags.pathReset = true; }
+      P.skLv = {};
+    }
+    if (!P.skLv) P.skLv = {};
+    P.tp = null;
+    for (const it of [...P.bag, ...Object.values(P.eq)]) if (it && it.wt && OLD_WEP[it.wt]) { it.wt = OLD_WEP[it.wt]; it.n = wepName(it.n, it.wt); }
     if (!P.bagMax) P.bagMax = BAG_MAX;
     for (const it of [...P.bag, ...Object.values(P.eq)]) if (it && it.q >= 4 && it.lock === undefined) it.lock = true;
-    if (P.dao && !P.tp) { P.tp = 'thanh_tam'; P.tpLv.thanh_tam = P.tpLv.thanh_tam || 1; }
     for (const id of ['ngung_than', 'bao_khi']) if (P.pills && P.pills[id] === undefined) P.pills[id] = 0;
     // đồ Thần thoại từ bản cũ chưa có thần thông thì gán theo mã món
     for (const it of [...P.bag, ...Object.values(P.eq)]) {
       if (it && it.q >= 4 && !it.tt) { const pool = THAN_THONG[it.slot]; it.tt = pool[Math.abs(it.id) % pool.length].id; }
     }
   }
-  learn(id) {
+  // ---------- Kỹ năng theo đường tu (thay võ kỹ) ----------
+  /** Kỹ năng đã đủ cảnh giới để mở (Linh giới: mở hết) */
+  skillRealmOk(id, realm = this.P.realm) {
+    return realm >= 10 || realm >= (SKILLS[id].realm || 0);
+  }
+  /** Cấp các kỹ năng đã mở của đường đang đi */
+  skillLvs(P = this.P) {
+    const out = {};
+    if (!P || !PATHS[P.path]) return out;
+    for (const id of PATH_SKILLS[P.path]) if (this.skillRealmOk(id, P.realm)) out[id] = Math.max(1, (P.skLv && P.skLv[id]) || 1);
+    return out;
+  }
+  /** Kỹ năng dùng trong trận (chủ động + tuyệt kỹ; bị động tính riêng) */
+  activeSkills() {
+    const lv = this.skillLvs();
+    const ids = Object.keys(lv);
+    return ids.length ? ids : ['quyen'];
+  }
+  /** Kỹ năng mới mở khi lên cảnh giới: báo cho người chơi */
+  checkNewSkills() {
     const P = this.P;
-    if (!SKILLS[id] || P.skills.includes(id)) return false;
-    P.skills.push(id);
-    if (P.loadout.length < 4) P.loadout.push(id);
-    else if (P.loadout.includes('quyen')) P.loadout[P.loadout.indexOf('quyen')] = id;
+    if (!PATHS[P.path]) return;
+    P.skSeen = P.skSeen || [];
+    for (const id of PATH_SKILLS[P.path]) {
+      if (this.skillRealmOk(id) && !P.skSeen.includes(id)) {
+        P.skSeen.push(id);
+        if (P.skSeen.length > 1) this.log(`Lĩnh ngộ ${SKILLS[id].slot === 'ult' ? 'tuyệt kỹ' : SKILLS[id].kind === 'passive' ? 'kỹ năng bị động' : 'kỹ năng'} ${skillToken(id, SKILLS[id])}${SKILLS[id].n}: ${SKILLS[id].desc}`, 'good');
+      }
+    }
+    P.loadout = this.activeSkills();
+  }
+  /** Ngộ đạo điểm: nâng cấp kỹ năng */
+  addSP(n, why = '') {
+    const P = this.P;
+    if (!P || !n) return '';
+    P.sp = (P.sp || 0) + n;
+    if (this.s.opt && this.s.opt.autoSkill !== false) this.autoSpendSP();
+    return `${why}Ngộ đạo điểm +${n}.`;
+  }
+  /** Tự nâng kỹ năng: ưu tiên kỹ năng cấp thấp, tuyệt kỹ và chiêu đánh trước */
+  autoSpendSP() {
+    const P = this.P;
+    if (!PATHS[P.path]) return 0;
+    let n = 0;
+    for (let guard = 0; guard < 60; guard++) {
+      const W = (id) => (SKILLS[id].slot === 'ult' ? 2.2 : SKILLS[id].kind === 'passive' ? 1 : 1.3);
+      const c = PATH_SKILLS[P.path].filter((id) => this.skillRealmOk(id) && ((P.skLv[id] || 1) < SKILL_MAX(id)) && this.skillCost(id) <= (P.sp || 0));
+      if (!c.length) break;
+      c.sort((a, b) => (P.skLv[a] || 1) / W(a) - (P.skLv[b] || 1) / W(b));
+      if (!this.upgradeSkill(c[0])) break;
+      n++;
+    }
+    return n;
+  }
+  skillCost(id) {
+    const lv = (this.P.skLv && this.P.skLv[id]) || 1;
+    return SKILLS[id].slot === 'ult' ? 2 * lv : lv;
+  }
+  upgradeSkill(id) {
+    const P = this.P;
+    if (!P || !PATHS[P.path] || !PATH_SKILLS[P.path].includes(id) || !this.skillRealmOk(id)) return null;
+    P.skLv = P.skLv || {};
+    const lv = P.skLv[id] || 1;
+    if (lv >= SKILL_MAX(id)) return null;
+    const c = this.skillCost(id);
+    if ((P.sp || 0) < c) return null;
+    P.sp -= c;
+    P.skLv[id] = lv + 1;
+    return `${SKILLS[id].n} lên cấp ${lv + 1}.`;
+  }
+  /** Tương thích: trước đây học võ kỹ, nay quy thành ngộ đạo điểm */
+  learn(id) {
+    this.addSP(3);
     return true;
   }
-  /** Học một võ kỹ ngẫu nhiên trong khoảng phẩm, trả về câu thông báo */
+  /** Trước đây: học võ kỹ ngẫu nhiên. Nay: lĩnh ngộ, được ngộ đạo điểm */
   learnRandom(minT, maxT) {
-    const P = this.P;
-    const w = P.eq.vu_khi ? P.eq.vu_khi.wt : null;
-    const opts = SKILL_IDS.filter((k) => !SKILLS[k].path && SKILLS[k].tier >= minT && SKILLS[k].tier <= maxT && !P.skills.includes(k));
-    if (!opts.length) return '';
-    const id = this.r.weighted(opts, (k) => (!SKILLS[k].wep || SKILLS[k].wep === w ? 3 : 1));
-    this.learn(id);
-    const m = `Lĩnh ngộ võ kỹ: ${skillToken(id, SKILLS[id])}${SKILLS[id].n}.`;
+    const n = 1 + minT + maxT;
+    const m = `Lĩnh ngộ đạo pháp: ◈ Ngộ đạo điểm +${n}.`;
+    this.addSP(n);
     this.log(m, 'good');
     return m;
   }
-  /** Xếp 4 võ kỹ mạnh nhất dùng được với binh khí đang cầm: 3 chiêu đánh + 1 chiêu hộ thể/hồi phục nếu có */
+  /** Chuyển tu: mỗi kiếp một lần, mất 50% tu vi và tiến độ đường cũ (hoàn lại nửa ngộ đạo điểm đã dùng) */
+  changePath(id) {
+    const P = this.P;
+    if (!this.playing || !PATHS[id] || id === P.path || P.flags.changedPath) return null;
+    let spent = 0;
+    for (const k in P.skLv || {}) { const L = P.skLv[k]; for (let l = 1; l < L; l++) spent += SKILLS[k] && SKILLS[k].slot === 'ult' ? 2 * l : l; }
+    P.flags.changedPath = true;
+    P.tuvi = Math.floor(P.tuvi * 0.5);
+    P.loose = Math.min(P.loose || 0, P.tuvi);
+    P.skLv = {};
+    P.sp = (P.sp || 0) + Math.floor(spent / 2);
+    P.path = null;
+    P.skSeen = [];
+    return this.setPath(id, true);
+  }
   autoLoadout() {
     const P = this.P;
-    const w = P.eq && P.eq.vu_khi ? P.eq.vu_khi.wt : null;
-    const before = P.loadout.join();
-    P.loadout = this.loadoutFor(w);
+    const before = (P.loadout || []).join();
+    P.loadout = this.activeSkills();
     return before !== P.loadout.join();
   }
-  /** Đặt võ kỹ vào ô i (0-3) của bộ mang theo; đã ở ô khác thì đổi chỗ */
-  setSkillSlot(i, id) {
-    const P = this.P;
-    if (!P.skills.includes(id) || i < 0 || i > 3) return;
-    const L = P.loadout;
-    const j = L.indexOf(id);
-    if (j === i) return;
-    if (i >= L.length) { if (j >= 0) return; L.push(id); return; }
-    if (j >= 0) [L[i], L[j]] = [L[j], L[i]];
-    else L[i] = id;
-  }
-  toggleSkill(id) {
-    const P = this.P;
-    if (!P.skills.includes(id)) return;
-    const i = P.loadout.indexOf(id);
-    if (i >= 0) { if (P.loadout.length > 1) P.loadout.splice(i, 1); }
-    else if (P.loadout.length < 4) P.loadout.push(id);
-  }
+  toggleSkill() {}
   setTactic(t) {
     if (this.P) this.P.tactic = t;
   }
@@ -1888,16 +1971,8 @@ export class Game {
     try { return fn(); } finally { P.eq = e; P.loadout = l; }
   }
   /** Bộ võ kỹ hợp nhất với một loại binh khí */
-  loadoutFor(w) {
-    const P = this.P;
-    const ok = P.skills.filter((id) => SKILLS[id] && (!SKILLS[id].wep || SKILLS[id].wep === w));
-    const power = (id) => { const k = SKILLS[id]; return (k.path ? 5 : 0) + k.tier * 3 + (k.mult || 0) * (k.hits || 1); };
-    const atk = ok.filter((id) => SKILLS[id].kind === 'atk' && id !== 'quyen').sort((a, b) => power(b) - power(a));
-    const def = ok.filter((id) => SKILLS[id].kind !== 'atk').sort((a, b) => power(b) - power(a));
-    const pick = [...atk.slice(0, def.length ? 3 : 4), ...def.slice(0, 1)];
-    for (const id of [...atk.slice(3), ...def.slice(1)]) if (pick.length < 4) pick.push(id);
-    if (pick.length < 4) pick.push('quyen');
-    return [...new Set(pick)].slice(0, 4);
+  loadoutFor() {
+    return this.activeSkills();
   }
   /** Một con số lực chiến từ chỉ số trận đấu: sát thương mỗi lượt × lượng máu thực chịu được */
   fighterValue(F) {
@@ -1912,11 +1987,16 @@ export class Game {
       const frac = sk.mp ? Math.min(1, mpT / sk.mp) : 1;
       const cls = F.clsMul[skillCls(sk)] || 1;
       if (sk.kind === 'atk') {
-        const fit = !sk.wep || sk.wep === F.wep ? 1 : 0.6;
-        const v = (sk.mult || 1) * (sk.hits || 1) * fit * cls * (1 + (sk.crit || 0) * 0.7) + (sk.burn || 0) * 0.15 + (sk.stun || 0) * 0.5 + (sk.armorBreak ? 0.3 : 0);
+        const fit = !sk.wep || sk.wep === F.wep || (sk.wep === 'quyen' && !F.wep) ? 1 : sk.wep === 'phap' ? 0.85 : 0.6;
+        const lvm = F.lv && F.lv[id] ? skillLvMul(id, F.lv[id]) : 1;
+        const v = (sk.mult || 1) * (sk.hits || 1) * fit * cls * lvm * (sk.trueDmg ? 1.35 : 1) * (1 + (sk.crit || 0) * 0.7) + (sk.burn || 0) * 0.15 + (sk.stun || 0) * 0.5 + (sk.armorBreak || sk.dizzy || sk.confuse ? 0.3 : 0) + (sk.chaos || 0) * 0.6;
         skM = Math.max(skM, frac * v + (1 - frac) * base);
       } else defM = Math.max(defM, 1 + 0.5 * frac * ((sk.shield || 0) + (sk.heal || 0)) * cls);
     }
+    // phi kiếm, tuyệt kỹ (khoảng mỗi 4-5 lượt một lần)
+    skM += (F.fly || 0) * 0.9;
+    if (F.ult && SKILLS[F.ult]) skM += (SKILLS[F.ult].mult * (F.lv && F.lv[F.ult] ? skillLvMul(F.ult, F.lv[F.ult]) : 1)) / 4.5 * (F.twin ? 2 : 1);
+    if (F.path === 'the') skM *= 1 + (F.ragePerCharge || 0) * 4;
     const d = foeDef * (1 - Math.min(0.8, F.pierce || 0));
     let off = F.atk * skM * (1 + Math.min(1, F.crit) * (F.critDmg - 1)) * (1 + (F.combo || 0) * 0.8) * (1 - d / (d + F.atk * 1.5));
     if (F.execute) off *= 1 + 0.25 * (F.execute - 1);
@@ -2017,16 +2097,15 @@ export class Game {
     return this.combatValue({ ...this.P.eq, [slot]: it });
   }
   wepNeeded() {
-    const cnt = {};
-    for (const id of this.P.loadout || []) { const w = SKILLS[id] && SKILLS[id].wep; if (w) cnt[w] = (cnt[w] || 0) + 1; }
-    const best = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0];
-    return best ? best[0] : null;
+    return PATHS[this.P.path] ? PATHS[this.P.path].wep : null;
   }
-  /** Võ kỹ đang mang mà không hợp binh khí đang cầm */
+  /** Binh khí không hợp đường tu: trả về các kỹ năng bị yếu đi */
   skillMismatch() {
     const P = this.P;
+    const need = this.wepNeeded();
     const w = P.eq && P.eq.vu_khi ? P.eq.vu_khi.wt : null;
-    return (P.loadout || []).filter((id) => SKILLS[id] && SKILLS[id].wep && SKILLS[id].wep !== w);
+    if (!need || w === need || (need === 'quyen' && !w)) return [];
+    return this.activeSkills().filter((id) => SKILLS[id] && SKILLS[id].wep);
   }
   /** Mặc món tốt nhất cho mỗi ô. Trả về số món đã đổi. */
   equipBest() {
@@ -2050,11 +2129,7 @@ export class Game {
       it.key = `${win}:${i}`;
       return it;
     });
-    const maxT = Math.min(3, 1 + Math.floor(P.realm / 2));
-    const pool = SKILL_IDS.filter((k) => SKILLS[k].tier >= 1 && SKILLS[k].tier <= Math.min(2, maxT));
-    const books = [];
-    for (let i = 0; i < 2 && pool.length; i++) books.push(pool.splice(r.int(0, pool.length - 1), 1)[0]);
-    return { win, gear, books: books.map((id) => ({ id, price: 120 * SKILLS[id].tier * (1 + P.realm) })) };
+    return { win, gear, books: [] };
   }
   buyGear(key) {
     const P = this.P;
@@ -2068,13 +2143,20 @@ export class Game {
     delete own.price; delete own.key;
     return this.gainItem(own, 'Mua');
   }
-  buyBook(id) {
+  /** Ngọc giản ngộ đạo ở Tụ Bảo Lâu: mỗi 5 năm 2 cái */
+  sageStock() {
     const P = this.P;
-    const b = this.shopStock().books.find((x) => x.id === id);
-    if (!b || P.skills.includes(id) || P.money < b.price) return null;
-    this.money(-b.price);
-    this.learn(id);
-    return `Học được ${skillToken(id, SKILLS[id])}${SKILLS[id].n}.`;
+    const win = Math.floor(this.s.year / 5);
+    const bought = (P.shopBought || []).filter((k) => k.startsWith(`sp${win}:`)).length;
+    return { left: Math.max(0, 2 - bought), price: Math.round(150 * (1 + P.realm) * (1 + this.plane * 4) * this.shopMul()), win };
+  }
+  buySage() {
+    const P = this.P;
+    const st = this.sageStock();
+    if (!this.playing || !st.left || P.money < st.price) return null;
+    this.money(-st.price);
+    (P.shopBought = P.shopBought || []).push(`sp${st.win}:${st.left}`);
+    return this.addSP(3, 'Đọc ngọc giản ngộ đạo: ');
   }
   hurt(n, cause) {
     const P = this.P;
@@ -2097,12 +2179,12 @@ export class Game {
   joinSect(sc) {
     this.P.sect = sc.id;
     this.P.dao = true;
-    const sk = this.sectSkill(sc);
-    if (this.learn(sk)) this.log(`Nhập môn ${sc.name}, được truyền ${SKILLS[sk].n}.`, 'good');
+    this.addSP(3);
+    this.log(`Nhập môn ${sc.name}, được trưởng lão chỉ điểm. Ngộ đạo điểm +3.`, 'good');
   }
-  sectSkill(sc) {
-    if (!sc.skill) sc.skill = SKILL_IDS.filter((k) => SKILLS[k].tier >= 1 && SKILLS[k].tier <= 2)[sc.id % 12];
-    return sc.skill;
+  /** Tương thích: tông môn trước đây truyền võ kỹ */
+  sectSkill() {
+    return 'quyen';
   }
   /** Việc thực tế năm nay (có thể khác lựa chọn nếu chưa đủ điều kiện) */
   effectiveAction() {
@@ -2198,7 +2280,9 @@ export class Game {
   /** Sức mạnh đợt lôi kiếp thứ k (1..9) */
   kiepPow(k) {
     const P = this.P;
-    return REALMS[P.realm].pow * 1.5 * (0.75 + 0.075 * (k - 1)) * 1.2;
+    // Thể tu có Kim Thân: lôi kiếp yếu đi; Tinh thần lực: đạo thứ 9 đánh vào hồn nặng hơn
+    const m = P.path === 'the' && this.skillRealmOk('the_8') ? 0.85 : P.path === 'tinh' && k === 9 ? 1.15 : 1;
+    return REALMS[P.realm].pow * 1.5 * (0.75 + 0.075 * (k - 1)) * 1.2 * m;
   }
   /** Vượt hết lôi kiếp: lên giới trên (người chơi đi tiếp) hoặc phi thăng hẳn */
   ascendPlane() {
@@ -2208,6 +2292,7 @@ export class Game {
     if (from === 0) {
       const old = REALMS[P.realm].n;
       P.plane = 1; P.realm = PLANES[1].first; P.tuvi = 0;
+      this.checkNewSkills();
       P.flags.ascendedFrom = 0; P.flags.notifiedFull = false; P.flags.neck = null;
       P.sect = null; P.flags.chuongMon = undefined; P.closed = 0; P.hp = 100;
       P.map = PLANES[1].map; P.mapGoal = P.map; P.flags.retreated = false;
@@ -2252,8 +2337,7 @@ export class Game {
     if (lo > 0.02) out.push({ n: `Căn cơ chưa vững (${Math.round(lo * 100)}% tu vi)`, v: -0.3 * lo });
     if (P.sat >= this.satLine(70)) out.push({ n: `Sát khí ${Math.round(P.sat)}`, v: -0.1 });
     if (P.brkBonus) out.push({ n: 'Vừa bế quan xong', v: P.brkBonus });
-    const tb = this.tpFx('brk');
-    if (tb) out.push({ n: TAM_PHAP[P.tp].n, v: tb });
+
     return out;
   }
   attemptBreak(bonus = 0) {
@@ -2276,6 +2360,8 @@ export class Game {
       P.tuvi = 0;
       P.loose = 0;
       this.fame(P.realm * 3);
+      this.addSP(5);
+      this.checkNewSkills();
       for (const it of Object.values(P.eq)) {
         if (it && it.q >= 4 && it.lv === P.realm) {
           this.log(`Phong ấn trên ${it.n} vỡ tan. Thần khí nhận ngươi làm chủ, phát huy toàn bộ sức mạnh${it.tt && TT_MAP[it.tt] ? ` và thần thông 「${TT_MAP[it.tt].n}」` : ''}.`, 'big');
@@ -2356,12 +2442,11 @@ export class Game {
   // ---------- Sát khí ----------
   /** Ngưỡng sát khí (Ma tu chịu được cao hơn 20) */
   satLine(v) {
-    return this.P.path === 'ma' ? v + 20 : v;
+    return v;
   }
   addSat(n) {
     const P = this.P;
     if (!P || !P.dao) return;
-    if (n > 0 && P.path === 'ma') n *= 0.7;
     const before = P.sat || 0;
     P.sat = clamp(before + n, 0, 100);
     const top = this.satLine(100) > 100 ? 100 : 100;
@@ -2371,7 +2456,7 @@ export class Game {
   purgeSat(n) {
     const P = this.P;
     if (!P || !(P.sat > 0)) return;
-    const m = (P.path === 'phat' ? 2 : 1) * (1 + this.tpFx('satPurge'));
+    const m = P.path === 'tinh' ? 1.3 : 1;
     P.sat = Math.max(0, P.sat - n * m);
   }
   /** Sát khí đầy: tẩu hỏa nhập ma */
@@ -2391,52 +2476,19 @@ export class Game {
   }
 
   // ---------- Tâm pháp ----------
-  tpFx(k) {
-    const P = this.P;
-    if (!P || !P.tp || !TAM_PHAP[P.tp]) return 0;
-    const v = TAM_PHAP[P.tp].fx[k];
-    return v ? v * (P.tpLv[P.tp] || 1) : 0;
+  /** Tâm pháp đã bỏ (bản 4): giữ hàm để mã cũ không lỗi */
+  tpFx() {
+    return 0;
   }
-  tpNeed(lv) {
-    return 8 + lv * 6;
+  learnTamPhap() {
+    return this.addSP(3, 'Lĩnh ngộ đạo pháp: ');
   }
-  /** Học một tâm pháp chưa biết (true: lấy bất kỳ) */
-  learnTamPhap(any = false) {
-    const P = this.P;
-    const pool = TAM_PHAP_IDS.filter((id) => !P.tpLv[id]);
-    if (!pool.length) return '';
-    const id = this.r.pick(pool);
-    P.tpLv[id] = 1;
-    P.tpXp[id] = 0;
-    if (!P.tp) P.tp = id;
-    return `Lĩnh hội tâm pháp ${TAM_PHAP[id].n}. (${TAM_PHAP[id].desc}${P.tp === id ? '' : ' Đổi chủ tu ở mục Công pháp trong túi.'})`;
-  }
-  setTamPhap(id) {
-    const P = this.P;
-    if (!this.playing || !P.tpLv[id]) return false;
-    P.tp = id;
-    return true;
-  }
-  /** Tu luyện, bế quan: tâm pháp chủ tu lên cấp */
-  tpTrain(years, mul = 1) {
-    const P = this.P;
-    const id = P.tp;
-    if (!id || !P.dao) return;
-    const lv = P.tpLv[id] || 1;
-    if (lv >= 9) return;
-    P.tpXp[id] = (P.tpXp[id] || 0) + years * mul;
-    if (P.tpXp[id] >= this.tpNeed(lv)) this.tpLevelUp(id);
-  }
+  tpTrain() {}
   tpLevelUp(id, why = '') {
-    const P = this.P;
-    const lv = P.tpLv[id] || 1;
-    if (lv >= 9) return false;
-    P.tpXp[id] = 0;
-    P.tpLv[id] = lv + 1;
-    this.log(`${why}Tâm pháp ${TAM_PHAP[id].n} lên tầng ${lv + 1}.`, 'good');
-    return true;
+    const t = this.addSP(3, why);
+    if (t) this.log(t, 'good');
+    return !!t;
   }
-
   // ---------- Trận lớn: phù, đan, bạn trợ chiến ----------
   bigFightBuffs(A) {
     const P = this.P;
@@ -2507,7 +2559,7 @@ export class Game {
       P.sat = 0;
       P.loose = 0;
       bits.push('sinh lực hồi đầy, sát khí tan hết, căn cơ vững chắc, lần đột phá tới +15%');
-      if (len >= 50 && served >= 50 && P.tp && this.r.chance(0.5)) { if (this.tpLevelUp(P.tp, 'Tử quan đốn ngộ! ')) bits.push('đốn ngộ'); }
+      if (len >= 50 && served >= 50 && this.r.chance(0.5)) { this.addSP(4); bits.push('đốn ngộ: ngộ đạo điểm +4'); }
     }
     this.log(`${why}${bits.length ? ` Bế quan ${served} năm: ${bits.join(', ')}.` : served ? ` (Bế quan ${served} năm, chưa đủ 10 năm nên chưa có thành quả đặc biệt.)` : ''}`, bits.length ? 'good' : 'muted');
   }
@@ -2527,7 +2579,12 @@ export class Game {
   }
   ngheLv(id) {
     const n = this.P.nghe;
-    return n && n.id === id ? n.lv : 0;
+    return n && n.id === id ? n.lv + this.ngheBonus() : 0;
+  }
+  /** Tinh thần lực (Liên Tâm Hồi Thần): nghề phụ mạnh hơn 2 cấp */
+  ngheBonus() {
+    const P = this.P;
+    return P.path === 'tinh' && this.skillRealmOk('phu_8') ? 2 : 0;
   }
   sanNghiepPrice() {
     return Math.round(400 * (1 + this.P.realm) * (1 + this.P.sanNghiep));
@@ -2547,7 +2604,7 @@ export class Game {
     if (!n) return '';
     n.xp += years;
     if (n.lv < 9 && n.xp >= 6 + n.lv * 6) { n.xp = 0; n.lv++; this.log(`Tay nghề ${NGHE[n.id].n} lên cấp ${n.lv}.`, 'good'); }
-    const lv = n.lv;
+    const lv = n.lv + this.ngheBonus();
     if (n.id === 'luyen_dan') {
       const got = {};
       const tries = Math.max(1, Math.round(years / 2));
@@ -2670,7 +2727,6 @@ export class Game {
         : P.origin === 'tu'
           ? 'Sáu tuổi, ông nội lấy ra cuốn gia phả cũ, dạy ngươi bài khẩu quyết tổ truyền. Ngươi nhập đạo, khí tức đã thông được ba phần.'
           : 'Sáu tuổi, cha mẹ gom góp đưa ngươi tới nghe một tán tu giảng đạo ở đầu làng. Ngươi học được bài dẫn khí đầu tiên và chính thức nhập đạo.', 'good');
-      if (!P.tp) { P.tp = 'thanh_tam'; P.tpLv.thanh_tam = 1; this.log('Cùng bài dẫn khí là tâm pháp nhập môn Thanh Tâm Quyết. Tu luyện, bế quan sẽ làm tâm pháp lên tầng.', 'muted'); }
     }
     if (P.dao && !P.flags.firstSkill) {
       P.flags.firstSkill = true;
@@ -2784,7 +2840,7 @@ export class Game {
       if (P.closed > 0) this.exitClose('Tu vi viên mãn, ngươi phá quan đi ra.');
       this.s.queue.push({ id: 'dot_pha', botId: null, data: {} });
     }
-    if (P.realm >= 2 && P.path === undefined && (!P.pathRetry || P.age >= P.pathRetry) && !this.s.queue.some((q) => q.id === 'dao_do') && !(this.s.pending && this.s.pending.id === 'dao_do')) this.s.queue.unshift({ id: 'dao_do', botId: null, data: {} });
+    if (P.dao && !PATHS[P.path] && !this.s.queue.some((q) => q.id === 'dao_do') && !(this.s.pending && this.s.pending.id === 'dao_do')) this.s.queue.unshift({ id: 'dao_do', botId: null, data: {} });
     if (P.realm >= 2 && P.daoHieu === undefined && !this.s.queue.some((q) => q.id === 'dao_hieu')) this.s.queue.push({ id: 'dao_hieu', botId: null, data: { opts: this.genDaoHieuOpts() } });
     this.checkTitles();
     if (this._rank === 1) P.cnt.top1 = (P.cnt.top1 || 0) + 1;
@@ -2798,6 +2854,8 @@ export class Game {
       const ev = EVENT_MAP[q.id];
       if (!ev) continue;
       if (q.botId && !(this.soul(q.botId) || {}).alive) continue;
+      // tông môn đã mất (phi thăng, tông diệt) thì bỏ chuyện tông môn
+      if (q.id === 'tong_mon_chien' && !(this.P && this.P.sect && this.sect(this.P.sect) && q.data && this.sect(q.data.enemy))) continue;
       s.pending = q;
       return;
     }
@@ -3002,17 +3060,62 @@ export class Game {
     this.rollDraft();
   }
 
-  /** Chọn con đường tu hành (một lần mỗi kiếp), học tuyệt học của con đường */
-  setPath(id) {
+  /** Chọn con đường tu hành (khi nhập đạo, một lần mỗi kiếp; chuyển tu thì gọi lại) */
+  setPath(id, change = false) {
     const P = this.P;
     const pa = PATHS[id];
-    if (!P || !pa || P.path || (pa.req && !pa.req(P))) return '';
+    if (!P || !pa || P.path) return '';
     P.path = id;
-    this.learn(pa.skill);
-    this.log(`Ngươi chọn con đường ${pa.n}. Lĩnh ngộ tuyệt học ${skillToken(pa.skill, SKILLS[pa.skill])}${SKILLS[pa.skill].n}.`, 'big');
-    return `Từ nay ngươi là ${pa.n}. Lĩnh ngộ tuyệt học ${skillToken(pa.skill, SKILLS[pa.skill])}${SKILLS[pa.skill].n}: ${SKILLS[pa.skill].desc}`;
+    P.skLv = P.skLv || {};
+    P.skSeen = [];
+    // chọn đúng khuynh hướng mạnh nhất: được thêm ngộ đạo điểm khởi đầu
+    const bonus = !change && this.pathSuggest()[0] === id ? 3 : 0;
+    if (bonus) P.sp = (P.sp || 0) + bonus;
+    this.checkNewSkills();
+    if (this.s.opt && this.s.opt.autoSkill !== false) this.autoSpendSP();
+    setWepBias(pa.wep);
+    // binh khí nhập môn đúng loại của đường
+    let gift = '';
+    const cur = P.eq.vu_khi;
+    if (!cur || cur.wt !== pa.wep) {
+      const it = makeItem(this.r, this.s.nextItem++, P.realm, 0, 'vu_khi');
+      it.wt = pa.wep; it.n = wepName(it.n, pa.wep);
+      if (!cur) P.eq.vu_khi = it; else if (P.bag.length < this.bagCap()) P.bag.push(it);
+      gift = ` Sư phụ dẫn đạo tặng một ${it.n}${cur ? ' (trong túi)' : ''}.`;
+    }
+    this.log(`${change ? 'Chuyển tu' : 'Ngươi chọn con đường'} ${pa.n}: ${pa.tag}.${bonus ? ' Hợp khuynh hướng trời sinh: ngộ đạo điểm +3.' : ''}${gift}`, 'big');
+    return `Từ nay ngươi là ${pa.n}. ${pa.short}\n\nKỹ năng đầu tiên: ${skillToken(PATH_SKILLS[id][0], SKILLS[PATH_SKILLS[id][0]])}${SKILLS[PATH_SKILLS[id][0]].n}. Các kỹ năng khác mở dần theo cảnh giới; nâng cấp bằng ngộ đạo điểm ở Túi trữ vật → Kỹ năng.${bonus ? '\nHợp khuynh hướng trời sinh: ngộ đạo điểm +3.' : ''}`;
   }
-
+  /** Khuynh hướng: căn cốt hợp Thể tu, ngộ tính hợp Tinh thần lực, cơ duyên và trận đánh hợp Kiếm tu. Trả về thứ tự gợi ý. */
+  pathScores(P = this.P) {
+    const st = P.stats;
+    const w = (P.cnt && P.cnt.win) || 0;
+    return {
+      kiem: st.co * 0.6 + st.can * 0.2 + Math.min(20, w * 2) + (P.eq && P.eq.vu_khi && P.eq.vu_khi.wt === 'kiem' ? 8 : 0),
+      the: st.can * 0.9 + Math.min(15, ((P.cnt && P.cnt.lose) || 0) * 3) + (P.hp < 60 ? 4 : 0),
+      tinh: st.ngo * 0.8 + st.tam * 0.3,
+    };
+  }
+  /** Thử đạo: một trận mẫu với cơ chế của đường id (giả như đã ở Kim Đan), không ảnh hưởng ván chơi */
+  trialPath(id) {
+    const P = this.P;
+    const keep = { path: P.path, skLv: P.skLv, realm: P.realm, tuvi: P.tuvi, hp: P.hp, eq: P.eq };
+    try {
+      P.path = id; P.skLv = {}; P.realm = Math.max(P.realm, 3); P.tuvi = 0; P.hp = 100;
+      const w = { ...(P.eq.vu_khi || { id: -77, slot: 'vu_khi', q: 1, lv: P.realm, atk: 0 }), wt: PATHS[id].wep };
+      P.eq = { ...P.eq, vu_khi: w };
+      const r = new Rng(4242 + PATH_IDS.indexOf(id));
+      const m = { n: id === 'tinh' ? 'Yêu Lang' : 'Hắc Lang', pow: REALMS[P.realm].pow * 1.15, beast: true, r: P.realm, seed: 77 };
+      const res = battle(this.playerFighter(), this.monsterFighter(m), r);
+      res.a.hp0 = 100;
+      res.label = `Thử đạo · ${PATHS[id].n} (giả như ở ${REALMS[P.realm].n})`;
+      return res;
+    } finally { Object.assign(P, keep); }
+  }
+  pathSuggest(P = this.P) {
+    const sc = this.pathScores(P);
+    return Object.keys(sc).sort((a, b) => sc[b] - sc[a]);
+  }
   /** Hẹn một sự kiện xảy ra sau `years` năm (0 = năm sau) */
   later(years, id, data = {}, botId = null) {
     this.P.later.push({ at: this.P.age + Math.max(1, years), id, data, botId });
@@ -3036,7 +3139,7 @@ export class Game {
   /** Tôn xưng hiện tại của người chơi (null nếu chưa có đạo hiệu) */
   honorific(P = this.P) {
     if (!P || !P.daoHieu || P.realm < 2) return null;
-    const ma = (P.tinh <= -50 || P.path === 'ma') && P.realm >= 3;
+    const ma = P.tinh <= -50 && P.realm >= 3;
     const hon = ma ? DH_HON_MA : P.g === 'nu' ? DH_HON_NU : DH_HON;
     return P.ascended ? `${P.daoHieu} Tiên Tôn` : `${P.daoHieu} ${hon[Math.min(P.realm, hon.length - 1)]}`;
   }
