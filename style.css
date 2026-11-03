@@ -609,3 +609,4 @@ body.inPlay .tabbody { flex: 1; min-height: 0; overflow-y: auto; overscroll-beha
   .evPeek, .evBack { display: none !important; }
 }
 @media (prefers-reduced-motion: reduce) { .log li.fresh, .evPanel { animation: none; } }
+.hudSub .noPill { color: var(--bad); }

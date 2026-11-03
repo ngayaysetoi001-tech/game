@@ -59,6 +59,8 @@ export class Game {
     if (state.draft) this.ensureGear(state.draft);
     if (!state.nextItem) state.nextItem = 1;
     if (!state.opt) state.opt = { retreat: true, autoSalvage: false };
+    if (state.opt.autoPill === undefined) state.opt.autoPill = true;
+    if (state.opt.autoBuyPill === undefined) state.opt.autoBuyPill = false;
   }
 
   // ---------- Tạo, lưu, tải ----------
@@ -1386,6 +1388,28 @@ export class Game {
     }
     return null;
   }
+  /** Sinh lực dưới 40: tự uống Hồi Xuân Đan (hết thì tự mua nếu bật). Trả về số viên đã uống. */
+  autoHeal() {
+    const P = this.P;
+    const o = this.s.opt || {};
+    if (!this.playing || !o.autoPill || P.hp >= 40) return 0;
+    let n = 0;
+    const hp0 = P.hp;
+    while (P.hp < 40 && n < 3) {
+      if (!(P.pills.hoi_xuan > 0) && o.autoBuyPill && P.money >= this.pillPrice('hoi_xuan')) { this.buy('hoi_xuan'); P.flags.pillBought = (P.flags.pillBought || 0) + 1; }
+      if (!(P.pills.hoi_xuan > 0)) break;
+      this.usePill('hoi_xuan');
+      n++;
+    }
+    if (n) {
+      P.flags.noPillWarned = false;
+      this.log(`Sinh lực còn ${hp0}, tự uống ${n} viên Hồi Xuân Đan: sinh lực ${P.hp}. Còn ${P.pills.hoi_xuan || 0} viên.`, 'muted');
+    } else if (!P.flags.noPillWarned) {
+      P.flags.noPillWarned = true;
+      this.toast(`Sinh lực còn ${P.hp} mà hết Hồi Xuân Đan${o.autoBuyPill ? ', cũng không đủ linh thạch để mua' : ''}.`, 'Hết đan', 0);
+    }
+    return n;
+  }
   canBreak() {
     return this.playing && this.P.dao && this.P.tuvi >= this.need() && !this.s.pending;
   }
@@ -1491,6 +1515,7 @@ export class Game {
         if (this.hurt(dmg, mp.haz[3])) return true;
       }
       if (mp.d >= 4) P.cnt.hard = (P.cnt.hard || 0) + 1;
+      this.autoHeal();
       if (P.hp >= 40) P.flags.enteredLow = false;
       if (mp.d >= 2 && P.hp < 40 && !P.flags.enteredLow) {
         if (this.s.opt.retreat) {
@@ -1517,6 +1542,7 @@ export class Game {
       this.stat(this.r.pick(['can', 'ngo', 'tam', 'co']), 1);
     }
     P.hp = Math.min(100, P.hp + (act === 'be_quan' ? 6 : 4) * this.tmul('regenMul'));
+    this.autoHeal();
     if (this.thas('coldPoison') && P.age >= 8 && this.r.chance(0.04) && !this.known().some(({ r }) => r.tag === 'dao_lu')) {
       this.log('Hàn độc Cửu Âm phát tác, cả người lạnh như băng.', 'bad');
       if (this.hurt(12, 'hàn độc Cửu Âm phát tác, đông cứng mà chết')) return true;
@@ -1640,6 +1666,7 @@ export class Game {
       L.c = `${this._auto ? '(Tự quyết) ' : ''}${ch.t}`;
     }
     if (this.s.phase === 'dead' && this.s.deadInfo) this.s.deadInfo.last = { h: title, c: ch.t, t: res.trim() };
+    if (this.playing) this.autoHeal();
     if (this.playing) this.checkTitles();
   }
   /** Sự kiện đang chờ có tự quyết được không (việc nhỏ) */

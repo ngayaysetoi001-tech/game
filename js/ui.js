@@ -276,7 +276,8 @@ function renderPlay() {
   const doing = P.closed > 0 ? `🕯 Bế quan, còn ${P.closed} năm`
     : act === 'lon_len' ? (P.age < 6 ? 'Còn nhỏ, cứ lớn lên đã' : 'Chưa nhập đạo, chưa thể tu luyện')
     : `${ACTIONS[act].icon} ${ACTIONS[act].n}${mp ? ` · ${DIFF[mp.d].ic} ${mp.n}` : ''}${mp && P.flags.retreated && MAP_MAP[P.mapGoal] ? ` (dưỡng thương, hồi 80 về ${MAP_MAP[P.mapGoal].n})` : ''}`;
-  setHTML($('hudSub'), `<span>${esc(doing)}</span><span class="money">${fmt(P.money)} linh thạch</span>`);
+  const nPill = P.pills.hoi_xuan || 0;
+  setHTML($('hudSub'), `<span>${esc(doing)}</span><span class="money">${g.s.opt.autoPill ? `<span title="Hồi Xuân Đan, tự uống khi sinh lực dưới 40" class="${nPill ? '' : 'noPill'}">💊${nPill}</span> · ` : ''}${fmt(P.money)} linh thạch</span>`);
 
   const canBreak = g.canBreak();
   setHTML($('breakRow'), canBreak ? '<button class="btn primary breakBtn wide" data-do="break">⚡ Tu vi viên mãn · Đột phá</button>' : '');
@@ -730,6 +731,15 @@ function botWhere(b) {
   const tt = b.gq >= 4 && b.tt && TT_MAP[b.tt] ? ` · <span class="ttName">✦ thần khí 「${esc(TT_MAP[b.tt].n)}」</span>` : '';
   return m || tt ? `<div class="meta">${m ? `⛰ Đang lịch luyện ở ${esc(m.n)} <span class="diff d${m.d}">${DIFF[m.d].n}</span>` : ''}${tt}</div>` : '';
 }
+/** Nút bật tắt tự uống, tự mua Hồi Xuân Đan */
+function pillOpts() {
+  const o = g.s.opt;
+  return `<div class="row btnRow"><button class="btn ${o.autoPill ? 'on' : 'ghost'}" data-opt="autoPill">💊 Tự uống Hồi Xuân Đan khi sinh lực dưới 40: ${o.autoPill ? 'bật' : 'tắt'}</button>
+    <button class="btn ${o.autoBuyPill ? 'on' : 'ghost'}" data-opt="autoBuyPill" ${o.autoPill ? '' : 'disabled'}>Hết đan thì tự mua (${fmt(g.pillPrice('hoi_xuan'))}/viên): ${o.autoBuyPill ? 'bật' : 'tắt'}</button></div>`;
+}
+function bindPillOpts(redraw) {
+  $('sheetBody').querySelectorAll('[data-opt]').forEach((b) => { b.onclick = () => { g.s.opt[b.dataset.opt] = !g.s.opt[b.dataset.opt]; save(); dirty = true; redraw(); }; });
+}
 const oddsCls = (p) => (p >= 0.8 ? 'o0' : p >= 0.55 ? 'o1' : p >= 0.3 ? 'o2' : p >= 0.12 ? 'o3' : 'o4');
 
 // ---------- Bản đồ lịch luyện ----------
@@ -765,6 +775,8 @@ function openMaps() {
       <p class="intro">Các tu sĩ khác cũng tự chọn vùng theo sức mình và tính cách: kẻ liều lĩnh vào vùng khó, người cẩn trọng ở vùng dễ. Cùng vùng thì dễ chạm mặt nhau hơn, và hạ được kẻ mang thần khí thì có thể đoạt lấy.</p>
       <p class="intro">Độ khó luôn tính theo cảnh giới hiện tại của ngươi: yêu thú cùng cảnh giới nhưng mạnh hơn theo độ khó, đồ rơi ra hợp với cảnh giới của ngươi. Đồ Thần thoại chỉ xuất hiện từ vùng Khó trở lên. Tỉ lệ thắng tính theo trang bị, võ kỹ và sinh lực hiện tại (${P.hp}/100).</p>
       <div class="row btnRow"><button class="btn ${g.s.opt.retreat ? 'on' : 'ghost'}" data-retreat="1">Tự lui khi sinh lực dưới 40, hồi lên 80 tự quay lại: ${g.s.opt.retreat ? 'bật' : 'tắt'}</button></div>
+      ${pillOpts()}
+      <p class="intro">Còn ${P.pills.hoi_xuan || 0} viên Hồi Xuân Đan. Đan được uống trước khi xét tự lui, nên còn đan thì ngươi ở lại vùng đã chọn.</p>
       ${P.flags.retreated && MAP_MAP[P.mapGoal] ? `<p class="intro"><b>Đang tạm lui</b> về ${MAP_MAP[DEFAULT_MAP].n} dưỡng thương (sinh lực ${P.hp}/100). Hồi lên 80 sẽ quay lại ${esc(MAP_MAP[P.mapGoal].n)}. Uống Hồi Xuân Đan để quay lại sớm, hoặc tắt tự lui để ở lại mặc kệ nguy hiểm.</p>` : ''}
       <div class="list">${cards}</div>`, bind);
   };
@@ -774,6 +786,7 @@ function openMaps() {
     $('sheetBody').querySelectorAll('[data-go]').forEach((b) => { b.onclick = () => pick(b.dataset.go); });
     $('sheetBody').querySelectorAll('[data-back]').forEach((b) => { b.onclick = () => draw(); });
     $('sheetBody').querySelectorAll('[data-retreat]').forEach((b) => { b.onclick = () => { g.s.opt.retreat = !g.s.opt.retreat; save(); draw(); }; });
+    bindPillOpts(() => draw());
   };
   draw();
 }
@@ -952,8 +965,10 @@ function openShop() {
           <div class="row btnRow"><button class="btn ghost" data-buy="${id}" ${P.money < price ? 'disabled' : ''}>Mua · ${fmt(price)}</button>
           ${id !== 'pha_canh' ? `<button class="btn ghost" data-use="${id}" ${n ? '' : 'disabled'}>Dùng</button>` : '<span class="meta">Dùng khi đột phá</span>'}</div></div></div>`;
       }).join('')}</div>
+      ${pillOpts()}
       ${shopGear()}
       <p class="intro" id="shopMsg"></p>`, () => {
+      bindPillOpts(draw);
       $('sheetBody').querySelectorAll('[data-buy]').forEach((b) => { b.onclick = () => { g.buy(b.dataset.buy); save(); draw(); }; });
       $('sheetBody').querySelectorAll('[data-bg]').forEach((b) => { b.onclick = () => { const m = g.buyGear(b.dataset.bg); save(); draw(); if (m) $('shopMsg').textContent = m; }; });
       $('sheetBody').querySelectorAll('[data-bk]').forEach((b) => { b.onclick = () => { const m = g.buyBook(b.dataset.bk); save(); draw(); if (m) $('shopMsg').textContent = m; }; });
