@@ -350,6 +350,56 @@ Trên màn hình rộng (từ 900px), bố cục chia 2 cột: trái là nhân v
   - Nhập sẽ thay thế thế giới hiện tại, có hỏi xác nhận.
 - **Ngoại tuyến:** trang riêng (GitHub Pages) có `sw.js` lưu sẵn 17 tệp. Mở game thì dùng bản đã lưu ngay cho nhanh, đồng thời tải bản mới ở nền, nên cập nhật có hiệu lực từ lần mở sau. Bản gộp một tệp trong Claude không dùng service worker.
 
+## 6j. Biểu tượng võ kỹ, kỳ ngộ đợt 3
+
+**Biểu tượng võ kỹ** (`js/icons.js`, xem thử ở `tools/preview-skills.html`):
+- 23 võ kỹ và 5 chiêu yêu thú, mỗi chiêu một biểu tượng pixel 16×16.
+- **Hình theo loại chiêu:**
+  - binh khí: kiếm, đao, thương, phiến, vạn kiếm
+  - tay không: quyền, chưởng, ấn, trảo
+  - hộ thể, hồi phục: khiên, hồi phục, sen
+  - khác: lôi, giọt huyết, móng thú, cuồng nộ, gầm thét
+- **Màu theo hệ, vầng sáng theo phẩm.** Tuyệt học của 6 con đường tu hành có vầng đỏ như đồ Thần thoại.
+- **Hiện ở:** Hành trang, bí kíp ở Tụ Bảo Lâu, nhật ký khi lĩnh ngộ, tên chiêu khi đánh nhau.
+- **Nút "Xếp võ kỹ hợp binh khí":** chọn 3 chiêu đánh mạnh nhất dùng được với binh khí đang cầm, cộng 1 chiêu hộ thể hoặc hồi phục.
+
+**Kỳ ngộ đợt 3** (`js/events3.js`): 45 kỳ ngộ mới, tổng cộng 117.
+
+| Nhóm | Kỳ ngộ |
+|---|---|
+| Riêng từng vùng lịch luyện (luật `map`) | yêu cáo trộm gà, đê làng sắp vỡ (Ngoại ô) · Lang Vương, thợ săn mất tích (Hắc Phong) · cổ trùng, độc thảo ngàn năm + đêm trăng tròn (Vụ Ẩn) · hỏa linh, lò luyện cổ (Xích Diệm) · tàn hồn tướng quân, binh hồn nhận chủ (Cổ Chiến) · khe nứt thời gian, bóng hình kiếp trước (Hư Không) |
+| Cảnh giới cao (luật `realm`) | khai tông lập phái (người chơi làm tổ sư), thư mời trưởng lão, luận đạo, ma đạo xâm lấn, tiểu thiên kiếp, truyền y bát |
+| Con đường tu hành (luật `path`) | kiếm ý bên thác, độ hóa ma đầu, ma công phản phệ, lôi trì tôi thân, trận pháp thượng cổ, linh thú tiến hóa |
+| Tông môn (luật `sect`) | đại tỷ thí, nhiệm vụ tông môn, tranh ngôi chưởng môn, truy bắt phản đồ |
+| Thiên hạ | đoạt thần khí của bot (chỉ ở vùng Khó trở lên, luật `minD`), hai tông giao tranh (chọn phe), dị bảo xuất thế, khiêu chiến Bảng Thiên Kiêu |
+| Tuổi thơ, tuổi già, bế quan | trường làng, chim non rơi tổ, hội làng · viết di thư, truyền nghề · tiếng gõ ngoài động phủ, ngộ đạo trong bế quan |
+| Chuỗi dài | Huyết án trấn Thanh Thạch (3 bước), Lời hẹn dưới gốc đào (hẹn ước, 25–45 năm sau gặp lại, hoặc người đã mất) |
+
+**Lựa chọn khác nhau theo người:** nhiều lựa chọn riêng chỉ hiện khi đủ điều kiện, ví dụ:
+- Ma tu hoặc thể chất Bách Độc được nuốt cổ trùng.
+- Pháp tu dễ thu phục hỏa linh hơn, Phật tu dễ siêu độ hơn.
+- Có linh thú thì mới có chuyện linh thú tiến hóa.
+
+**Luật xuất hiện mở rộng:** `map`, `minD`, `realm`, `path`, `sect`, kiểm cả khi chọn kỳ ngộ lẫn trong `tools/check-events.mjs`.
+
+**Trọng số:**
+- Kỳ ngộ riêng của vùng nhân 3 khi đang ở đúng vùng.
+- Kỳ ngộ chưa gặp trong kiếp này nhân 1,5; đã gặp n lần thì nhân 1/(1 + 0,5n).
+
+**Cân bằng:**
+- Tu vi thưởng của đợt này nhân 0,6; các khoản cộng sức chiến đấu vĩnh viễn chỉ 2–3,5%.
+- Kỳ ngộ có trận nguy hiểm đều có tự quyết theo tỉ lệ thắng, và được xếp vào nhóm "việc lớn" nên ở tốc độ chậm vẫn hỏi người chơi.
+
+**Số liệu sau đợt này:**
+
+| Mô phỏng | Kết quả |
+|---|---|
+| Cân bằng chung (540 kiếp) | tuổi trung bình 310, phi thăng 17 |
+| Chỉ ở vùng Vừa (200 kiếp) | khoảng 0,09 món Thần thoại mỗi kiếp |
+| Lối chơi liều (200 kiếp) | khoảng 0,6 món Thần thoại mỗi kiếp |
+| Bị hỏi ở 1× (chế độ "Hỏi việc lớn") | khoảng 8 giây một lần |
+| Thử từng lựa chọn của 45 kỳ ngộ mới | 113 lựa chọn, không lỗi |
+
 ## 7. Kỹ thuật
 
 - HTML, CSS, JavaScript thuần (ES module), không cần build, không cần máy chủ.

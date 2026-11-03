@@ -23,7 +23,7 @@ import { EVENTS, EVENT_MAP } from './events.js';
 import { SKILLS, SKILL_IDS, BEAST_SKILLS, fighter, battle, turnText } from './combat.js';
 import { makeItem, gearStats, itemScore, QUALITY, THAN_THONG, TT_MAP, isSealed, rollQuality, itemVal, itemName, PLUS_MAX, AFFIX } from './items.js';
 import { botSeed } from './sprite.js';
-import { armorColor, itemToken, iconToken, matIconOpts } from './icons.js';
+import { armorColor, itemToken, iconToken, matIconOpts, skillToken } from './icons.js';
 
 // đối thủ coi như có sẵn trang bị (trừ hạng phàm nhân)
 const enemyGear = (realm) => (realm <= 0 ? 1 : 1.2);
@@ -33,7 +33,7 @@ const WEP_N = { kiem: 'Kiếm', dao: 'Đao', thuong: 'Thương', quat: 'Phiến'
 // kỳ ngộ chịu ảnh hưởng của độ khó vùng lịch luyện
 const MAP_RARE_EV = new Set(['hang_dong', 'truyen_thua', 'co_mo', 'kiem_trung', 'bi_canh', 'linh_mach', 'yeu_vuong', 'ban_do', 'trung_la', 'bao_vat', 'linh_thu', 'ngoc_gian']);
 // kỳ ngộ tự quyết được nhưng đủ quan trọng để hỏi người chơi khi chạy chậm
-const MAJOR_EV = new Set(['truyen_thua', 'bi_canh', 'kiem_trung', 'yeu_vuong', 'tam_ma']);
+const MAJOR_EV = new Set(['truyen_thua', 'bi_canh', 'kiem_trung', 'yeu_vuong', 'tam_ma', 'tuong_quan', 'binh_hon_chu', 'hoa_linh', 'huyet_an_1', 'thien_kieu_chien', 'kiem_y', 'loi_tri', 'tran_phap', 'thu_tien_hoa', 'do_hoa', 'luan_dao', 'ma_dao_xam', 'dai_ty_thi', 'truy_than_khi', 'tranh_chuong_mon', 'tieu_thien_kiep', 'phan_phe', 'huyet_an_2', 'huyet_an_3']);
 const MAP_FIGHT_EV = new Set(['khieu_chien', 'huyet_tran', 'bat_coc', 'ma_tu_tra_thu']);
 export const matToken = (k) => iconToken(matIconOpts(k, MATS[k]));
 // Bot đi lịch luyện: tỉ lệ ra ngoài và mức tỉ lệ thắng tối thiểu chấp nhận được, theo tính cách
@@ -1231,9 +1231,24 @@ export class Game {
     if (!opts.length) return '';
     const id = this.r.weighted(opts, (k) => (!SKILLS[k].wep || SKILLS[k].wep === w ? 3 : 1));
     this.learn(id);
-    const m = `Lĩnh ngộ võ kỹ: ${iconToken({ kind: 'bi_kip', q: SKILLS[id].tier })}${SKILLS[id].n}.`;
+    const m = `Lĩnh ngộ võ kỹ: ${skillToken(id, SKILLS[id])}${SKILLS[id].n}.`;
     this.log(m, 'good');
     return m;
+  }
+  /** Xếp 4 võ kỹ mạnh nhất dùng được với binh khí đang cầm: 3 chiêu đánh + 1 chiêu hộ thể/hồi phục nếu có */
+  autoLoadout() {
+    const P = this.P;
+    const w = P.eq && P.eq.vu_khi ? P.eq.vu_khi.wt : null;
+    const ok = P.skills.filter((id) => SKILLS[id] && (!SKILLS[id].wep || SKILLS[id].wep === w));
+    const power = (id) => { const k = SKILLS[id]; return (k.path ? 5 : 0) + k.tier * 3 + (k.mult || 0) * (k.hits || 1); };
+    const atk = ok.filter((id) => SKILLS[id].kind === 'atk' && id !== 'quyen').sort((a, b) => power(b) - power(a));
+    const def = ok.filter((id) => SKILLS[id].kind !== 'atk').sort((a, b) => power(b) - power(a));
+    const pick = [...atk.slice(0, def.length ? 3 : 4), ...def.slice(0, 1)];
+    for (const id of [...atk.slice(3), ...def.slice(1)]) if (pick.length < 4) pick.push(id);
+    if (pick.length < 4) pick.push('quyen');
+    const before = P.loadout.join();
+    P.loadout = [...new Set(pick)].slice(0, 4);
+    return before !== P.loadout.join();
   }
   toggleSkill(id) {
     const P = this.P;
@@ -1386,7 +1401,7 @@ export class Game {
     if (!b || P.skills.includes(id) || P.money < b.price) return null;
     this.money(-b.price);
     this.learn(id);
-    return `Học được ${iconToken({ kind: 'bi_kip', q: SKILLS[id].tier })}${SKILLS[id].n}.`;
+    return `Học được ${skillToken(id, SKILLS[id])}${SKILLS[id].n}.`;
   }
   hurt(n, cause) {
     const P = this.P;
@@ -1695,6 +1710,12 @@ export class Game {
       if (P.age < (ru.age ?? 14)) continue;
       if (ru.place === 'xa' && act !== 'lich_luyen') continue;
       if (ru.place === 'thanh' && act !== 'muu_sinh' && act !== 'ket_giao') continue;
+      // luật mở rộng: đúng vùng lịch luyện, đủ cảnh giới, đúng con đường, có tông môn
+      if (ru.map && (!mapNow || mapNow.id !== ru.map)) continue;
+      if (ru.minD !== undefined && (!mapNow || mapNow.d < ru.minD)) continue;
+      if (ru.realm && P.realm < ru.realm) continue;
+      if (ru.path && P.path !== ru.path) continue;
+      if (ru.sect && !(P.sect && this.sect(P.sect) && this.sect(P.sect).alive)) continue;
       if (e.when && !e.when(this)) continue;
       const bot = e.bot ? e.bot(this) : null;
       if (e.bot && !bot) continue;
@@ -1704,12 +1725,18 @@ export class Game {
       if (e.acts && e.acts.includes(act)) w *= 3;
       if (mapNow) w *= MAP_RARE_EV.has(e.id) ? 0.5 + 0.35 * mapNow.d : e.id === 'yeu_thu' ? 0.6 + 0.3 * mapNow.d : MAP_FIGHT_EV.has(e.id) ? 0.8 + 0.15 * mapNow.d : 1;
       w *= this.tevW(e.id);
+      if (ru.map) w *= 3; // chuyện riêng của vùng đang ở
+      // ưu tiên chuyện chưa gặp trong kiếp này, gặp rồi thì giảm dần
+      const seen = (P.evSeen && P.evSeen[e.id]) || 0;
+      w *= seen ? 1 / (1 + 0.5 * seen) : 1.5;
       cands.push({ e, bot, data, w });
     }
     const pick = this.r.weighted(cands, (c) => c.w);
     if (!pick) return;
     s.cd[pick.e.id] = P.age;
     if (pick.e.once) s.once[pick.e.id] = true;
+    P.evSeen = P.evSeen || {};
+    P.evSeen[pick.e.id] = (P.evSeen[pick.e.id] || 0) + 1;
     const mp0 = this.curMap();
     s.pending = { id: pick.e.id, botId: pick.bot ? pick.bot.id : null, data: pick.data, act, age: P.age, map: mp0 ? mp0.id : null };
   }
@@ -1854,8 +1881,8 @@ export class Game {
     if (!P || !pa || P.path || (pa.req && !pa.req(P))) return '';
     P.path = id;
     this.learn(pa.skill);
-    this.log(`Ngươi chọn con đường ${pa.n}. Lĩnh ngộ tuyệt học ${iconToken({ kind: 'bi_kip', q: 3 })}${SKILLS[pa.skill].n}.`, 'big');
-    return `Từ nay ngươi là ${pa.n}. Lĩnh ngộ tuyệt học ${iconToken({ kind: 'bi_kip', q: 3 })}${SKILLS[pa.skill].n}: ${SKILLS[pa.skill].desc}`;
+    this.log(`Ngươi chọn con đường ${pa.n}. Lĩnh ngộ tuyệt học ${skillToken(pa.skill, SKILLS[pa.skill])}${SKILLS[pa.skill].n}.`, 'big');
+    return `Từ nay ngươi là ${pa.n}. Lĩnh ngộ tuyệt học ${skillToken(pa.skill, SKILLS[pa.skill])}${SKILLS[pa.skill].n}: ${SKILLS[pa.skill].desc}`;
   }
 
   /** Hẹn một sự kiện xảy ra sau `years` năm (0 = năm sau) */

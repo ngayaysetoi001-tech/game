@@ -6,6 +6,7 @@
 import { REALMS, TOP_REALM, TAG_NAMES, PATHS, MAPS } from './data.js';
 import { makeItem } from './items.js';
 import { EVENTS2 } from './events2.js';
+import { EVENTS3 } from './events3.js';
 
 const RN = (r) => REALMS[r].n;
 // gần cảnh giới; nếu cùng lịch luyện một vùng thì nới thêm một bậc
@@ -804,6 +805,6 @@ export const EVENT_RULES = {
   huyet_tran: { age: 16, place: 'xa' }, dao_lu: { age: 16 }, song_tu: { age: 16 }, ho_ly: { age: 16 }, de_tu_nan: { age: 16 },
   thu_kiep_truoc: { age: 16 }, thu_nha: { age: 16 }, yeu_vuong: { age: 16 }, co_duyen_muon: { age: 16 }, luyen_dan: { age: 16 }, mong: { age: 20 },
 };
-export const EVENTS = BASE_EVENTS.concat(EVENTS2);
-for (const e of EVENTS) e.rule = EVENT_RULES[e.id] || {};
+export const EVENTS = BASE_EVENTS.concat(EVENTS2, EVENTS3);
+for (const e of EVENTS) e.rule = EVENT_RULES[e.id] || e.r3 || {};
 export const EVENT_MAP = Object.fromEntries(EVENTS.map((e) => [e.id, e]));

@@ -9,7 +9,7 @@ const read = (p) => readFileSync(join(root, p), 'utf8');
 const out = process.argv[2] || join(root, 'dist', 'tram-kiep-phu-sinh.html');
 
 // Thứ tự theo phụ thuộc: rng -> data -> events -> core -> ui
-const mods = ['js/rng.js', 'js/data.js', 'js/items.js', 'js/combat.js', 'js/sprite.js', 'js/icons.js', 'js/events2.js', 'js/events.js', 'js/core.js', 'js/ui.js'];
+const mods = ['js/rng.js', 'js/data.js', 'js/items.js', 'js/combat.js', 'js/sprite.js', 'js/icons.js', 'js/events3.js', 'js/events2.js', 'js/events.js', 'js/core.js', 'js/ui.js'];
 const js = mods.map((m) => {
   let s = read(m);
   s = s.replace(/^import[\s\S]*?from\s+'[^']+';\s*$/gm, '');

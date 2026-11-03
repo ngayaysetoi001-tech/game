@@ -1,0 +1,11 @@
+<!doctype html><meta charset="utf-8"><title>Biểu tượng võ kỹ</title>
+<style>body{font-family:serif;background:#1b1713;color:#eee;display:flex;flex-wrap:wrap;gap:10px;padding:12px}div{width:96px;text-align:center;font-size:12px}img{width:64px;height:64px;image-rendering:pixelated;background:#2a241e;border-radius:10px;padding:4px}</style>
+<script type="module">
+import { SKILLS, BEAST_SKILLS } from '../js/combat.js';
+import { iconURL, skillIconOpts } from '../js/icons.js';
+for (const [id, sk] of [...Object.entries(SKILLS), ...Object.entries(BEAST_SKILLS)]) {
+  const d = document.createElement('div');
+  d.innerHTML = `<img src="${iconURL(skillIconOpts(id, sk))}"><br>${sk.n}`;
+  document.body.appendChild(d);
+}
+</script>

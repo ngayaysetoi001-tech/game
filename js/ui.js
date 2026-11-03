@@ -2,9 +2,9 @@
 import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITLE_MAP, HL_PRICE, HL_REROLL, PATHS, clamp } from './core.js';
 import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEFAULT_MAP, realmLabel, subN } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
-import { SKILLS, TACTICS, WEAPON_TYPES, turnText } from './combat.js';
+import { SKILLS, BEAST_SKILLS, TACTICS, WEAPON_TYPES, turnText } from './combat.js';
 import { SLOTS, QUALITY, itemLine, TT_MAP, isSealed, gearStats, itemName, PLUS_MAX, AFFIX } from './items.js';
-import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE, matIconOpts } from './icons.js';
+import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE, matIconOpts, skillIconOpts } from './icons.js';
 
 const SAVE_KEY = 'tkps.save.v1';
 const SPEEDS = [1, 2, 4, 8, 16, 32];
@@ -79,6 +79,8 @@ const playerRobe = (P) => (P.eq && P.eq.ao ? armorColor(P.eq.ao) : sectRobe(P.se
 const SLOT_KIND = { vu_khi: 'kiem', ao: 'dao_bao', phu_kien: 'ngoc_boi' };
 const icoImg = (o, cls = '') => `<img class="ico ${cls}" alt="" src="${iconURL(o)}">`;
 const itemIco = (it) => icoImg(itemIconOpts(it), `q${it.q}`);
+/** Biểu tượng võ kỹ (cả chiêu yêu thú) */
+const skIco = (id, cls = '') => { const sk = SKILLS[id] || BEAST_SKILLS[id]; if (!sk) return ''; const o = skillIconOpts(id, sk); return icoImg(o, `q${o.q} ${cls}`); };
 
 /** Chỉ thay DOM khi nội dung đổi, để nút không bị dựng lại giữa lúc đang chạm */
 function setHTML(el, html) {
@@ -625,7 +627,7 @@ function stepBattle() {
   if (t.stunned) floatText(t.side, t.stunned, 'status');
   if (t.skill) {
     const big = t.skill !== 'quyen' && t.skill !== 'can_xe';
-    $('btBanner').textContent = t.skillN;
+    $('btBanner').innerHTML = `${skIco(t.skill, 'inl')}${esc(t.skillN)}`;
     $('btBanner').className = 'banner show ' + (big ? 'big ' : '') + (t.side === 'a' ? 'left' : 'right');
     me.classList.remove('lunge'); void me.offsetWidth; me.classList.add('lunge');
     const foeEl = $(foe === 'a' ? 'fA' : 'fB');
@@ -729,7 +731,7 @@ function shopGear() {
   const books = st.books.map((b) => {
     const sk = SKILLS[b.id];
     const has = P.skills.includes(b.id);
-    return `<div class="item withIco">${icoImg({ kind: 'bi_kip', q: sk.tier })}<div class="body"><div class="row"><b>Bí kíp: ${esc(sk.n)}</b><span class="meta">Linh lực ${sk.mp}</span></div><div class="meta">${esc(sk.desc)}</div>
+    return `<div class="item withIco">${skIco(b.id)}<div class="body"><div class="row"><b>Bí kíp: ${esc(sk.n)}</b><span class="meta">Linh lực ${sk.mp}</span></div><div class="meta">${esc(sk.desc)}</div>
       <div class="row btnRow">${has ? '<span class="meta">Đã học</span>' : `<button class="btn ghost" data-bk="${b.id}" ${P.money < b.price ? 'disabled' : ''}>Mua · ${fmt(b.price)}</button>`}</div></div></div>`;
   }).join('');
   return `<h3>Pháp khí · đổi hàng mỗi 5 năm</h3><div class="list">${gear}</div><h3>Bí kíp võ kỹ</h3><div class="list">${books}</div>`;
@@ -932,9 +934,11 @@ function openBag() {
         fit = `<span class="tag neg">Cần ${WEAPON_TYPES[sk.wep].n.toLowerCase()}, đang yếu 40%</span>` +
           (alt ? `<button class="btn ghost" data-eq="${alt.id}">Cầm ${esc(itemName(alt))}</button>` : g.forgeOpen() ? `<button class="btn ghost" data-goforge="vu_khi:${sk.wep}">⚒ Rèn ${WEAPON_TYPES[sk.wep].n.toLowerCase()}</button>` : '');
       }
-      return `<div class="item"><div class="row"><b>${esc(sk.n)}</b><span class="meta">${sk.mp ? `Linh lực ${sk.mp}` : 'Không tốn linh lực'}</span></div><div class="meta">${esc(sk.desc)}</div>
-        <div class="row btnRow"><button class="btn ${on ? 'on' : 'ghost'}" data-sk="${id}">${on ? 'Đang mang theo' : 'Mang theo'}</button>${fit}</div></div>`;
+      const needW = sk.wep ? ` · cần ${WEAPON_TYPES[sk.wep].n.toLowerCase()}` : '';
+      return `<div class="item withIco">${skIco(id)}<div class="body"><div class="row"><b>${esc(sk.n)}</b><span class="meta">${sk.mp ? `Linh lực ${sk.mp}` : 'Không tốn linh lực'}${needW}</span></div><div class="meta">${esc(sk.desc)}</div>
+        <div class="row btnRow"><button class="btn ${on ? 'on' : 'ghost'}" data-sk="${id}">${on ? 'Đang mang theo' : 'Mang theo'}</button>${fit}</div></div></div>`;
     }).join('');
+    const mism = g.skillMismatch().length;
     const canBest = ['vu_khi', 'ao', 'phu_kien'].some((sl) => P.bag.some((x) => x.slot === sl && g.effScore(x) > g.effScore(P.eq[sl])));
     openSheet(`<h2>Hành trang</h2>
       <div class="cstats"><span>Công <b>${fmt(F.atk)}</b></span><span>Thủ <b>${fmt(F.def)}</b></span><span>Sinh lực <b>${fmt(F.maxHp)}</b></span><span>Bạo kích <b>${Math.round(F.crit * 100)}%</b></span><span>Né <b>${Math.round(F.dodge * 100)}%</b></span></div>
@@ -944,7 +948,9 @@ function openBag() {
       <div class="row btnRow"><button class="btn ${canBest ? 'primary' : 'ghost'}" data-best="1" ${canBest ? '' : 'disabled'}>✨ Mặc đồ tốt nhất</button>
         <button class="btn ${g.s.opt.autoEquip ? 'on' : 'ghost'}" data-autoeq="1">Nhặt được đồ tốt hơn thì tự mặc: ${g.s.opt.autoEquip ? 'bật' : 'tắt'}</button></div>
       <h3>Đang mang</h3><div class="list">${eq}</div>
-      <h3>Võ kỹ · mang theo ${P.loadout.length}/4</h3><div class="list">${sks}</div>
+      <h3>Võ kỹ · mang theo ${P.loadout.length}/4</h3>
+      <div class="row btnRow"><button class="btn ${mism ? 'primary' : 'ghost'}" data-autosk="1">⚔ Xếp võ kỹ hợp binh khí</button>${mism ? `<span class="tag neg">${mism} chiêu đang lệch binh khí</span>` : ''}</div>
+      <div class="list">${sks}</div>
       <h3>Chiến thuật</h3><div class="tactics">${Object.entries(TACTICS).map(([k, t]) => `<button class="btn ${P.tactic === k ? 'on' : ''}" data-tc="${k}">${t.n}<small>${t.desc}</small></button>`).join('')}</div>
       <h3>Túi đồ · ${P.bag.length}/16</h3>
       <div class="row btnRow"><button class="btn ghost" data-salvall="1" ${P.bag.some((x) => x.q <= 1) ? '' : 'disabled'}>Phân giải hết Hạ, Trung phẩm</button>
@@ -962,6 +968,7 @@ function openBag() {
       q('[data-enh]', (b) => g.enhance(+b.dataset.enh) || 'Không đủ nguyên liệu.');
       q('[data-up]', (b) => g.upgrade(+b.dataset.up) || 'Không đủ nguyên liệu.');
       q('[data-sk]', (b) => g.toggleSkill(b.dataset.sk));
+      q('[data-autosk]', () => (g.autoLoadout() ? `Đã xếp: ${g.P.loadout.map((id) => SKILLS[id].n).join(', ')}.` : 'Bộ võ kỹ đang mang đã hợp nhất rồi.'));
       q('[data-tc]', (b) => g.setTactic(b.dataset.tc));
       $('sheetBody').querySelectorAll('[data-goforge]').forEach((b) => { b.onclick = () => { const [sl, wt] = b.dataset.goforge.split(':'); forgeTab = 'moi'; forgeSel.slot = sl; if (wt) forgeSel.wt = wt; openForge(); }; });
     });

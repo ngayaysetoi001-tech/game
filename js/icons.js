@@ -44,6 +44,82 @@ function canvasBuf() {
 }
 
 /** Dựng biểu tượng. o: { kind, q, col, seed } */
+// ---------- Biểu tượng võ kỹ ----------
+// [hình, màu hệ] theo từng chiêu; phẩm (khung, vầng sáng) theo tier, tuyệt học con đường tu hành = 4
+const SKILL_ICON = {
+  quyen: ['sk_quyen', '#c9a27a'],
+  luu_van: ['sk_kiem', '#9fd8ff'], kinh_hong: ['sk_kiem', '#eae2ff'], van_kiem: ['sk_vankiem', '#8fb8ff'],
+  liet_hoa: ['sk_dao', '#ff7a2a'], pha_son: ['sk_dao', '#c8a060'],
+  truy_hon: ['sk_thuong', '#9b7bff'], bach_dieu: ['sk_thuong', '#6fd0a0'],
+  thanh_phong: ['sk_quat', '#7fd08a'], me_hon: ['sk_quat', '#c58cff'],
+  han_bang: ['sk_chuong', '#8fe0ff'], tran_nhac: ['sk_an', '#c8a060'], huyet_anh: ['sk_trao', '#d0303a'], ngu_loi: ['sk_loi', '#ffe066'],
+  huyen_vu: ['sk_khien', '#4fa8a0'], hoi_nguyen: ['sk_hoi', '#6fd07a'], kim_cang: ['sk_khien', '#f0c64a'],
+  nhat_kiem: ['sk_kiem', '#5fc0ff'], ba_the: ['sk_quyen', '#ff8a3a'], cuu_thien: ['sk_loi', '#c08cff'], dai_bi: ['sk_sen', '#f0c64a'], huyet_hai: ['sk_giot', '#c0182a'], van_thu: ['sk_thu', '#d0925a'],
+  can_xe: ['sk_trao', '#e0d6c4'], doc_nha: ['sk_giot', '#7fd04a'], cuong_bao: ['sk_no', '#ff5030'], vay_giap: ['sk_khien', '#8a9a6a'], gam_thet: ['sk_gam', '#e0c080'],
+};
+/** Tùy chọn vẽ biểu tượng cho một võ kỹ (sk: định nghĩa trong SKILLS hoặc BEAST_SKILLS) */
+export function skillIconOpts(id, sk = {}) {
+  const [kind, col] = SKILL_ICON[id] || ['sk_quyen', '#c9a27a'];
+  return { kind, q: sk.path ? 4 : Math.min(3, sk.tier ?? 1), col };
+}
+export const skillToken = (id, sk) => iconToken(skillIconOpts(id, sk));
+// vũ khí làm nền cho chiêu binh khí
+const SK_WEP = { sk_kiem: 'kiem', sk_dao: 'dao', sk_thuong: 'thuong', sk_quat: 'quat' };
+function drawSkill(k, o, { px, set, rect, line, ell }) {
+  const col = o.col || '#c9a27a', colL = ilite(col, 0.45), colD = idark(col, 0.3);
+  const skin = '#e8b48a', skinD = '#b8845a';
+  const arc = (cx, cy, r, a0, a1, c) => { for (let a = a0; a <= a1; a += 4) { const t = (a * Math.PI) / 180; set(cx + Math.cos(t) * r, cy + Math.sin(t) * r, c); } };
+  if (SK_WEP[k]) {
+    // vẽ binh khí phẩm trung rồi phủ khí của hệ lên
+    const base = buildIcon({ kind: SK_WEP[k], q: 1 }).px;
+    for (let i = 0; i < base.length; i++) if (base[i] && base[i] !== I_OUT) px[i] = base[i];
+    if (k === 'sk_kiem') { arc(8, 8, 7, 200, 290, col); arc(8, 8, 5.6, 210, 280, colL); set(14, 13, colL); set(12, 15, col); }
+    if (k === 'sk_dao') { for (const [x, y] of [[13, 6], [14, 4], [12, 3], [15, 7], [13, 1]]) { set(x, y, col); set(x, y + 1, colD); } set(14, 3, colL); }
+    if (k === 'sk_thuong') { for (const y of [9, 11, 13]) line(1, y - 3, 4, y - 6, y === 11 ? colL : col); set(15, 0, colL); }
+    if (k === 'sk_quat') { arc(8, 13, 9, 200, 340, col); arc(8, 13, 10.4, 215, 300, colL); }
+  } else if (k === 'sk_vankiem') {
+    for (const [x, y0] of [[3, 3], [8, 1], [13, 3]]) { line(x, y0, x, y0 + 8, '#dfe6ee'); set(x + 1, y0 + 2, '#9aa3ab'); set(x - 1, y0 + 9, col); set(x + 1, y0 + 9, col); set(x, y0 + 9, colD); set(x, y0 + 10, '#7a5230'); set(x, y0 - 1, colL); }
+    arc(8, 18, 9, 225, 315, col);
+  } else if (k === 'sk_quyen') {
+    rect(4, 5, 10, 11, skin); rect(4, 5, 10, 5, skinD); for (const x of [6, 8]) line(x, 5, x, 7, skinD); rect(3, 8, 4, 11, skinD); rect(5, 12, 9, 13, col);
+    line(12, 4, 14, 2, col); line(12, 8, 15, 8, colL); line(12, 12, 14, 14, col);
+  } else if (k === 'sk_chuong') {
+    ell(8, 8, 7.6, 7.6, (x, y, d) => (d > 0.78 ? col : null));
+    rect(5, 7, 10, 12, skin); for (const [x, t] of [[5, 3], [7, 2], [9, 3]]) rect(x, t, x, 6, skin); rect(11, 6, 11, 9, skin); rect(5, 12, 10, 12, skinD);
+    set(7, 9, colL); set(8, 10, colL);
+  } else if (k === 'sk_an') {
+    rect(6, 0, 9, 2, '#8a6a3a'); rect(3, 3, 12, 12, col); rect(4, 4, 11, 11, colD); rect(5, 5, 10, 10, col);
+    line(7, 6, 7, 9, colL); line(6, 7, 9, 7, colL); line(9, 8, 9, 10, colL); set(12, 3, colL);
+  } else if (k === 'sk_khien') {
+    for (let y = 2; y <= 14; y++) { const h = y < 9 ? 5 : Math.max(0, 5 - (y - 8)); for (let x = 8 - h; x <= 7 + h; x++) set(x, y, x < 8 ? colL : col); }
+    for (let y = 2; y <= 14; y++) { const h = y < 9 ? 5 : Math.max(0, 5 - (y - 8)); set(8 - h, y, colD); set(7 + h, y, colD); }
+    rect(3, 2, 12, 2, colD); rect(7, 6, 8, 9, '#ffffff');
+  } else if (k === 'sk_hoi') {
+    ell(8, 10, 4.6, 4.6, (x, y) => (x + y < 16 ? colL : col)); for (let y = 2; y <= 6; y++) { const w = Math.round((y - 2) * 0.8); rect(8 - w, y, 8 + w, y, col); }
+    rect(7, 8, 8, 12, '#ffffff'); rect(6, 9, 9, 11, '#ffffff'); rect(7, 9, 8, 11, '#ffffff');
+  } else if (k === 'sk_loi') {
+    const pts = [[11, 0], [5, 8], [9, 8], [4, 15]];
+    for (let i = 0; i < pts.length - 1; i++) { const [a, b] = pts[i], [c2, d2] = pts[i + 1]; line(a, b, c2, d2, col); line(a + 1, b, c2 + 1, d2, colL); }
+    rect(5, 8, 9, 8, col); set(12, 1, colL); set(2, 6, colL); set(13, 11, col);
+  } else if (k === 'sk_trao') {
+    for (const [x0, y0, x1, y1] of [[3, 2, 8, 13], [6, 1, 11, 12], [9, 1, 14, 11]]) { line(x0, y0, x1, y1, col); line(x0 + 1, y0, x1 + 1, y1, colD); set(x0, y0, colL); }
+  } else if (k === 'sk_sen') {
+    ell(4.5, 10, 2.2, 3.6, () => colD); ell(11.5, 10, 2.2, 3.6, () => colD); ell(6.5, 9, 2.2, 4.2, () => col); ell(9.5, 9, 2.2, 4.2, () => col); ell(8, 8, 2, 4.6, () => colL);
+    rect(3, 13, 12, 13, '#5f9a5a'); rect(5, 14, 10, 14, '#3f7a3a'); set(8, 2, '#ffffff');
+  } else if (k === 'sk_giot') {
+    ell(8, 10, 4.8, 4.8, (x, y) => (x + y < 15 ? colL : col)); for (let y = 2; y <= 6; y++) { const w = Math.round((y - 2) * 0.9); rect(8 - w, y, 8 + w, y, col); }
+    set(6, 9, '#ffffff'); set(6, 10, colL); line(4, 15, 12, 15, colD);
+  } else if (k === 'sk_thu') {
+    ell(8, 11, 3.8, 3.2, () => col); for (const [x, y] of [[3.5, 6.5], [6.5, 4], [9.5, 4], [12.5, 6.5]]) ell(x, y, 1.6, 2, () => colL);
+    set(7, 10, colL); set(8, 10, colL);
+  } else if (k === 'sk_no') {
+    for (let a = 0; a < 360; a += 45) { const t = (a * Math.PI) / 180; line(8, 8, 8 + Math.cos(t) * 7, 8 + Math.sin(t) * 7, a % 90 ? colL : col); }
+    ell(8, 8, 3, 3, (x, y, d) => (d < 0.35 ? '#ffffff' : colL));
+  } else if (k === 'sk_gam') {
+    rect(1, 6, 3, 10, colD); for (const r of [4, 7, 10]) arc(2, 8, r, -50, 50, r === 7 ? colL : col);
+  }
+}
+
 export function buildIcon(o) {
   const { px, set, rect, line, ell } = canvasBuf();
   const q = o.q || 0;
@@ -148,6 +224,8 @@ export function buildIcon(o) {
     const crystal = (cx, top, w, h) => { for (let y = top; y <= top + h; y++) { const hw = y < top + 2 ? (y - top) : w; for (let x = cx - hw; x <= cx + hw; x++) set(x, y, x < cx ? ilite(c, 0.35) : x === cx ? c : idark(c, 0.25)); } };
     crystal(8, 1, 2, 12); crystal(4, 6, 1, 8); crystal(12, 5, 1, 9);
     rect(2, 14, 13, 14, idark(c, 0.55)); set(7, 3, '#ffffff');
+  } else if (k.startsWith('sk_')) {
+    drawSkill(k, o, { px, set, rect, line, ell });
   } else if (k === 'bi_kip') {
     rect(2, 3, 13, 12, '#e9dcbc');
     rect(2, 3, 2, 12, '#b89a6a'); rect(13, 3, 13, 12, '#b89a6a');

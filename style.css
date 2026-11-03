@@ -656,3 +656,4 @@ body.inPlay #scr-play > .dock { margin-top: auto; }
 .sheet h2 + .cstats { padding-right: 52px; }
 .item .btnRow .cost { flex-basis: 100%; }
 .evKicker .lowHp { color: var(--bad); font-weight: 700; }
+.banner .ico { width: 20px; height: 20px; vertical-align: -4px; margin-right: 4px; }
