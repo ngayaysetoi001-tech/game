@@ -699,14 +699,15 @@ function floatText(side, text, cls) {
   host.appendChild(el);
   setTimeout(() => el.remove(), 1100);
 }
-const SWING = [0, 1, 2, 3, 4, 5].map((i) => artURL(`heroes/kiem_atk_${i}`)).filter(Boolean);
-function swingFrames(img, fast) {
-  if (!img || img.hidden || !SWING.length || img.dataset.swing) return;
+const SWING = { nam: [0, 1, 2, 3, 4, 5].map((i) => artURL(`heroes/kiem_atk_${i}`)).filter(Boolean), nu: [0, 1, 2, 3, 4, 5].map((i) => artURL(`heroes/kiem_atk_nu_${i}`)).filter(Boolean) };
+function swingFrames(img, fast, gd = 'nam') {
+  const SW = SWING[gd === 'nu' ? 'nu' : 'nam'];
+  if (!img || img.hidden || SW.length < 6 || img.dataset.swing) return;
   const base = img.src;
   img.dataset.swing = '1';
   img.classList.add('swing');
-  SWING.forEach((u, i) => setTimeout(() => { img.src = u; }, i * (fast ? 35 : 60)));
-  setTimeout(() => { img.src = base; img.classList.remove('swing'); delete img.dataset.swing; }, SWING.length * (fast ? 35 : 60) + 40);
+  SW.forEach((u, i) => setTimeout(() => { img.src = u; }, i * (fast ? 35 : 60)));
+  setTimeout(() => { img.src = base; img.classList.remove('swing'); delete img.dataset.swing; }, SW.length * (fast ? 35 : 60) + 40);
 }
 function startBattle(res, fast = false, onClose = null) {
   bt = { res, i: 0, timer: null, closeT: null, fast: btFast || fast || (!!res.tower && fastNow()), done: false, onClose };
@@ -788,7 +789,7 @@ function stepBattle() {
     if (t.ult) { const ar = $('battle').querySelector('.arena'); ar.classList.remove('ultFx'); void ar.offsetWidth; ar.classList.add('ultFx'); }
     // Kiếm tu: hoạt ảnh vung kiếm
     const fx = t.side === 'a' ? bt.res.a : bt.res.b;
-    if (fx.path === 'kiem' && fx.look && fx.look.type === 'human' && fx.look.g !== 'nu') swingFrames(me.querySelector('img.art'), bt.fast);
+    if (fx.path === 'kiem' && fx.look && fx.look.type === 'human') swingFrames(me.querySelector('img.art'), bt.fast, fx.look.g);
     me.classList.remove('lunge'); void me.offsetWidth; me.classList.add('lunge');
     const foeEl = $(foe === 'a' ? 'fA' : 'fB');
     setTimeout(() => {
