@@ -1,13 +1,20 @@
 // Tranh vẽ tay (chibi) cho nhân vật, quái, linh thú, kỹ năng. Tệp nằm ở assets/; bản gộp một tệp thay bằng data URI.
 // Danh sách sinh tự động bằng tools/gen-art.mjs.
 // <list>
-const ART_LIST = ["heroes/kiem","heroes/kiem_atk_0","heroes/kiem_atk_1","heroes/kiem_atk_2","heroes/kiem_atk_3","heroes/kiem_atk_4","heroes/kiem_atk_5","heroes/meditate","heroes/phu","heroes/the","monsters/bang_hoang","monsters/bang_xa","monsters/bang_yeu","monsters/hac_thi","monsters/hau_yeu","monsters/hoang_tuyen_quy","monsters/hon_don_de_quan","monsters/hon_don_linh","monsters/hon_don_thu","monsters/hu_anh","monsters/hu_khong_thu","monsters/hu_xa","monsters/huyet_lang","monsters/huyet_ma","monsters/lang_vuong","monsters/ma_thi","monsters/ma_vien","monsters/moc_linh","monsters/moc_yeu","monsters/soi_yeu","monsters/thai_co_ma_than","monsters/u_hon","monsters/xa_yeu","monsters/xuong_giap","pets/bang_ly","pets/hoa_phuong","pets/kim_ho","pets/kim_thiem","pets/ky_lan","pets/linh_hac","pets/quy_giap","pets/thanh_long","pets/tieu_ho","pets/van_ho","skills/kiem_1","skills/kiem_2","skills/kiem_3","skills/kiem_4","skills/kiem_5","skills/kiem_6","skills/kiem_7","skills/kiem_8","skills/phu_1","skills/phu_2","skills/phu_3","skills/phu_4","skills/phu_5","skills/phu_6","skills/phu_7","skills/phu_8","skills/the_1","skills/the_2","skills/the_3","skills/the_4","skills/the_5","skills/the_6","skills/the_7","skills/the_8"];
+const ART_LIST = ["heroes/kiem","heroes/kiem_atk_0","heroes/kiem_atk_1","heroes/kiem_atk_2","heroes/kiem_atk_3","heroes/kiem_atk_4","heroes/kiem_atk_5","heroes/kiem_nu","heroes/meditate","heroes/phu","heroes/the","heroes/the_nu","monsters/bang_hoang","monsters/bang_xa","monsters/bang_yeu","monsters/hac_thi","monsters/hau_yeu","monsters/hoang_tuyen_quy","monsters/hon_don_de_quan","monsters/hon_don_linh","monsters/hon_don_thu","monsters/hu_anh","monsters/hu_khong_thu","monsters/hu_xa","monsters/huyet_lang","monsters/huyet_ma","monsters/lang_vuong","monsters/ma_thi","monsters/ma_vien","monsters/moc_linh","monsters/moc_yeu","monsters/soi_yeu","monsters/thai_co_ma_than","monsters/u_hon","monsters/xa_yeu","monsters/xuong_giap","pets/bang_ly","pets/hoa_phuong","pets/kim_ho","pets/kim_thiem","pets/ky_lan","pets/linh_hac","pets/quy_giap","pets/thanh_long","pets/tieu_ho","pets/van_ho","skills/kiem_1","skills/kiem_2","skills/kiem_3","skills/kiem_4","skills/kiem_5","skills/kiem_6","skills/kiem_7","skills/kiem_8","skills/phu_1","skills/phu_2","skills/phu_3","skills/phu_4","skills/phu_5","skills/phu_6","skills/phu_7","skills/phu_8","skills/the_1","skills/the_2","skills/the_3","skills/the_4","skills/the_5","skills/the_6","skills/the_7","skills/the_8"];
 // </list>
 export const ART = Object.fromEntries(ART_LIST.map((k) => [k, `assets/${k}.webp`]));
 export const hasArt = (k) => !!ART[k];
 export const artURL = (k) => ART[k] || '';
 /** Tranh nhân vật theo đường tu */
-export const heroArt = (path) => (path === 'kiem' ? ART['heroes/kiem'] : path === 'the' ? ART['heroes/the'] : path === 'tinh' ? ART['heroes/phu'] : ART['heroes/meditate']);
+const HERO_BASE = { kiem: 'kiem', the: 'the', tinh: 'phu' };
+/** Tranh nhân vật theo đường tu và giới tính (nữ chưa có tranh thì dùng tranh nam) */
+export const heroArt = (path, g = 'nam') => {
+  const b = HERO_BASE[path] || 'meditate';
+  return (g === 'nu' && ART[`heroes/${b}_nu`]) || ART[`heroes/${b}`];
+};
+/** Hào quang vẽ thêm cho tranh không có sẵn hào quang */
+export const heroFilter = (path, g = 'nam') => (path === 'the' && g === 'nu' && ART['heroes/the_nu'] ? 'drop-shadow(0 0 6px #d8e85a) drop-shadow(0 0 14px #b8d040)' : '');
 /** Biểu tượng kỹ năng (tên tệp trùng mã kỹ năng) */
 export const skillArt = (id) => ART[`skills/${id}`] || '';
 // quái: theo từ khóa trong tên, không khớp thì chọn theo seed; mỗi biến thể đổi màu nhẹ

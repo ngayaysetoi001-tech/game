@@ -860,3 +860,4 @@ body.inPlay.evOpen .hudPic img.art { width: 36px; height: 45px; }
 .ppSk .ico.art { width: 30px; height: 30px; }
 .ppGood, .ppBad { margin: 0; padding-left: 18px; font-size: 12px; }
 .ppGood li { color: var(--good); } .ppBad li { color: var(--bad); }
+img.art[hidden] { display: none !important; }
