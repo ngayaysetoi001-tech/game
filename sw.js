@@ -1,7 +1,7 @@
 // Cho game mở được khi không có mạng (cài ra Màn hình chính).
 // Có mạng: luôn lấy bản mới nhất từ máy chủ (bỏ qua bộ nhớ đệm của trình duyệt), rồi lưu lại.
 // Mất mạng: dùng bản đã lưu.
-const CACHE = 'tkps-v4';
+const CACHE = 'tkps-v5';
 const SHELL = [
   './', 'index.html', 'style.css', 'manifest.webmanifest',
   'js/rng.js', 'js/version.js', 'js/data.js', 'js/items.js', 'js/combat.js', 'js/sprite.js', 'js/icons.js',

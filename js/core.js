@@ -21,7 +21,7 @@ const THE_CAP_ADD = { brk: 0.15 };
 const THE_MAP = Object.fromEntries(THE_CHAT.map((t) => [t.id, t]));
 const TP_MAP = Object.fromEntries(THIEN_PHU.map((t) => [t.id, t]));
 import { EVENTS, EVENT_MAP } from './events.js';
-import { SKILLS, SKILL_IDS, BEAST_SKILLS, fighter, battle, turnText } from './combat.js';
+import { SKILLS, SKILL_IDS, BEAST_SKILLS, fighter, battle, turnText, skillCls } from './combat.js';
 import { makeItem, gearStats, itemScore, QUALITY, THAN_THONG, TT_MAP, isSealed, rollQuality, itemVal, itemName, PLUS_MAX, AFFIX } from './items.js';
 import { botSeed } from './sprite.js';
 import { armorColor, itemToken, iconToken, matIconOpts, skillToken } from './icons.js';
@@ -85,6 +85,7 @@ export class Game {
     if (state.opt.autoEquip === undefined) state.opt.autoEquip = true;
     if (state.opt.towerResume === undefined) state.opt.towerResume = true;
     if (state.opt.autoSell === undefined) state.opt.autoSell = false;
+    if (!state.opt.autoEquipMode) state.opt.autoEquipMode = state.opt.autoEquip === false ? 'off' : 'gain';
   }
 
   /** Bản lưu cũ (Phàm giới 8 cảnh giới): thêm Hợp Thể vào giữa nên Đại Thừa từ 7 thành 8 */
@@ -1490,10 +1491,11 @@ export class Game {
   salvage(id) {
     const P = this.P;
     const i = P.bag.findIndex((x) => x.id === id);
-    if (i < 0) return '';
+    if (i < 0 || P.bag[i].lock) return '';
     const it = P.bag.splice(i, 1)[0];
     const y = this.salvageYield(it);
     for (const k in y) P.mats[k] = (P.mats[k] || 0) + y[k];
+    if (this._rec) this._rec.push({ it, mats: y });
     return this.matText(y).replace(/\.$/, '');
   }
   /** Phân giải mọi món trong túi từ phẩm maxQ trở xuống */
@@ -1501,7 +1503,7 @@ export class Game {
     const P = this.P;
     const tot = {};
     let n = 0;
-    for (const it of P.bag.filter((x) => x.q <= maxQ)) {
+    for (const it of P.bag.filter((x) => x.q <= maxQ && !x.lock)) {
       const y = this.salvageYield(it);
       this.salvage(it.id);
       n++;
@@ -1705,6 +1707,9 @@ export class Game {
     if (P.towerWait === undefined) P.towerWait = null;
     if (P.brkBonus === undefined) P.brkBonus = 0;
     if (P.sanNghiep === undefined) P.sanNghiep = 0;
+    if (!P.pin) P.pin = {};
+    if (!P.bagMax) P.bagMax = BAG_MAX;
+    for (const it of [...P.bag, ...Object.values(P.eq)]) if (it && it.q >= 4 && it.lock === undefined) it.lock = true;
     if (P.dao && !P.tp) { P.tp = 'thanh_tam'; P.tpLv.thanh_tam = P.tpLv.thanh_tam || 1; }
     for (const id of ['ngung_than', 'bao_khi']) if (P.pills && P.pills[id] === undefined) P.pills[id] = 0;
     // đồ Thần thoại từ bản cũ chưa có thần thông thì gán theo mã món
@@ -1736,15 +1741,8 @@ export class Game {
   autoLoadout() {
     const P = this.P;
     const w = P.eq && P.eq.vu_khi ? P.eq.vu_khi.wt : null;
-    const ok = P.skills.filter((id) => SKILLS[id] && (!SKILLS[id].wep || SKILLS[id].wep === w));
-    const power = (id) => { const k = SKILLS[id]; return (k.path ? 5 : 0) + k.tier * 3 + (k.mult || 0) * (k.hits || 1); };
-    const atk = ok.filter((id) => SKILLS[id].kind === 'atk' && id !== 'quyen').sort((a, b) => power(b) - power(a));
-    const def = ok.filter((id) => SKILLS[id].kind !== 'atk').sort((a, b) => power(b) - power(a));
-    const pick = [...atk.slice(0, def.length ? 3 : 4), ...def.slice(0, 1)];
-    for (const id of [...atk.slice(3), ...def.slice(1)]) if (pick.length < 4) pick.push(id);
-    if (pick.length < 4) pick.push('quyen');
     const before = P.loadout.join();
-    P.loadout = [...new Set(pick)].slice(0, 4);
+    P.loadout = this.loadoutFor(w);
     return before !== P.loadout.join();
   }
   /** Đặt võ kỹ vào ô i (0-3) của bộ mang theo; đã ở ô khác thì đổi chỗ */
@@ -1777,81 +1775,247 @@ export class Game {
     const tk = itemToken(it);
     if (it.tt && TT_MAP[it.tt]) prefix = `${prefix} thần khí mang thần thông 「${TT_MAP[it.tt].n}」`;
     if (it.q >= 4) this.toast(`${tk}${it.n}${it.tt && TT_MAP[it.tt] ? ` · 「${TT_MAP[it.tt].n}」` : ''}`, 'Thần khí vào tay', 4);
+    // đồ Thần thoại tự khóa: không bị bán, phân giải, tự thay
+    if (it.q >= 4) it.lock = true;
     if (!P.eq[it.slot]) {
       P.eq[it.slot] = it;
       const m = `${prefix}: ${tk}${it.n} (${qn}), đã mang vào người.`;
       this.log(m, 'good');
       return m;
     }
-    if (this.s.opt && this.s.opt.autoEquip && this.betterThanEquipped(it)) {
+    if (this.autoEquipOk(it)) {
       const old = P.eq[it.slot];
+      const gp = this.swapGain(it);
       P.eq[it.slot] = it;
       P.bag.push(old);
-      let m = `${prefix}: ${tk}${it.n} (${qn}), tốt hơn ${itemName(old)} nên mang vào luôn.`;
-      if (P.bag.length > BAG_MAX) m += this.trimBag();
+      let m = `${prefix}: ${tk}${it.n} (${qn}), lực chiến +${Math.round(gp * 100)}% so với ${itemName(old)} nên mang vào luôn.`;
+      if (P.bag.length > this.bagCap()) m += this.trimBag(it);
       this.log(m, 'good');
       return m;
     }
     P.bag.push(it);
     let msg = `${prefix}: ${tk}${it.n} (${qn}).`;
-    if (P.bag.length > BAG_MAX) msg += this.trimBag();
+    if (P.bag.length > this.bagCap()) msg += this.trimBag(it);
     this.log(msg, 'good');
     return msg;
   }
-  /** Túi đầy: bán hoặc phân giải món kém nhất, trả về câu thông báo */
-  trimBag() {
+  /** Túi đầy: bán hoặc phân giải món kém nhất (không đụng đồ khóa, Thần thoại, đồ thăng cấp lên sẽ tốt hơn) */
+  trimBag(fresh = null) {
     const P = this.P;
-    let msg = '';
-    {
-      P.bag.sort((a, b) => a.val - b.val);
-      const sold = P.bag[0];
-      if (this.s.opt && this.s.opt.autoSalvage) {
-        msg += ` Túi đầy, phân giải ${itemName(sold)}: ${this.salvage(sold.id)}.`;
-      } else {
-        P.bag.shift();
-        this.money(sold.val);
-        msg += ` Túi đầy, bán ${itemName(sold)} được ${sold.val} linh thạch.`;
+    const pot = (it) => Math.max(this.effScore(it), it.lv < P.realm ? this.effScore(this.upgradedClone(it)) : 0);
+    let cands = P.bag.filter((x) => !x.lock && x.q < 4 && !this.upBetter(x));
+    if (!cands.length) cands = P.bag.filter((x) => !x.lock && x.q < 4);
+    if (!cands.length) {
+      // toàn đồ khóa: món mới không khóa thì bỏ món mới, còn không thì cho tràn túi và báo
+      if (fresh && !fresh.lock) cands = [fresh];
+      else {
+        if (!P.flags.bagFullWarn || P.age - P.flags.bagFullWarn >= 10) { P.flags.bagFullWarn = P.age; this.toast('Túi đầy toàn đồ đã khóa. Mở khóa bớt hoặc mở rộng túi (Túi trữ vật → Cài đặt).', '🎒 Túi đầy', 1); }
+        return ' Túi đầy toàn đồ khóa, tạm để tràn túi.';
       }
     }
-    return msg;
+    const sold = cands.sort((a, b) => pot(a) - pot(b) || a.val - b.val)[0];
+    if (this.s.opt && this.s.opt.autoSalvage) return ` Túi đầy, phân giải ${itemName(sold)}: ${this.salvage(sold.id)}.`;
+    this.sell(sold.id);
+    return ` Túi đầy, bán ${itemName(sold)} được ${sold.val} linh thạch.`;
   }
-  equip(itemId) {
+  bagCap() {
+    return this.P.bagMax || BAG_MAX;
+  }
+  /** Mở rộng túi: 16 → 24 → 32. by: 'money' | 'coin' */
+  bagExpandCost() {
+    const P = this.P;
+    const step = (this.bagCap() - BAG_MAX) / 8 + 1;
+    if (this.bagCap() >= 32) return null;
+    return { money: Math.round(600 * step * (1 + P.realm) * (1 + this.plane * 4)), coin: 60 * step };
+  }
+  expandBag(by) {
+    const P = this.P;
+    const c = this.bagExpandCost();
+    if (!this.playing || !c) return null;
+    if (by === 'coin') { if ((P.towerCoin || 0) < c.coin) return null; P.towerCoin -= c.coin; }
+    else { if (P.money < c.money) return null; this.money(-c.money); }
+    P.bagMax = this.bagCap() + 8;
+    return `Túi trữ vật mở rộng lên ${P.bagMax} ô.`;
+  }
+  toggleLock(id) {
+    const it = this.findItem(id);
+    if (!it) return null;
+    it.lock = !it.lock;
+    return it.lock ? `Đã khóa ${itemName(it)}: không bị bán, phân giải, tự thay.` : `Đã mở khóa ${itemName(it)}.`;
+  }
+  togglePin(slot) {
+    const P = this.P;
+    if (P.pin[slot]) delete P.pin[slot]; else if (P.eq[slot]) P.pin[slot] = true;
+    return P.pin[slot] ? `Đã ghim ô ${slot === 'vu_khi' ? 'vũ khí' : slot === 'ao' ? 'y phục' : 'phụ kiện'}: tự mặc sẽ không thay.` : 'Đã bỏ ghim.';
+  }
+  /** Nhặt được đồ: có tự mặc không */
+  autoEquipOk(it) {
+    const P = this.P;
+    const mode = (this.s.opt && this.s.opt.autoEquipMode) || 'gain';
+    const cur = P.eq[it.slot];
+    if (mode === 'off' || !cur || P.pin[it.slot] || cur.lock && cur.q >= 4 && it.q < 4) return false;
+    return this.swapGain(it) >= (mode === 'gain' ? 0.1 : 0.005);
+  }
+
+  // ---------- Hoàn tác bán, phân giải ----------
+  undoStart() {
+    this._rec = [];
+  }
+  undoEnd() {
+    if (this._rec && this._rec.length) this.s.undo = this._rec;
+    this._rec = null;
+    return !!(this.s.undo && this.s.undo.length);
+  }
+  undoLast() {
+    const P = this.P;
+    const u = this.s.undo;
+    if (!this.playing || !u || !u.length) return null;
+    const need = { money: 0 };
+    for (const r of u) { need.money += r.money || 0; for (const k in r.mats || {}) need[k] = (need[k] || 0) + r.mats[k]; }
+    if (!this.canPay(need)) return 'Không hoàn tác được: linh thạch hoặc nguyên liệu nhận được đã tiêu mất.';
+    for (const k in need) if (k === 'money') P.money -= need.money; else P.mats[k] -= need[k];
+    for (const r of u) P.bag.push(r.it);
+    this.s.undo = null;
+    return `Đã lấy lại ${u.length} món.`;
+  }
+
+  // ---------- Lực chiến: thử mặc cả bộ rồi tính chỉ số trận đấu thật ----------
+  /** Chạy fn với bộ đồ, bộ võ kỹ tạm thời */
+  withGear(eq, loadout, fn) {
+    const P = this.P;
+    const e = P.eq, l = P.loadout;
+    P.eq = eq; P.loadout = loadout || l;
+    try { return fn(); } finally { P.eq = e; P.loadout = l; }
+  }
+  /** Bộ võ kỹ hợp nhất với một loại binh khí */
+  loadoutFor(w) {
+    const P = this.P;
+    const ok = P.skills.filter((id) => SKILLS[id] && (!SKILLS[id].wep || SKILLS[id].wep === w));
+    const power = (id) => { const k = SKILLS[id]; return (k.path ? 5 : 0) + k.tier * 3 + (k.mult || 0) * (k.hits || 1); };
+    const atk = ok.filter((id) => SKILLS[id].kind === 'atk' && id !== 'quyen').sort((a, b) => power(b) - power(a));
+    const def = ok.filter((id) => SKILLS[id].kind !== 'atk').sort((a, b) => power(b) - power(a));
+    const pick = [...atk.slice(0, def.length ? 3 : 4), ...def.slice(0, 1)];
+    for (const id of [...atk.slice(3), ...def.slice(1)]) if (pick.length < 4) pick.push(id);
+    if (pick.length < 4) pick.push('quyen');
+    return [...new Set(pick)].slice(0, 4);
+  }
+  /** Một con số lực chiến từ chỉ số trận đấu: sát thương mỗi lượt × lượng máu thực chịu được */
+  fighterValue(F) {
+    const ref = this.basePower() * 1.3;
+    const foeAtk = 10 * ref, foeDef = 4 * ref;
+    const mpT = 12 + (F.mpRegen || 0);
+    const base = F.clsMul.the || 1;
+    let skM = base, defM = 1;
+    for (const id of F.skills) {
+      const sk = SKILLS[id];
+      if (!sk) continue;
+      const frac = sk.mp ? Math.min(1, mpT / sk.mp) : 1;
+      const cls = F.clsMul[skillCls(sk)] || 1;
+      if (sk.kind === 'atk') {
+        const fit = !sk.wep || sk.wep === F.wep ? 1 : 0.6;
+        const v = (sk.mult || 1) * (sk.hits || 1) * fit * cls * (1 + (sk.crit || 0) * 0.7) + (sk.burn || 0) * 0.15 + (sk.stun || 0) * 0.5 + (sk.armorBreak ? 0.3 : 0);
+        skM = Math.max(skM, frac * v + (1 - frac) * base);
+      } else defM = Math.max(defM, 1 + 0.5 * frac * ((sk.shield || 0) + (sk.heal || 0)) * cls);
+    }
+    const d = foeDef * (1 - Math.min(0.8, F.pierce || 0));
+    let off = F.atk * skM * (1 + Math.min(1, F.crit) * (F.critDmg - 1)) * (1 + (F.combo || 0) * 0.8) * (1 - d / (d + F.atk * 1.5));
+    if (F.execute) off *= 1 + 0.25 * (F.execute - 1);
+    off *= 1 + (F.stunHit || 0) * 0.5 + (F.first ? 0.05 : 0);
+    const hit = foeAtk * (1 - F.def / (F.def + foeAtk * 1.5));
+    off += (F.rf || 0) * hit;
+    let ehp = F.maxHp * (1 + F.st.shield / F.maxHp) * defM / Math.max(0.05, (1 - Math.min(0.75, F.dodge)) * (1 - (F.dmgRed || 0)) * (1 + (F.takenPct || 0)));
+    ehp *= foeAtk / Math.max(1, hit);
+    ehp *= 1 + (F.regenTurn || 0) * 7;
+    if (F.lastStand) ehp *= 1.3;
+    if (F.immune) ehp *= 1.08;
+    ehp /= 1 - Math.min(0.6, ((F.ls || 0) * off) / Math.max(1, hit) * 0.5);
+    return Math.sqrt(off * ehp);
+  }
+  /** Lực chiến với bộ đồ eq (mặc định đồ đang mang), sinh lực đầy */
+  combatValue(eq = this.P.eq, loadout = null) {
+    const P = this.P;
+    const L = loadout || P.loadout;
+    const key = [P.realm, Math.round(this.basePower()), L.join(','), ...['vu_khi', 'ao', 'phu_kien'].map((k) => (eq[k] ? `${eq[k].id}.${eq[k].plus || 0}.${eq[k].lv}` : '-'))].join('|');
+    this._cv = this._cv || new Map();
+    if (this._cv.has(key)) return this._cv.get(key);
+    const v = this.withGear(eq, L, () => this.fighterValue(this.playerFighter(1, 100)));
+    if (this._cv.size > 400) this._cv.clear();
+    this._cv.set(key, v);
+    return v;
+  }
+  /** Bản sao món đồ nếu thăng cấp lên cảnh giới hiện tại */
+  upgradedClone(it) {
+    const P = this.P;
+    if (it.lv >= P.realm) return it;
+    const k = REALMS[P.realm].pow / REALMS[it.lv].pow;
+    const c = { ...it, id: -9000 - it.id, lv: P.realm };
+    for (const st of ['atk', 'def', 'hp']) if (it[st]) c[st] = Math.round(it[st] * k);
+    return c;
+  }
+  /** Mặc món it vào thay đồ cùng ô: lực chiến tăng bao nhiêu (tỉ lệ). relayout: xếp lại võ kỹ hợp binh khí mới */
+  swapGain(it, relayout = false) {
+    const P = this.P;
+    const eq = { ...P.eq, [it.slot]: it };
+    const L = relayout ? this.loadoutFor(eq.vu_khi ? eq.vu_khi.wt : null) : null;
+    return this.combatValue(eq, L) / Math.max(1e-9, this.combatValue()) - 1;
+  }
+  /** Thăng cấp lên thì tốt hơn đồ đang mặc */
+  upBetter(it) {
+    return it.lv < this.P.realm && !Object.values(this.P.eq).includes(it) && this.swapGain(this.upgradedClone(it)) > 0.01;
+  }
+  /** Sửa món it thành clone (cường hóa, thăng cấp): lực chiến khi mặc tăng bao nhiêu so với mặc món hiện tại */
+  improveGain(it, clone) {
+    const P = this.P;
+    const a = this.combatValue({ ...P.eq, [it.slot]: it });
+    const b = this.combatValue({ ...P.eq, [it.slot]: clone });
+    return b / Math.max(1e-9, a) - 1;
+  }
+  /** Đánh thử: tỉ lệ thắng với đối thủ target ('map' | 'tower' | 'boss') khi mặc bộ eq */
+  trialOdds(target, eq = this.P.eq, loadout = null) {
+    const P = this.P;
+    const FIX = { pick: (a) => a[a.length - 1], range: () => 1, int: (a) => a, chance: () => false };
+    return this.withGear(eq, loadout, () => {
+      if (target === 'map') { const mp = MAP_MAP[P.map] || this.defaultMap(); return this.winOdds(() => this.monsterFighter(this.mapMonster(mp, FIX))); }
+      const T = this.towerState();
+      if (target === 'tower') return this.floorOdds(Math.min(1000, T.f + 1));
+      return this.bossOdds(this.plane, Math.min(1000, Math.ceil((T.f + 1) / 100) * 100));
+    });
+  }
+  equip(itemId, manual = false) {
     const P = this.P;
     const i = P.bag.findIndex((x) => x.id === itemId);
     if (i < 0) return;
     const it = P.bag.splice(i, 1)[0];
     if (P.eq[it.slot]) P.bag.push(P.eq[it.slot]);
     P.eq[it.slot] = it;
+    // tự tay mặc thì ghim ô này: tự mặc không thay nữa
+    if (manual) P.pin[it.slot] = true;
   }
   unequip(slot) {
     const P = this.P;
-    if (P.eq[slot] && P.bag.length < BAG_MAX) {
+    if (P.eq[slot] && P.bag.length < this.bagCap()) {
       P.bag.push(P.eq[slot]);
       P.eq[slot] = null;
+      delete P.pin[slot];
     }
   }
   sell(itemId) {
     const P = this.P;
     const i = P.bag.findIndex((x) => x.id === itemId);
-    if (i < 0) return 0;
+    if (i < 0 || P.bag[i].lock) return 0;
     const it = P.bag.splice(i, 1)[0];
     this.money(it.val);
+    if (this._rec) this._rec.push({ it, money: it.val });
     return it.val;
   }
   betterThanEquipped(it) {
-    return this.effScore(it) > this.effScore(this.P.eq[it.slot]);
+    return !!it && !Object.values(this.P.eq).includes(it) && this.swapGain(it) > 0.01;
   }
-  /** Điểm thực dùng: đồ Thần thoại bị phong ấn thì tính theo sức đang phát huy */
-  effScore(it) {
-    if (!it) return 0;
-    let sc;
-    if (!isSealed(it, this.P.realm)) sc = itemScore(it);
-    else { const g = gearStats({ x: it }, this.P.realm); sc = g.atk * 3 + g.def * 4 + g.hp * 0.5; }
-    // vũ khí không hợp võ kỹ đang mang thì kém giá trị hơn với ngươi
-    if (it.slot === 'vu_khi') { const need = this.wepNeeded(); if (need && it.wt !== need) sc *= 0.6; }
-    return sc;
+  /** Lực chiến khi mặc món này vào ô của nó (null: để trống ô) */
+  effScore(it, slot = it && it.slot) {
+    if (!slot) return 0;
+    return this.combatValue({ ...this.P.eq, [slot]: it });
   }
-  /** Loại binh khí mà võ kỹ đang mang cần nhiều nhất (null nếu không cần) */
   wepNeeded() {
     const cnt = {};
     for (const id of this.P.loadout || []) { const w = SKILLS[id] && SKILLS[id].wep; if (w) cnt[w] = (cnt[w] || 0) + 1; }
@@ -1869,8 +2033,9 @@ export class Game {
     const P = this.P;
     let n = 0;
     for (const slot of ['vu_khi', 'ao', 'phu_kien']) {
+      if (P.pin[slot]) continue;
       const best = P.bag.filter((x) => x.slot === slot).sort((a, b) => this.effScore(b) - this.effScore(a))[0];
-      if (best && this.effScore(best) > this.effScore(P.eq[slot])) { this.equip(best.id); n++; }
+      if (best && this.effScore(best) > this.effScore(P.eq[slot], slot) * 1.005) { this.equip(best.id); n++; }
     }
     return n;
   }
@@ -2115,6 +2280,14 @@ export class Game {
         if (it && it.q >= 4 && it.lv === P.realm) {
           this.log(`Phong ấn trên ${it.n} vỡ tan. Thần khí nhận ngươi làm chủ, phát huy toàn bộ sức mạnh${it.tt && TT_MAP[it.tt] ? ` và thần thông 「${TT_MAP[it.tt].n}」` : ''}.`, 'big');
           (this.s.toasts = this.s.toasts || []).push({ n: `${it.n} giải phong`, tier: 4, bonus: it.tt && TT_MAP[it.tt] ? TT_MAP[it.tt].n : 'Toàn bộ sức mạnh' });
+        }
+      }
+      // đồ trong túi vừa mở phong ấn, hoặc giờ mạnh hơn đồ đang mặc
+      for (const it of P.bag) {
+        if (it.q >= 4 && it.lv === P.realm) {
+          const gp = this.swapGain(it);
+          this.log(`Phong ấn trên ${itemToken(it)}${it.n} trong túi đã mở.${gp > 0.01 ? ` Mặc vào lực chiến +${Math.round(gp * 100)}%.` : ''}`, 'big');
+          this.toast(`${itemToken(it)}${it.n} đã mở phong ấn${gp > 0.01 ? `, mặc vào lực chiến +${Math.round(gp * 100)}%` : ''}.`, 'Phong ấn đã mở', 4);
         }
       }
       const ob = this.tadd('ngoOnBreak');

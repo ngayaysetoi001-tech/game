@@ -536,6 +536,17 @@ Mô phỏng 30 kiếp mỗi cách chơi (Phàm giới, có rèn đồ):
 - Công pháp: thanh 4 ô võ kỹ (lệch binh khí viền đỏ kèm biểu tượng binh khí cần), lưới võ kỹ đã học, thẻ chi tiết có nút đặt vào ô 1-4, chiến thuật dạng 3 thẻ, tâm pháp chủ tu.
 - Lò rèn, Tụ Bảo Lâu, Tháp thương điếm dùng cùng kiểu lưới ô.
 
+### So sánh đồ bằng lực chiến, ghim, khóa (bản 3.1)
+- **Lực chiến** (`combatValue`): thử mặc cả bộ rồi dựng chỉ số trận đấu thật (`playerFighter`), tính sát thương mỗi lượt × lượng máu thực chịu được. Gồm thần thông, dòng %, phong ấn, áp chế, võ kỹ có hợp binh khí, tâm pháp, con đường. Đối chiếu 60 bộ đồ ngẫu nhiên với tỉ lệ thắng đánh thật: tương quan hạng 0,98 (điểm cũ 0,91). Ví dụ đao Thần thoại cảnh giới 3 được chấm cao hơn đao Trung phẩm cảnh giới 5, đánh thật thắng 25% so với 7%.
+- Thẻ chi tiết: lực chiến trước → sau, "Mặc + xếp lại võ kỹ" khi đổi loại binh khí, từng chỉ số ▲▼, thần thông được/mất, "nếu thăng/linh hóa lên cảnh giới hiện tại", "khi lên X mở phong ấn", **Đánh thử** 40 trận với quái vùng / tầng tháp kế / trùm tháp kế.
+- Nhãn ô: ▲ tốt hơn ngay, ⬆ thăng cấp lên sẽ tốt hơn, 📌 ô đang ghim, 🔒 đã khóa, ⛓ phong ấn, ⚠ áp chế. Nút cường hóa, thăng cấp ghi trước lực chiến tăng bao nhiêu.
+- **Ghim**: tự tay mặc thì ô đó được ghim, tự mặc và "Mặc tốt nhất" không thay. Có đồ mạnh hơn từ 10% thì HUD báo "⚠ Có đồ mạnh hơn".
+- **Tự mặc khi nhặt**: Tắt / Lực chiến +10% (mặc định) / Hễ tốt hơn. Không thay đồ Thần thoại bằng đồ phẩm thấp hơn.
+- **Khóa**: đồ Thần thoại tự khóa. Đồ khóa không bán, không phân giải, không bị chọn nhiều. Túi đầy: bỏ món tiềm năng kém nhất (không đụng đồ khóa, Thần thoại, đồ có ⬆); toàn đồ khóa thì cho tràn và báo.
+- **Chọn nhiều** tự tắt mỗi lần mở túi, có thanh báo và nút Xong. "Chọn hết đồ kém" chỉ chọn Thượng phẩm trở xuống không khóa, không tốt hơn kể cả khi thăng cấp.
+- Bán, phân giải đồ Cực phẩm trở lên phải bấm hai lần. Có **↶ Hoàn tác** lần bán/phân giải gần nhất trong 10 giây.
+- Túi mở rộng 16 → 24 → 32 ô bằng linh thạch hoặc Tháp tệ. Xếp theo lực chiến, lọc "Thăng được", "Đã khóa".
+
 ## 7. Kỹ thuật
 
 - HTML, CSS, JavaScript thuần (ES module), không cần build, không cần máy chủ.
