@@ -203,7 +203,17 @@ Chọn Lịch luyện thì mở bảng chọn vùng. Độ khó **luôn tính th
 - Đồ Thần thoại **chỉ** xuất hiện ở vùng Khó trở lên (hoặc tự rèn). Kỳ ngộ ở nơi khác vốn cho đồ Thần thoại thì hạ xuống Cực phẩm.
 - Thua yêu thú ở vùng khó dễ mất mạng hơn (hệ số 0,3 ở Dễ tới 2,5 ở Luyện ngục). Vùng khó gặp kỳ ngộ hiếm, yêu thú và cao thủ nhiều hơn.
 - Mỗi thẻ vùng hiện tỉ lệ thắng thật theo trang bị, võ kỹ, sinh lực đang có, và nguy hiểm tính mạng khi thua. Vào vùng Nguy hiểm trở lên phải xác nhận.
-- Sinh lực dưới 40% ở vùng Khó trở lên: nếu bật "tự lui" thì về Hắc Phong Lĩnh; nếu tắt thì game dừng lại cảnh báo một lần.
+- **Sinh lực dưới 40 ở vùng Khó trở lên:**
+  - Nếu bật "tự lui" (mặc định): về Hắc Phong Lĩnh dưỡng thương, có thông báo nổi. Hồi lên 80 thì tự quay lại vùng đã chọn.
+  - Nếu tắt "tự lui": game dừng lại cảnh báo một lần, rồi ở lại.
+  - Cố ý chọn vào vùng khó khi sinh lực đang dưới 40 thì không bị kéo về ngay. Phải hồi lên 40 rồi tụt xuống lại mới tính.
+- **Tự uống Hồi Xuân Đan** (mặc định bật): sinh lực dưới 40 thì uống, tối đa 3 viên một lần.
+  - Kiểm tra sau mỗi năm và sau mỗi kỳ ngộ.
+  - Đan được uống trước khi xét tự lui, nên còn đan thì ở lại vùng đã chọn.
+  - Tùy chọn "hết đan thì tự mua" (mặc định tắt) dùng linh thạch mua theo giá Tụ Bảo Lâu.
+  - Hết đan thì có thông báo nổi một lần.
+  - Thanh trên hiện số viên còn lại (💊).
+  - Nút bật tắt nằm ở bảng chọn vùng và ở Tụ Bảo Lâu.
 - Hệ số được chỉnh theo mô phỏng: nhân vật trung bình thắng ~100% / 85% / 65% / 35% / 10% / 2% ở 6 vùng. Lối chơi "luôn vào vùng khó nhất còn thắng được 55%" mang về ~0,4 món Thần thoại mỗi kiếp nhưng 4 trên 10 kiếp chết dưới nanh yêu thú.
 
 **Bot cũng lịch luyện như người chơi.** Từ 10 tuổi, cứ 3 đến 8 năm mỗi bot quyết định ra ngoài hay ở nhà tu luyện, rồi chọn vùng khó nhất mà nó tự tin thắng được. Tỉ lệ thắng bot tự ước lượng theo cùng đường cong với người chơi, tính cả linh căn, thể chất, tu vi và trang bị đang có.
