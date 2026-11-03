@@ -20,7 +20,7 @@ const THE_CAP_ADD = { brk: 0.15 };
 
 const THE_MAP = Object.fromEntries(THE_CHAT.map((t) => [t.id, t]));
 const TP_MAP = Object.fromEntries(THIEN_PHU.map((t) => [t.id, t]));
-import { EVENTS, EVENT_MAP } from './events.js';
+import { EVENTS, EVENT_MAP, EVENT_TERRAIN, terrainOf } from './events.js';
 import { SKILLS, SKILL_IDS, BEAST_SKILLS, fighter, battle, turnText, skillCls, PATH_SKILLS, PATH_RES, SKILL_MAX, skillLvMul } from './combat.js';
 import { makeItem, gearStats, itemScore, QUALITY, THAN_THONG, TT_MAP, isSealed, rollQuality, itemVal, itemName, PLUS_MAX, AFFIX, wepName, setWepBias } from './items.js';
 import { botSeed } from './sprite.js';
@@ -67,7 +67,14 @@ export const planStepText = (x) => `${PLAN_ACT_N[x.a]} ${x.a === 'be_quan' ? `${
 export const pct = (p) => Math.round(p * 100) + '%';
 
 // Xác suất có sự kiện mỗi năm theo việc đang làm
-const EVENT_RATE = { lon_len: 0.3, tu_luyen: 0.16, lich_luyen: 0.55, muu_sinh: 0.26, ket_giao: 0.26, be_quan: 0.03 };
+const TU_MUL = 1.3;
+const REGEN = { tu_luyen: 9, muu_sinh: 5, lich_luyen: 1.5, vuot_thap: 4, lon_len: 6 };
+const EVENT_RATE = { lon_len: 0.3, tu_luyen: 0.12, lich_luyen: 0.55, muu_sinh: 0.3, vuot_thap: 0.08 };
+// Nhóm kỳ ngộ được gặp theo việc làm (bản 4.3)
+const ACT_POOL = { tu_luyen: 'tu', lich_luyen: 'lich', muu_sinh: 'muu' };
+/** Mức thương thế theo sinh lực ẩn: 0 khỏe, 1 nhẹ, 2 trọng, 3 nguy kịch */
+export const woundLv = (hp) => (hp >= 80 ? 0 : hp >= 50 ? 1 : hp >= 25 ? 2 : 3);
+export const WOUND_N = ['Khỏe mạnh', 'Thương nhẹ', 'Trọng thương', 'Nguy kịch'];
 
 export class Game {
   constructor(state) {
@@ -537,10 +544,10 @@ export class Game {
     const mp = this.playing ? this.curMap() : null;
     return this.r.weighted(list, (b) => (this.s.rel[b.id] && this.s.rel[b.id].met ? metW : 1) * (mp && b.map === mp.id ? 3 : 1));
   }
-  meetBot() {
+  meetBot(quiet = false) {
     const P = this.P;
     const b = this.findBot((x, r) => x.age >= 8 && Math.abs(x.realm - P.realm) <= 1 + (r && r.met ? 2 : 0), 2);
-    if (!b) return this.log('Ngươi ngồi quán trà cả năm mà chẳng gặp ai hợp chuyện.');
+    if (!b) return quiet ? null : this.log('Ngươi ngồi quán trà cả năm mà chẳng gặp ai hợp chuyện.');
     const r = this.rel(b);
     if (!r.met && r.cn) return this.s.queue.push({ id: 'co_nhan_gap_lai', botId: b.id, data: {} });
     const lp = r.past[r.past.length - 1];
@@ -548,7 +555,7 @@ export class Game {
     const dv = Math.max(1, Math.round(this.r.range(4, 10) * PERSONALITIES[b.pers].relMul * (1 + P.tinh / 200)));
     this.relAdd(b, dv);
     P.tinh = clamp(P.tinh + 1, -100, 100);
-    const what = this.r.pick(['uống trà luận đạo', 'đánh một ván cờ', 'ngồi bàn chuyện giang hồ', 'đi dạo bên hồ', 'cùng nhau luyện kiếm', 'nghe kể chuyện cổ tu']);
+    const what = this.P.action === 'lich_luyen' ? this.r.pick(['tình cờ đi chung một quãng đường', 'cùng trú mưa trong miếu hoang', 'chung tay đánh lui một bầy yêu thú', 'đốt lửa trại luận đạo']) : this.r.pick(['uống trà luận đạo', 'đánh một ván cờ', 'ngồi bàn chuyện giang hồ', 'đi dạo bên hồ', 'cùng ngồi tửu lâu', 'nghe kể chuyện cổ tu']);
     this.log(`Cùng ${b.name} ${what}. Thân thiết +${dv}.`);
   }
 
@@ -1403,7 +1410,7 @@ export class Game {
     P.flags.mapWarned = false;
     P.flags.retreated = false;
     // cố ý vào khi đang bị thương thì không tự lui ngay, đợi hồi lên 40 rồi tụt lại mới tính
-    P.flags.enteredLow = P.hp < 40;
+    P.flags.enteredLow = P.hp < 50;
     this.setAction('lich_luyen');
   }
   /** Yêu thú của vùng: cùng cảnh giới với ngươi, sức mạnh nhân theo độ khó */
@@ -1742,6 +1749,14 @@ export class Game {
     for (const it of [...P.bag, ...Object.values(P.eq)]) {
       if (it && it.q >= 4 && !it.tt) { const pool = THAN_THONG[it.slot]; it.tt = pool[Math.abs(it.id) % pool.length].id; }
     }
+    // bản 4.3: bế quan gộp vào tu luyện, bỏ kết giao
+    if (P.closed > 0) { P.closed = 0; P.closeServed = 0; P.closeLen = 0; P.action = 'tu_luyen'; }
+    if (P.action === 'be_quan' || P.action === 'ket_giao') P.action = P.action === 'ket_giao' ? 'muu_sinh' : 'tu_luyen';
+    if (P.plan && P.plan.steps) for (const st of P.plan.steps) { if (st.a === 'be_quan') { st.a = 'tu_luyen'; st.k = 'y'; st.v = st.v || 10; } else if (st.a === 'ket_giao') st.a = 'muu_sinh'; }
+  }
+  /** Củng cố căn cơ: tu vi chưa vững thành vững */
+  firm(n) {
+    this.P.loose = Math.max(0, (this.P.loose || 0) - n);
   }
   // ---------- Kỹ năng theo đường tu (thay võ kỹ) ----------
   /** Kỹ năng đã đủ cảnh giới để mở (Linh giới: mở hết) */
@@ -2219,8 +2234,8 @@ export class Game {
   /** Việc thực tế năm nay (có thể khác lựa chọn nếu chưa đủ điều kiện) */
   effectiveAction() {
     const P = this.P;
-    if (P.closed > 0) return 'be_quan';
     if (P.age < 6) return 'lon_len';
+    if (!ACTIONS[P.action]) P.action = P.dao ? 'tu_luyen' : 'muu_sinh';
     const ok = (id) => {
       const a = ACTIONS[id];
       return P.age >= a.minAge && (!a.needDao || P.dao);
@@ -2230,12 +2245,18 @@ export class Game {
   actionOk(id) {
     const P = this.P;
     const a = ACTIONS[id];
+    if (!a) return false;
     return P.age >= a.minAge && (!a.needDao || P.dao);
   }
   setAction(id) {
     if (this.playing && ACTIONS[id]) this.P.action = id;
   }
+  /** Bản 4.3: bế quan đã gộp vào tu luyện. Giữ hàm cho lệnh cũ: chỉ chuyển sang tu luyện. */
   closeDoor(years) {
+    if (this.playing) this.manualAction('tu_luyen');
+    return false;
+  }
+  closeDoorOld(years) {
     const P = this.P;
     if (!this.playing || !P.dao || P.age < 12 || P.tuvi >= this.need()) return false;
     P.closed = years;
@@ -2698,18 +2719,12 @@ export class Game {
       if (!pl.begun) {
         pl.begun = true;
         pl.t0 = P.age;
-        if (st.a === 'be_quan') {
-          if (P.closed > 0) return;
-          if (!this.closeDoor(st.v || 10)) { this.planAdvance(); continue; }
-          return;
-        }
         if (!this.actionOk(st.a) || (st.a === 'vuot_thap' && this.towerState().f >= 1000)) { this.planAdvance(); continue; }
         P.action = st.a;
         return;
       }
       const yrs = P.age - pl.t0;
-      const done = st.a === 'be_quan' ? P.closed === 0
-        : yrs >= 300 ? true
+      const done = yrs >= 300 ? true
         : st.k === 'y' ? yrs >= st.v : st.k === 'sg' ? P.sat >= st.v : P.sat <= st.v;
       if (!done) return;
       this.planAdvance();
@@ -2752,23 +2767,22 @@ export class Game {
       if (t) this.log(`Bước vào đường tu, ngươi tự mò ra một môn võ kỹ. ${t}`, 'good');
     }
     const g = this.gain() * ypt;
-    const lu = (act === 'tu_luyen' || act === 'be_quan') && this.daoLu() ? this.daoLu() : null;
+    const lu = act === 'tu_luyen' && this.daoLu() ? this.daoLu() : null;
     // củng cố căn cơ: tu vi chưa vững dần thành vững
     const firm = (n) => { P.loose = Math.max(0, (P.loose || 0) - n); };
     if (act === 'vuot_thap') {
       this.addTuvi(g * 0.6, true);
       this.climbTower();
     } else if (act === 'tu_luyen') {
-      this.addTuvi(g * this.r.range(0.85, 1.15) * (lu ? 1.25 : 1));
-      firm(g * 1.2 * (lu ? 1.5 : 1));
-      this.purgeSat(4 + (lu ? 3 : 0));
-      this.tpTrain(ypt, 1);
-    } else if (act === 'be_quan') {
-      this.addTuvi(g * ((P.closeLen || 0) >= 50 ? 2 : 1.6) * this.tmul('closedMul') * (lu ? 1.25 : 1));
-      firm(g * 4 * (lu ? 1.5 : 1));
-      this.purgeSat(15 + (lu ? 3 : 0));
-      this.tpTrain(ypt, 2.5);
-      P.closeServed = (P.closeServed || 0) + ypt;
+      // tu luyện (đã gộp bế quan): tu vi nhanh nhất, củng cố căn cơ, xả sát khí
+      this.addTuvi(g * TU_MUL * this.r.range(0.9, 1.1) * this.tmul('closedMul') * (lu ? 1.25 : 1));
+      firm(g * 3 * (lu ? 1.5 : 1));
+      this.purgeSat(12 + (lu ? 3 : 0));
+      this.tpTrain(ypt, 2);
+      // tu liền 10 năm: căn cơ vững hẳn, lần đột phá tới +15%
+      const was = P.tuStreak || 0;
+      P.tuStreak = was + ypt;
+      if (was < 10 && P.tuStreak >= 10) { P.brkBonus = Math.max(P.brkBonus || 0, 0.15); P.loose = 0; this.log('Tu luyện liền mười năm, căn cơ vững như bàn thạch. Lần đột phá tới +15%.', 'good'); }
     } else if (act === 'lich_luyen') {
       // đã tự lui dưỡng thương: hồi đủ 80 thì quay lại vùng đã chọn
       if (P.flags.retreated && P.hp >= 80 && MAP_MAP[P.mapGoal] && P.map !== P.mapGoal) {
@@ -2788,18 +2802,26 @@ export class Game {
       }
       if (mp.d >= 4) P.cnt.hard = (P.cnt.hard || 0) + 1;
       this.autoHeal();
-      if (P.hp >= 40) P.flags.enteredLow = false;
-      if (mp.d >= 2 && P.hp < 40 && !P.flags.enteredLow) {
+      if (P.hp >= 50) P.flags.enteredLow = false;
+      // nguy kịch mà hết đan: về tu luyện dưỡng thương
+      if (P.hp < 25 && !(P.pills.hoi_xuan > 0) && this.s.opt.retreat && !(P.plan && P.plan.on)) {
+        P.action = 'tu_luyen';
+        P.flags.retreated = false;
+        const msg = `Ngươi bị thương nguy kịch mà hết đan, đành rời ${mp.n} về động phủ tu luyện dưỡng thương.`;
+        this.log(msg, 'bad');
+        this.toast(msg, 'Dưỡng thương', 0);
+      }
+      if (mp.d >= 2 && P.hp < 50 && !P.flags.enteredLow) {
         if (this.s.opt.retreat) {
           P.map = this.defaultMap().id;
           P.mapGoal = P.mapGoal && MAP_MAP[P.mapGoal] && MAP_MAP[P.mapGoal].d >= 2 ? P.mapGoal : mp.id;
           P.flags.retreated = true;
-          const msg = `Sinh lực chỉ còn ${P.hp}, ngươi rút khỏi ${mp.n} về ${this.defaultMap().n} dưỡng thương. Hồi lên 80 sẽ tự quay lại.`;
+          const msg = `Trọng thương, ngươi rút khỏi ${mp.n} về ${this.defaultMap().n} dưỡng thương. Lành rồi sẽ tự quay lại.`;
           this.log(msg, 'bad');
           this.toast(msg, 'Tự lui', 0);
         } else if (!P.flags.mapWarned) {
           P.flags.mapWarned = true;
-          this.s.alert = { title: `Nguy hiểm ở ${mp.n}`, text: `Sinh lực chỉ còn ${P.hp}. Ở ${mp.n} lúc này, tỉ lệ thắng yêu thú chỉ khoảng ${Math.round(this.mapOdds(mp.id) * 100)}%. Nên về vùng dễ hơn dưỡng thương.` };
+          this.s.alert = { title: `Nguy hiểm ở ${mp.n}`, text: `Ngươi đang trọng thương. Ở ${mp.n} lúc này, tỉ lệ thắng yêu thú chỉ khoảng ${Math.round(this.mapOdds(mp.id) * 100)}%. Nên về vùng dễ hơn dưỡng thương.` };
         }
       }
       if (P.hp >= 70) P.flags.mapWarned = false;
@@ -2813,22 +2835,20 @@ export class Game {
       this.purgeSat(3);
       const t = this.ngheWork(ypt);
       if (t) this.log(t, 'muted');
-    } else if (act === 'ket_giao') {
-      this.addTuvi(g * 0.25);
-      firm(g * 0.3);
-      this.purgeSat(8);
-      this.meetBot();
-      this.socialPerks();
     }
+    // gặp người: không còn nút Kết giao, quen biết khi đi lại (mưu sinh ở trấn, lịch luyện trên đường)
+    if (act === 'muu_sinh' && this.r.chance(Math.min(0.9, 0.35 * ypt))) { this.meetBot(true); if (this.r.chance(0.4)) this.socialPerks(); }
+    else if (act === 'lich_luyen' && this.r.chance(Math.min(0.5, 0.12 * ypt))) this.meetBot(true);
+    if (act !== 'tu_luyen') P.tuStreak = 0;
     // tự mặc: món nào trong túi có lực chiến cao hơn đồ đang mặc thì thay (mỗi 3 năm xét lại)
     if (this.s.opt.autoEquip !== false && P.age % 3 === 0 && P.bag.length) this.equipBest();
     if (P.sanNghiep > 0) this.money(Math.round(P.sanNghiep * 6 * ypt * (1 + P.realm * 1.5)));
-    if (act !== 'vuot_thap' && act !== 'lich_luyen' && act !== 'tu_luyen' && act !== 'be_quan' && act !== 'muu_sinh' && act !== 'ket_giao') this.purgeSat(2);
+    if (act !== 'vuot_thap' && act !== 'lich_luyen' && act !== 'tu_luyen' && act !== 'muu_sinh') this.purgeSat(2);
     if (this.checkSat()) return true; else if (act === 'lon_len' && P.age >= 6 && this.r.chance(0.2)) {
       this.stat(this.r.pick(['can', 'ngo', 'tam', 'co']), 1);
     }
-    if (P.plan && P.plan.on && P.hp < 20 && !(P.pills.hoi_xuan > 0)) this.planStop(`sinh lực chỉ còn ${P.hp}, hết Hồi Xuân Đan`);
-    P.hp = Math.min(100, P.hp + (act === 'be_quan' ? 6 : 4) * Math.min(3, ypt) * this.tmul('regenMul') * (1 + this.tpFx('regen')));
+    if (P.plan && P.plan.on && P.hp < 20 && !(P.pills.hoi_xuan > 0)) this.planStop('nguy kịch mà hết Hồi Xuân Đan');
+    P.hp = Math.min(100, P.hp + (REGEN[act] ?? 4) * Math.min(3, ypt) * this.tmul('regenMul') * (1 + this.tpFx('regen')));
     this.autoHeal();
     const nk = P.flags.neck;
     if (nk && (nk.realm !== P.realm || P.age >= nk.until)) { P.flags.neck = null; if (nk.realm === P.realm) this.log('Bình cảnh nhỏ tự tan, linh khí lại chảy thông suốt.', 'good'); }
@@ -2842,11 +2862,6 @@ export class Game {
       this.die('thọ nguyên cạn kiệt, tọa hóa');
       return true;
     }
-    if (P.closed > 0) {
-      P.closed = Math.max(0, P.closed - ypt);
-      if (this.r.chance(0.03) && this.hurt(15, 'tẩu hỏa nhập ma trong lúc bế quan')) return true;
-      if (P.closed === 0) this.exitClose('Ngươi xuất quan.');
-    }
     if (P.dao && P.tuvi >= this.need() && !P.flags.notifiedFull && this.atPlaneTop() && !(P.tokens && P.tokens[P.plane])) {
       // cảnh giới cuối mỗi giới: phải có lệnh bài của tháp mới độ kiếp phi thăng
       P.flags.notifiedFull = true;
@@ -2857,7 +2872,6 @@ export class Game {
     }
     if (P.dao && P.tuvi >= this.need() && !P.flags.notifiedFull) {
       P.flags.notifiedFull = true;
-      if (P.closed > 0) this.exitClose('Tu vi viên mãn, ngươi phá quan đi ra.');
       this.s.queue.push({ id: 'dot_pha', botId: null, data: {} });
     }
     if (P.dao && !PATHS[P.path] && !this.s.queue.some((q) => q.id === 'dao_do') && !(this.s.pending && this.s.pending.id === 'dao_do')) this.s.queue.unshift({ id: 'dao_do', botId: null, data: {} });
@@ -2897,15 +2911,16 @@ export class Game {
     const mapNow = this.curMap();
     for (const e of EVENTS) {
       if (e.queued) continue;
-      if (act === 'be_quan' && !e.inClosed) continue;
+      // đúng nhóm việc làm: chuyện đời xảy ra mọi lúc, còn lại phải đúng việc (lúc nhỏ chưa có việc thì gặp đủ)
+      if (e.pool !== 'doi' && act !== 'lon_len' && ACT_POOL[act] !== e.pool) continue;
       if (e.once && s.once[e.id]) continue;
       if (s.cd[e.id] !== undefined && P.age - s.cd[e.id] < (e.cd ?? 8)) continue;
       // luật tuổi và nơi chốn (EVENT_RULES trong events.js)
       const ru = e.rule || {};
       if (P.age < 6 && !ru.child) continue;
       if (P.age < (ru.age ?? 14)) continue;
-      if (ru.place === 'xa' && act !== 'lich_luyen') continue;
-      if (ru.place === 'thanh' && act !== 'muu_sinh' && act !== 'ket_giao') continue;
+      if (ru.place === 'xa' && act !== 'lich_luyen' && act !== 'lon_len') continue;
+      if (ru.place === 'thanh' && act !== 'muu_sinh' && act !== 'lon_len') continue;
       // luật mở rộng: đúng vùng lịch luyện, đủ cảnh giới, đúng con đường, có tông môn
       if (ru.map && (!mapNow || mapNow.id !== ru.map)) continue;
       if (ru.minD !== undefined && (!mapNow || mapNow.d < ru.minD)) continue;
@@ -2920,6 +2935,8 @@ export class Game {
       if (e.prep && !data) continue;
       let w = typeof e.w === 'function' ? e.w(this) : e.w ?? 1;
       if (e.acts && e.acts.includes(act)) w *= 3;
+      if (e.pool === 'doi' && (act === 'tu_luyen' || act === 'vuot_thap')) w *= 0.5; // tu luyện: chuyện đời thưa hơn
+      if (act === 'lich_luyen' && EVENT_TERRAIN[e.id] && EVENT_TERRAIN[e.id] === terrainOf(mapNow)) w *= 2.5; // hợp địa hình
       if (mapNow) w *= MAP_RARE_EV.has(e.id) ? 0.5 + 0.35 * mapNow.d : e.id === 'yeu_thu' ? 0.6 + 0.3 * mapNow.d : MAP_FIGHT_EV.has(e.id) ? 0.8 + 0.15 * mapNow.d : 1;
       w *= this.tevW(e.id);
       if (e.id === 'tam_ma' && P.sat >= this.satLine(70)) w *= 3;

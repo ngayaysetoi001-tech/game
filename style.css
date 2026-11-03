@@ -978,3 +978,9 @@ body.inPlay.evOpen .hudPic img.art, body.inPlay.evOpen .hud #portrait { width: 4
 .log li.bad .lic { color: var(--bad); }
 .log .age { font-size: 11px; }
 .dock .seg .sp .pz { font-size: 11px; letter-spacing: -2px; font-weight: 400; }
+/* Bản 4.3: 4 việc làm, 4 tiện ích */
+.dock .actions { grid-template-columns: repeat(4, 1fr); }
+.dock .utils { grid-template-columns: repeat(4, 1fr); }
+.hudChip.wound { border-color: #d9822b; color: #d9822b; }
+.hudChip.wound.w2 { border-color: var(--bad); color: var(--bad); font-weight: 700; }
+.hudChip.wound.w3 { border-color: var(--bad); color: var(--bad); font-weight: 700; animation: pulseBad 1.6s infinite; }

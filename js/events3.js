@@ -506,19 +506,17 @@ export const EVENTS3 = [
   // ================= Bế quan =================
   {
     id: 'quay_be_quan', w: 3, cd: 15, inClosed: true, title: 'Tiếng gõ ngoài động phủ', r3: { age: 14, realm: 1 },
-    when: (g) => g.P.closed > 0,
     auto: () => 'Mặc',
     text: () => 'Đang lúc nhập định, có tiếng đập cửa động phủ ầm ầm. Ai đó gọi tên ngươi, giọng hoảng hốt.',
     choices: (g) => [
-      { t: 'Xuất quan xem chuyện gì', go: (g) => { g.P.closed = 0; if (g.r.chance(0.5)) { g.tinh(5); g.fame(2); return 'Làng dưới núi bị cướp. Ngươi đuổi được bọn cướp, dân làng mang gà vịt lên tạ ơn.'; } const f = g.fight('Kẻ phá động phủ', pw3(g) * 0.9, 1, { lethal: 0.15 }); return `Là kẻ thù cũ dụ ngươi ra ngoài.\n${f.text}`; } },
+      { t: 'Ra ngoài xem chuyện gì', go: (g) => { if (g.r.chance(0.5)) { g.tinh(5); g.fame(2); return 'Làng dưới núi bị cướp. Ngươi đuổi được bọn cướp, dân làng mang gà vịt lên tạ ơn.'; } const f = g.fight('Kẻ phá động phủ', pw3(g) * 0.9, 1, { lethal: 0.15 }); return `Là kẻ thù cũ dụ ngươi ra ngoài.\n${f.text}`; } },
       { t: 'Mặc kệ, tiếp tục nhập định', p: xp3(0.6 + (st3(g, 'tam') - 50) / 120), go: (g) => { if (g.r.chance(xp3(0.6 + (st3(g, 'tam') - 50) / 120))) { g.stat('tam', 3); return 'Tiếng đập cửa xa dần. Tâm ngươi như mặt hồ không gợn sóng. Tâm tính +3.'; } g.hurt(12, 'tẩu hỏa nhập ma khi bế quan'); return 'Tâm bị loạn, khí chạy sai đường. Ngươi phun ra một ngụm máu.'; } },
     ],
   },
   {
-    id: 'ngo_be_quan', w: 3, cd: 20, inClosed: true, title: 'Ngộ đạo trong bế quan', r3: { age: 14, realm: 1 },
-    when: (g) => g.P.closed > 0,
+    id: 'ngo_be_quan', w: 3, cd: 20, inClosed: true, title: 'Ngộ đạo khi tu luyện', r3: { age: 14, realm: 1 },
     auto: () => 'Ổn',
-    text: () => 'Năm thứ mấy trong bế quan, ngươi cũng không nhớ nữa. Bỗng một tia linh quang lóe lên trong đầu, như có ai đẩy cánh cửa bấy lâu đóng chặt.',
+    text: () => 'Tu luyện đã bao năm, ngươi cũng không nhớ nữa. Bỗng một tia linh quang lóe lên trong đầu, như có ai đẩy cánh cửa bấy lâu đóng chặt.',
     choices: (g) => {
       const p = xp3(0.55 + (st3(g, 'ngo') - 50) / 100);
       return [

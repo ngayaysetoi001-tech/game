@@ -8,6 +8,7 @@ import { makeItem } from './items.js';
 import { EVENTS2 } from './events2.js';
 import { EVENTS3 } from './events3.js';
 import { EVENTS4 } from './events4.js';
+import { EVENTS5 } from './events5.js';
 
 const RN = (r) => REALMS[r].n;
 // gần cảnh giới; nếu cùng lịch luyện một vùng thì nới thêm một bậc
@@ -445,7 +446,7 @@ const BASE_EVENTS = [
     id: 'song_tu', auto: () => 'Đi cùng', w: 3, cd: 5, title: 'Tử Trúc Lâm',
     when: (g) => g.P.dao,
     bot: (g) => g.findBot((b, r) => b.dao && r && r.met && r.tag === 'dao_lu'),
-    text: (g, { bot: b }) => `${b.name} rủ ngươi cùng vào Tử Trúc Lâm bế quan song tu một mùa.`,
+    text: (g, { bot: b }) => `${b.name} rủ ngươi cùng vào Tử Trúc Lâm song tu một mùa.`,
     choices: (g, { bot: b }) => [
       { t: 'Đi cùng', go: (g) => { const t = g.addTuvi(g.gain() * 3); b.tuvi = Math.min(REALMS[b.realm].need, b.tuvi + g.botGain(b) * 2); g.relAdd(b, 8); g.stat('tam', 2); return `Linh khí hai người hòa vào nhau như sông gặp biển. Tu vi +${t}.`; } },
       { t: 'Để lần sau', go: (g) => { g.relAdd(b, -3); return `${b.name} thở dài, nhưng vẫn cười.`; } },
@@ -805,6 +806,36 @@ export const EVENT_RULES = {
   huyet_tran: { age: 16, place: 'xa' }, dao_lu: { age: 16 }, song_tu: { age: 16 }, ho_ly: { age: 16 }, de_tu_nan: { age: 16 },
   thu_kiep_truoc: { age: 16 }, thu_nha: { age: 16 }, yeu_vuong: { age: 16 }, co_duyen_muon: { age: 16 }, luyen_dan: { age: 16 }, mong: { age: 20 },
 };
-export const EVENTS = BASE_EVENTS.concat(EVENTS2, EVENTS3, EVENTS4);
+export const EVENTS = BASE_EVENTS.concat(EVENTS2, EVENTS3, EVENTS4, EVENTS5);
 for (const e of EVENTS) e.rule = EVENT_RULES[e.id] || e.r3 || {};
+// Nhóm kỳ ngộ theo việc làm (bản 4.3): 'tu' chỉ khi Tu luyện, 'lich' chỉ khi Lịch luyện, 'muu' chỉ khi Mưu sinh,
+// 'doi' là chuyện đời (cốt truyện một kiếp), xảy ra dù làm gì. Chưa ghi thì là 'doi'.
+const POOL_OF = {
+  tu: 'tam_ma mong ngo_be_quan quay_be_quan phan_phe tieu_thien_kiep bong_kiep_truoc co_duyen_muon linh_kiep_nho',
+  lich: 'hang_dong yeu_thu truyen_thua linh_thu cuu_nguoi khieu_chien bi_canh bao_vat tien_boi ban_do_2 trung_la huyet_tran kiep_nguoi linh_mach bat_coc kiem_trung yeu_vuong ngoc_gian ngoc_gian_mo vuon_thuoc luyen_dan lang_vuong tho_san co_trung doc_thao doc_thao_2 hoa_linh lo_co tuong_quan binh_hon_chu khe_thoi_gian kiem_y loi_tri tran_phap di_bao linh_hau_dao huyet_trieu loi_mach linh_vuong_tan_hon vuc_goi tranh_linh_mach linh_hai_trieu khe_uoc_linh_thu do_hoa phan_do co_mo co_mo_sau',
+  muu: 'cho_dem ho_tong dau_gia an_may ban_do moc_tui dau_tu lua_dao song_bac song_bac_2 ho_ly cho_no_le tuu_lau loi_dai loi_dai_n linh_mach_2 dau_gia_linh cho_den_linh thieu_gia_ban_dia ho_tich truyen_nghe duyen_no',
+};
+export const EVENT_POOL = {};
+for (const [k, ids] of Object.entries(POOL_OF)) for (const id of ids.split(' ')) EVENT_POOL[id] = k;
+for (const e of EVENTS) e.pool = e.pool || EVENT_POOL[e.id] || 'doi';
+// Kỳ ngộ hợp địa hình vùng lịch luyện: gặp nhiều hơn khi đi đúng loại vùng
+const TERRAIN_OF = {
+  rung: 'yeu_thu linh_thu vuon_thuoc tho_san lang_vuong bao_vat trung_la linh_hau_dao bat_coc tien_boi',
+  dam: 'co_trung doc_thao doc_thao_2 huyet_tran',
+  hoa: 'hoa_linh lo_co luyen_dan loi_tri loi_mach',
+  hon: 'tuong_quan binh_hon_chu kiem_trung co_mo co_mo_sau linh_vuong_tan_hon do_hoa',
+  hu: 'khe_thoi_gian tran_phap vuc_goi di_bao bi_canh',
+};
+export const EVENT_TERRAIN = {};
+for (const [k, ids] of Object.entries(TERRAIN_OF)) for (const id of ids.split(' ')) EVENT_TERRAIN[id] = k;
+/** Loại địa hình của một vùng lịch luyện, đoán theo tên */
+export function terrainOf(mp) {
+  if (!mp) return null;
+  const n = mp.n;
+  if (/Đầm|Trạch|Chiểu|Độc/.test(n)) return 'dam';
+  if (/Diệm|Hỏa|Viêm|Nham|Lôi/.test(n)) return 'hoa';
+  if (/Chiến Trường|Mộ|Hồn|Cốt|Thi/.test(n)) return 'hon';
+  if (/Hư Không|Liệt|Thời|Hỗn Độn|Uyên/.test(n)) return 'hu';
+  return 'rung';
+}
 export const EVENT_MAP = Object.fromEntries(EVENTS.map((e) => [e.id, e]));

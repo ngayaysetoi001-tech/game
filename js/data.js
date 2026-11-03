@@ -133,10 +133,9 @@ export const MONSTERS = [
 export const MOVES = ['Lưu Vân Chưởng', 'Phá Sơn Quyền', 'Hàn Băng Chỉ', 'Kinh Hồng Kiếm', 'Liệt Hỏa Đao', 'Bôn Lôi Cước', 'Tàn Nguyệt Trảm', 'Vạn Diệp Phi Hoa', 'Trấn Nhạc Ấn', 'Thanh Phong Bộ', 'Huyền Vũ Thuẫn', 'Truy Hồn Thích'];
 
 export const ACTIONS = {
-  tu_luyen: { n: 'Tu luyện', icon: '☯', minAge: 6, needDao: true, desc: 'Tu vi tăng nhanh nhất, củng cố căn cơ, xả sát khí chậm.' },
-  lich_luyen: { n: 'Lịch luyện', icon: '⛰', minAge: 10, desc: 'Đi khắp nơi, gặp nhiều kỳ ngộ và hiểm nguy. Tích sát khí, tu vi chưa vững.' },
-  muu_sinh: { n: 'Mưu sinh', icon: '⚖', minAge: 8, desc: 'Kiếm linh thạch, luyện nghề phụ (luyện đan, luyện khí, phù sư, thương nhân). Bấm để chọn nghề.' },
-  ket_giao: { n: 'Kết giao', icon: '☕', minAge: 8, desc: 'Gặp gỡ tu sĩ khác, kết bạn, tìm đạo lữ, xả sát khí. Bạn thân trợ chiến trận lớn, hộ pháp lôi kiếp.' },
+  tu_luyen: { n: 'Tu luyện', icon: '☯', minAge: 6, needDao: true, desc: 'Tu vi tăng nhanh nhất, củng cố căn cơ, xả sát khí, dưỡng thương. Tu liền 10 năm: đột phá +15%. Kỳ ngộ hiếm, chỉ chuyện nội tu (đốn ngộ, tâm ma, linh khí triều…).' },
+  lich_luyen: { n: 'Lịch luyện', icon: '⛰', minAge: 10, desc: 'Đi khắp nơi: đánh yêu thú, nhặt đồ, nguyên liệu, gặp người trên đường. Kỳ ngộ nhiều, đổi theo địa hình vùng. Tích sát khí, tu vi chưa vững, gần như không dưỡng thương.' },
+  muu_sinh: { n: 'Mưu sinh', icon: '⚖', minAge: 8, desc: 'Kiếm linh thạch, luyện nghề phụ, quen biết người ở trấn. Kỳ ngộ chợ búa, tửu lâu, đấu giá, thương đội. Bấm để chọn nghề.' },
   vuot_thap: { n: 'Vượt tháp', icon: '🗼', minAge: 10, needDao: true, desc: 'Leo tháp 1000 tầng. Hạ tầng cuối mới được phi thăng.' },
 };
 
@@ -488,10 +487,10 @@ export const TOWER_SHOP = [
 
 // ---------- Lịch trình tự động ----------
 // bước: { a: việc, k: điều kiện chuyển bước ('y' số năm, 'sg' sát khí >=, 'sl' sát khí <=), v }
-export const PLAN_STEP_ACTS = { vuot_thap: '🗼 Vượt tháp', lich_luyen: '⛰ Lịch luyện', tu_luyen: '☯ Tu luyện', be_quan: '🕯 Bế quan', muu_sinh: '⚖ Mưu sinh', ket_giao: '☕ Kết giao' };
+export const PLAN_STEP_ACTS = { vuot_thap: '🗼 Vượt tháp', lich_luyen: '⛰ Lịch luyện', tu_luyen: '☯ Tu luyện', muu_sinh: '⚖ Mưu sinh' };
 export const PLAN_COND = { y: 'năm', sg: 'tới khi sát khí ≥', sl: 'tới khi sát khí ≤' };
 export const PLAN_TEMPLATES = [
-  { id: 'thap', n: 'Leo tháp', desc: 'Vượt tháp tới khi sát khí 60 → bế quan 10 năm (xả sát khí, củng cố căn cơ, +15% đột phá) → tu luyện 5 năm.', steps: [{ a: 'vuot_thap', k: 'sg', v: 60 }, { a: 'be_quan', k: 'y', v: 10 }, { a: 'tu_luyen', k: 'y', v: 5 }] },
-  { id: 'dao', n: 'Tu đạo', desc: 'Tu luyện 20 năm → lịch luyện tới khi sát khí 40 → bế quan 10 năm.', steps: [{ a: 'tu_luyen', k: 'y', v: 20 }, { a: 'lich_luyen', k: 'sg', v: 40 }, { a: 'be_quan', k: 'y', v: 10 }] },
-  { id: 'giau', n: 'Làm giàu', desc: 'Mưu sinh 20 năm → kết giao 5 năm → tu luyện 10 năm.', steps: [{ a: 'muu_sinh', k: 'y', v: 20 }, { a: 'ket_giao', k: 'y', v: 5 }, { a: 'tu_luyen', k: 'y', v: 10 }] },
+  { id: 'thap', n: 'Leo tháp', desc: 'Vượt tháp tới khi sát khí 60 → tu luyện 10 năm (xả sát khí, dưỡng thương, củng cố căn cơ, đột phá +15%).', steps: [{ a: 'vuot_thap', k: 'sg', v: 60 }, { a: 'tu_luyen', k: 'y', v: 10 }] },
+  { id: 'dao', n: 'Tu đạo', desc: 'Tu luyện 20 năm → lịch luyện tới khi sát khí 40 → tu luyện 10 năm.', steps: [{ a: 'tu_luyen', k: 'y', v: 20 }, { a: 'lich_luyen', k: 'sg', v: 40 }, { a: 'tu_luyen', k: 'y', v: 10 }] },
+  { id: 'giau', n: 'Làm giàu', desc: 'Mưu sinh 20 năm (kiếm linh thạch, quen biết) → tu luyện 10 năm.', steps: [{ a: 'muu_sinh', k: 'y', v: 20 }, { a: 'tu_luyen', k: 'y', v: 10 }] },
 ];

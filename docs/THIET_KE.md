@@ -610,3 +610,39 @@ Mô phỏng 42 kiếp mỗi đạo (lịch trình Leo tháp, có rèn đồ):
 - **Nhật ký:** biểu tượng đầu dòng theo loại.
   - ⚡ đột phá, ⚔ trận, ✦ kỳ ngộ, ☯ tâm pháp và kỹ năng, 🏅 danh hiệu, ◈ tài vật, ★ việc lớn, ✓ việc tốt, ✕ việc xấu.
 - **Khung chung:** viền vàng mảnh (--frame) cho thẻ, nút, ô. Tiêu đề in đậm.
+
+## Bốn việc làm, kỳ ngộ theo việc (bản 4.3)
+
+- **Bỏ Bế quan và Kết giao.**
+  - Còn 4 việc: ☯ Tu luyện, ⛰ Lịch luyện, ⚖ Mưu sinh, 🗼 Tháp.
+  - Hàng tiện ích còn 4 nút: Hành trang, Lò rèn, Tụ Bảo, Thêm.
+- **Tu luyện (gộp bế quan):**
+  - Tu vi ×1,3 (`TU_MUL`), nhân thêm `closedMul` của thể chất và trang bị.
+  - Củng cố căn cơ gấp 3 lần, xả sát khí 12/năm, dưỡng thương 9/năm.
+  - Không khóa năm. Tu liền 10 năm (`P.tuStreak`) thì lần đột phá tới +15% và căn cơ vững hẳn.
+- **Nhóm kỳ ngộ** (`e.pool`, bảng `POOL_OF` trong events.js):
+
+  | Nhóm | Gặp khi | Số lượng | Tần suất |
+  |---|---|---|---|
+  | `tu` | chỉ khi Tu luyện | 15 (6 cái mới trong events5.js) | khoảng 9 năm một lần |
+  | `lich` | chỉ khi Lịch luyện | 50 | khoảng 2 năm một lần |
+  | `muu` | chỉ khi Mưu sinh | 22 | khoảng 3,5 năm một lần |
+  | `doi` | mọi lúc (chuyện đời, cốt truyện một kiếp) | 63 | thưa một nửa khi Tu luyện và Tháp |
+
+  - Lúc nhỏ chưa có việc (`lon_len`) thì gặp được mọi nhóm.
+  - 6 kỳ ngộ tu luyện mới: Đốn ngộ, Linh khí triều dâng, Tẩu hỏa nhập ma, Kinh mạch tắc nghẽn, Thần thức xuất khiếu, Thiên địa dị tượng.
+- **Địa hình** (`EVENT_TERRAIN`, `terrainOf(map)`): rừng, đầm, hỏa, hồn, hư không. Kỳ ngộ hợp địa hình vùng đang đi ra nhiều hơn ×2,5.
+- **Gặp người:**
+  - Mưu sinh: 35%/năm (đôi khi được bạn giúp). Lịch luyện: 12%/năm.
+  - Kết bái, đạo lữ, song tu chuyển sang nhóm `doi`.
+  - Tab Quan hệ, trợ chiến, hộ pháp giữ nguyên. Thông tin xem ở Thêm → Quan hệ, trợ chiến.
+- **Thương thế thay Sinh lực:**
+  - Sinh lực 0–100 vẫn tính ngầm, giao diện chỉ hiện mức (`woundLv`): Khỏe (≥80), Thương nhẹ (≥50), Trọng thương (≥25), Nguy kịch.
+  - Hồi mỗi năm (`REGEN`): Tu luyện 9, Mưu sinh 5, Tháp 4, Lịch luyện 1,5.
+  - Lịch luyện: trọng thương thì tự rút về vùng dễ. Nguy kịch mà hết đan thì tự về Tu luyện.
+  - Nhật ký đổi "Sinh lực -N" thành "Bị thương".
+- **Lịch trình mẫu:**
+  - Leo tháp: tháp tới khi sát khí 60 → tu luyện 10 năm.
+  - Tu đạo: tu 20 → lịch luyện tới khi sát khí 40 → tu 10.
+  - Làm giàu: mưu sinh 20 → tu 10.
+- **Bản lưu cũ:** đang bế quan thì chuyển sang Tu luyện, đang kết giao thì chuyển sang Mưu sinh. Bước lịch trình cũ được đổi theo.

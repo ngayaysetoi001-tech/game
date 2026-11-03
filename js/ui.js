@@ -1,6 +1,6 @@
 // Giao diện trình duyệt. Mọi luật chơi nằm trong core.js.
 import { APP_VERSION } from './version.js';
-import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITLE_MAP, HL_PRICE, HL_REROLL, PATHS, clamp, planStepText } from './core.js';
+import { Game, woundLv, WOUND_N, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITLE_MAP, HL_PRICE, HL_REROLL, PATHS, clamp, planStepText } from './core.js';
 import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEFAULT_MAP, realmLabel, subN, PLANES, mapsOf, WORLD_DIFF, mythMatOf, planeOf, THEME_BG, BOSS_KITS, TOWER_THEMES, TOWER_SHOP, TAM_PHAP, TAM_PHAP_IDS, NGHE, PHU, PLAN_TEMPLATES, PLAN_STEP_ACTS, PLAN_COND, PATH_BAR_N } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, BEAST_SKILLS, TACTICS, WEAPON_TYPES, turnText, PATH_RES, PATH_SKILLS, SKILL_MAX, skillLvMul } from './combat.js';
@@ -161,17 +161,17 @@ function statInfo(k, P) {
     const helpers = playing ? g.breakHelpers().length : 0;
     return {
       n: 'Hữu tình / Vô tình', val: `${t > 0 ? '+' : ''}${t}`, about: 'Con đường của ngươi: sống vì người hay bỏ hết tình cảm. Từ 30 là Hữu tình, từ -30 trở xuống là Vô tình.',
-      now: t >= 30 ? [`Bạn bè thân (thân thiết từ 50, cảnh giới không thấp hơn ngươi) hộ pháp khi đột phá, mỗi người +4%, tối đa 4 người. Hiện có ${helpers} người: ${pc(helpers * 0.04)}`, `Thân thiết tăng ${pc(t / 200)} khi kết giao`]
-        : t <= -30 ? ['Tu luyện +20%', 'Đột phá +6%', `Thân thiết tăng ${pc(t / 200)} khi kết giao`, t <= -50 ? 'Từ Kim Đan, tôn xưng đổi sang ma đạo (Ma Quân, Ma Tôn)' : 'Tới -50 thì từ Kim Đan tôn xưng đổi sang ma đạo']
-          : ['Chưa nghiêng về bên nào, chưa có tác dụng đặc biệt', `Thân thiết tăng ${pc(t / 200)} khi kết giao`],
-      up: ['Hữu tình tăng: kết giao, cứu người, chữa dịch, giải cứu dân làng, tha thứ, kết nghĩa, có đạo lữ', 'Vô tình tăng: bỏ mặc người gặp nạn, cướp của, đánh lén, học lén ma trận, chém tâm ma bằng sát niệm', 'Đạt 70 hoặc -70 mở danh hiệu riêng'],
+      now: t >= 30 ? [`Bạn bè thân (thân thiết từ 50, cảnh giới không thấp hơn ngươi) hộ pháp khi đột phá, mỗi người +4%, tối đa 4 người. Hiện có ${helpers} người: ${pc(helpers * 0.04)}`, `Thân thiết tăng ${pc(t / 200)} khi gặp gỡ`]
+        : t <= -30 ? ['Tu luyện +20%', 'Đột phá +6%', `Thân thiết tăng ${pc(t / 200)} khi gặp gỡ`, t <= -50 ? 'Từ Kim Đan, tôn xưng đổi sang ma đạo (Ma Quân, Ma Tôn)' : 'Tới -50 thì từ Kim Đan tôn xưng đổi sang ma đạo']
+          : ['Chưa nghiêng về bên nào, chưa có tác dụng đặc biệt', `Thân thiết tăng ${pc(t / 200)} khi gặp gỡ`],
+      up: ['Hữu tình tăng: gặp gỡ, cứu người, chữa dịch, giải cứu dân làng, tha thứ, kết nghĩa, có đạo lữ', 'Vô tình tăng: bỏ mặc người gặp nạn, cướp của, đánh lén, học lén ma trận, chém tâm ma bằng sát niệm', 'Đạt 70 hoặc -70 mở danh hiệu riêng'],
     };
   }
   if (k === 'path' && P.path && PATHS[P.path]) {
     const pa = PATHS[P.path];
     return { n: pa.n, val: '', about: `${pa.tag}. ${pa.desc}`, now: [...pa.good.map((x) => `Mạnh: ${x}`), ...pa.bad.map((x) => `Yếu: ${x}`)], up: ['Kỹ năng: Túi trữ vật → Kỹ năng', 'Mỗi kiếp được chuyển tu một lần'], upTitle: 'Ghi chú' };
   }
-  if (k === 'pill') return { n: 'Hồi Xuân Đan', val: String(P.pills.hoi_xuan || 0), about: 'Đan hồi sinh lực, tự uống khi sinh lực dưới 40.', now: ['Giữ mạng khi lịch luyện, vượt tháp'], up: ['Mua ở Tụ Bảo Lâu', 'Luyện đan (nghề phụ)', 'Phần thưởng kỳ ngộ'] };
+  if (k === 'pill') return { n: 'Hồi Xuân Đan', val: String(P.pills.hoi_xuan || 0), about: 'Đan chữa thương, tự uống khi trọng thương.', now: ['Giữ mạng khi lịch luyện, vượt tháp'], up: ['Mua ở Tụ Bảo Lâu', 'Luyện đan (nghề phụ)', 'Phần thưởng kỳ ngộ'] };
   if (k === 'money') return { n: 'Linh thạch', val: fmt(P.money), about: 'Tiền tệ của giới tu tiên.', now: ['Mua đan dược, pháp khí, bí kíp ở Tụ Bảo Lâu; đấu giá; chuộc người; cược', 'Có 5.000 mở danh hiệu Phú Giáp Nhất Phương'], up: ['Mưu sinh (tăng theo cảnh giới và cơ duyên)', 'Hộ tống thương đội, đầu tư thương hội, linh mạch, kho báu, bán đồ thừa'] };
   if (k === 'fame') return { n: 'Danh vọng', val: fmt(P.fame), about: 'Tiếng tăm trên giang hồ.', now: ['Giúp tự minh oan khi bị vu cáo', 'Đạt 50 và 200 mở danh hiệu'], up: ['Thắng trận, đột phá, cứu người, thắng lôi đài, hạ yêu vương, trừ huyết trận'] };
   if (k === 'tuvi') return { n: 'Tu vi', val: playing ? `${fmt(P.tuvi)}/${fmt(g.need())}` : '-', about: 'Công lực tích lũy ở cảnh giới hiện tại. Đầy thì có thể đột phá. Phần màu cam cuối thanh là tu vi chưa vững (có từ vượt tháp, lịch luyện): tu luyện, bế quan sẽ củng cố. Đột phá khi còn nhiều tu vi chưa vững thì tỉ lệ giảm tới 30%.', now: playing ? [`Mỗi năm tu luyện được khoảng ${fmt(g.gain())} tu vi`, `Chưa vững: ${fmt(P.loose || 0)} (${Math.round(((P.loose || 0) / Math.max(1, g.need())) * 100)}% tu vi cần)`, `Tỉ lệ đột phá hiện tại ~${Math.round(g.breakChance() * 100)}%`, ...g.brkMods().map((x) => `${x.n}: ${pc(x.v)} đột phá`)] : [], up: ['Tu luyện (đủ, củng cố căn cơ), bế quan (x1,6, củng cố rất nhanh; tử quan từ 50 năm x2)', 'Vượt tháp, lịch luyện cho tu vi chưa vững', 'Linh căn, ngộ tính, tông môn (+20%), thể chất, Vô tình, thần thông, đạo lộ'] };
@@ -188,7 +188,7 @@ function statInfo(k, P) {
     if (X) return { n: X[0], val: X[1], about: X[2], now: X[3], up: X[4] };
   }
   if (k === 'sat') return { n: 'Sát khí', val: playing ? Math.round(P.sat) : '-', about: 'Tích tụ khi vượt tháp, lịch luyện, chiến đấu. Vùng càng khó tích càng nhanh.', now: [`Từ ${g.satLine(50)}: tu vi từ chiến đấu -20%`, `Từ ${g.satLine(70)}: đột phá -10%, dễ gặp tâm ma`, '100: tẩu hỏa nhập ma (trọng thương, mất 20% tu vi)', 'Tinh Thần Lực xả sát khí nhanh hơn 30%'], up: ['Tu luyện (xả chậm), bế quan (xả rất nhanh, đủ 10 năm thì sạch), kết giao (vừa), mưu sinh (ít)', 'Đạo lữ song tu, Ngưng Thần Đan (-40)'], upTitle: 'Cách giảm' };
-  if (k === 'hp') return { n: 'Sinh lực', val: `${P.hp}/100`, about: 'Về 0 là chết.', now: [`Sức chiến đấu x${(0.5 + P.hp / 200).toFixed(2)} (sinh lực càng thấp càng yếu)`, P.hp < 30 ? 'Dưới 30: tu luyện chậm 40%' : 'Dưới 30 thì tu luyện chậm 40%', 'Vào trận với đúng lượng sinh lực đang có'], up: ['Tự hồi 4 mỗi năm (bế quan 6)', 'Hồi Xuân Đan (+40)', 'Thể chất, thần thông hồi phục'] };
+  if (k === 'hp') { const w = woundLv(P.hp); return { n: 'Thương thế', val: WOUND_N[w], about: 'Bị thương do yêu thú, hiểm địa, kỳ ngộ. Nặng quá thì mất mạng.', now: [w === 0 ? 'Khỏe mạnh: chiến đấu bình thường' : `Đang ${WOUND_N[w].toLowerCase()}: sức chiến đấu x${(0.5 + P.hp / 200).toFixed(2)}`, w >= 2 ? 'Trọng thương: tu luyện chậm, lịch luyện tự rút về vùng dễ' : 'Trọng thương thì tu luyện chậm, lịch luyện tự rút về vùng dễ', 'Nguy kịch: tự uống Hồi Xuân Đan nếu có'], up: ['Tu luyện dưỡng thương nhanh nhất, Mưu sinh vừa, Lịch luyện gần như không hồi', 'Hồi Xuân Đan', 'Thể chất, thần thông hồi phục'] }; }
   if (k === 'tho') return { n: 'Thọ nguyên', val: playing ? `${P.age}/${g.lifespan()}` : '-', about: 'Hết thọ là tọa hóa.', now: ['Mỗi lần đột phá lên cảnh giới mới thì thọ nguyên tăng mạnh', 'Căn cốt cao thì sống lâu hơn'], up: ['Đột phá cảnh giới', 'Diên Thọ Đan (+5%, mỗi cảnh giới một viên)', 'Tìm thuốc trường sinh lúc tuổi già, Huyền Quy, thể chất, thần thông Trường Sinh'] };
   return null;
 }
@@ -341,12 +341,10 @@ function renderPlay() {
   setHTML($('hudLine'), `<span class="hl1"><b class="hudName">${esc(P.name)}</b><span class="realm">${esc(g.subRealmName())}</span><span class="more">›</span></span><span class="hl2">${ttl ? `<span class="ttl t${ttl.tier} mini"><span>${esc(ttl.n)}</span></span>` : ''}<span class="meta">${P.age} tuổi${sc ? ` · ${esc(sc.name)}` : ''}</span>${pIco}</span>`);
   setHTML($('bars'),
     bar('Tu vi', P.tuvi, need, 'var(--tuvi)', P.dao ? `${fmt(P.tuvi)}/${fmt(need)}` : '-', 'tuvi', subN(P.realm), P.loose || 0) +
-    bar('Sinh lực', P.hp, 100, 'var(--hp)', `${P.hp}/100`, 'hp') +
     bar('Thọ', P.age, life, 'var(--life)', `${P.age}/${life}`, 'tho'));
   const act = g.effectiveAction();
   const mp = act === 'lich_luyen' ? MAP_MAP[P.map] || g.defaultMap() : null;
-  const doing = P.closed > 0 ? `🕯 Bế quan, còn ${P.closed} năm`
-    : act === 'lon_len' ? (P.age < 6 ? 'Còn nhỏ, cứ lớn lên đã' : 'Chưa nhập đạo, chưa thể tu luyện')
+  const doing = act === 'lon_len' ? (P.age < 6 ? 'Còn nhỏ, cứ lớn lên đã' : 'Chưa nhập đạo, chưa thể tu luyện')
     : act === 'vuot_thap' ? `🗼 ${PLANES[g.plane].tower} · tầng ${g.towerState().f}/1000`
     : `${ACTIONS[act].icon} ${ACTIONS[act].n}${mp ? ` · ${DIFF[mp.d].ic} ${mp.n}` : ''}${mp && P.flags.retreated && MAP_MAP[P.mapGoal] ? ` (dưỡng thương, hồi 80 về ${MAP_MAP[P.mapGoal].n})` : ''}`;
   const nPill = P.pills.hoi_xuan || 0;
@@ -357,7 +355,9 @@ function renderPlay() {
   if (g.atPlaneTop() && P.tuvi >= g.need() && !(P.tokens && P.tokens[P.plane])) warn.push(`<button class="hudWarn" data-hw="tower">🗼 Cần ${PLANES[P.plane].token}</button>`);
   // chip trạng thái: tháp, sát khí, lịch trình
   const chips = [];
-  if (g.s.opt.autoPill) chips.push(`<button class="hudChip ${nPill ? '' : 'noPill'}" data-stat="pill" title="Hồi Xuân Đan, tự uống khi sinh lực dưới 40">💊 ${nPill}</button>`);
+  const wl = woundLv(P.hp);
+  if (wl) chips.push(`<button class="hudChip wound w${wl}" data-stat="hp">🩸 ${WOUND_N[wl]}</button>`);
+  if (g.s.opt.autoPill) chips.push(`<button class="hudChip ${nPill ? '' : 'noPill'}" data-stat="pill" title="Hồi Xuân Đan, tự uống khi trọng thương">💊 ${nPill}</button>`);
   chips.push(`<button class="hudChip" data-stat="money" title="Linh thạch">💎 ${fmtShort(P.money)}</button>`);
   if (P.dao && (g.towerState().f > 0 || P.action === 'vuot_thap')) chips.push(`<button class="hudChip" data-hw="tower" title="Tầng tháp">🗼 ${g.towerState().f}</button>`);
   if (P.sat >= 1) chips.push(`<button class="hudChip sat ${P.sat >= g.satLine(70) ? 'hi' : P.sat >= g.satLine(50) ? 'mid' : ''}" data-stat="sat">☠ ${Math.round(P.sat)}</button>`);
@@ -374,10 +374,7 @@ function renderPlay() {
     `<button class="btn sp auto ask-${askMode}" data-do="auto" aria-label="${esc(ASK[askMode])}" title="${esc(ASK[askMode])}: ${esc(ASK_TIP[askMode])} Bấm để đổi.">${ASK_ICO[askMode]}</button>`);
 
   let html = '';
-  if (P.closed > 0) {
-    html = `<p class="hint">Đang bế quan, còn ${P.closed} năm. Tu vi x1,6, gần như không có kỳ ngộ.</p>
-      <button class="btn ghost" data-do="openDoor">Xuất quan sớm</button>`;
-  } else {
+  {
     html = Object.entries(ACTIONS).map(([id, a]) => {
       const ok = g.actionOk(id);
       const why = P.age < a.minAge ? `Từ ${a.minAge} tuổi` : a.needDao && !P.dao ? 'Cần nhập đạo' : a.desc;
@@ -392,7 +389,6 @@ function renderPlay() {
       <button class="btn ut" data-do="bag" data-tip="Trang bị, kỹ năng, chiến thuật, đan, nguyên liệu">${uiIcon('hanh_trang', '🎒')}<span>Hành trang</span></button>
       <button class="btn ut" data-do="forge" data-tip="${g.forgeOpen() ? 'Cường hóa, thăng cấp, tẩy luyện, rèn mới' : 'Mở từ 12 tuổi'}" ${g.forgeOpen() ? '' : 'disabled'}>${uiIcon('lo_ren', '⚒')}<span>Lò rèn</span></button>
       <button class="btn ut" data-do="shop" data-tip="Đan dược, pháp khí, bí kíp" ${P.age < 10 ? 'disabled' : ''}>${uiIcon('tu_bao', '🏮')}<span>Tụ Bảo</span></button>
-      <button class="btn ut" data-do="close" data-tip="Tu nhanh, ít kỳ ngộ" ${P.dao && P.age >= 12 && !canBreak && !(P.closed > 0) ? '' : 'disabled'}>${uiIcon('be_quan', '🕯')}<span>Bế quan</span></button>
       <button class="btn ut" data-do="more" data-tip="Nhân vật, danh hiệu, cài đặt">${uiIcon('them', '⋯')}<span>Thêm</span></button>`);
 
   const tabs = [['log', 'Nhật ký'], ['rel', 'Quan hệ'], ['world', 'Thiên hạ'], ['rank', 'Xếp hạng'], ['lives', 'Sổ kiếp']];
@@ -443,11 +439,13 @@ function openMore() {
   openSheet(`<h2>Thêm</h2><div class="list">
     <button class="btn" id="moChar">👤 Nhân vật<small>Chỉ số, thể chất, trang bị đang mang</small></button>
     <button class="btn" id="moTitles">🏅 Danh hiệu<small>${P.titles.length ? `Đã có ${P.titles.length}` : 'Chưa có'}</small></button>
-    <button class="btn" id="moPlan">📅 Lịch trình tự động<small>${P.plan ? (P.plan.on ? 'Đang chạy' : 'Đang dừng') : 'Tự đổi việc theo vòng: leo tháp, bế quan, tu luyện...'}</small></button>
+    <button class="btn" id="moSocial">☕ Quan hệ, trợ chiến<small>Đạo lữ, bạn thân trợ chiến, hộ pháp lôi kiếp</small></button>
+    <button class="btn" id="moPlan">📅 Lịch trình tự động<small>${P.plan ? (P.plan.on ? 'Đang chạy' : 'Đang dừng') : 'Tự đổi việc theo vòng: leo tháp, tu luyện, lịch luyện...'}</small></button>
     <button class="btn" id="moMenu">☰ Cài đặt, hướng dẫn<small>Giao diện sáng tối, thế giới mới</small></button></div>`, () => {
     $('moChar').onclick = openChar;
     $('moTitles').onclick = openTitles;
     $('moPlan').onclick = openPlan;
+    $('moSocial').onclick = openSocial;
     $('moMenu').onclick = () => $('menuBtn').onclick();
   });
 }
@@ -471,6 +469,8 @@ function fmtShort(n) {
   return (n / 1e6).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + 'tr';
 }
 /** Biểu tượng nhỏ đầu dòng nhật ký theo loại */
+/** Nhật ký: số sinh lực ẩn đi, đổi thành chữ thương thế */
+const woundText = (t) => t.replace(/Sinh lực -(\d+)/g, 'Bị thương').replace(/sinh lực -(\d+)/g, 'bị thương').replace(/Sinh lực \+(\d+)/g, 'Hồi phục thương thế').replace(/sinh lực \+(\d+)/g, 'hồi phục thương thế').replace(/[Ss]inh lực (hồi )?đầy/g, 'thương thế lành hẳn');
 function logIco(l) {
   const t = l.t + ' ' + (l.c || '');
   if (/Đột phá|đột phá|phi thăng|Phi thăng|lôi kiếp/.test(t)) return '⚡';
@@ -495,13 +495,13 @@ function renderTab(t = tab) {
       const idx = n - 1 - i;
       const cls = `${l.tone}${idx >= fresh ? ' fresh' : ''}`;
       const ic = `<i class="lic">${logIco(l)}</i>`;
-      if (l.h) return `<li class="${cls}">${ic}<span class="age">${l.a} tuổi</span><b class="evH">${esc(l.h)}</b>${l.c ? `<span class="evC">→ ${esc(l.c)}</span>` : ''}<div class="evR">${rich(l.t)}</div></li>`;
-      return `<li class="${cls}">${ic}<span class="age">${l.a} tuổi</span>${rich(l.t)}</li>`;
+      if (l.h) return `<li class="${cls}">${ic}<span class="age">${l.a} tuổi</span><b class="evH">${esc(l.h)}</b>${l.c ? `<span class="evC">→ ${esc(l.c)}</span>` : ''}<div class="evR">${rich(woundText(l.t))}</div></li>`;
+      return `<li class="${cls}">${ic}<span class="age">${l.a} tuổi</span>${rich(woundText(l.t))}</li>`;
     }).join('')}</ul>`;
   }
   if (tab === 'rel') {
     const list = g.known().sort((a, b) => Math.abs(b.r.v) - Math.abs(a.r.v) || (b.r.tag ? 1 : 0) - (a.r.tag ? 1 : 0));
-    if (!list.length) return '<p class="empty">Ngươi chưa quen ai. Hãy thử Kết giao.</p>';
+    if (!list.length) return '<p class="empty">Ngươi chưa quen ai. Mưu sinh ở trấn hay lịch luyện sẽ gặp người.</p>';
     return `<div class="list">${list.map(({ b, r }) => {
       const cls = r.v >= 20 || ['huynh_de', 'dao_lu', 'su_phu', 'de_tu'].includes(r.tag) ? 'pos' : r.v <= -20 || r.tag === 'thu' ? 'neg' : '';
       const sc = b.sect ? g.sect(b.sect) : null;
@@ -632,7 +632,7 @@ function renderEvent() {
   if (!showCard) return;
   const P = g.P;
   const mp = g.curMap();
-  setHTML($('evKicker'), `Kỳ ngộ · ${P ? P.age : ''} tuổi${mp ? ` · ${DIFF[mp.d].ic} ${esc(mp.n)}` : ''}${P ? ` · <span class="${P.hp < 40 ? 'lowHp' : ''}">sinh lực ${P.hp}/100</span>` : ''}`);
+  setHTML($('evKicker'), `Kỳ ngộ · ${P ? P.age : ''} tuổi${mp ? ` · ${DIFF[mp.d].ic} ${esc(mp.n)}` : ''}${P && woundLv(P.hp) ? ` · <span class="${P.hp < 40 ? 'lowHp' : ''}">🩸 ${WOUND_N[woundLv(P.hp)].toLowerCase()}</span>` : ''}`);
   $('evTitle').textContent = v.title;
   setHTML($('evText'), rich(v.text));
   setHTML($('evChoices'), v.choices.map((c, i) => `<button class="btn" data-ch="${i}"><span class="chNo">${i + 1}</span>${esc(c)}</button>`).join(''));
@@ -684,7 +684,7 @@ function pickChoice(i) {
   if (p.result === undefined) return;
   if (p.battles) { p.battles = p.battles.filter(wantBattle); p.bi = 0; }
   if (!p.battles || !p.battles.length) g.dismiss();
-  if (g.playing && g.P.hp < 25 && g.P.hp < hp0) g.toast(`Sinh lực chỉ còn ${g.P.hp}/100.`, 'Trọng thương', 0);
+  if (g.playing && g.P.hp < 25 && g.P.hp < hp0) g.toast('Ngươi bị thương nguy kịch. Nên tu luyện dưỡng thương.', 'Nguy kịch', 0);
   markFresh();
   save();
   dirty = true;
@@ -948,7 +948,7 @@ function botWhere(b) {
 /** Nút bật tắt tự uống, tự mua Hồi Xuân Đan */
 function pillOpts() {
   const o = g.s.opt;
-  return `<div class="row btnRow"><button class="btn ${o.autoPill ? 'on' : 'ghost'}" data-opt="autoPill">💊 Tự uống Hồi Xuân Đan khi sinh lực dưới 40: ${o.autoPill ? 'bật' : 'tắt'}</button>
+  return `<div class="row btnRow"><button class="btn ${o.autoPill ? 'on' : 'ghost'}" data-opt="autoPill">💊 Tự uống Hồi Xuân Đan khi trọng thương: ${o.autoPill ? 'bật' : 'tắt'}</button>
     <button class="btn ${o.autoBuyPill ? 'on' : 'ghost'}" data-opt="autoBuyPill" ${o.autoPill ? '' : 'disabled'}>Hết đan thì tự mua (${fmt(g.pillPrice('hoi_xuan'))}/viên): ${o.autoBuyPill ? 'bật' : 'tắt'}</button></div>`;
 }
 function bindPillOpts(redraw) {
@@ -987,7 +987,7 @@ function openTower() {
         <div class="cstats col"><span>Tầng <b>${T.f}</b>/1000</span><span>Kỷ lục <b>${g.s.towerBest[pl] || 0}</b></span><span>Tháp tệ <b>${fmt(coin)}</b></span>${T.recall ? `<span>Hồi ức: tới tầng <b>${T.recall}</b></span>` : ''}<span>${P.tokens && P.tokens[pl] ? `<b>Đã có ${PL.token}</b>` : `Chưa có ${PL.token}`}</span></div>
         ${T.f < 1000 ? `<div class="item"><div class="row"><b>Tầng ${nf} · ${esc(th.n)}</b><span class="meta">ngang ${REALMS[r].n}${kind === 'elite' ? ' · tinh anh' : kind === 'boss' ? ' · trùm' : kind === 'final' ? ' · Tháp chủ' : ''}</span></div>
           <div class="meta">${esc(m.n)}</div>
-          <div class="odds ${oddsCls(p)}">Thắng ~${Math.round(p * 100)}%${boss ? ` (cả ${g.bossPhases(nf)} giai đoạn)` : ''} · sinh lực ${P.hp}/100</div></div>` : '<p class="intro"><b>Đã vượt hết 1000 tầng.</b></p>'}
+          <div class="odds ${oddsCls(p)}">Thắng ~${Math.round(p * 100)}%${boss ? ` (cả ${g.bossPhases(nf)} giai đoạn)` : ''}${woundLv(P.hp) ? ` · 🩸 ${WOUND_N[woundLv(P.hp)].toLowerCase()}` : ''}</div></div>` : '<p class="intro"><b>Đã vượt hết 1000 tầng.</b></p>'}
       </div></div>
       ${P.towerWait ? `<p class="forgeMsg">⏳ Đang tu luyện chờ đủ sức vượt tầng ${P.towerWait.f}${resume ? `, tỉ lệ thắng đạt ${P.towerWait.boss ? 75 : 60}% sẽ tự quay lại` : ''}.</p>` : ''}
       ${msg ? `<p class="forgeMsg">${rich(msg)}</p>` : ''}
@@ -1043,17 +1043,14 @@ function openSocial() {
   const hp = g.hoPhapCand();
   const lu = g.daoLu();
   const owe = g.known().filter(({ r }) => r.owe);
-  openSheet(`<h2>☕ Kết giao</h2>
-    <p class="intro">Gặp gỡ tu sĩ khác, xả sát khí, đôi khi được bạn tặng quà. Bạn thân giúp ngươi trong những trận lớn.</p>
+  openSheet(`<h2>☕ Quan hệ</h2>
+    <p class="intro">Không còn việc Kết giao riêng: ngươi quen người khi Mưu sinh ở trấn (dễ gặp nhất) và khi Lịch luyện trên đường. Bạn thân giúp ngươi trong những trận lớn.</p>
     <ul class="statList">
       <li>Trợ chiến (thân từ 50, cùng giới, cảnh giới không kém quá một bậc): mời vào trận trùm tháp, vùng chủ. Mỗi người 10 năm một lần, xong thì ngươi nợ ân tình (kết giao để trả). ${al.length ? `Có thể mời: <b>${al.slice(0, 4).map((x) => esc(x.b.name)).join(', ')}</b>.` : 'Hiện chưa có ai.'}</li>
       <li>Hộ pháp lôi kiếp (thân từ 70 hoặc đạo lữ, huynh đệ, sư đồ): đỡ thay một đợt lôi kiếp. ${hp ? `Có thể nhờ <b>${esc(hp.b.name)}</b>.` : 'Hiện chưa có ai.'}</li>
-      <li>Đạo lữ song tu: tu luyện, bế quan +25%, củng cố căn cơ nhanh hơn, xả sát khí. ${lu ? `Đạo lữ: <b>${esc(lu.name)}</b>.` : 'Chưa có đạo lữ.'}</li>
+      <li>Đạo lữ song tu: tu luyện +25%, củng cố căn cơ nhanh hơn, xả sát khí. ${lu ? `Đạo lữ: <b>${esc(lu.name)}</b>.` : 'Chưa có đạo lữ.'}</li>
       ${owe.length ? `<li>Đang nợ ân tình: ${owe.map((x) => esc(x.b.name)).join(', ')}.</li>` : ''}
-    </ul>
-    <div class="row btnRow"><button class="btn ${P.action === 'ket_giao' ? 'on' : 'primary'}" id="kgGo">${P.action === 'ket_giao' ? '☕ Đang kết giao' : '☕ Kết giao mỗi lượt'}</button></div>`, () => {
-    $('kgGo').onclick = () => { g.manualAction('ket_giao'); save(); dirty = true; $('sheet').hidden = true; };
-  });
+    </ul>`);
 }
 
 // ---------- Lịch trình tự động ----------
@@ -1069,7 +1066,7 @@ function openPlan() {
       <input type="number" min="0" max="300" inputmode="numeric" data-pv="${i}" value="${x.v}"><span class="meta">${x.a === 'be_quan' || x.k === 'y' ? 'năm' : ''}</span>
       <button class="btn ghost sm" data-pdel="${i}" ${planDraft.length > 1 ? '' : 'disabled'}>✕</button></div>`;
     openSheet(`<h2>📅 Lịch trình tự động</h2>
-      <p class="intro">Tự đổi việc theo vòng. Dừng khi có chuyện lớn: thua trùm tháp, sinh lực cạn mà hết đan, tẩu hỏa nhập ma, tu vi viên mãn mà chưa thể đột phá. Tự bấm đổi việc cũng dừng lịch trình.</p>
+      <p class="intro">Tự đổi việc theo vòng. Dừng khi có chuyện lớn: thua trùm tháp, nguy kịch mà hết đan, tẩu hỏa nhập ma, tu vi viên mãn mà chưa thể đột phá. Tự bấm đổi việc cũng dừng lịch trình.</p>
       ${pl ? `<div class="item ${pl.on ? 'me' : ''}"><div class="row"><b>${pl.on ? '▶ Đang chạy' : '⏸ Đang dừng'}</b><span class="meta">Bước ${pl.i + 1}/${pl.steps.length}</span></div><div class="meta">${pl.steps.map((x, i) => (i === pl.i ? `<b>${esc(planStepText(x))}</b>` : esc(planStepText(x)))).join(' → ')}</div>
         <div class="row btnRow">${pl.on ? '<button class="btn ghost" id="plStop">⏸ Dừng</button>' : '<button class="btn primary" id="plRes">▶ Chạy tiếp</button>'}<button class="btn ghost" id="plDel">Xóa lịch trình</button></div></div>` : ''}
       ${msg ? `<p class="forgeMsg">${esc(msg)}</p>` : ''}
@@ -1118,7 +1115,7 @@ function openMaps() {
         <div class="meta">${esc(m.desc)}</div>
         <div class="meta">Yêu thú x${String(m.pow).replace('.', ',')} · Thu hoạch x${String(m.loot).replace('.', ',')} · ${m.myth ? `Thần thoại ${String(m.myth * 100).replace('.', ',')}%/món` : 'Không có đồ Thần thoại'}</div>
         <div class="meta">Nguyên liệu: ${matIco(m.mat)} ${MATS[m.mat].n}${m.haz ? ' · Có tai họa thiên nhiên' : ''}</div>
-        <div class="odds ${oddsCls(p)}">Với sức ngươi lúc này (sinh lực ${P.hp}/100): thắng ~${Math.round(p * 100)}%${p < 0.8 ? ` · thua thì nguy hiểm tính mạng ~${Math.round(risk * 100)}%` : ''}</div>
+        <div class="odds ${oddsCls(p)}">Với sức ngươi lúc này (${WOUND_N[woundLv(P.hp)].toLowerCase()}): thắng ~${Math.round(p * 100)}%${p < 0.8 ? ` · thua thì nguy hiểm tính mạng ~${Math.round(risk * 100)}%` : ''}</div>
         ${(() => { const bs = g.botsIn(m.id); if (!bs.length) return '<div class="meta">Không có tu sĩ nào khác ở đây.</div>'; const known = bs.filter((b) => g.s.rel[b.id] && g.s.rel[b.id].met); return `<div class="meta">${bs.length} tu sĩ khác đang lịch luyện ở đây${known.length ? `, có người quen: ${known.slice(0, 3).map((b) => esc(b.name)).join(', ')}` : ''}.</div>`; })()}
         ${cur === m.id ? '<div class="meta"><b>Đang lịch luyện ở đây</b></div>' : ''}
       </button>`;
@@ -1126,11 +1123,11 @@ function openMaps() {
     openSheet(`<h2>Chọn vùng lịch luyện</h2>
       <p class="intro">Các tu sĩ khác cũng tự chọn vùng theo sức mình và tính cách: kẻ liều lĩnh vào vùng khó, người cẩn trọng ở vùng dễ. Cùng vùng thì dễ chạm mặt nhau hơn, và hạ được kẻ mang thần khí thì có thể đoạt lấy.</p>
       <p class="intro">Độ khó luôn tính theo cảnh giới hiện tại của ngươi: yêu thú cùng cảnh giới nhưng mạnh hơn theo độ khó, đồ rơi ra hợp với cảnh giới của ngươi. Đồ Thần thoại chỉ xuất hiện từ vùng Khó trở lên. Tỉ lệ thắng tính theo trang bị, võ kỹ và sinh lực hiện tại (${P.hp}/100).</p>
-      <div class="row btnRow"><button class="btn ${g.s.opt.retreat ? 'on' : 'ghost'}" data-retreat="1">Tự lui khi sinh lực dưới 40, hồi lên 80 tự quay lại: ${g.s.opt.retreat ? 'bật' : 'tắt'}</button></div>
+      <div class="row btnRow"><button class="btn ${g.s.opt.retreat ? 'on' : 'ghost'}" data-retreat="1">Tự lui khi trọng thương, lành rồi tự quay lại: ${g.s.opt.retreat ? 'bật' : 'tắt'}</button></div>
       ${g.plane ? `<p class="intro">Đây là các vùng của ${PLANES[g.plane].n}.</p>` : ''}
       ${pillOpts()}
       <p class="intro">Còn ${P.pills.hoi_xuan || 0} viên Hồi Xuân Đan. Đan được uống trước khi xét tự lui, nên còn đan thì ngươi ở lại vùng đã chọn.</p>
-      ${P.flags.retreated && MAP_MAP[P.mapGoal] ? `<p class="intro"><b>Đang tạm lui</b> về ${g.defaultMap().n} dưỡng thương (sinh lực ${P.hp}/100). Hồi lên 80 sẽ quay lại ${esc(MAP_MAP[P.mapGoal].n)}. Uống Hồi Xuân Đan để quay lại sớm, hoặc tắt tự lui để ở lại mặc kệ nguy hiểm.</p>` : ''}
+      ${P.flags.retreated && MAP_MAP[P.mapGoal] ? `<p class="intro"><b>Đang tạm lui</b> về ${g.defaultMap().n} dưỡng thương (${WOUND_N[woundLv(P.hp)].toLowerCase()}). Hồi lên 80 sẽ quay lại ${esc(MAP_MAP[P.mapGoal].n)}. Uống Hồi Xuân Đan để quay lại sớm, hoặc tắt tự lui để ở lại mặc kệ nguy hiểm.</p>` : ''}
       <div class="list">${cards}</div>`, bind);
   };
   const pick = (id) => { g.setMap(id); save(); $('sheet').hidden = true; dirty = true; };
@@ -1680,13 +1677,11 @@ function dockClick(e) {
   if (b.dataset.act === 'lich_luyen') openMaps();
   else if (b.dataset.act === 'vuot_thap') openTower();
   else if (b.dataset.act === 'muu_sinh') openWork();
-  else if (b.dataset.act === 'ket_giao') openSocial();
   else if (b.dataset.act) { g.manualAction(b.dataset.act); save(); }
   else if (b.dataset.do === 'forge') openForge();
   else if (b.dataset.do === 'shop') openShop();
   else if (b.dataset.do === 'bag') openBag();
   else if (b.dataset.do === 'titles') openTitles();
-  else if (b.dataset.do === 'close') openClose();
   else if (b.dataset.do === 'openDoor') g.openDoor();
   dirty = true;
 }
@@ -1837,7 +1832,7 @@ function frame(t) {
     if (g.playing && wantTower(r) && !sheetOpen) startBattle(r, false, () => {});
   }
   if (g.playing && !paused && !g.s.pending && !sheetOpen && !bt) {
-    const yearMs = 1000 / speed / (g.P.closed > 0 ? 3 : 1);
+    const yearMs = 1000 / speed;
     acc += dt;
     let n = 0;
     while (acc >= yearMs && n < 8) {
