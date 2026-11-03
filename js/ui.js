@@ -16,6 +16,8 @@ let g = null;
 let speed = 1;
 let paused = false;
 let autoOn = true; // tự quyết việc nhỏ từ 8×
+let battleView = 'big'; // xem diễn lại trận: all | big | off
+const BATTLE_VIEW = { all: 'Luôn xem', big: 'Chỉ trận lớn', off: 'Không xem' };
 const AUTO_SPEED = 8;
 let tab = 'log';
 let acc = 0;
@@ -32,6 +34,7 @@ function load() {
       const ui = g.s.ui || {};
       speed = SPEEDS.includes(ui.speed) ? ui.speed : 1;
       autoOn = ui.auto !== false;
+      battleView = BATTLE_VIEW[ui.battle] ? ui.battle : 'big';
       return;
     }
   } catch (e) {
@@ -41,7 +44,7 @@ function load() {
 }
 function save() {
   try {
-    g.s.ui = { speed, auto: autoOn };
+    g.s.ui = { speed, auto: autoOn, battle: battleView };
     localStorage.setItem(SAVE_KEY, g.save());
   } catch (e) {
     /* hết chỗ hoặc chế độ riêng tư: chơi tiếp không lưu */
@@ -86,7 +89,6 @@ function render() {
   if (ph === 'birth') renderBirth();
   else if (ph === 'play' || (ph === 'dead' && g.s.pending)) renderPlay();
   else renderDead();
-  renderModal();
   dirty = false;
 }
 
@@ -306,6 +308,7 @@ function renderPlay() {
   const tabs = [['log', 'Nhật ký'], ['rel', 'Quan hệ'], ['world', 'Thiên hạ'], ['rank', 'Xếp hạng'], ['lives', 'Sổ kiếp']];
   setHTML($('tabs'), tabs.map(([id, n]) => `<button class="${tab === id ? 'on' : ''}" data-tab="${id}">${n}</button>`).join(''));
   setHTML($('tabbody'), renderTab());
+  renderEvent();
 }
 
 /** Bảng Nhân vật: ảnh lớn, trang bị, chỉ số, thể chất (trước đây nằm ở màn chính) */
@@ -358,7 +361,14 @@ function openMore() {
 function renderTab() {
   if (tab === 'log') {
     const items = g.s.log.slice(-80).reverse();
-    return `<ul class="log">${items.map((l) => `<li class="${l.tone}"><span class="age">${l.a} tuổi</span>${rich(l.t)}</li>`).join('')}</ul>`;
+    const n = g.s.log.length;
+    const fresh = performance.now() < freshUntil ? freshFrom : Infinity;
+    return `<ul class="log">${items.map((l, i) => {
+      const idx = n - 1 - i;
+      const cls = `${l.tone}${idx >= fresh ? ' fresh' : ''}`;
+      if (l.h) return `<li class="${cls}"><span class="age">${l.a} tuổi</span><b class="evH">${esc(l.h)}</b>${l.c ? `<span class="evC">→ ${esc(l.c)}</span>` : ''}<div class="evR">${rich(l.t)}</div></li>`;
+      return `<li class="${cls}"><span class="age">${l.a} tuổi</span>${rich(l.t)}</li>`;
+    }).join('')}</ul>`;
   }
   if (tab === 'rel') {
     const list = g.known().sort((a, b) => Math.abs(b.r.v) - Math.abs(a.r.v) || (b.r.tag ? 1 : 0) - (a.r.tag ? 1 : 0));
@@ -451,6 +461,7 @@ function renderDead() {
         </div>
       </div>
       <div>${esc(l.name)} ${esc(l.cause)}.</div>
+      ${d.last ? `<div class="lastMoment"><b>${esc(d.last.h)}</b> <span class="evC">→ ${esc(d.last.c)}</span><div class="evR">${rich(d.last.t)}</div></div>` : ''}
       <div class="meta">${fr ? `${fr} người vẫn nhớ ngươi.` : ''} ${en ? `${en} kẻ thù vẫn chưa quên.` : ''} Thế giới vẫn tiếp tục khi ngươi vắng mặt.</div>
     </div>
     ${d.hl ? `<div class="altar hlGain"><div class="row"><b>Hồn Lực</b><span class="hl">+${fmt(d.hl.total)} · tổng <b>${fmt(g.s.honLuc || 0)}</b></span></div>
@@ -472,34 +483,52 @@ function renderDead() {
   });
 }
 
-function renderModal() {
-  const v = g.eventView();
+/** Kỳ ngộ hiện ngay trong vùng giữa (không phủ màn hình), dải điều khiển dưới vẫn dùng được */
+function renderEvent() {
   const p = g.s.pending;
-  if (v && v.done && p.battles && p.bi < p.battles.length) {
-    $('modal').hidden = true;
-    if (!bt) startBattle(p);
-    return;
-  }
-  $('modal').hidden = !v;
-  if (!v) return;
+  const v = g.eventView();
+  const fighting = !!(p && v && v.done && p.battles && p.bi < p.battles.length);
+  if (fighting && !bt) startBattle(p);
+  $('battle').hidden = !bt;
+  const ask = !!(v && !v.done);
+  const showCard = ask && !bt;
+  $('evPanel').hidden = !showCard;
+  if (!showCard) return;
+  const P = g.P;
+  const mp = g.curMap();
+  setHTML($('evKicker'), `Kỳ ngộ · ${P ? P.age : ''} tuổi${mp ? ` · ${DIFF[mp.d].ic} ${esc(mp.n)}` : ''}`);
   $('evTitle').textContent = v.title;
-  $('evText').innerHTML = rich(v.text);
-  $('evPause').textContent = paused ? '▶ Chạy tiếp sau khi chọn' : '⏸ Dừng sau khi chọn';
-  $('evPause').classList.toggle('on', paused);
-  if (v.done) {
-    $('evChoices').innerHTML = `<button class="btn primary" id="evOk">Tiếp tục</button>`;
-    $('evOk').onclick = () => { g.dismiss(); save(); dirty = true; };
-  } else {
-    $('evChoices').innerHTML = v.choices.map((c, i) => `<button class="btn" data-ch="${i}">${esc(c)}</button>`).join('');
-    $('evChoices').querySelectorAll('[data-ch]').forEach((b) => { b.onclick = () => { g.choose(+b.dataset.ch); save(); dirty = true; }; });
-  }
+  setHTML($('evText'), rich(v.text));
+  setHTML($('evChoices'), v.choices.map((c, i) => `<button class="btn" data-ch="${i}"><span class="chNo">${i + 1}</span>${esc(c)}</button>`).join(''));
 }
+/** Chọn xong: kết quả vào nhật ký, diễn trận nếu cần, rồi chạy tiếp ngay */
+function pickChoice(i) {
+  const p = g.s.pending;
+  if (!p || p.result !== undefined) return;
+  const hp0 = g.P ? g.P.hp : 0;
+  g.choose(i);
+  if (p.result === undefined) return;
+  if (p.battles) { p.battles = p.battles.filter(wantBattle); p.bi = 0; }
+  if (!p.battles || !p.battles.length) g.dismiss();
+  if (g.playing && g.P.hp < 25 && g.P.hp < hp0) g.toast(`Sinh lực chỉ còn ${g.P.hp}/100.`, 'Trọng thương', 0);
+  markFresh();
+  save();
+  dirty = true;
+}
+function wantBattle(res) {
+  if (battleView === 'off') return false;
+  if (!paused && speed >= AUTO_SPEED) return false;
+  return battleView === 'all' || res.big || res.died;
+}
+$('evChoices').addEventListener('click', (e) => { const b = e.target.closest('[data-ch]'); if (b) pickChoice(+b.dataset.ch); });
+// dòng nhật ký mới sáng lên một lúc
+let freshFrom = 0, freshUntil = 0;
+function markFresh() { freshFrom = Math.min(freshFrom || Infinity, g.s.log.length - 1); freshUntil = performance.now() + 2600; }
 
 /** Chữ có mã biểu tượng: thoát HTML rồi thay mã bằng ảnh */
 function rich(t) {
   return esc(t).replace(ICON_TOKEN_RE, (m, kind, q, col) => `<img class="ico inl q${q}" alt="" src="${iconURL({ kind, q: +q, col: col === '-' ? null : col })}">`);
 }
-$('evPause').onclick = () => { paused = !paused; dirty = true; };
 
 // ---------- Diễn lại trận đấu ----------
 let bt = null;
@@ -524,7 +553,7 @@ function floatText(side, text, cls) {
 }
 function startBattle(p) {
   const res = p.battles[p.bi];
-  bt = { res, i: 0, timer: null, fast: btFast, done: false };
+  bt = { res, i: 0, timer: null, closeT: null, fast: btFast, done: false };
   $('battle').hidden = false;
   $('btTitle').textContent = `${res.a.name} ⚔ ${res.b.name}`;
   for (const [side, f] of [['A', res.a], ['B', res.b]]) {
@@ -599,18 +628,25 @@ function endBattle() {
   (r.win ? $('fB') : $('fA')).classList.add('down');
   $('btBanner').textContent = r.win ? 'Thắng!' : 'Bại...';
   $('btBanner').className = 'banner show big result ' + (r.win ? 'win' : 'lose');
-  $('btNext').textContent = 'Tiếp tục';
+  $('btNext').textContent = 'Đóng';
+  // đánh xong tự đóng, không bắt bấm
+  bt.closeT = setTimeout(closeBattle, bt.fast ? 900 : 1600);
 }
-$('btNext').onclick = () => {
+function closeBattle() {
   if (!bt) return;
-  if (!bt.done) return endBattle();
-  const p = g.s.pending;
+  clearTimeout(bt.timer);
+  clearTimeout(bt.closeT);
   $('battle').hidden = true;
   bt = null;
-  if (p && p.battles) p.bi++;
+  const p = g.s.pending;
+  if (p && p.battles) {
+    p.bi++;
+    if (p.bi >= p.battles.length) { g.dismiss(); markFresh(); }
+  }
   save();
   dirty = true;
-};
+}
+$('btNext').onclick = closeBattle;
 $('btFast').onclick = () => {
   if (!bt) return;
   bt.fast = btFast = !btFast;
@@ -801,7 +837,7 @@ function openForge() {
       q('[data-iron]', () => g.buyIron());
       q('[data-enh]', (b) => g.enhance(+b.dataset.enh));
       q('[data-up]', (b) => g.upgrade(+b.dataset.up));
-      q('[data-rr]', (b) => { const [id, i, m] = b.dataset.rr.split(':'); return g.reroll(+id, +i, m || null); });
+      q('[data-rr]', (b) => { const [id, i, m] = b.dataset.rr.split(':'); return g.rerollAffix(+id, +i, m || null); });
       q('[data-fs]', (b) => { forgeSel.slot = b.dataset.fs; });
       q('[data-fw]', (b) => { forgeSel.wt = b.dataset.fw; });
       q('[data-fc]', (b) => { forgeSel.cat = b.dataset.fc; });
@@ -941,7 +977,11 @@ $('menuBtn').onclick = () => {
     <p class="intro">Mỗi năm chọn một việc. Kỳ ngộ sẽ tự tìm tới. Tu vi đầy thì đột phá. Chết rồi thì đầu thai, mang theo một tàn niệm.</p>
     <p class="intro">Bốn mươi linh hồn khác cũng sống trong thế giới này. Họ tu luyện, kết thù, lập tông môn, chết đi rồi đầu thai như ngươi. Người từng thân với ngươi có thể nhận ra ngươi ở kiếp sau. Kẻ thù cũng vậy.</p>
     <p class="intro">Hữu tình: bạn bè hộ pháp khi ngươi đột phá. Vô tình: tu nhanh hơn, đột phá vững hơn, nhưng cô độc.</p>
+    <h3>Xem diễn lại trận đấu</h3>
+    <div class="opts">${Object.entries(BATTLE_VIEW).map(([k, n]) => `<button class="btn ${battleView === k ? 'on' : 'ghost'}" data-bv="${k}">${n}</button>`).join('')}</div>
+    <p class="intro">Chỉ trận lớn: trận có thể mất mạng (yêu thú vùng khó, kẻ thù, ma tu...). Từ ${AUTO_SPEED}× luôn bỏ qua. Kết quả trận nào cũng ghi vào nhật ký.</p>
     <div class="list"><button class="btn" id="themeBtn">Đổi giao diện sáng / tối</button><button class="btn" id="newWorld">Tạo thế giới mới (xóa bản lưu)</button></div>`, () => {
+    $('sheetBody').querySelectorAll('[data-bv]').forEach((b) => { b.onclick = () => { battleView = b.dataset.bv; save(); $('menuBtn').onclick(); }; });
     $('themeBtn').onclick = () => {
       const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
       const nx = cur === 'dark' ? 'light' : 'dark';
@@ -1036,10 +1076,27 @@ $('tabs').addEventListener('click', (e) => {
   if (b && b.dataset.tab) { tab = b.dataset.tab; dirty = true; }
 });
 
+// Bàn phím: 1-9 chọn phương án, Space tạm dừng/chạy, Esc đóng bảng
+document.addEventListener('keydown', (e) => {
+  if (e.target.closest && e.target.closest('input, textarea, select')) return;
+  if (e.key === 'Escape' && !$('sheet').hidden) { $('sheet').hidden = true; dirty = true; return; }
+  if (!$('sheet').hidden || !g.playing) return;
+  if (!$('evPanel').hidden && /^[1-9]$/.test(e.key)) {
+    const b = $('evChoices').querySelector(`[data-ch="${+e.key - 1}"]`);
+    if (b) { e.preventDefault(); pickChoice(+e.key - 1); }
+    return;
+  }
+  if (e.key === ' ' && !(e.target.closest && e.target.closest('button'))) { e.preventDefault(); paused = !paused; dirty = true; }
+});
+
 // ---------- Vòng lặp ----------
 function frame(t) {
   const dt = Math.min(250, t - lastT);
   lastT = t;
+  // kết quả còn treo (bản lưu cũ, hoặc tự quyết lúc đang diễn trận) thì đóng luôn
+  const pp = g.s.pending;
+  if (pp && pp.result !== undefined && !bt && !(pp.battles && pp.bi < pp.battles.length)) { g.dismiss(); dirty = true; }
+  if (freshUntil && t > freshUntil) { freshUntil = 0; freshFrom = 0; dirty = true; }
   const sheetOpen = !$('sheet').hidden;
   // tốc độ cao: kỳ ngộ nhỏ tự quyết để không bị hộp câu hỏi chặn liên tục
   if (autoOn && !paused && speed >= AUTO_SPEED && g.playing && g.canAuto()) {

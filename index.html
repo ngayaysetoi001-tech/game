@@ -27,30 +27,13 @@
           <div class="hudSub" id="hudSub"></div>
         </div>
       </div>
-      <nav class="tabs" id="tabs"></nav>
-      <div class="tabbody" id="tabbody"></div>
-      <div class="dock" id="dock">
-        <div class="tip" id="tip" hidden></div>
-        <div class="breakRow" id="breakRow"></div>
-        <div class="speed" id="speed"></div>
-        <div class="actions" id="actions"></div>
-        <div class="utils" id="utils"></div>
+      <div class="evPanel" id="evPanel" hidden>
+        <div class="evKicker" id="evKicker"></div><h2 id="evTitle"></h2>
+        <div class="evText" id="evText"></div>
+        <div class="choices" id="evChoices"></div>
       </div>
-    </section>
-
-    <section id="scr-dead" class="screen" hidden></section>
-  </div>
-
-  <div class="overlay" id="modal" hidden>
-    <div class="card event" role="dialog" aria-modal="true">
-      <div class="evHead"><h2 id="evTitle"></h2><button class="btn sp" id="evPause"></button></div>
-      <div class="evText" id="evText"></div>
-      <div class="choices" id="evChoices"></div>
-    </div>
-  </div>
-
-  <div class="overlay battleOv" id="battle" hidden>
-    <div class="card arena" role="dialog" aria-modal="true" aria-label="Giao chiến">
+      <div class="battleBox" id="battle" hidden>
+    <div class="card arena" aria-label="Giao chiến">
       <div class="arenaTop"><b id="btTitle"></b><span id="btRound" class="meta"></span></div>
       <div class="stage">
         <div class="fighter" id="fA">
@@ -70,6 +53,19 @@
       <ul class="btlog" id="btLog"></ul>
       <div class="btBtns"><button class="btn ghost" id="btFast">Nhanh ×2</button><button class="btn primary" id="btNext">Bỏ qua</button></div>
     </div>
+      </div>
+      <nav class="tabs" id="tabs"></nav>
+      <div class="tabbody" id="tabbody"></div>
+      <div class="dock" id="dock">
+        <div class="tip" id="tip" hidden></div>
+        <div class="breakRow" id="breakRow"></div>
+        <div class="speed" id="speed"></div>
+        <div class="actions" id="actions"></div>
+        <div class="utils" id="utils"></div>
+      </div>
+    </section>
+
+    <section id="scr-dead" class="screen" hidden></section>
   </div>
 
   <div class="overlay" id="sheet" hidden>

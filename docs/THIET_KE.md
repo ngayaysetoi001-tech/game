@@ -257,6 +257,26 @@ Trên màn hình rộng (từ 900px), bố cục chia 2 cột: trái là nhân v
 
 Ở điện thoại cỡ 390×844, nhật ký bắt đầu ở y=208 và cao 472px, không cần cuộn trang (trước đây nhật ký bắt đầu sau khoảng 1.500px).
 
+**Kỳ ngộ và trận đấu không phủ màn hình (6h bổ sung):**
+
+- **Thẻ kỳ ngộ:**
+  - Hiện ngay trong vùng giữa, cao vừa nội dung; nhật ký vẫn thấy bên dưới.
+  - Dải điều khiển vẫn dùng được: đổi tốc độ, mở Hành trang uống đan, đổi đồ trước khi chọn.
+  - Thời gian tự dừng cho tới khi chọn.
+- **Chọn xong:**
+  - Không còn màn kết quả hay nút "Tiếp tục".
+  - Kết quả được ghi vào nhật ký: tên kỳ ngộ, lựa chọn (có dấu "Tự quyết" nếu máy chọn), diễn biến đầy đủ. Dòng mới sáng lên vài giây.
+  - Game chạy tiếp ngay.
+- **Trận đấu:**
+  - Diễn lại trong vùng giữa, đánh xong tự đóng sau 1,6 giây; nút "Bỏ qua" đóng ngay.
+  - Cài đặt "Xem diễn lại trận đấu" có 3 mức: Luôn xem / Chỉ trận lớn (mặc định) / Không xem.
+  - Trận lớn là trận có thể mất mạng thật: chết trong trận, hoặc hệ số nguy hiểm từ 0,4 trở lên (yêu thú vùng Khó trở lên, kẻ thù, ma tu...).
+  - Từ 8× luôn bỏ qua.
+- **Thông báo nổi:** thêm "Trọng thương" khi sinh lực tụt dưới 25 sau một kỳ ngộ.
+- **Chết:** màn kết thúc kiếp ghi lại "giây phút cuối" (kỳ ngộ, lựa chọn, diễn biến).
+- **Bàn phím:** phím 1–9 chọn phương án, Space tạm dừng hoặc chạy tiếp, Esc đóng bảng.
+- **Màn hình rộng:** thẻ kỳ ngộ ở cột trái, nhật ký bên phải luôn hiện.
+
 ## 7. Kỹ thuật
 
 - HTML, CSS, JavaScript thuần (ES module), không cần build, không cần máy chủ.

@@ -582,3 +582,30 @@ body.inPlay .tabbody { flex: 1; min-height: 0; overflow-y: auto; overscroll-beha
   body.inPlay .dock { grid-area: dock; align-self: start; border-top: none; margin-top: 10px; }
   .hud #portrait { width: 80px; height: 100px; }
 }
+
+/* ========== Kỳ ngộ, trận đấu trong vùng giữa ========== */
+.evPanel { flex: 0 1 auto; max-height: 64%; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin-top: 8px; background: var(--panel); border: 2px solid var(--accent); border-radius: 14px; padding: 12px 14px; animation: evIn 0.25s ease-out; }
+@keyframes evIn { from { opacity: 0; transform: translateY(8px); } }
+.evPanel[hidden], .battleBox[hidden], .evBack[hidden], .tabs[hidden], .tabbody[hidden] { display: none !important; }
+.evHead { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.evKicker { font-size: 12px; color: var(--muted); letter-spacing: 0.03em; }
+.evPanel h2 { margin: 0 0 8px; font-size: 18px; color: var(--accent); }
+.evPeek { min-height: 32px; padding: 2px 10px; font-size: 12px; flex: none; }
+.evPanel .choices .btn { display: flex; gap: 10px; align-items: center; text-align: left; }
+.chNo { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); display: inline-grid; place-items: center; font-size: 12px; color: var(--muted); }
+.evBack { margin-top: 8px; width: 100%; text-align: center; border: 2px dashed var(--accent); background: var(--panel); border-radius: 10px; padding: 8px; font-size: 14px; color: var(--ink); }
+.battleBox { flex: 0 1 auto; max-height: 72%; min-height: 0; overflow-y: auto; margin-top: 8px; }
+.battleBox .arena { max-width: none; margin: 0; }
+.log li .evH { color: var(--accent); margin-right: 4px; }
+.log li .evC { color: var(--muted); font-size: 14px; }
+.log li .evR { white-space: pre-line; margin-top: 2px; }
+.log li.fresh { animation: freshLog 2.6s ease-out; border-radius: 8px; }
+@keyframes freshLog { 0%, 30% { background: color-mix(in srgb, var(--gold) 22%, transparent); } 100% { background: transparent; } }
+.lastMoment { margin: 8px 0; padding: 8px 10px; border-left: 3px solid var(--bad); background: var(--bg); border-radius: 6px; font-size: 14px; }
+.lastMoment .evR { white-space: pre-line; margin-top: 4px; }
+@media (min-width: 900px) {
+  body.inPlay #scr-play { grid-template-rows: auto auto auto 1fr; grid-template-areas: 'hud tabs' 'ev body' 'dock body' 'x body'; }
+  body.inPlay .evPanel, body.inPlay .battleBox { grid-area: ev; max-height: 62vh; }
+  .evPeek, .evBack { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) { .log li.fresh, .evPanel { animation: none; } }

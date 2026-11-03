@@ -690,23 +690,11 @@ export class Game {
     P.tuvi = Math.min(this.need(), P.tuvi + n);
     return Math.round(P.tuvi - before);
   }
-  playerPower() {
-    const P = this.P;
-    const R = REALMS[P.realm];
-    return R.pow * (1 + (P.tuvi / R.need) * 0.5) * (1 + (P.stats.can - 50) / 200) * (1 + P.fight) * (0.5 + P.hp / 200) * (P.flags.pet ? 1.1 : 1) * this.tmul('fightMul');
-  }
   monster(realm) {
     const r = clamp(realm, 0, TOP_REALM);
     const opts = MONSTERS.filter((m) => m.r === Math.min(r, MONSTERS[MONSTERS.length - 1].r));
     const m = this.r.pick(opts.length ? opts : MONSTERS);
     return { n: m.n, pow: REALMS[r].pow * this.r.range(0.75, 1.25), beast: true, r, seed: this.r.int(1, 1e6) };
-  }
-  hint(foePow) {
-    const k = this.playerPower() / foePow;
-    if (k > 1.5) return 'Trông không đáng ngại.';
-    if (k > 0.9) return 'Có vẻ ngang tài ngang sức.';
-    if (k > 0.6) return 'Khí thế đối phương khiến ngươi chột dạ.';
-    return 'Ngươi cảm thấy tử khí lạnh sống lưng.';
   }
   // ---------- Chiến đấu ----------
   /** Sức mạnh gốc (chưa tính trang bị, sinh lực) */
@@ -798,6 +786,8 @@ export class Game {
     if (opts.extra) lines.push(opts.extra);
     res.a.hp0 = hp0;
     res.died = died;
+    // trận lớn: có thể mất mạng thật (yêu thú vùng khó, kẻ thù, ma tu...), giao diện ưu tiên diễn lại
+    res.big = died || (opts.lethal ?? 0.15) >= 0.4;
     if (this._sink) this._sink.push(res);
     const text = [head, ...lines].join('\n');
     if (died) this._battleDeath = text;
@@ -1094,7 +1084,7 @@ export class Game {
     return c;
   }
   /** Tẩy luyện một dòng thuộc tính. cat: dẫn liệu để chắc chắn ra dòng của nó */
-  reroll(id, idx, cat = null) {
+  rerollAffix(id, idx, cat = null) {
     const it = this.findItem(id);
     if (!it || !this.forgeOpen() || it.q < 2 || !it.affix || idx < 0 || idx >= it.affix.length) return null;
     const old = it.affix[idx];
@@ -1625,8 +1615,15 @@ export class Game {
     this._absorbHurt = false;
     if (this.s.phase === 'dead') res += `\n\n${this.P.name} ngã xuống, hưởng thọ ${this.P.age} tuổi.`;
     p.result = res;
-    const first = res.split('\n').filter(Boolean).pop();
-    if (this.P && first) this.log(`${this._auto ? '(Tự quyết) ' : ''}${ev.title}: ${first}`, 'event');
+    // ghi đủ kết quả vào nhật ký: tên kỳ ngộ, lựa chọn, diễn biến (giao diện không cần hiện màn kết quả nữa)
+    const title = typeof ev.title === 'function' ? ev.title(this, c) : ev.title;
+    if (this.P && res.trim()) {
+      this.log(res.trim(), 'event');
+      const L = this.s.log[this.s.log.length - 1];
+      L.h = title;
+      L.c = `${this._auto ? '(Tự quyết) ' : ''}${ch.t}`;
+    }
+    if (this.s.phase === 'dead' && this.s.deadInfo) this.s.deadInfo.last = { h: title, c: ch.t, t: res.trim() };
     if (this.playing) this.checkTitles();
   }
   /** Sự kiện đang chờ có tự quyết được không (việc nhỏ) */

@@ -26,6 +26,12 @@ for (const m of mods) {
     seen.set(mm[1], m);
   }
 }
+// phương thức trùng tên trong một class: cái sau âm thầm đè cái trước (từng làm hỏng nút Gieo lại)
+for (const m of mods) {
+  const names = [...read(m).matchAll(/^  (?:static |async )?([A-Za-z_$][\w$]*)\([^)]*\) \{$/gm)].map((x) => x[1]);
+  const dup = names.filter((n, i) => names.indexOf(n) !== i && !['constructor'].includes(n));
+  if (dup.length) throw new Error(`Phương thức trùng tên trong ${m}: ${[...new Set(dup)].join(', ')}`);
+}
 
 const html = read('index.html');
 const body = html.slice(html.indexOf('<body>') + 6, html.indexOf('<script type="module"')).trim();
