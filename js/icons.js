@@ -224,6 +224,46 @@ export function buildIcon(o) {
     const crystal = (cx, top, w, h) => { for (let y = top; y <= top + h; y++) { const hw = y < top + 2 ? (y - top) : w; for (let x = cx - hw; x <= cx + hw; x++) set(x, y, x < cx ? ilite(c, 0.35) : x === cx ? c : idark(c, 0.25)); } };
     crystal(8, 1, 2, 12); crystal(4, 6, 1, 8); crystal(12, 5, 1, 9);
     rect(2, 14, 13, 14, idark(c, 0.55)); set(7, 3, '#ffffff');
+  } else if (k === 'st_atk') {
+    // nắm đấm / lưỡi kiếm chéo
+    line(3, 12, 12, 3, '#e2e8ee'); line(4, 12, 13, 3, '#9aa3ab'); line(3, 3, 12, 12, '#e2e8ee'); line(3, 4, 12, 13, '#9aa3ab');
+    rect(2, 12, 4, 14, '#c9a040'); rect(11, 12, 13, 14, '#c9a040'); set(13, 2, '#ffffff'); set(2, 2, '#ffffff');
+  } else if (k === 'st_def') {
+    const c = '#5f86c0';
+    for (let y = 2; y <= 13; y++) { const w = y < 9 ? 5 : 5 - (y - 8); rect(8 - w, y, 7 + w, y, y === 2 ? ilite(c, 0.4) : c); set(8 - w, y, ilite(c, 0.35)); set(7 + w, y, idark(c, 0.3)); }
+    line(8, 3, 8, 12, '#d8b44a'); line(4, 6, 11, 6, '#d8b44a');
+  } else if (k === 'st_hp') {
+    const c = '#d63c3c';
+    ell(5.5, 6, 3, 3, () => c); ell(10.5, 6, 3, 3, () => c);
+    for (let y = 6; y <= 13; y++) { const w = Math.max(0, 6 - (y - 7)); rect(8 - w, y, 7 + w, y, c); }
+    set(4, 5, '#ffb0b0'); set(5, 4, '#ffb0b0');
+  } else if (k === 'st_crit') {
+    const c = '#ffcf3d';
+    line(8, 1, 8, 15, c); line(1, 8, 15, 8, c); line(3, 3, 13, 13, ilite(c, 0.3)); line(13, 3, 3, 13, ilite(c, 0.3));
+    ell(8, 8, 2.5, 2.5, () => '#ffffff');
+  } else if (k === 'st_dodge') {
+    // lông vũ
+    const c = '#7fd0c0';
+    line(3, 14, 12, 2, idark(c, 0.4));
+    for (let i = 0; i < 9; i++) { line(4 + i, 12 - i * 1.2, 7 + i, 13 - i * 1.2, i % 2 ? c : ilite(c, 0.3)); line(4 + i, 12 - i * 1.2, 3 + i, 9 - i * 1.2, i % 2 ? ilite(c, 0.2) : c); }
+  } else if (k === 'cog') {
+    const c = '#a8b0b8';
+    ell(8, 8, 5.5, 5.5, (x, y, d) => (d < 0.18 ? null : d > 0.75 ? idark(c, 0.2) : c));
+    for (const [x, y] of [[8, 1], [8, 15], [1, 8], [15, 8], [3, 3], [13, 13], [13, 3], [3, 13]]) rect(x - 1, y - 1, x, y, c);
+  } else if (k === 'thap') {
+    const c = '#b89060';
+    for (let i = 0; i < 5; i++) { const y = 13 - i * 3; const w = 6 - i; rect(8 - w, y - 1, 7 + w, y, i % 2 ? c : idark(c, 0.2)); rect(8 - w - 1, y - 2, 7 + w + 1, y - 2, '#7a3a2a'); }
+    rect(7, 0, 8, 1, '#ffcf3d');
+  } else if (k === 'sat') {
+    const c = '#d8d0c8';
+    ell(8, 6.5, 5, 5, (x, y, d) => (d > 0.8 ? idark(c, 0.2) : c));
+    rect(5, 11, 11, 13, c); rect(5, 6, 7, 8, '#a01818'); rect(9, 6, 11, 8, '#a01818'); set(8, 9, '#3a2a2a');
+    for (const x of [6, 8, 10]) set(x, 13, '#3a2a2a');
+  } else if (k === 'tam') {
+    // âm dương
+    ell(8, 8, 6.5, 6.5, (x, y) => (x < 8 ? '#f3ead8' : '#2a2238'));
+    ell(8, 4.7, 3.2, 3.2, () => '#f3ead8'); ell(8, 11.3, 3.2, 3.2, () => '#2a2238');
+    ell(8, 4.7, 1, 1, () => '#2a2238'); ell(8, 11.3, 1, 1, () => '#f3ead8');
   } else if (k.startsWith('sk_')) {
     drawSkill(k, o, { px, set, rect, line, ell });
   } else if (k === 'bi_kip') {
@@ -294,7 +334,7 @@ export function iconURL(o) {
 /** Biểu tượng của một món trang bị */
 export const itemIconOpts = (it) => ({ kind: iconKind(it), q: it.q, col: it.slot === 'ao' ? armorColor(it) : null });
 
-export const PILL_COLORS = { hoi_xuan: '#c0392b', pha_canh: '#8e5bd0', dien_tho: '#d8a83c', tinh_tam: '#4f8fd6' };
+export const PILL_COLORS = { hoi_xuan: '#c0392b', pha_canh: '#8e5bd0', dien_tho: '#d8a83c', tinh_tam: '#4f8fd6', ngung_than: '#3fae9a', bao_khi: '#e06a1c' };
 
 /** Mã nhúng biểu tượng vào chữ (giao diện thay bằng ảnh, nơi khác bỏ qua) */
 export const matIconOpts = (id, m) => ({ kind: id === 'tinh_thiet' ? 'thoi' : m.aff === 'ls' || m.aff === 'dodge' ? 'hach' : 'mat', q: Math.min(4, m.q), col: m.col });

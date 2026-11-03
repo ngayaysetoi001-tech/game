@@ -47,6 +47,22 @@ export const BEAST_SKILLS = {
   cuong_bao: { n: 'Cuồng bạo', kind: 'buff', mp: 30, rage: 3 },
   vay_giap: { n: 'Vảy giáp', kind: 'shield', mp: 30, shield: 0.2 },
   gam_thet: { n: 'Gầm thét', kind: 'atk', mp: 35, mult: 1.2, stun: 0.3 },
+  // chiêu riêng của trùm tháp
+  b_trieu_thi: { n: 'Triệu hồi cương thi', kind: 'shield', mp: 35, shield: 0.3 },
+  b_thi_doc: { n: 'Thi độc trảo', kind: 'atk', mp: 25, mult: 1.15, burn: 3, burnName: 'thi độc' },
+  b_bang_phong: { n: 'Băng phong vạn lý', kind: 'atk', mp: 35, mult: 1.1, stun: 0.6, stunName: 'đóng băng' },
+  b_han_khi: { n: 'Hàn khí thấu xương', kind: 'atk', mp: 20, mult: 0.6, hits: 2 },
+  b_viem_nguc: { n: 'Viêm ngục', kind: 'atk', mp: 35, mult: 1.3, burn: 4, burnName: 'thiêu đốt' },
+  b_hoa_bao: { n: 'Hỏa bạo', kind: 'atk', mp: 45, mult: 1.9 },
+  b_quy_hut: { n: 'Quỷ hút hồn', kind: 'atk', mp: 30, mult: 1.3, drain: 0.7 },
+  b_am_phong: { n: 'Âm phong', kind: 'atk', mp: 20, mult: 0.9, burn: 2, burnName: 'âm hàn' },
+  b_kiem_vuc: { n: 'Kiếm vực', kind: 'shield', mp: 40, shield: 0.2, thorns: 3 },
+  b_van_kiem: { n: 'Vạn kiếm quy tông', kind: 'atk', mp: 45, mult: 0.45, hits: 5 },
+  b_ma_bao: { n: 'Ma diễm bạo phát', kind: 'buff', mp: 30, rage: 3 },
+  b_pha_giap: { n: 'Phá giáp ma trảo', kind: 'atk', mp: 30, mult: 1.3, armorBreak: 3 },
+  b_lien_quyen: { n: 'Liên hoàn bá quyền', kind: 'atk', mp: 30, mult: 0.5, hits: 3 },
+  b_hu_bo: { n: 'Hư không bộ', kind: 'atk', mp: 25, mult: 1.0, evade: 2 },
+  b_khong_tram: { n: 'Không gian trảm', kind: 'atk', mp: 40, mult: 1.5, pierce: true },
 };
 
 export const WEAPON_TYPES = {

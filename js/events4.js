@@ -1,6 +1,6 @@
 // Kỳ ngộ đợt 4: tháp 1000 tầng (trùm, tầng đặc biệt), lôi kiếp phi thăng, vùng chủ, và Linh giới.
 // r3.plane: chỉ xảy ra ở vị diện đó (0 Phàm giới, 1 Linh giới).
-import { REALMS, PLANES, MAP_MAP } from './data.js';
+import { REALMS, PLANES, MAP_MAP, BOSS_KITS, THEME_BG, TAM_PHAP, TOWER_SHOP, MOB_AFFIX_MAP } from './data.js';
 import { makeItem } from './items.js';
 
 const xp4 = (p) => Math.max(0.03, Math.min(0.97, p));
@@ -21,17 +21,25 @@ const clearFloor = (g, data) => {
   if (T.f < data.floor) T.f = data.floor;
   g.s.towerBest[data.plane] = Math.max(g.s.towerBest[data.plane] || 0, T.f);
   g.towerReward(data.floor, 'normal');
+  g.P.towerCoin = (g.P.towerCoin || 0) + 2;
 };
 const near4 = (g, b, d = 1) => Math.abs(b.realm - g.P.realm) <= d;
+const SP_N = { thu_tam: 'Thử Tâm', ao_canh: 'Ảo Cảnh', guong: 'Tầng Gương', bao_kho: 'Bảo Khố', suoi_linh: 'Suối Linh', thuong_nhan: 'Thương Nhân', lien_hoan: 'Thử Thách Liên Hoàn', doi_thu: 'Đối Thủ Leo Tháp', nguoi_ket: 'Người Kẹt Trong Tháp', bia_ngo: 'Bia Ngộ Đạo' };
+const FIX4 = { pick: (a) => a[0], range: () => 1, int: (a) => a, chance: () => false };
+const chainOdds = (g, data) => phaseOdds(g, () => g.towerMonster(data.plane, data.floor, FIX4), 3);
 
 /** Đánh qua nhiều giai đoạn, không hồi máu giữa chừng. Trả về { win, text } */
-function phases(g, mk, n, opts) {
+function phases(g, mk, n, opts, tagOf = null) {
   const parts = [];
+  g._enc = true; g._encBuffed = false;
+  try { return phasesRun(g, mk, n, opts, tagOf, parts); } finally { g._enc = false; g._encBuffed = false; }
+}
+function phasesRun(g, mk, n, opts, tagOf, parts) {
   for (let i = 0; i < n; i++) {
     const m = mk(i);
-    if (i > 0) { m.rage = 0.25 * i; m.n = `${m.n} (giai đoạn ${i + 1}, nổi giận)`; }
-    const f = g.fightMonster(m, 1, 1, opts);
-    parts.push(f.text);
+    if (i > 0 && !m.rage) { m.rage = 0.25 * i; m.n = `${m.n} (nổi giận)`; }
+    const f = g.fightMonster(m, 1, 1, { big: true, ...opts, tag: tagOf ? tagOf(i, m) : undefined });
+    parts.push(n > 1 ? `[Giai đoạn ${i + 1}/${n}] ${f.text}` : f.text);
     if (!f.win) return { win: false, text: parts.join('\n\n') };
     if (i < n - 1) parts.push(`— Giai đoạn ${i + 1} qua. Sinh lực còn ${g.P.hp}. Đối thủ gầm lên, khí thế bùng nổ. —`);
   }
@@ -42,55 +50,86 @@ function phaseOdds(g, mk, n) {
   const p1 = g.winOdds(() => g.monsterFighter(mk(0)));
   return Math.pow(p1, 1 + (n - 1) * 0.8);
 }
+/** Lựa chọn mời bạn trợ chiến (thân từ 50) */
+const allyChoice = (g, label, run) => {
+  const c = g.allyCands()[0];
+  if (!c) return null;
+  return { t: `Mời ${c.b.name} (${REALMS[c.b.realm].n}) trợ chiến · ${label}`, go: (g) => g.withAlly(c.b, () => ({ text: run(g) })).text };
+};
+const bossOddsOf = (g, data) => g.bossOdds(data.plane, data.floor);
+const bossTag = (g, data) => (i, m) => {
+  const idx = g.themeIdx(data.floor);
+  const th = g.floorTheme(data.plane, data.floor);
+  const n = g.bossPhases(data.floor);
+  return { tower: 'boss', boss: true, label: `Tầng ${data.floor} · ${data.floor >= 1000 ? 'Tháp chủ' : th.n} · Giai đoạn ${i + 1}/${n}`, phase: i + 1, phases: n, intro: i === 0 ? { n: data.floor >= 1000 ? `${PLANES[data.plane].tower} chi chủ` : th.boss, th: `${data.floor >= 1000 ? 'Tháp chủ' : th.n}${m.aff && m.aff.length ? ` · ${m.aff.map((x) => (MOB_AFFIX_MAP[x] ? MOB_AFFIX_MAP[x].n : x)).join(', ')}` : ''}`, mech: BOSS_KITS[idx].mech } : null, rage: i > 0, bg: THEME_BG[idx] };
+};
 
 export const EVENTS4 = [
   // ================= Tháp: trùm mỗi 100 tầng, Tháp chủ tầng 1000 =================
   {
     id: 'thap_chu', queued: true, w: 1,
     title: (g, { data }) => (data.floor >= 1000 ? `${tower4(g, data)} · Tháp chủ` : `${tower4(g, data)} · Tầng ${data.floor}`),
-    auto: (g, { data }) => (phaseOdds(g, (i) => g.towerMonster(data.plane, data.floor, { pick: (a) => a[0], range: () => 1, int: (a) => a, chance: () => false }), data.floor >= 1000 ? 3 : 2) >= 0.55 ? 0 : 'Rút'),
+    // chỉ tự đánh khi chắc thắng từ 75% (tính đủ mọi giai đoạn); thấp hơn thì luôn dừng lại hỏi
+    canAuto: (g, { data }) => bossOddsOf(g, data) >= 0.75,
+    auto: () => 0,
     text: (g, { data }) => {
       const th = g.floorTheme(data.plane, data.floor);
       const fin = data.floor >= 1000;
-      const n = fin ? 3 : 2;
-      const p = phaseOdds(g, () => g.towerMonster(data.plane, data.floor, { pick: (a) => a[0], range: () => 1, int: (a) => a, chance: () => false }), n);
+      const n = g.bossPhases(data.floor);
+      const p = bossOddsOf(g, data);
       const boss = fin ? `${PLANES[data.plane].tower} chi chủ` : th.boss;
-      return `${fin ? `Đỉnh ${tower4(g, data)}. Cả tầng tháp là một đại điện trống trải, chỉ có một bóng người ngồi trên ngai đá. Hạ được người này mới có ${PLANES[data.plane].token}, mới được phi thăng.` : `Tầng ${data.floor}, tầng cuối của ${th.n}. ${boss} chờ sẵn, khí thế đè nặng cả tầng tháp.`}\n\nPhải đánh qua ${n} giai đoạn liền, giữa chừng không có thời gian hồi phục. Ước chừng thắng ~${Math.round(p * 100)}% (sinh lực hiện tại ${g.P.hp}/100). Thua có thể mất mạng.`;
+      const kit = BOSS_KITS[g.themeIdx(data.floor)];
+      const safe = data.floor < 500;
+      return `${fin ? `Đỉnh ${tower4(g, data)}. Cả tầng tháp là một đại điện trống trải, chỉ có một bóng người ngồi trên ngai đá. Hạ được người này mới có ${PLANES[data.plane].token}, mới được phi thăng.` : `Tầng ${data.floor}, tầng cuối của ${th.n}. ${boss} chờ sẵn, khí thế đè nặng cả tầng tháp.`}\n\nCơ chế: ${kit.mech}.\nPhải đánh qua ${n} giai đoạn liền, giữa chừng không hồi phục. Ước chừng thắng cả ${n} giai đoạn ~${Math.round(p * 100)}% (sinh lực hiện tại ${g.P.hp}/100). ${safe ? 'Thua chỉ trọng thương (cấm chế tầng dưới 500 kéo ngươi ra).' : 'Thua có thể mất mạng.'}`;
     },
     choices: (g, { data }) => {
       const fin = data.floor >= 1000;
-      const n = fin ? 3 : 2;
-      const mk = () => g.towerMonster(data.plane, data.floor);
-      const p = phaseOdds(g, () => g.towerMonster(data.plane, data.floor, { pick: (a) => a[0], range: () => 1, int: (a) => a, chance: () => false }), n);
-      return [
-        {
-          t: fin ? 'Khiêu chiến Tháp chủ' : 'Khiêu chiến trùm tầng', p, go: (g) => {
-            const r = phases(g, mk, n, { lethal: fin ? 0.4 : 0.25, cause: `tử trận ở tầng ${data.floor} ${tower4(g, data)}` });
-            if (!r.win) return `${r.text}\n\n${g.playing ? 'Ngươi thua. Cấm chế của tháp kéo ngươi ra ngoài trước khi đòn cuối giáng xuống.' : ''}`;
-            const T = g.towerState(data.plane);
-            T.f = Math.max(T.f, data.floor);
-            g.s.towerBest[data.plane] = Math.max(g.s.towerBest[data.plane] || 0, T.f);
-            return `${r.text}\n\n${g.towerBossReward(data.floor, data.plane)}`;
-          },
-        },
-        { t: 'Rút lui, chuẩn bị thêm', go: () => 'Ngươi rời tháp. Khi nào mạnh hơn thì quay lại.' },
-      ];
+      const n = g.bossPhases(data.floor);
+      const p = bossOddsOf(g, data);
+      const safe = data.floor < 500;
+      const fight = (g) => {
+        const r = phases(g, (i) => g.bossMonster(data.plane, data.floor, i), n, { lethal: fin ? 0.4 : 0.25, safe, cause: `tử trận ở tầng ${data.floor} ${tower4(g, data)}` }, bossTag(g, data));
+        if (!r.win) {
+          if (g.playing) g.towerPause(data.floor, true, `Thua trùm tầng ${data.floor}`);
+          return `${r.text}\n\n${g.playing ? 'Ngươi thua. Cấm chế của tháp kéo ngươi ra ngoài trước khi đòn cuối giáng xuống.' : ''}`;
+        }
+        const T = g.towerState(data.plane);
+        T.f = Math.max(T.f, data.floor);
+        g.s.towerBest[data.plane] = Math.max(g.s.towerBest[data.plane] || 0, T.f);
+        g.addSat(5);
+        return `${r.text}\n\n${g.towerBossReward(data.floor, data.plane)}`;
+      };
+      const out = [{ t: fin ? 'Khiêu chiến Tháp chủ' : 'Khiêu chiến trùm tầng', p, go: fight }];
+      const al = allyChoice(g, 'cùng khiêu chiến', fight);
+      if (al) out.push(al);
+      out.push({ t: 'Rút lui, chuẩn bị thêm', go: (g) => { g.towerPause(data.floor, true, `Rút lui trước trùm tầng ${data.floor}`); return 'Ngươi rời tháp. Khi nào mạnh hơn thì quay lại.'; } });
+      return out;
     },
   },
 
   // ================= Tháp: tầng đặc biệt =================
   {
     id: 'thap_dac_biet', queued: true, w: 1,
-    title: (g, { data }) => `${tower4(g, data)} · Tầng ${data.floor}: ${{ thu_tam: 'Thử Tâm', ao_canh: 'Ảo Cảnh', guong: 'Tầng Gương', bao_kho: 'Bảo Khố', suoi_linh: 'Suối Linh' }[data.type]}`,
-    auto: (g, { data }) => (data.type === 'guong' ? (g.winOdds(() => g.mirrorFighter()) >= 0.5 ? 0 : 1) : 0),
-    text: (g, { data }) => ({
+    title: (g, { data }) => `${tower4(g, data)} · Tầng ${data.floor}: ${SP_N[data.type]}`,
+    auto: (g, { data, bot }) => (data.type === 'guong' ? (g.winOdds(() => g.mirrorFighter()) >= 0.5 ? 0 : 1)
+      : data.type === 'thuong_nhan' ? 'Đi tiếp'
+      : data.type === 'lien_hoan' ? (chainOdds(g, data) >= 0.6 ? 0 : 1)
+      : data.type === 'doi_thu' ? 'Chắp tay'
+      : data.type === 'nguoi_ket' ? (bot && g.floorOdds(data.floor, data.plane) >= 0.6 ? 0 : 'Mặc')
+      : data.type === 'bia_ngo' ? 'Tĩnh tọa' : 0),
+    text: (g, { data, bot }) => ({
       thu_tam: 'Tầng tháp trống không, chỉ có một giọng nói vang lên trong đầu: "Ngươi tu đạo vì điều gì?" Mỗi câu trả lời dối lòng, cả tầng tháp sẽ siết lại.',
       ao_canh: 'Sương mù dày đặc. Khi sương tan, ngươi thấy mình đứng giữa sân nhà cũ, cha mẹ đang gọi ra ăn cơm. Biết là ảo cảnh, nhưng sao ấm áp quá.',
       guong: 'Cả tầng tháp là một tấm gương khổng lồ. Bóng của ngươi bước ra, cầm đúng binh khí của ngươi, dùng đúng chiêu thức của ngươi.',
       bao_kho: 'Giữa tầng có ba chiếc rương: một rương đồng, một rương bạc, một rương gỗ mục. Chỉ được mở một.',
       suoi_linh: 'Một dòng suối linh trong vắt chảy giữa tầng tháp, hơi nước thơm ngát. Người leo tháp xưa khắc lên đá: "Uống đi, đường còn dài."',
+      thuong_nhan: `Một lão thương nhân ngồi xếp bằng giữa tầng tháp, sau lưng là cái gùi to hơn người. "Leo tháp mà không mang đủ đồ thì chết sớm." Lão chỉ nhận Tháp tệ. Ngươi có ${g.P.towerCoin || 0} Tháp tệ.`,
+      lien_hoan: `Ba cánh cửa đá mở ra liền nhau, sau mỗi cửa là một đối thủ. Bia đá ghi: "Qua cả ba, thưởng gấp đôi. Giữa chừng không được nghỉ." Ước chừng qua cả ba ~${Math.round(chainOdds(g, data) * 100)}%. Thua chỉ bị đẩy ra ngoài.`,
+      doi_thu: bot ? `${bot.name} (${REALMS[bot.realm].n}) cũng đang leo ${tower4(g, data)}, kỷ lục tầng ${bot.tower || 0}. Hai người chạm mặt ở chiếu nghỉ hẹp, chỉ một người đi trước được. ${g.hintBot(bot)}` : '',
+      nguoi_ket: bot ? `Giữa tầng tháp, một trận pháp sáng mờ giam một người bên trong: ${bot.name} (${REALMS[bot.realm].n}), mặt mũi hốc hác, đã kẹt ở đây không biết bao lâu. Muốn phá trận phải hạ con quái giữ trận. Tỉ lệ thắng ~${Math.round(g.floorOdds(data.floor, data.plane) * 100)}%.` : '',
+      bia_ngo: 'Một tấm bia đá cổ khắc đầy chữ và hình người luyện công. Đứng trước bia lâu, chữ như sống dậy, chạy vào trong đầu.',
     }[data.type]),
-    choices: (g, { data }) => {
+    choices: (g, { data, bot }) => {
       const T = data.type;
       if (T === 'thu_tam') {
         const p = xp4(0.5 + (st4(g, 'tam') - 50) / 80);
@@ -108,7 +147,7 @@ export const EVENTS4 = [
       }
       if (T === 'guong') {
         return [
-          { t: 'Đánh với bóng mình', p: g.winOdds(() => g.mirrorFighter()), go: (g) => { const f = g.runBattle(g.playerFighter(), g.mirrorFighter(), { lethal: 0, cause: 'bị bóng mình giết' }); if (f.win) { clearFloor(g, data); const t = yrs4(g, 3); return `${f.text}\n\nBóng gương vỡ thành nghìn mảnh. Ngươi hiểu mình hơn một chút. Tu vi +${t}.`; } return `${f.text}\n\nBóng gương đứng nhìn ngươi bị đẩy ra ngoài, mỉm cười đúng như ngươi vẫn cười.`; } },
+          { t: 'Đánh với bóng mình', p: g.winOdds(() => g.mirrorFighter()), go: (g) => { const f = g.runBattle(g.playerFighter(), g.mirrorFighter(), { safe: true, cause: 'bị bóng mình giết', tag: { tower: 'elite', label: `Tầng ${data.floor} · Tầng Gương`, bg: '#2a3442' } }); if (f.win) { clearFloor(g, data); const t = yrs4(g, 3); return `${f.text}\n\nBóng gương vỡ thành nghìn mảnh. Ngươi hiểu mình hơn một chút. Tu vi +${t}.`; } return `${f.text}\n\nBóng gương đứng nhìn ngươi bị đẩy ra ngoài, mỉm cười đúng như ngươi vẫn cười.`; } },
           { t: 'Đi vòng qua gương', go: () => 'Tấm gương không cho ai đi vòng. Ngươi đành ra ngoài, lần sau quay lại.' },
         ];
       }
@@ -125,6 +164,77 @@ export const EVENTS4 = [
           { t: 'Mở rương đồng (chắc ăn)', go: open('dong') },
           { t: 'Mở rương bạc (có thể có bẫy)', go: open('bac') },
           { t: 'Mở rương gỗ mục (được ăn cả)', go: open('go') },
+        ];
+      }
+      if (T === 'thuong_nhan') {
+        const buy = (id) => (g) => { const m = g.towerBuy(id); clearFloor(g, data); return m || 'Không đủ Tháp tệ. Lão thương nhân lắc đầu, ngươi đi tiếp.'; };
+        const c = g.P.towerCoin || 0;
+        return [
+          ...TOWER_SHOP.filter((x) => ['hx', 'nt', 'bk', 'pc', 'tp'].includes(x.id)).map((x) => ({ t: `Đổi ${x.n} (${x.price} Tháp tệ)`, if: c >= x.price, go: buy(x.id) })),
+          { t: 'Đi tiếp', go: (g) => { clearFloor(g, data); return 'Ngươi gật đầu chào rồi đi tiếp. Lão thương nhân lại nhắm mắt.'; } },
+        ];
+      }
+      if (T === 'lien_hoan') {
+        return [
+          {
+            t: 'Nhận thử thách liên hoàn', p: chainOdds(g, data), go: (g) => {
+              const r = phases(g, () => g.towerMonster(data.plane, data.floor), 3, { safe: true, big: false, cause: 'gục ở thử thách liên hoàn' }, (i) => ({ tower: 'elite', label: `Tầng ${data.floor} · Thử thách liên hoàn ${i + 1}/3`, bg: THEME_BG[g.themeIdx(data.floor)] }));
+              if (!r.win) return `${r.text}
+
+Ngươi gục ở cửa đá. Cấm chế đẩy ngươi ra ngoài.`;
+              clearFloor(g, data);
+              g.P.towerCoin = (g.P.towerCoin || 0) + 10;
+              const loot = g.towerReward(data.floor, 'elite');
+              return `${r.text}
+
+Qua cả ba cửa! Thưởng gấp đôi: Tháp tệ +10.
+${loot.join('\n')}`;
+            },
+          },
+          { t: 'Đi lối thường', go: (g) => { clearFloor(g, data); return 'Ngươi đi lối thường lên tầng trên.'; } },
+        ];
+      }
+      if (T === 'doi_thu' && bot) {
+        return [
+          {
+            t: 'Tỷ thí giành đường', p: g.winOdds(() => g.botFighter(bot)), go: (g) => {
+              const f = g.fightBot(bot, 1, { safe: true, lethal: 0, big: true, tag: { tower: 'elite', label: `Tầng ${data.floor} · Đối thủ leo tháp`, bg: THEME_BG[g.themeIdx(data.floor)] } });
+              if (f.win) { clearFloor(g, data); g.fame(3); g.relAdd(bot, -3); g.P.towerCoin = (g.P.towerCoin || 0) + 8; return `${f.text}
+
+${bot.name} lùi lại nhường đường, mặt khó coi. Thanh danh +3, Tháp tệ +8.`; }
+              g.relAdd(bot, 2);
+              return `${f.text}
+
+${bot.name} bước qua người ngươi lên tầng trên. Thua người leo tháp không mất mạng, chỉ mất mặt.`;
+            },
+          },
+          { t: 'Chắp tay nhường đường', go: (g) => { g.relAdd(bot, 6); clearFloor(g, data); return `${bot.name} gật đầu cảm kích, đi trước một bước. Lát sau ngươi cũng lên tầng trên. Thân thiết +6.`; } },
+          { t: 'Rủ cùng leo một đoạn', go: (g) => { g.relAdd(bot, 4); clearFloor(g, data); const t = yrs4(g, 2); return `Hai người cùng leo, vừa đi vừa luận chiêu. Thân thiết +4, tu vi +${t}.`; } },
+        ];
+      }
+      if (T === 'nguoi_ket' && bot) {
+        return [
+          {
+            t: `Phá trận cứu ${bot.name}`, p: g.floorOdds(data.floor, data.plane), go: (g) => {
+              const f = g.fightMonster(g.towerMonster(data.plane, data.floor), 1, 1, { safe: true });
+              if (f.win) { clearFloor(g, data); g.relAdd(bot, 25); g.fame(2); g.tinh(3); return `${f.text}
+
+Trận pháp vỡ. ${bot.name} quỳ xuống tạ ơn: "Ơn cứu mạng, kiếp này không quên." Thân thiết +25.`; }
+              g.relAdd(bot, 5);
+              return `${f.text}
+
+Ngươi bị đẩy ra ngoài. ${bot.name} vẫn kẹt trong trận, nhưng nhớ mặt người đã liều mình vì mình. Thân thiết +5.`;
+            },
+          },
+          { t: 'Mặc kệ, đi tiếp', go: (g) => { g.tinh(-3); clearFloor(g, data); return `Ngươi bước qua. Tiếng gọi của ${bot.name} nhỏ dần sau lưng.`; } },
+        ];
+      }
+      if (T === 'bia_ngo') {
+        const pv = xp4(0.4 + (st4(g, 'ngo') - 50) / 100);
+        return [
+          { t: 'Lĩnh ngộ võ kỹ trên bia', p: pv, go: (g) => { clearFloor(g, data); if (g.r.chance(pv)) { const t = g.learnRandom(2, 3); return t || 'Võ kỹ trên bia ngươi đều đã biết. Ngộ tính +1.'; } g.stat('ngo', 1); return 'Chữ trên bia nhòe đi trước mắt. Ngươi chỉ hiểu được chút ít. Ngộ tính +1.'; } },
+          { t: 'Lĩnh ngộ tâm pháp', go: (g) => { clearFloor(g, data); const P = g.P; if (g.r.chance(0.4)) { const t = g.learnTamPhap(); if (t) return t; } if (P.tp && g.tpLevelUp(P.tp, 'Đối chiếu với bia đá, ')) return `Ngươi hiểu sâu thêm ${TAM_PHAP[P.tp].n}.`; g.stat('ngo', 1); return 'Ngộ tính +1.'; } },
+          { t: 'Tĩnh tọa trước bia', go: (g) => { clearFloor(g, data); g.stat('ngo', 2); g.stat('tam', 1); g.purgeSat(15); return 'Ngồi trước bia ba ngày, lòng lặng như nước. Ngộ tính +2, tâm tính +1, sát khí giảm.'; } },
         ];
       }
       return [
@@ -147,10 +257,10 @@ export const EVENTS4 = [
     choices: (g, { data }) => {
       const k = data.wave;
       const fightWave = (g, pre = '') => {
-        const f = g.fight(`Đạo lôi thứ ${k}`, g.kiepPow(k), 1, { lethal: 0.45, cause: 'tan biến dưới lôi kiếp phi thăng' });
+        const f = g.fight(`Đạo lôi thứ ${k}`, g.kiepPow(k), 1, { lethal: 0.45, big: true, cause: 'tan biến dưới lôi kiếp phi thăng', tag: { boss: true, label: `Lôi kiếp · đợt ${k}/9`, bg: '#1d1a3a' } });
         if (f.win) {
           if (k >= 9) return `${pre}${f.text}\n\n${g.ascendPlane()}`;
-          g.next('loi_kiep', { wave: k + 1 });
+          g.next('loi_kiep', { wave: k + 1, hp: data.hp });
           return `${pre}${f.text}\n\nĐợt ${k} qua. Sinh lực còn ${g.P.hp}. Mây kiếp vẫn cuộn, đợt thứ ${k + 1} đang tụ lại.`;
         }
         if (!g.playing) return `${pre}${f.text}`;
@@ -161,6 +271,16 @@ export const EVENTS4 = [
       return [
         { t: `Chống đỡ đợt ${k}`, p: g.winOdds(() => g.genericFighter(`Đạo lôi thứ ${k}`, g.kiepPow(k))), go: (g) => fightWave(g) },
         { t: `Uống Hồi Xuân Đan rồi chống (còn ${g.P.pills.hoi_xuan || 0})`, if: (g.P.pills.hoi_xuan || 0) > 0, go: (g) => { g.usePill('hoi_xuan'); return fightWave(g, `Đan dược tan ra, sinh lực hồi lên ${g.P.hp}.\n`); } },
+        ...(() => {
+          const h = !data.hp && k < 9 && g.hoPhapCand();
+          if (!h) return [];
+          return [{ t: `Nhờ ${h.b.name} hộ pháp, đỡ thay đợt ${k}`, go: (g) => {
+            g.relAdd(h.b, 5);
+            g.rel(h.b).owe = true;
+            g.next('loi_kiep', { wave: k + 1, hp: true });
+            return `${h.b.name} bay lên giữa trời, dựng pháp bảo đón lấy đạo lôi thứ ${k}. Tiếng nổ rung chuyển trăm dặm. Người ấy rơi xuống, máu chảy khóe miệng nhưng vẫn mỉm cười với ngươi. Ngươi nợ một ân tình lớn.`;
+          } }];
+        })(),
         { t: 'Từ bỏ độ kiếp', go: (g) => { g.P.tuvi = Math.floor(g.P.tuvi * 0.85); g.P.flags.notifiedFull = false; g.hurt(15, 'bị lôi kiếp phản phệ'); return 'Ngươi thu hết linh lực, ép mây kiếp tan đi. Cái giá là tu vi tụt còn 85% và một thân thương tích.'; } },
       ];
     },
@@ -178,16 +298,16 @@ export const EVENTS4 = [
     choices: (g, { data }) => {
       const mp = MAP_MAP[data.map];
       return [
-        {
+        ...[{
           t: 'Nghênh chiến vùng chủ', p: phaseOdds(g, () => g.mapBoss(data.map, true), 2), go: (g) => {
-            const r = phases(g, () => g.mapBoss(data.map), 2, { lethal: 0.35 * mp.lethal, cause: `bị vùng chủ ${mp.n} xé xác` });
+            const r = phases(g, () => g.mapBoss(data.map), 2, { lethal: 0.35 * mp.lethal, cause: `bị vùng chủ ${mp.n} xé xác` }, (i) => ({ boss: true, label: `Vùng chủ ${mp.n} · Giai đoạn ${i + 1}/2`, phase: i + 1, phases: 2, rage: i > 0 }));
             if (!r.win) return r.text;
             g.fame(4 + mp.d * 2);
             const myth = mp.d >= 5 ? 0.25 : mp.d >= 4 ? 0.12 : mp.d >= 3 ? 0.05 : 0;
             const m = { [mp.mat]: RARE(mp.mat) ? 1 : 3, linh_tinh: fr4(g) * 2 };
             return `${r.text}\n\nVùng chủ ${mp.n} gục ngã.\n${item4(g, g.r.chance(myth) ? 4 : 3, null, 'Vùng chủ rơi')}\n${mats4(g, m)}`;
           },
-        },
+        }].flatMap((c) => [c, allyChoice(g, 'cùng nghênh chiến', c.go)].filter(Boolean)),
         { t: 'Tránh đi, rời vùng này một thời gian', go: (g) => { g.P.map = g.defaultMap().id; return `Ngươi rút về ${g.defaultMap().n}. Vùng chủ gầm vang sau lưng.`; } },
       ];
     },

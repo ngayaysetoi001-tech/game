@@ -133,10 +133,10 @@ export const MONSTERS = [
 export const MOVES = ['Lưu Vân Chưởng', 'Phá Sơn Quyền', 'Hàn Băng Chỉ', 'Kinh Hồng Kiếm', 'Liệt Hỏa Đao', 'Bôn Lôi Cước', 'Tàn Nguyệt Trảm', 'Vạn Diệp Phi Hoa', 'Trấn Nhạc Ấn', 'Thanh Phong Bộ', 'Huyền Vũ Thuẫn', 'Truy Hồn Thích'];
 
 export const ACTIONS = {
-  tu_luyen: { n: 'Tu luyện', icon: '☯', minAge: 6, needDao: true, desc: 'Tu vi tăng nhanh nhất.' },
-  lich_luyen: { n: 'Lịch luyện', icon: '⛰', minAge: 10, desc: 'Đi khắp nơi, gặp nhiều kỳ ngộ và hiểm nguy.' },
-  muu_sinh: { n: 'Mưu sinh', icon: '⚖', minAge: 8, desc: 'Kiếm linh thạch.' },
-  ket_giao: { n: 'Kết giao', icon: '☕', minAge: 8, desc: 'Gặp gỡ tu sĩ khác, kết bạn, tìm đạo lữ.' },
+  tu_luyen: { n: 'Tu luyện', icon: '☯', minAge: 6, needDao: true, desc: 'Tu vi tăng nhanh nhất, củng cố căn cơ, xả sát khí chậm, tâm pháp lên tầng.' },
+  lich_luyen: { n: 'Lịch luyện', icon: '⛰', minAge: 10, desc: 'Đi khắp nơi, gặp nhiều kỳ ngộ và hiểm nguy. Tích sát khí, tu vi chưa vững.' },
+  muu_sinh: { n: 'Mưu sinh', icon: '⚖', minAge: 8, desc: 'Kiếm linh thạch, luyện nghề phụ (luyện đan, luyện khí, phù sư, thương nhân). Bấm để chọn nghề.' },
+  ket_giao: { n: 'Kết giao', icon: '☕', minAge: 8, desc: 'Gặp gỡ tu sĩ khác, kết bạn, tìm đạo lữ, xả sát khí. Bạn thân trợ chiến trận lớn, hộ pháp lôi kiếp.' },
   vuot_thap: { n: 'Vượt tháp', icon: '🗼', minAge: 10, needDao: true, desc: 'Leo tháp 1000 tầng. Hạ tầng cuối mới được phi thăng.' },
 };
 
@@ -146,6 +146,8 @@ export const PILLS = {
   pha_canh: { n: 'Phá Cảnh Đan', price: 100, desc: 'Dùng khi đột phá: tỉ lệ +10%.' },
   dien_tho: { n: 'Diên Thọ Đan', price: 120, desc: 'Thọ nguyên +5%. Mỗi cảnh giới chỉ hấp thu được một viên.' },
   tinh_tam: { n: 'Tĩnh Tâm Đan', price: 40, desc: 'Tâm tính +6. Phá được bình cảnh nhỏ.' },
+  ngung_than: { n: 'Ngưng Thần Đan', price: 50, desc: 'Sát khí -40. Luyện đan sư tự luyện được.' },
+  bao_khi: { n: 'Bạo Khí Đan', price: 90, craft: true, desc: 'Trận lớn kế tiếp (trùm, vùng chủ, lôi kiếp): công +30%. Chỉ luyện đan sư làm ra, hoặc đổi ở Tháp thương điếm.' },
 };
 
 // Tàn niệm: chọn 1 trong 3 khi chết, mang sang kiếp sau
@@ -406,3 +408,67 @@ export const WORLD_DIFF = {
   kho: { n: 'Khó', pow: 1.25, lethal: 1.3, reward: 1.3, desc: 'Quái mạnh hơn 25%, dễ mất mạng hơn 30%. Thưởng và Hồn Lực +30%.' },
   nghich: { n: 'Nghịch Thiên', pow: 1.6, lethal: 2, reward: 2, desc: 'Quái mạnh hơn 60%, thua dễ chết gấp đôi. Thưởng và Hồn Lực x2.' },
 };
+
+// ---------- Trùm tháp: mỗi trùm một bộ chiêu riêng (theo thứ tự 10 khu của tháp) ----------
+// sk: chiêu (trong BEAST_SKILLS), gear: chỉ số riêng, mech: mô tả cơ chế cho người chơi
+export const BOSS_KITS = [
+  { sk: ['can_xe', 'cuong_bao', 'gam_thet'], gear: { atkPct: 0.1 }, mech: 'Cuồng bạo và gầm thét làm choáng' },
+  { sk: ['b_trieu_thi', 'b_thi_doc'], gear: { ls: 0.08 }, mech: 'Triệu cương thi đỡ đòn (khiên), thi độc' },
+  { sk: ['b_bang_phong', 'b_han_khi'], gear: { dmgRed: 0.1 }, mech: 'Đóng băng (mất lượt) rất hay trúng' },
+  { sk: ['b_viem_nguc', 'b_hoa_bao'], gear: { atkPct: 0.12 }, mech: 'Thiêu đốt dài, đòn lửa mạnh' },
+  { sk: ['b_quy_hut', 'b_am_phong'], gear: { ls: 0.18 }, mech: 'Hút sinh lực, bào mòn' },
+  { sk: ['b_kiem_vuc', 'b_van_kiem'], gear: { rf: 0.22 }, mech: 'Kiếm vực phản sát thương, vạn kiếm nhiều nhát' },
+  { sk: ['b_ma_bao', 'b_pha_giap'], gear: { atkPct: 0.2 }, mech: 'Ma bạo tăng công, phá giáp' },
+  { sk: ['b_lien_quyen', 'gam_thet'], gear: { combo: 0.4 }, mech: 'Liên hoàn: đánh dồn nhiều đòn mỗi lượt' },
+  { sk: ['b_hu_bo', 'b_khong_tram'], gear: { dodge: 0.25 }, mech: 'Hư không bộ: né rất cao' },
+  { sk: [], gear: {}, mech: 'Mỗi giai đoạn mượn chiêu của ba trùm trước' },
+];
+// màu nền trận đấu theo khu của tháp
+export const THEME_BG = ['#1f3a24', '#2b2636', '#1b3448', '#4a1d12', '#241733', '#353a44', '#3c1219', '#3b3315', '#150f2e', '#3d3420'];
+
+// ---------- Tâm pháp: một môn chủ tu, cấp 1-9, chỉ lên cấp khi tu luyện / bế quan ----------
+// fx theo mỗi cấp
+export const TAM_PHAP = {
+  thanh_tam: { n: 'Thanh Tâm Quyết', fx: { gainMul: 0.03 }, desc: 'Tốc độ tu luyện +3% mỗi cấp.' },
+  kim_than: { n: 'Kim Thân Quyết', fx: { hpPct: 0.04 }, desc: 'Sinh lực trong trận +4% mỗi cấp.' },
+  linh_hai: { n: 'Linh Hải Công', fx: { mpRegen: 1.2 }, desc: 'Hồi linh lực mỗi lượt +1,2 mỗi cấp: ra sát chiêu nhiều hơn.' },
+  kiem_tam: { n: 'Kiếm Tâm Quyết', fx: { crit: 0.015 }, desc: 'Bạo kích +1,5% mỗi cấp.' },
+  hoi_xuan_cong: { n: 'Hồi Xuân Công', fx: { regenTurn: 0.004, regen: 0.4 }, desc: 'Mỗi lượt trong trận hồi 0,4% sinh lực mỗi cấp, ngoài trận hồi phục nhanh hơn.' },
+  tinh_than: { n: 'Tĩnh Thần Quyết', fx: { satPurge: 0.12, brk: 0.006 }, desc: 'Tiêu sát khí nhanh hơn 12% và đột phá +0,6% mỗi cấp.' },
+  bat_dong: { n: 'Bất Động Minh Vương Kinh', fx: { dmgRed: 0.012 }, desc: 'Giảm sát thương nhận vào 1,2% mỗi cấp.' },
+};
+export const TAM_PHAP_IDS = Object.keys(TAM_PHAP);
+
+// ---------- Nghề phụ (Mưu sinh): chọn một nghề, cấp 1-9, chỉ lên cấp khi mưu sinh ----------
+export const NGHE = {
+  luyen_dan: { n: 'Luyện đan sư', icon: '⚗', desc: 'Mưu sinh luyện ra đan dược: Hồi Xuân, Ngưng Thần (giảm sát khí), Bạo Khí (tăng công một trận lớn), cấp cao ra Tĩnh Tâm, Phá Cảnh. Thu nhập linh thạch ít hơn.' },
+  luyen_khi: { n: 'Luyện khí sư', icon: '⚒', desc: 'Mưu sinh rèn ra Tinh thiết, Linh tinh. Tay nghề rèn tăng, rèn và cường hóa rẻ hơn 4% mỗi cấp.' },
+  phu_su: { n: 'Phù sư', icon: '📜', desc: 'Mưu sinh vẽ phù dùng một lần trong trận lớn: Hộ Thân (khiên), Bạo Lôi (tăng công), cấp 4 có Truyền Tống (thoát chết một lần).' },
+  thuong_nhan: { n: 'Thương nhân', icon: '💰', desc: 'Thu nhập mưu sinh gấp đôi, mua ở Tụ Bảo Lâu rẻ hơn 3% mỗi cấp, mua được sản nghiệp sinh lời mỗi năm dù đang làm việc khác.' },
+};
+export const PHU = {
+  ho_than: { n: 'Hộ Thân Phù', desc: 'Vào trận lớn có khiên 30% sinh lực.' },
+  bao_loi: { n: 'Bạo Lôi Phù', desc: 'Vào trận lớn công +25%.' },
+  truyen_tong: { n: 'Truyền Tống Phù', desc: 'Một lần sắp mất mạng thì tự kích hoạt, đưa ngươi thoát ra.' },
+};
+
+// ---------- Tháp thương điếm: đổi bằng Tháp tệ ----------
+export const TOWER_SHOP = [
+  { id: 'hx', n: '3 Hồi Xuân Đan', price: 12, pill: ['hoi_xuan', 3] },
+  { id: 'nt', n: 'Ngưng Thần Đan', price: 15, pill: ['ngung_than', 1] },
+  { id: 'bk', n: 'Bạo Khí Đan', price: 25, pill: ['bao_khi', 1] },
+  { id: 'pc', n: 'Phá Cảnh Đan', price: 40, pill: ['pha_canh', 1] },
+  { id: 'tt', n: 'Đá cường hóa (Tinh thiết, Linh tinh)', price: 20, mats: true },
+  { id: 'vk', n: 'Bí kíp tháp (võ kỹ phẩm 2-3)', price: 80, book: true },
+  { id: 'tp', n: 'Tâm pháp tàn quyển', price: 120, tamPhap: true },
+];
+
+// ---------- Lịch trình tự động ----------
+// bước: { a: việc, k: điều kiện chuyển bước ('y' số năm, 'sg' sát khí >=, 'sl' sát khí <=), v }
+export const PLAN_STEP_ACTS = { vuot_thap: '🗼 Vượt tháp', lich_luyen: '⛰ Lịch luyện', tu_luyen: '☯ Tu luyện', be_quan: '🕯 Bế quan', muu_sinh: '⚖ Mưu sinh', ket_giao: '☕ Kết giao' };
+export const PLAN_COND = { y: 'năm', sg: 'tới khi sát khí ≥', sl: 'tới khi sát khí ≤' };
+export const PLAN_TEMPLATES = [
+  { id: 'thap', n: 'Leo tháp', desc: 'Vượt tháp tới khi sát khí 60 → bế quan 10 năm (xả sát khí, củng cố căn cơ, +15% đột phá) → tu luyện 5 năm.', steps: [{ a: 'vuot_thap', k: 'sg', v: 60 }, { a: 'be_quan', k: 'y', v: 10 }, { a: 'tu_luyen', k: 'y', v: 5 }] },
+  { id: 'dao', n: 'Tu đạo', desc: 'Tu luyện 20 năm → lịch luyện tới khi sát khí 40 → bế quan 10 năm.', steps: [{ a: 'tu_luyen', k: 'y', v: 20 }, { a: 'lich_luyen', k: 'sg', v: 40 }, { a: 'be_quan', k: 'y', v: 10 }] },
+  { id: 'giau', n: 'Làm giàu', desc: 'Mưu sinh 20 năm → kết giao 5 năm → tu luyện 10 năm.', steps: [{ a: 'muu_sinh', k: 'y', v: 20 }, { a: 'ket_giao', k: 'y', v: 5 }, { a: 'tu_luyen', k: 'y', v: 10 }] },
+];

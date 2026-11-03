@@ -498,6 +498,44 @@ Trên màn hình rộng (từ 900px), bố cục chia 2 cột: trái là nhân v
 - **Chuỗi "Bí mật Tiếp Dẫn Đài" (3 bước):** người phi thăng mất tích, hầm linh nô, Tiếp Dẫn Sứ Giả.
 - **Tổng cộng 144 kỳ ngộ.** Chuyện chỉ hợp Phàm giới (ví dụ Huyết án trấn Thanh Thạch) có luật `plane: 0`.
 
+## 11. Tháp đa dạng, vai trò các việc làm, túi trữ vật (bản 3)
+
+### Tháp
+- Thua ở bất kỳ tầng nào: tự chuyển sang Tu luyện, ghi nhật ký, báo "Thua ở tầng X · tạm dừng vượt tháp". Tùy chọn "Thua thì tu luyện, đủ sức tự leo lại" (mặc định bật): cứ 5 năm xem lại, tỉ lệ thắng tầng đó từ 60% (trùm 75%) và sinh lực từ 70 thì quay lại tháp.
+- Tỉ lệ thắng trùm tính đủ mọi giai đoạn (đánh thử 24 lần cả chuỗi, máu mang sang giai đoạn sau). Trùm chỉ tự đánh khi từ 75% (sự kiện có `canAuto`), thấp hơn thì luôn dừng lại hỏi, kể cả ở 32×.
+- Rút lui trước trùm: chuyển sang tu luyện, không xếp lại trùm mỗi lượt.
+- Trùm tầng 100-400 thua chỉ trọng thương (`safe`). Từ tầng 500 và Tháp chủ vẫn có thể chết.
+- Diễn trận tinh anh (mỗi 10 tầng) và trùm (mỗi 100 tầng) cả khi chạy nhanh (tốc độ cao, khoảng 2 giây). Cài đặt "Xem trận trong tháp": Trùm và tinh anh / Chỉ trùm / Không xem. Trận tinh anh đánh lúc trôi năm được đẩy vào `s.replay` để giao diện diễn.
+- Trùm: màn giới thiệu (tên, khu, cơ chế), thanh máu lớn, nhãn giai đoạn 1/2/3, hiệu ứng nổi giận khi sang giai đoạn sau, hình to hơn, nền trận theo màu khu (`THEME_BG`).
+- Mỗi khu một bộ chiêu trùm (`BOSS_KITS`): Thi Mộ triệu cương thi (khiên) và thi độc, Băng đóng băng, Viêm Ma thiêu đốt, Quỷ Vực hút máu, Vạn Kiếm phản đòn, Ma Thành tăng công và phá giáp, Lôi Đài liên hoàn, Hư Không né cao. Tháp chủ: mỗi giai đoạn mượn chiêu của ba trùm trước.
+- Tầng đặc biệt (1/12 tầng thường): thêm Thương nhân (đổi bằng Tháp tệ), Thử thách liên hoàn (3 trận liền, thưởng gấp đôi), Đối thủ leo tháp (bot có kỷ lục gần nhất), Người kẹt trong tháp (cứu bot, thân +25), Bia ngộ đạo (võ kỹ, tâm pháp, ngộ tính).
+- Tháp tệ: tầng thường +1, tinh anh +5, tầng đặc biệt +2, trùm +30, Tháp chủ +100. Tháp thương điếm trong bảng tháp: Hồi Xuân, Ngưng Thần, Bạo Khí, Phá Cảnh Đan, đá cường hóa, bí kíp tháp, tâm pháp.
+- HUD có chip "🗼 tầng/1000", bảng tháp có tháp pixel 10 khu và dấu tầng hiện tại, toast mỗi khi qua mốc 100.
+
+### Vai trò các việc làm
+- **Sát khí** (0-100): vượt tháp +1,5 mỗi lượt +0,5 mỗi tầng, lịch luyện +0,5..4,5 theo độ khó vùng, mỗi trận +1 (trận lớn +4). Từ 50: tu vi từ chiến đấu -20%. Từ 70: đột phá -10%, tâm ma dễ gặp gấp 3. 100: tẩu hỏa nhập ma (sinh lực -40, mất 20% tu vi, về 60). Giảm: tu luyện -4, bế quan -15, kết giao -8, mưu sinh -3 mỗi lượt. Phật tu xả gấp đôi; Ma tu chịu thêm 20, tích chậm hơn 30%, sát khí tăng sức mạnh tới +25%.
+- **Căn cơ**: tu vi từ vượt tháp, lịch luyện là "chưa vững" (`P.loose`, thanh tu vi có đoạn sọc cam). Tu luyện củng cố 1,2 × tu vi mỗi lượt, bế quan 4 ×. Đột phá: -30% × (chưa vững / tu vi cần).
+- **Tâm pháp**: một môn chủ tu, tầng 1-9, chỉ lên khi tu luyện (bế quan nhanh 2,5 lần), cần 8 + 6×tầng năm. 7 môn (`TAM_PHAP`): Thanh Tâm (tu luyện), Kim Thân (sinh lực), Linh Hải (linh lực), Kiếm Tâm (bạo kích), Hồi Xuân Công (hồi phục), Tĩnh Thần (xả sát khí, đột phá), Bất Động Minh Vương (giảm sát thương). Nhập đạo có sẵn Thanh Tâm Quyết; học thêm từ trùm tháp, Bia ngộ đạo, Tháp thương điếm.
+- **Bế quan**: đủ 10 năm thì xuất quan sinh lực đầy, sát khí 0, căn cơ vững, lần đột phá tới +15%. Tử quan 50-100 năm: tu vi x2, xuất quan 50% đốn ngộ (tâm pháp +1 tầng).
+- **Mưu sinh**: chọn một nghề (`NGHE`), cấp 1-9 chỉ lên khi mưu sinh, đổi nghề mất nửa cấp. Luyện đan (ra Hồi Xuân, Ngưng Thần, Bạo Khí, cấp cao ra Tĩnh Tâm, Phá Cảnh, Diên Thọ; thu nhập x0,6). Luyện khí (Tinh thiết, Linh tinh, tay nghề rèn, rèn và cường hóa rẻ hơn 4%/cấp). Phù sư (Hộ Thân, Bạo Lôi, từ cấp 4 Truyền Tống). Thương nhân (thu nhập x2+, Tụ Bảo Lâu rẻ 3%/cấp, tối đa 5 sản nghiệp sinh lời mỗi năm).
+- **Trận lớn** (trùm, vùng chủ, lôi kiếp, `opts.big`): tự dùng Hộ Thân Phù (khiên 30%), Bạo Lôi Phù (công +25%), Bạo Khí Đan (công +30%), một lần cho cả trận nhiều giai đoạn. Truyền Tống Phù tự cháy khi sắp mất mạng.
+- **Kết giao**: xả sát khí, thanh danh, bạn thân từ 50 tặng quà. Trợ chiến: bạn thân từ 50, cùng giới, cảnh giới không kém quá một bậc, mời vào trận trùm tháp và vùng chủ (công +30% × tỉ lệ sức, khiên 15%), mỗi người 10 năm một lần, xong thì nợ ân tình (kết giao để trả). Hộ pháp lôi kiếp: bạn thân từ 70 hoặc đạo lữ, huynh đệ, sư đồ đỡ thay một đợt. Đạo lữ song tu: tu luyện, bế quan +25%, củng cố x1,5, xả thêm sát khí.
+- **Lịch trình tự động** (`P.plan`): tối đa 5 bước lặp lại, mỗi bước một việc với điều kiện số năm / sát khí ≥ / sát khí ≤ (bế quan theo số năm). Mẫu: Leo tháp, Tu đạo, Làm giàu. Dừng khi thua trùm, sinh lực dưới 20 mà hết đan, tẩu hỏa, tu vi viên mãn mà chưa thể đột phá, hoặc người chơi tự đổi việc. Thua tầng thường khi đang chạy lịch trình thì sang bước kế.
+
+Mô phỏng 30 kiếp mỗi cách chơi (Phàm giới, có rèn đồ):
+
+| Cách chơi | Cảnh giới TB khi chết | Tầng tháp TB | Tới Độ Kiếp |
+|---|---|---|---|
+| Chỉ tu luyện | 4,6 | 0 | 3/30 |
+| Chỉ bấm Vượt tháp (game tự chuyển tu luyện khi thua) | 5,6 | 447 | 6/30 |
+| Lịch trình "Leo tháp" | 8,5 | 708 | 14/30 |
+
+### Túi trữ vật
+- 5 thẻ biểu tượng: Trang bị, Công pháp, Đan và phù, Nguyên liệu, Cài đặt.
+- Trang bị: hình nhân vật lớn, 3 ô trang bị quanh hình (trống thì hiện bóng mờ), chỉ số bằng biểu tượng (chạm để xem giải thích), lưới 5 cột có viền theo phẩm, nhãn +N, ▲ tốt hơn, 🔒 phong ấn, ⚠ áp chế. Chạm ô mở thẻ chi tiết có so sánh với đồ đang mang và nút Mang / Cường hóa / Thăng cấp / Bán / Phân giải. Lọc theo ô, xếp theo phẩm / cảnh giới / mới nhặt, chọn nhiều để bán hoặc phân giải hàng loạt.
+- Công pháp: thanh 4 ô võ kỹ (lệch binh khí viền đỏ kèm biểu tượng binh khí cần), lưới võ kỹ đã học, thẻ chi tiết có nút đặt vào ô 1-4, chiến thuật dạng 3 thẻ, tâm pháp chủ tu.
+- Lò rèn, Tụ Bảo Lâu, Tháp thương điếm dùng cùng kiểu lưới ô.
+
 ## 7. Kỹ thuật
 
 - HTML, CSS, JavaScript thuần (ES module), không cần build, không cần máy chủ.
