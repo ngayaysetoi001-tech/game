@@ -134,9 +134,10 @@ export function makeItem(r, id, lv, q = null, slot = null) {
 
 /** Tổng chỉ số từ các món đang mặc */
 /** Thần khí kén chủ: đồ Thần thoại cao cảnh giới hơn chủ thì bị phong ấn */
-export const isSealed = (it, realm) => !!it && it.q >= 4 && realm !== undefined && it.lv > realm;
+// đồ không phân cảnh giới nữa: không còn phong ấn, áp chế
+export const isSealed = () => false;
 /** Đồ hạ giới đang bị áp chế ở giới trên */
-export const isSuppressed = (it, realm) => !!it && realm !== undefined && planeOf(it.lv) < planeOf(realm);
+export const isSuppressed = () => false;
 
 export function gearStats(eq, realm) {
   const g = { atk: 0, def: 0, hp: 0, crit: 0, dodge: 0, ls: 0, rf: 0, sp: 0 };

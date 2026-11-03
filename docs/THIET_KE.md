@@ -568,6 +568,12 @@ Mô phỏng 42 kiếp mỗi đạo (lịch trình Leo tháp, có rèn đồ):
 | Thể Tu | 6,17 | 573 | 1203 | 103 | 8/42 |
 | Tinh Thần Lực | 5,98 | 554 | 1079 | 87 | 10/42 |
 
+### Đồ không phân cảnh giới (bản 4.1)
+- Mọi món đồ luôn theo cảnh giới hiện tại của nhân vật (`syncGear`: nạp game, nhặt đồ, đột phá, phi thăng đều kéo chỉ số về cảnh giới hiện tại). Chỉ phẩm cấp, cường hóa, dòng thuộc tính, thần thông quyết định độ mạnh. Bỏ thăng cấp, linh hóa, phong ấn thần khí, áp chế đồ hạ giới.
+- Tự mặc (mặc định bật): nhặt được món có lực chiến cao hơn là mặc ngay, cứ 3 năm xét lại cả túi. Bỏ ghim ô.
+- Tự xử lý theo phẩm ngay khi nhặt (`opt.qRule`): mỗi phẩm Hạ, Trung, Thượng, Cực chọn Giữ / Bán / Phân giải (mặc định Hạ, Trung phân giải; Thượng, Cực giữ). Áp dụng cả cho món vừa bị thay ra. Đồ khóa, đồ Thần thoại luôn giữ.
+- Túi trữ vật: 3 ô trang bị xếp cột trái, cột phải 3 ô trống để dành; bỏ hàng lọc, xếp đồ theo phẩm rồi lực chiến; lưới luôn hiện đủ số ô của túi.
+
 ## 7. Kỹ thuật
 
 - HTML, CSS, JavaScript thuần (ES module), không cần build, không cần máy chủ.

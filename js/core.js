@@ -90,7 +90,7 @@ export class Game {
     if (state.opt.towerResume === undefined) state.opt.towerResume = true;
     if (state.player && PATHS[state.player.path]) setWepBias(PATHS[state.player.path].wep);
     if (state.opt.autoSell === undefined) state.opt.autoSell = false;
-    if (!state.opt.autoEquipMode) state.opt.autoEquipMode = state.opt.autoEquip === false ? 'off' : 'gain';
+    if (!state.opt.qRule) state.opt.qRule = { 0: 'salv', 1: 'salv', 2: 'keep', 3: 'keep' };
   }
 
   /** Bản lưu cũ (Phàm giới 8 cảnh giới): thêm Hợp Thể vào giữa nên Đại Thừa từ 7 thành 8 */
@@ -1722,6 +1722,8 @@ export class Game {
     if (P.brkBonus === undefined) P.brkBonus = 0;
     if (P.sanNghiep === undefined) P.sanNghiep = 0;
     if (!P.pin) P.pin = {};
+    P.pin = {};
+    this.syncGear(P);
     // bản 4: ba đường tu, bỏ võ kỹ, tâm pháp, 4 đường cũ
     if (P.sp === undefined) {
       const old = (P.skills || []).filter((id) => !SKILLS[id] || !SKILLS[id].path);
@@ -1849,9 +1851,37 @@ export class Game {
   setTactic(t) {
     if (this.P) this.P.tactic = t;
   }
+  /** Đồ không phân cảnh giới: mọi món luôn theo cảnh giới hiện tại của ngươi (chỉ phẩm và cường hóa quyết định độ mạnh) */
+  syncGear(P = this.P) {
+    if (!P) return;
+    const fit = (it) => {
+      if (!it || it.lv === P.realm || !REALMS[it.lv]) return;
+      const k = REALMS[P.realm].pow / REALMS[it.lv].pow;
+      for (const st of ['atk', 'def', 'hp']) if (it[st]) it[st] = Math.round(it[st] * k);
+      it.lv = P.realm;
+      it.val = itemVal(it);
+    };
+    for (const it of [...(P.bag || []), ...Object.values(P.eq || {})]) fit(it);
+  }
+  /** Luật tự xử lý đồ theo phẩm: keep (giữ) | sell (bán) | salv (phân giải). Đồ khóa, Thần thoại luôn giữ. */
+  qRule(q) {
+    const r = (this.s.opt && this.s.opt.qRule) || {};
+    return q >= 4 ? 'keep' : r[q] || 'keep';
+  }
+  /** Món vừa vào túi: xử lý ngay theo luật phẩm. Trả về câu thông báo (rỗng nếu giữ). */
+  applyQRule(it) {
+    const P = this.P;
+    if (!it || it.lock || !P.bag.includes(it)) return '';
+    const rule = this.qRule(it.q);
+    if (rule === 'sell') { const v = this.sell(it.id); return v ? ` Tự bán ${itemName(it)} (${QUALITY[it.q].n}) được ${v} linh thạch.` : ''; }
+    if (rule === 'salv') { const t = this.salvage(it.id); return t ? ` Tự phân giải ${itemName(it)} (${QUALITY[it.q].n}): ${t}.` : ''; }
+    return '';
+  }
   /** Bỏ một món vào túi, tự mặc nếu ô đang trống. Trả về câu thông báo. */
   gainItem(it, prefix = 'Thu được') {
     const P = this.P;
+    // đồ luôn theo cảnh giới hiện tại
+    if (P && it.lv !== P.realm && REALMS[it.lv]) { const k = REALMS[P.realm].pow / REALMS[it.lv].pow; for (const st of ['atk', 'def', 'hp']) if (it[st]) it[st] = Math.round(it[st] * k); it.lv = P.realm; it.val = itemVal(it); }
     // đồ Thần thoại chỉ xuất hiện ở vùng lịch luyện từ Khó trở lên (hoặc tự rèn)
     if (it.q >= 4 && !this.mythOk()) it = this.demote(it);
     const qn = QUALITY[it.q].n;
@@ -1872,12 +1902,14 @@ export class Game {
       P.eq[it.slot] = it;
       P.bag.push(old);
       let m = `${prefix}: ${tk}${it.n} (${qn}), lực chiến +${Math.round(gp * 100)}% so với ${itemName(old)} nên mang vào luôn.`;
+      m += this.applyQRule(old);
       if (P.bag.length > this.bagCap()) m += this.trimBag(it);
       this.log(m, 'good');
       return m;
     }
     P.bag.push(it);
     let msg = `${prefix}: ${tk}${it.n} (${qn}).`;
+    msg += this.applyQRule(it);
     if (P.bag.length > this.bagCap()) msg += this.trimBag(it);
     this.log(msg, 'good');
     return msg;
@@ -1885,7 +1917,7 @@ export class Game {
   /** Túi đầy: bán hoặc phân giải món kém nhất (không đụng đồ khóa, Thần thoại, đồ thăng cấp lên sẽ tốt hơn) */
   trimBag(fresh = null) {
     const P = this.P;
-    const pot = (it) => Math.max(this.effScore(it), it.lv < P.realm ? this.effScore(this.upgradedClone(it)) : 0);
+    const pot = (it) => this.effScore(it);
     let cands = P.bag.filter((x) => !x.lock && x.q < 4 && !this.upBetter(x));
     if (!cands.length) cands = P.bag.filter((x) => !x.lock && x.q < 4);
     if (!cands.length) {
@@ -1934,10 +1966,10 @@ export class Game {
   /** Nhặt được đồ: có tự mặc không */
   autoEquipOk(it) {
     const P = this.P;
-    const mode = (this.s.opt && this.s.opt.autoEquipMode) || 'gain';
     const cur = P.eq[it.slot];
-    if (mode === 'off' || !cur || P.pin[it.slot] || cur.lock && cur.q >= 4 && it.q < 4) return false;
-    return this.swapGain(it) >= (mode === 'gain' ? 0.1 : 0.005);
+    if (this.s.opt && this.s.opt.autoEquip === false) return false;
+    if (!cur) return false;
+    return this.swapGain(it) > 0.005;
   }
 
   // ---------- Hoàn tác bán, phân giải ----------
@@ -2041,7 +2073,7 @@ export class Game {
   }
   /** Thăng cấp lên thì tốt hơn đồ đang mặc */
   upBetter(it) {
-    return it.lv < this.P.realm && !Object.values(this.P.eq).includes(it) && this.swapGain(this.upgradedClone(it)) > 0.01;
+    return false;
   }
   /** Sửa món it thành clone (cường hóa, thăng cấp): lực chiến khi mặc tăng bao nhiêu so với mặc món hiện tại */
   improveGain(it, clone) {
@@ -2069,7 +2101,6 @@ export class Game {
     if (P.eq[it.slot]) P.bag.push(P.eq[it.slot]);
     P.eq[it.slot] = it;
     // tự tay mặc thì ghim ô này: tự mặc không thay nữa
-    if (manual) P.pin[it.slot] = true;
   }
   unequip(slot) {
     const P = this.P;
@@ -2112,7 +2143,6 @@ export class Game {
     const P = this.P;
     let n = 0;
     for (const slot of ['vu_khi', 'ao', 'phu_kien']) {
-      if (P.pin[slot]) continue;
       const best = P.bag.filter((x) => x.slot === slot).sort((a, b) => this.effScore(b) - this.effScore(a))[0];
       if (best && this.effScore(best) > this.effScore(P.eq[slot], slot) * 1.005) { this.equip(best.id); n++; }
     }
@@ -2293,6 +2323,7 @@ export class Game {
       const old = REALMS[P.realm].n;
       P.plane = 1; P.realm = PLANES[1].first; P.tuvi = 0;
       this.checkNewSkills();
+      this.syncGear();
       P.flags.ascendedFrom = 0; P.flags.notifiedFull = false; P.flags.neck = null;
       P.sect = null; P.flags.chuongMon = undefined; P.closed = 0; P.hp = 100;
       P.map = PLANES[1].map; P.mapGoal = P.map; P.flags.retreated = false;
@@ -2362,20 +2393,7 @@ export class Game {
       this.fame(P.realm * 3);
       this.addSP(5);
       this.checkNewSkills();
-      for (const it of Object.values(P.eq)) {
-        if (it && it.q >= 4 && it.lv === P.realm) {
-          this.log(`Phong ấn trên ${it.n} vỡ tan. Thần khí nhận ngươi làm chủ, phát huy toàn bộ sức mạnh${it.tt && TT_MAP[it.tt] ? ` và thần thông 「${TT_MAP[it.tt].n}」` : ''}.`, 'big');
-          (this.s.toasts = this.s.toasts || []).push({ n: `${it.n} giải phong`, tier: 4, bonus: it.tt && TT_MAP[it.tt] ? TT_MAP[it.tt].n : 'Toàn bộ sức mạnh' });
-        }
-      }
-      // đồ trong túi vừa mở phong ấn, hoặc giờ mạnh hơn đồ đang mặc
-      for (const it of P.bag) {
-        if (it.q >= 4 && it.lv === P.realm) {
-          const gp = this.swapGain(it);
-          this.log(`Phong ấn trên ${itemToken(it)}${it.n} trong túi đã mở.${gp > 0.01 ? ` Mặc vào lực chiến +${Math.round(gp * 100)}%.` : ''}`, 'big');
-          this.toast(`${itemToken(it)}${it.n} đã mở phong ấn${gp > 0.01 ? `, mặc vào lực chiến +${Math.round(gp * 100)}%` : ''}.`, 'Phong ấn đã mở', 4);
-        }
-      }
+      this.syncGear();
       const ob = this.tadd('ngoOnBreak');
       if (ob) this.stat('ngo', ob);
       this.log(`Đột phá thành công! Ngươi đã là tu sĩ ${REALMS[P.realm].n}. Thọ nguyên ${this.lifespan()}.`, 'big');
@@ -2802,6 +2820,8 @@ export class Game {
       this.meetBot();
       this.socialPerks();
     }
+    // tự mặc: món nào trong túi có lực chiến cao hơn đồ đang mặc thì thay (mỗi 3 năm xét lại)
+    if (this.s.opt.autoEquip !== false && P.age % 3 === 0 && P.bag.length) this.equipBest();
     if (P.sanNghiep > 0) this.money(Math.round(P.sanNghiep * 6 * ypt * (1 + P.realm * 1.5)));
     if (act !== 'vuot_thap' && act !== 'lich_luyen' && act !== 'tu_luyen' && act !== 'be_quan' && act !== 'muu_sinh' && act !== 'ket_giao') this.purgeSat(2);
     if (this.checkSat()) return true; else if (act === 'lon_len' && P.age >= 6 && this.r.chance(0.2)) {

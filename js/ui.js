@@ -375,7 +375,7 @@ function renderPlay() {
       const why = P.age < a.minAge ? `Từ ${a.minAge} tuổi` : a.needDao && !P.dao ? 'Cần nhập đạo' : a.desc;
       const m = id === 'lich_luyen' && ok ? MAP_MAP[P.map] || g.defaultMap() : null;
       if (id === 'vuot_thap') return `<button class="btn act ${P.action === id ? 'on' : ''}" data-act="${id}" data-tip="${esc(ok ? `${a.desc} Đang ở tầng ${g.towerState().f}. Bấm để xem tháp.` : why)}" ${ok ? '' : 'disabled'}><span class="ai">${a.icon}</span><span>Tháp</span>${ok ? `<small>Tầng ${g.towerState().f}</small>` : ''}</button>`;
-      const sub = m ? `${DIFF[m.d].ic} ${DIFF[m.d].n}` : id === 'muu_sinh' && P.nghe ? `${NGHE[P.nghe.id].icon} cấp ${P.nghe.lv}` : id === 'tu_luyen' && PATHS[P.path] ? `${PATHS[P.path].icon} ${PATHS[P.path].n}` : '';
+      const sub = m ? `${DIFF[m.d].ic} ${DIFF[m.d].n}` : id === 'muu_sinh' && P.nghe ? `${NGHE[P.nghe.id].icon} cấp ${P.nghe.lv}` : '';
       return `<button class="btn act ${P.action === id ? 'on' : ''}" data-act="${id}" data-tip="${esc(m ? `${a.desc} Đang chọn: ${m.n} (${DIFF[m.d].n}). Bấm để đổi vùng.` : why)}" ${ok ? '' : 'disabled'}><span class="ai">${a.icon}</span><span>${a.n}</span>${sub ? `<small>${sub}</small>` : ''}</button>`;
     }).join('');
   }
@@ -842,6 +842,7 @@ function openSheet(html, bind) {
   const fresh = $('sheet').hidden;
   const keep = card.scrollTop;
   if ($('tip')) $('tip').hidden = true;
+  $('sheetClose').hidden = false;
   $('sheetBody').innerHTML = html;
   $('sheet').hidden = false;
   // mở mới thì lên đầu, vẽ lại (bấm Đeo, Mua...) thì giữ chỗ đang xem
@@ -856,8 +857,8 @@ $('sheet').addEventListener('click', (e) => { if (e.target === $('sheet')) { $('
 const qCls = (q) => `q${q}`;
 function itemCard(it, btns) {
   const wt = it.wt ? ` · ${WEAPON_TYPES[it.wt].n}` : '';
-  return `<div class="item withIco">${itemIco(it)}<div class="body"><div class="row"><b class="${qCls(it.q)}">${esc(itemName(it))}</b><span class="meta">${QUALITY[it.q].n} · ${SLOTS[it.slot]}${wt} · ${REALMS[it.lv].n}</span></div>
-    <div class="meta">${esc(itemLine(it))}</div>${sealLine(it)}${g.P && isSuppressed(it, g.P.realm) ? `<div class="sealLine">⚠ Đồ hạ giới: bị pháp tắc ${PLANES[g.plane].n} áp chế, chỉ phát huy 20%. Linh hóa ở lò rèn (cần Linh tủy).</div>` : ''}${ttLine(it)}${btns ? `<div class="row btnRow">${btns}</div>` : ''}</div></div>`;
+  return `<div class="item withIco">${itemIco(it)}<div class="body"><div class="row"><b class="${qCls(it.q)}">${esc(itemName(it))}</b><span class="meta">${QUALITY[it.q].n} · ${SLOTS[it.slot]}${wt}</span></div>
+    <div class="meta">${esc(itemLine(it))}</div>${ttLine(it)}${btns ? `<div class="row btnRow">${btns}</div>` : ''}</div></div>`;
 }
 /** Dòng thần thông của đồ Thần thoại */
 function ttLine(it) {
@@ -1165,7 +1166,8 @@ function openForge() {
         <div class="cost">${costText(c)}</div>
         <button class="btn primary wide" data-forge="1" ${g.canPay(c) ? '' : 'disabled'}>⚒ Rèn</button>`;
     }
-    const tabs = [['cuong', 'Cường hóa'], ['thang', 'Thăng cấp'], ['tay', 'Tẩy luyện'], ['moi', 'Rèn mới']];
+    if (forgeTab === 'thang') forgeTab = 'cuong';
+    const tabs = [['cuong', 'Cường hóa'], ['tay', 'Tẩy luyện'], ['moi', 'Rèn mới']];
     openSheet(`<h2>Lò rèn</h2>
       <p class="intro">Tay nghề rèn: <b>${P.forge || 0}/100</b> (+${Math.round(g.forgeBonus() * 100)}% tỉ lệ thành công)${P.path === 'tinh' ? ', Tinh Thần Lực được cộng thêm' : ''}. Linh thạch: <b>${fmt(P.money)}</b>.</p>
       ${matChips(P)}
@@ -1206,12 +1208,6 @@ function forgeBtns(it) {
     h += `<button class="btn ghost" data-enh="${it.id}" ${g.canPay(c) ? '' : 'disabled'}>⚒ +${(it.plus || 0) + 1} · ${Math.round(p * 100)}% · ${pctS(ge)}${tail}</button>`;
     h += `<div class="cost">Cường hóa: ${costText(c)}</div>`;
   }
-  if (it.lv < P.realm) {
-    const c = g.upgradeCost(it);
-    const lh = planeOf(it.lv) < g.plane;
-    const gu = gainOf(g.upgradedClone(it));
-    h += `<button class="btn ghost" data-up="${it.id}" ${g.canPay(c) ? '' : 'disabled'}>${lh ? '✦ Linh hóa' : '⬆ Thăng'} lên ${REALMS[P.realm].n} · ${lh && worn ? `×${(1 + gu).toFixed(1)}` : pctS(gu)}${tail}</button><div class="cost">${lh ? 'Linh hóa' : 'Thăng cấp'}: ${costText(c)}</div>`;
-  }
   return h;
 }
 // ---------- Túi trữ vật ----------
@@ -1250,13 +1246,6 @@ function compareLine(it) {
       if (tt(it) !== tt(cur) && (tt(it) || tt(cur))) out.push(`<div>Thần thông: ${tt(cur) ? `mất 「${esc(tt(cur))}」` : ''}${tt(cur) && tt(it) ? ', ' : ''}${tt(it) ? `được 「${esc(tt(it))}」` : ''} (đã tính vào lực chiến)</div>`);
     }
   }
-  if (it.lv < P.realm) {
-    const up = g.upgradedClone(it);
-    const gu = isEq ? g.improveGain(it, up) : g.swapGain(up);
-    const lh = planeOf(it.lv) < g.plane;
-    out.push(`<div class="pw">${lh ? '✦ Nếu linh hóa' : '⬆ Nếu thăng'} lên ${REALMS[P.realm].n}: <b class="${gu > 0 ? 'pos' : 'neg'}">${pctS(gu)}</b> ${isEq ? 'lực chiến' : 'so với đồ đang mặc'} · ${costText(g.upgradeCost(it))}</div>`);
-  }
-  if (isSealed(it, P.realm)) out.push(`<div class="pw">⛓ Khi lên ${REALMS[it.lv].n}: mở phong ấn, phát huy toàn bộ sức mạnh${it.tt && TT_MAP[it.tt] ? ` và thần thông 「${esc(TT_MAP[it.tt].n)}」` : ''}.</div>`);
   // đánh thử
   const T = { map: 'Quái vùng đang đi', tower: 'Tầng tháp kế', boss: 'Trùm tháp kế' };
   const tr = bag.trialRes && bag.trialRes.id === it.id && bag.trialRes.t === bag.trial ? bag.trialRes : null;
@@ -1268,8 +1257,8 @@ function itemTile(it, extra = '') {
   const P = g.P;
   const on = Object.values(P.eq).includes(it);
   const better = !on && g.betterThanEquipped(it);
-  const upb = !on && !better && g.upBetter(it);
-  const pin = on && P.pin[it.slot];
+  const upb = false;
+  const pin = false;
   return `<button class="tile q${it.q} ${bag.sel === it.id ? 'sel' : ''} ${bag.multi && bag.picked.has(it.id) ? 'picked' : ''}" data-it="${it.id}" ${extra}>${itemIco(it)}${it.plus ? `<span class="bdg plus">+${it.plus}</span>` : ''}${better ? '<span class="bdg up">▲</span>' : upb ? '<span class="bdg upc" title="Thăng cấp lên sẽ tốt hơn">⬆</span>' : pin ? '<span class="bdg pinb">📌</span>' : ''}${it.lock ? '<span class="bdg lk">🔒</span>' : ''}${isSealed(it, P.realm) ? '<span class="bdg lock">⛓</span>' : ''}${isSuppressed(it, P.realm) ? '<span class="bdg sup">⚠</span>' : ''}<span class="tn">${esc(itemName(it))}</span></button>`;
 }
 function slotTile(sl) {
@@ -1282,32 +1271,31 @@ function bagEq() {
   const F = g.playerFighter();
   const sel = bag.sel !== null ? g.findItem(bag.sel) : null;
   const isEq = sel && Object.values(P.eq).includes(sel);
-  let list = P.bag.filter((x) => (bag.slot === 'all' || x.slot === bag.slot) && (bag.filt === 'up' ? x.lv < P.realm : bag.filt === 'lock' ? x.lock : true));
-  const sv = new Map(list.map((x) => [x.id, g.swapGain(x)]));
-  list = list.slice().sort(bag.sort === 'power' ? (a, b) => sv.get(b.id) - sv.get(a.id) : bag.sort === 'q' ? (a, b) => b.q - a.q || sv.get(b.id) - sv.get(a.id) : bag.sort === 'lv' ? (a, b) => b.lv - a.lv || b.q - a.q : (a, b) => b.id - a.id);
-  const tt = [...new Set(Object.values(P.eq).filter((x) => x && x.tt && !isSealed(x, P.realm)).map((x) => x.tt))];
-  const canBest = ['vu_khi', 'ao', 'phu_kien'].some((sl) => !P.pin[sl] && P.bag.some((x) => x.slot === sl && g.betterThanEquipped(x)));
+  // túi xếp theo phẩm rồi theo lực chiến khi mặc
+  const sv = new Map(P.bag.map((x) => [x.id, g.swapGain(x)]));
+  const list = P.bag.slice().sort((a, b) => b.q - a.q || sv.get(b.id) - sv.get(a.id));
+  const tt = [...new Set(Object.values(P.eq).filter((x) => x && x.tt).map((x) => x.tt))];
+  const canBest = ['vu_khi', 'ao', 'phu_kien'].some((sl) => P.bag.some((x) => x.slot === sl && g.betterThanEquipped(x)));
   const stats = [['atk', 'Công', fmt(F.atk)], ['def', 'Thủ', fmt(F.def)], ['hp', 'Sinh lực', fmt(F.maxHp)], ['crit', 'Bạo kích', `${Math.round(F.crit * 100)}%`], ['dodge', 'Né', `${Math.round(F.dodge * 100)}%`]];
   const lockB = sel ? `<button class="btn ghost" data-lock="${sel.id}">${sel.lock ? '🔓 Mở khóa' : '🔒 Khóa'}</button>` : '';
   const cf = (k) => bag.confirm === `${k}:${sel.id}`;
   const sellB = sel && !isEq ? (sel.lock ? '<span class="meta">Đã khóa: không bán, phân giải được</span>'
     : `<button class="btn ${cf('sell') ? 'danger' : 'ghost'}" data-sell="${sel.id}">${cf('sell') ? `Bấm lần nữa để bán ${QUALITY[sel.q].n}` : `💰 Bán · ${fmt(sel.val)}`}</button><button class="btn ${cf('salv') ? 'danger' : 'ghost'}" data-salv="${sel.id}" title="${esc(stripTok(g.matText(g.salvageYield(sel))))}">${cf('salv') ? 'Bấm lần nữa để phân giải' : '♻ Phân giải'}</button>`) : '';
   const detail = sel ? `<div class="detail">${itemCard(sel, isEq
-    ? `<button class="btn ghost" data-un="${sel.slot}">Tháo</button><button class="btn ${P.pin[sel.slot] ? 'on' : 'ghost'}" data-pin="${sel.slot}">📌 ${P.pin[sel.slot] ? 'Đang ghim' : 'Ghim ô'}</button>${lockB}${forgeBtns(sel)}`
+    ? `<button class="btn ghost" data-un="${sel.slot}">Tháo</button>${lockB}${forgeBtns(sel)}`
     : `<button class="btn primary" data-eq="${sel.id}">Mang</button>${lockB}${sellB}${forgeBtns(sel)}`)}${compareLine(sel)}</div>` : '';
-  const pinWarn = ['vu_khi', 'ao', 'phu_kien'].filter((sl) => P.pin[sl] && P.bag.some((x) => x.slot === sl && g.swapGain(x) >= 0.1));
   const picked = [...bag.picked].filter((id) => P.bag.some((x) => x.id === id));
-  return `<div class="doll"><div class="dollCol">${slotTile('vu_khi')}</div><div class="dollFig"><canvas id="dollCv" width="32" height="40"></canvas><img id="dollArt" class="art" alt="" hidden></div><div class="dollCol">${slotTile('ao')}${slotTile('phu_kien')}</div></div>
+  const cap = g.bagCap();
+  const emptyCells = Array.from({ length: Math.max(0, cap - list.length) }, () => '<div class="tile cell"></div>').join('');
+  const spare = [0, 1, 2].map(() => '<div class="dollSlot"><div class="tile spare"><span class="tn">Sắp có</span></div></div>').join('');
+  return `<div class="doll doll2"><div class="dollCol">${slotTile('vu_khi')}${slotTile('ao')}${slotTile('phu_kien')}</div><div class="dollFig"><canvas id="dollCv" width="32" height="40"></canvas><img id="dollArt" class="art" alt="" hidden></div><div class="dollCol">${spare}</div></div>
     <div class="statIcons">${stats.map(([k, n, v]) => `<button class="si" data-stat="f_${k}">${icoImg({ kind: STAT_ICO[k] })}<span>${n}</span><b>${v}</b></button>`).join('')}</div>
     ${tt.length ? `<div class="ttActive">Thần thông: ${tt.map((id) => `<span class="ttName">✦ ${esc(TT_MAP[id].n)}</span>`).join(' ')}</div>` : ''}
     ${detail}
-    <div class="bagBar"><div class="chips">${[['all', 'Tất cả'], ['vu_khi', 'Vũ khí'], ['ao', 'Y phục'], ['phu_kien', 'Phụ kiện']].map(([k, n]) => `<button class="chip ${bag.slot === k ? 'on' : ''}" data-fs="${k}">${n}</button>`).join('')}</div>
-      <div class="chips">${[['power', 'Lực chiến'], ['q', 'Phẩm'], ['lv', 'Cảnh giới'], ['new', 'Mới nhặt']].map(([k, n]) => `<button class="chip ${bag.sort === k ? 'on' : ''}" data-so="${k}">${n}</button>`).join('')}<span class="sep"></span>${[['up', '⬆ Thăng được'], ['lock', '🔒 Đã khóa']].map(([k, n]) => `<button class="chip ${bag.filt === k ? 'on' : ''}" data-fl="${k}">${n}</button>`).join('')}</div></div>
-    ${pinWarn.length ? `<p class="forgeMsg">📌 Ô ${pinWarn.map((sl) => SLOTS[sl].toLowerCase()).join(', ')} đang ghim nhưng trong túi có đồ mạnh hơn từ 10% (nhãn ▲).</p>` : ''}
-    <div class="row btnRow"><button class="btn ${canBest ? 'primary' : 'ghost'}" data-best="1" ${canBest ? '' : 'disabled'}>✨ Mặc tốt nhất${Object.keys(P.pin).length ? ' (bỏ qua ô ghim)' : ''}</button>${bag.multi ? '' : '<button class="btn ghost" data-multi="1">☑ Chọn nhiều</button>'}<span class="meta">Túi ${P.bag.length}/${g.bagCap()}</span></div>
-    ${bag.multi ? `<div class="multiBar"><b>☑ Đang chọn để bán / phân giải · ${picked.length} món</b><span class="meta">Chạm ô để chọn hoặc bỏ. Đồ khóa không chọn được.</span>
+    <div class="bagHead"><b>Túi ${P.bag.length}/${cap}</b><span class="bagBtns">${canBest ? '<button class="btn primary sm" data-best="1">✨ Mặc tốt nhất</button>' : ''}${bag.multi ? '' : '<button class="btn ghost sm" data-multi="1" title="Chọn nhiều để bán, phân giải">☑</button>'}</span></div>
+    ${bag.multi ? `<div class="multiBar"><b>☑ Đang chọn để bán / phân giải · ${picked.length} món</b>
       <div class="row btnRow"><button class="btn ghost sm" data-pall="1">Chọn hết đồ kém</button><button class="btn ghost sm" data-msalv="1" ${picked.length ? '' : 'disabled'}>♻ Phân giải ${picked.length}</button><button class="btn ghost sm" data-msell="1" ${picked.length ? '' : 'disabled'}>💰 Bán ${picked.length}</button><button class="btn primary sm" data-multi="1">Xong</button></div></div>` : ''}
-    <div class="grid5">${list.map((it) => itemTile(it)).join('') || '<p class="empty" style="grid-column:1/-1">Túi trống. Đồ rơi từ yêu thú, tháp, bí cảnh, đối thủ, hoặc mua ở Tụ Bảo Lâu.</p>'}</div>`;
+    <div class="grid5 bagGrid">${list.map((it) => itemTile(it)).join('')}${emptyCells}</div>`;
 }
 function bagCp() {
   const P = g.P;
@@ -1382,16 +1370,18 @@ function bagSet() {
   const o = g.s.opt;
   const P = g.P;
   return `<div class="list">
-    <div class="item"><b>Nhặt được đồ thì tự mặc</b><div class="opts">${[['off', 'Tắt'], ['gain', 'Lực chiến +10%'], ['all', 'Hễ tốt hơn']].map(([k, n]) => `<button class="btn ${o.autoEquipMode === k ? 'on' : 'ghost'}" data-aem="${k}">${n}</button>`).join('')}</div><div class="meta">Không bao giờ thay ô đang ghim 📌 (ô ngươi tự tay mặc) và không thay đồ Thần thoại bằng đồ phẩm thấp hơn.</div></div>
-    <button class="btn ${o.autoSalvage ? 'on' : 'ghost'}" data-opt2="autoSalvage">Túi đầy: ${o.autoSalvage ? 'tự phân giải món kém nhất' : 'tự bán món kém nhất'}<small>Không đụng đồ khóa, Thần thoại, đồ thăng cấp lên sẽ tốt hơn</small></button>
+    <button class="btn ${o.autoEquip !== false ? 'on' : 'ghost'}" data-opt2="autoEquip">Nhặt được đồ lực chiến cao hơn thì tự mặc: ${o.autoEquip !== false ? 'bật' : 'tắt'}</button>
+    <div class="item"><b>Nhặt được đồ thì tự xử lý theo phẩm</b><div class="meta">Áp dụng ngay khi nhặt (và cho món vừa bị thay ra). Đồ đã khóa, đồ Thần thoại luôn được giữ.</div>
+      <div class="qRules">${[0, 1, 2, 3].map((q) => `<div class="qRule"><span class="q${q}">${QUALITY[q].n}</span>${[['keep', 'Giữ'], ['sell', 'Bán'], ['salv', 'Phân giải']].map(([k, n]) => `<button class="btn sm ${g.qRule(q) === k ? 'on' : 'ghost'}" data-qr="${q}:${k}">${n}</button>`).join('')}</div>`).join('')}</div></div>
+    <button class="btn ${o.autoSalvage ? 'on' : 'ghost'}" data-opt2="autoSalvage">Túi đầy: ${o.autoSalvage ? 'tự phân giải món kém nhất' : 'tự bán món kém nhất'}<small>Không đụng đồ khóa, Thần thoại</small></button>
     ${(() => { const c = g.bagExpandCost(); return c ? `<div class="item"><b>Mở rộng túi: ${g.bagCap()} → ${g.bagCap() + 8} ô</b><div class="row btnRow"><button class="btn ghost" data-bx="money" ${P.money >= c.money ? '' : 'disabled'}>${fmt(c.money)} linh thạch</button><button class="btn ghost" data-bx="coin" ${(P.towerCoin || 0) >= c.coin ? '' : 'disabled'}>${c.coin} Tháp tệ</button></div></div>` : `<p class="meta">Túi đã mở rộng tối đa ${g.bagCap()} ô.</p>`; })()}
     <button class="btn ${o.towerResume !== false ? 'on' : 'ghost'}" data-opt2="towerResume">Thua tháp thì tu luyện, đủ sức tự leo lại: ${o.towerResume !== false ? 'bật' : 'tắt'}</button>
     <button class="btn ghost" data-salvall="1" ${P.bag.some((x) => x.q <= 1) ? '' : 'disabled'}>♻ Phân giải hết Hạ, Trung phẩm trong túi</button>
-    <button class="btn ghost" data-salvall2="1" ${P.bag.some(weakItem) ? '' : 'disabled'}>♻ Phân giải hết đồ Thượng phẩm trở xuống không tốt hơn (kể cả khi thăng cấp), không khóa</button></div>`;
+    <button class="btn ghost" data-salvall2="1" ${P.bag.some(weakItem) ? '' : 'disabled'}>♻ Phân giải hết đồ Thượng phẩm trở xuống không tốt hơn đồ đang mặc, không khóa</button></div>`;
 }
 const RARE_MATS_UI = new Set(['than_hon', 'dao_van_thach', 'linh_tuy']);
 /** Đồ kém: tự chọn để bán, phân giải hàng loạt */
-const weakItem = (x) => x.q <= 2 && !x.lock && !g.betterThanEquipped(x) && !g.upBetter(x);
+const weakItem = (x) => x.q <= 2 && !x.lock && !g.betterThanEquipped(x);
 function openBag(tabId) {
   if (tabId) { bag.tab = tabId; bag.sel = null; }
   bag.multi = false; bag.picked.clear(); bag.confirm = null;
@@ -1403,6 +1393,7 @@ function openBag(tabId) {
       ${msg ? `<p class="forgeMsg">${rich(msg)}${g.s.undo && performance.now() < undoUntil ? ' <button class="btn ghost sm" data-undo="1">↶ Hoàn tác</button>' : ''}</p>` : ''}
       ${body}`, () => {
       const B = $('sheetBody');
+      $('sheetClose').hidden = true;
       const cv = $('dollCv');
       if (cv) { drawPortrait(cv, P, { life: g.lifespan(), robe: playerRobe(P) }); setArt($('dollArt'), PATHS[P.path] ? { src: heroArt(P.path, P.g), filter: heroFilter(P.path, P.g) } : null, cv); }
       const q = (sel, fn) => B.querySelectorAll(sel).forEach((b) => { b.onclick = () => { const cf0 = bag.confirm; const m = fn(b); if (bag.confirm === cf0) bag.confirm = null; save(); dirty = true; draw(typeof m === 'string' ? m : ''); }; });
@@ -1411,9 +1402,7 @@ function openBag(tabId) {
       const twice = (k, it, fn) => { if (it && it.q >= 3 && bag.confirm !== `${k}:${it.id}`) { bag.confirm = `${k}:${it.id}`; return ''; } bag.confirm = null; bag.sel = null; return undoable(fn); };
       q('[data-undo]', () => g.undoLast() || '');
       q('[data-lock]', (b) => g.toggleLock(+b.dataset.lock));
-      q('[data-pin]', (b) => g.togglePin(b.dataset.pin));
-      q('[data-fl]', (b) => { bag.filt = bag.filt === b.dataset.fl ? '' : b.dataset.fl; });
-      q('[data-aem]', (b) => { g.s.opt.autoEquipMode = b.dataset.aem; g.s.opt.autoEquip = b.dataset.aem !== 'off'; });
+      q('[data-qr]', (b) => { const [qq, k] = b.dataset.qr.split(':'); g.s.opt.qRule = { ...(g.s.opt.qRule || {}), [qq]: k }; });
       q('[data-bx]', (b) => g.expandBag(b.dataset.bx) || 'Không đủ.');
       q('[data-eqrl]', (b) => { g.equip(+b.dataset.eqrl, true); g.autoLoadout(); return `Đã mặc và xếp võ kỹ: ${g.P.loadout.map((id) => SKILLS[id].n).join(', ')}.`; });
       q('[data-trt]', (b) => { bag.trial = b.dataset.trt; });
@@ -1442,7 +1431,7 @@ function openBag(tabId) {
       q('[data-msalv]', () => { const ids = [...bag.picked]; bag.picked.clear(); bag.multi = false; return undoable(() => { const out = ids.map((id) => g.salvage(id)).filter(Boolean); return out.length ? `Phân giải ${out.length} món.` : ''; }); });
       q('[data-msell]', () => { const ids = [...bag.picked]; bag.picked.clear(); bag.multi = false; return undoable(() => `Bán ${ids.length} món được ${fmt(ids.reduce((m, id) => m + (g.sell(id) || 0), 0))} linh thạch.`); });
       q('[data-un]', (b) => { g.unequip(b.dataset.un); });
-      q('[data-eq]', (b) => { const it = g.findItem(+b.dataset.eq); const gp = g.swapGain(it); g.equip(+b.dataset.eq, true); return `Đã mặc ${itemName(it)} (lực chiến ${pctS(gp)}). Ô này được ghim 📌: tự mặc sẽ không thay.`; });
+      q('[data-eq]', (b) => { const it = g.findItem(+b.dataset.eq); const gp = g.swapGain(it); g.equip(+b.dataset.eq, true); return `Đã mặc ${itemName(it)} (lực chiến ${pctS(gp)}).`; });
       q('[data-sell]', (b) => { const it = g.findItem(+b.dataset.sell); return twice('sell', it, () => `Bán được ${g.sell(it.id)} linh thạch.`); });
       q('[data-salv]', (b) => { const it = g.findItem(+b.dataset.salv); return twice('salv', it, () => `Phân giải được: ${g.salvage(it.id)}.`); });
       q('[data-salvall2]', () => undoable(() => { const ids = P.bag.filter(weakItem).map((x) => x.id); ids.forEach((id) => g.salvage(id)); return `Phân giải ${ids.length} món.`; }));
@@ -1461,7 +1450,7 @@ function openBag(tabId) {
             q('[data-pl]', (b) => { bag.sel = bag.sel === b.dataset.pl ? null : b.dataset.pl; });
       q('[data-mt]', (b) => { bag.sel = bag.sel === b.dataset.mt ? null : b.dataset.mt; });
       q('[data-use]', (b) => g.usePill(b.dataset.use) || '');
-      q('[data-opt2]', (b) => { const k = b.dataset.opt2; g.s.opt[k] = k === 'towerResume' || k === 'autoBaoKhi' || k === 'autoSkill' ? g.s.opt[k] === false : !g.s.opt[k]; if (k === 'autoSkill' && g.s.opt.autoSkill !== false) g.autoSpendSP(); });
+      q('[data-opt2]', (b) => { const k = b.dataset.opt2; g.s.opt[k] = k === 'towerResume' || k === 'autoBaoKhi' || k === 'autoSkill' || k === 'autoEquip' ? g.s.opt[k] === false : !g.s.opt[k]; if (k === 'autoSkill' && g.s.opt.autoSkill !== false) g.autoSpendSP(); });
       bindPillOpts(draw);
       B.querySelectorAll('[data-goshop]').forEach((b) => { b.onclick = openShop; });
       B.querySelectorAll('[data-goforge]').forEach((b) => { b.onclick = () => { const [sl, wt] = b.dataset.goforge.split(':'); if (sl) { forgeTab = 'moi'; forgeSel.slot = sl; if (wt) forgeSel.wt = wt; } openForge(); }; });
