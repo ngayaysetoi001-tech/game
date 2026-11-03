@@ -4,7 +4,7 @@ import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITL
 import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEFAULT_MAP, realmLabel, subN, PLANES, mapsOf, WORLD_DIFF, mythMatOf, planeOf, THEME_BG, BOSS_KITS, TOWER_THEMES, TOWER_SHOP, TAM_PHAP, TAM_PHAP_IDS, NGHE, PHU, PLAN_TEMPLATES, PLAN_STEP_ACTS, PLAN_COND, PATH_BAR_N } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, BEAST_SKILLS, TACTICS, WEAPON_TYPES, turnText, PATH_RES, PATH_SKILLS, SKILL_MAX, skillLvMul } from './combat.js';
-import { heroArt, heroFilter, meditateArt, skillArt, monsterArt, needFlip, uiIcon } from './art.js';
+import { heroArt, heroStandArt, heroFilter, meditateArt, skillArt, monsterArt, needFlip, uiIcon } from './art.js';
 import { SLOTS, QUALITY, itemLine, TT_MAP, isSealed, isSuppressed, gearStats, itemName, PLUS_MAX, AFFIX } from './items.js';
 import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE, matIconOpts, skillIconOpts } from './icons.js';
 
@@ -329,7 +329,7 @@ function renderPlay() {
   const life = g.lifespan();
   const sc = P.sect ? g.sect(P.sect) : null;
   drawPortrait($('portrait'), P, { life, robe: playerRobe(P), dead: g.s.phase === 'dead' });
-  setArt($('portraitArt'), P.closed > 0 && P.dao ? { src: meditateArt(P.g) } : PATHS[P.path] ? { src: heroArt(P.path, P.g) } : null, $('portrait'));
+  setArt($('portraitArt'), P.closed > 0 && P.dao ? { src: meditateArt(P.g) } : PATHS[P.path] ? { src: heroStandArt(P.path, P.g) } : null, $('portrait'));
   const ttl = P.title && TITLE_MAP[P.title] ? TITLE_MAP[P.title] : null;
   setHTML($('hudLine'), `${ttl ? `<span class="ttl t${ttl.tier} mini"><span>${esc(ttl.n)}</span></span>` : ''}<b class="hudName">${esc(P.name)}</b> <span class="realm">${esc(g.subRealmName())}</span><span class="meta"> · ${P.age} tuổi${sc ? ` · ${esc(sc.name)}` : ''}</span><span class="more">›</span>`);
   const need = g.need();
@@ -630,7 +630,7 @@ function renderPathPick(on) {
     <p class="intro">${P.flags.pathReset ? 'Pháp tắc thiên địa đổi thay, con đường cũ không còn. ' : ''}Mỗi đường một bộ 8 kỹ năng riêng (chiêu, tuyệt kỹ, bị động), mở dần theo cảnh giới. Chọn đúng đường hợp thiên tư được thêm 3 ngộ đạo điểm. Mỗi kiếp được chuyển tu một lần.</p>
     <div class="ppCards">${Object.entries(PATHS).map(([id, pa]) => `<div class="ppCard ${id === sug ? 'sug' : ''} pp_${id}">
       ${id === sug ? '<span class="ppSug">Hợp thiên tư nhất</span>' : ''}
-      <img class="ppHero" alt="" src="${heroArt(id, P.g)}" style="filter:${heroFilter(id, P.g) || 'drop-shadow(0 4px 6px rgba(0,0,0,0.35))'}">
+      <img class="ppHero" alt="" src="${heroStandArt(id, P.g)}" style="filter:${heroFilter(id, P.g) || 'drop-shadow(0 4px 6px rgba(0,0,0,0.35))'}">
       <h3>${pa.icon} ${esc(pa.n)}</h3><div class="ppTag">${esc(pa.tag)}</div>
       <div class="ppBars">${Object.entries(pa.bars).map(([k, v]) => `<div><span>${PATH_BAR_N[k]}</span><i>${'<b></b>'.repeat(v)}${'<u></u>'.repeat(5 - v)}</i></div>`).join('')}</div>
       <div class="ppSk">${PATH_SKILLS[id].map((k) => skIco(k)).join('')}</div>
@@ -1330,7 +1330,7 @@ function bagCp() {
   }
   const mism = g.skillMismatch().length;
   const others = Object.keys(PATHS).filter((k) => k !== P.path);
-  return `<div class="pathHead"><img class="pathPic" alt="" src="${heroArt(P.path, P.g)}"><div><b>${pa.icon} ${esc(pa.n)}</b><div class="meta">${esc(pa.tag)} · thanh ${esc(pa.res)}</div><div class="spBox">◈ Ngộ đạo điểm: <b>${P.sp || 0}</b></div></div></div>
+  return `<div class="pathHead"><img class="pathPic" alt="" src="${heroStandArt(P.path, P.g)}"><div><b>${pa.icon} ${esc(pa.n)}</b><div class="meta">${esc(pa.tag)} · thanh ${esc(pa.res)}</div><div class="spBox">◈ Ngộ đạo điểm: <b>${P.sp || 0}</b></div></div></div>
     ${mism ? `<p class="forgeMsg">⚠ ${esc(pa.n)} cần ${WEAPON_TYPES[pa.wep].n.toLowerCase()}: binh khí đang cầm làm chiêu yếu đi.</p>` : ''}
     <div class="skTree"><div class="skCol"><h4>Chiêu thức</h4>${col(['co', 'c1', 'c2', 'chot'])}</div><div class="skCol"><h4>Tuyệt kỹ</h4>${col(['ult'])}</div><div class="skCol"><h4>Bị động</h4>${col(['p1', 'p2', 'p3'])}</div></div>
     ${detail}
@@ -1395,7 +1395,7 @@ function openBag(tabId) {
       const B = $('sheetBody');
       $('sheetClose').hidden = true;
       const cv = $('dollCv');
-      if (cv) { drawPortrait(cv, P, { life: g.lifespan(), robe: playerRobe(P) }); setArt($('dollArt'), PATHS[P.path] ? { src: heroArt(P.path, P.g), filter: heroFilter(P.path, P.g) } : null, cv); }
+      if (cv) { drawPortrait(cv, P, { life: g.lifespan(), robe: playerRobe(P) }); setArt($('dollArt'), PATHS[P.path] ? { src: heroStandArt(P.path, P.g), filter: heroFilter(P.path, P.g) } : null, cv); }
       const q = (sel, fn) => B.querySelectorAll(sel).forEach((b) => { b.onclick = () => { const cf0 = bag.confirm; const m = fn(b); if (bag.confirm === cf0) bag.confirm = null; save(); dirty = true; draw(typeof m === 'string' ? m : ''); }; });
       // bán, phân giải: đồ Cực phẩm trở lên phải bấm hai lần; xong thì có Hoàn tác trong 10 giây
       const undoable = (fn) => { g.undoStart(); const m = fn(); if (g.undoEnd()) undoUntil = performance.now() + 10000; return m; };
