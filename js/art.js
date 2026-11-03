@@ -1,7 +1,7 @@
 // Tranh vẽ tay (chibi) cho nhân vật, quái, linh thú, kỹ năng. Tệp nằm ở assets/; bản gộp một tệp thay bằng data URI.
 // Danh sách sinh tự động bằng tools/gen-art.mjs.
 // <list>
-const ART_LIST = ["heroes/kiem","heroes/kiem_nu","heroes/meditate","heroes/meditate_nu","heroes/phu","heroes/phu_nu","heroes/the","heroes/the_nu","monsters/bang_hoang","monsters/bang_xa","monsters/bang_yeu","monsters/hac_thi","monsters/hau_yeu","monsters/hoang_tuyen_quy","monsters/hon_don_de_quan","monsters/hon_don_linh","monsters/hon_don_thu","monsters/hu_anh","monsters/hu_khong_thu","monsters/hu_xa","monsters/huyet_lang","monsters/huyet_ma","monsters/lang_vuong","monsters/ma_thi","monsters/ma_vien","monsters/moc_linh","monsters/moc_yeu","monsters/soi_yeu","monsters/thai_co_ma_than","monsters/u_hon","monsters/xa_yeu","monsters/xuong_giap","skills/kiem_1","skills/kiem_2","skills/kiem_3","skills/kiem_4","skills/kiem_5","skills/kiem_6","skills/kiem_7","skills/kiem_8","skills/phu_1","skills/phu_2","skills/phu_3","skills/phu_4","skills/phu_5","skills/phu_6","skills/phu_7","skills/phu_8","skills/the_1","skills/the_2","skills/the_3","skills/the_4","skills/the_5","skills/the_6","skills/the_7","skills/the_8"];
+const ART_LIST = ["heroes/kiem","heroes/kiem_nu","heroes/meditate","heroes/meditate_nu","heroes/phu","heroes/phu_nu","heroes/the","heroes/the_nu","monsters/bang_hoang","monsters/bang_xa","monsters/bang_yeu","monsters/cuu_vi_ho","monsters/hac_thi","monsters/hau_yeu","monsters/hoa_van_bao","monsters/hoang_tuyen_quy","monsters/hon_don_de_quan","monsters/hon_don_linh","monsters/hon_don_thu","monsters/hu_anh","monsters/hu_khong_thu","monsters/hu_xa","monsters/huyet_lang","monsters/huyet_ma","monsters/kim_giap_quy","monsters/lang_vuong","monsters/loi_bao","monsters/loi_ky_lan","monsters/ma_thi","monsters/ma_vien","monsters/moc_linh","monsters/moc_yeu","monsters/soi_yeu","monsters/thai_co_ma_than","monsters/u_hon","monsters/xa_yeu","monsters/xuong_giap","skills/kiem_1","skills/kiem_2","skills/kiem_3","skills/kiem_4","skills/kiem_5","skills/kiem_6","skills/kiem_7","skills/kiem_8","skills/phu_1","skills/phu_2","skills/phu_3","skills/phu_4","skills/phu_5","skills/phu_6","skills/phu_7","skills/phu_8","skills/the_1","skills/the_2","skills/the_3","skills/the_4","skills/the_5","skills/the_6","skills/the_7","skills/the_8"];
 // </list>
 export const ART = Object.fromEntries(ART_LIST.map((k) => [k, `assets/${k}.webp`]));
 export const hasArt = (k) => !!ART[k];
@@ -21,6 +21,9 @@ export const heroFilter = () => '';
 export const skillArt = (id) => ART[`skills/${id}`] || '';
 // quái: theo từ khóa trong tên, không khớp thì chọn theo seed; mỗi biến thể đổi màu nhẹ
 const MON_RULES = [
+  // tranh riêng (đặt trước để không bị luật chung bắt nhầm, vd "Hỏa Vân Báo" có chữ Hỏa)
+  [/Lôi Văn Báo|Lôi Báo/, ['monsters/loi_bao']], [/Hỏa Vân Báo/, ['monsters/hoa_van_bao']],
+  [/Cửu Vĩ|Hồ Ly|(^|\s)Hồ(\s|$)/, ['monsters/cuu_vi_ho']], [/Kỳ Lân/, ['monsters/loi_ky_lan']], [/Thần Quy|Quy|Rùa/, ['monsters/kim_giap_quy']],
   [/Vương|Lang Vương/, ['monsters/lang_vuong']], [/Huyết Lang|Huyết Nha/, ['monsters/huyet_lang']], [/Lang|Sói|Khuyển/, ['monsters/soi_yeu', 'monsters/huyet_lang']],
   [/Băng Xà|Hàn Giao|Băng Lang/, ['monsters/bang_xa']], [/Lôi.*Xà|Hư.*Xà|Ma Xà|Cửu Anh/, ['monsters/hu_xa']], [/Xà|Giao|Hải Yêu|Đằng Xà/, ['monsters/xa_yeu', 'monsters/hu_xa']],
   [/Ma Viên|Hùng|Trư/, ['monsters/ma_vien']], [/Hầu|Viên/, ['monsters/hau_yeu']],
@@ -31,8 +34,8 @@ const MON_RULES = [
   [/Thụ|Mộc|Đằng|Linh Hầu/, ['monsters/moc_yeu', 'monsters/moc_linh']],
   [/Hỏa|Viêm|Dung Nham|Lửa/, ['monsters/hon_don_linh']], [/Băng|Tuyết|Hàn/, ['monsters/bang_yeu', 'monsters/bang_hoang']],
   [/Ma Thần|Ma Tôn|Ma Long|Thần Ma|Ma Tướng/, ['monsters/thai_co_ma_than']], [/Ma|Huyết/, ['monsters/huyet_ma']],
-  [/Hư Không|Long|Kình/, ['monsters/hu_khong_thu']], [/Kỳ Lân|Quy|Rùa/, ['monsters/hon_don_thu']],
-  [/Báo|Hổ|Hồ/, ['monsters/soi_yeu', 'monsters/huyet_lang']],
+  [/Hư Không|Long|Kình/, ['monsters/hu_khong_thu']], 
+  [/Báo|Hổ/, ['monsters/hoa_van_bao', 'monsters/loi_bao']],
   [/Bằng|Ưng|Điểu|Phượng|Hạc|Tinh/, ['monsters/bang_hoang']],
   [/Ngưu|Giác|Lộc|Hỗn Độn|Thú/, ['monsters/hon_don_thu']],
   [/Tướng|Binh|Vệ|Sĩ|Khách|Pháp Sư|Cự Nhân|Thạch|Đế|Tổ|Chủ|Linh Tộc/, ['monsters/hon_don_de_quan']],
@@ -42,6 +45,7 @@ const MON_ALL = () => ART_LIST.filter((k) => k.startsWith('monsters/'));
 const FACE = {
   'monsters/bang_hoang': 'L', 'monsters/bang_xa': 'L', 'monsters/hac_thi': 'L', 'monsters/hau_yeu': 'L', 'monsters/hon_don_thu': 'L',
   'monsters/hu_khong_thu': 'L', 'monsters/hu_xa': 'L', 'monsters/huyet_lang': 'L', 'monsters/lang_vuong': 'L', 'monsters/soi_yeu': 'L', 'monsters/xa_yeu': 'L',
+  'monsters/hoa_van_bao': 'L', 'monsters/loi_bao': 'L', 'monsters/cuu_vi_ho': 'L', 'monsters/kim_giap_quy': 'L', 'monsters/loi_ky_lan': 'L',
 };
 const keyOf = (src) => Object.keys(ART).find((k) => ART[k] === src);
 /** Có cần lật tranh để nhìn về phía want ('L' hoặc 'R') không */
