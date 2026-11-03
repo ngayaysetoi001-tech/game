@@ -20,25 +20,40 @@ export const heroFilter = () => '';
 /** Biểu tượng kỹ năng (tên tệp trùng mã kỹ năng) */
 export const skillArt = (id) => ART[`skills/${id}`] || '';
 // quái: theo từ khóa trong tên, không khớp thì chọn theo seed; mỗi biến thể đổi màu nhẹ
+// chữ đứng riêng (tránh "Thi" khớp nhầm "Thiết", "Thiên"; "Hồ" khớp nhầm "Hồi")
+const W = (w) => new RegExp(`(^|\\s)(${w})(\\s|$)`);
 const MON_RULES = [
   // tranh riêng (đặt trước để không bị luật chung bắt nhầm, vd "Hỏa Vân Báo" có chữ Hỏa)
   [/Lôi Văn Báo|Lôi Báo/, ['monsters/loi_bao']], [/Hỏa Vân Báo/, ['monsters/hoa_van_bao']],
-  [/Cửu Vĩ|Hồ Ly|(^|\s)Hồ(\s|$)/, ['monsters/cuu_vi_ho']], [/Kỳ Lân/, ['monsters/loi_ky_lan']], [/Đại Bằng|Kim Sí|Bằng/, ['monsters/kim_si_bang']], [/Ưng/, ['monsters/song_dau_ung']], [/Phượng/, ['monsters/linh_phuong']], [/Thần Quy|Quy|Rùa/, ['monsters/kim_giap_quy']],
-  [/Vương|Lang Vương/, ['monsters/lang_vuong']], [/Huyết Lang|Huyết Nha/, ['monsters/huyet_lang']], [/Lang|Sói|Khuyển/, ['monsters/soi_yeu', 'monsters/huyet_lang']],
-  [/Băng Xà|Hàn Giao|Băng Lang/, ['monsters/bang_xa']], [/Lôi.*Xà|Hư.*Xà|Ma Xà|Cửu Anh/, ['monsters/hu_xa']], [/Xà|Giao|Hải Yêu|Đằng Xà/, ['monsters/xa_yeu', 'monsters/hu_xa']],
-  [/Ma Viên|Hùng|Trư/, ['monsters/ma_vien']], [/Hầu|Viên/, ['monsters/hau_yeu']],
-  [/Thi Vương|Thi Mộ|Cương Thi|Thi Hổ/, ['monsters/hac_thi', 'monsters/ma_thi']], [/Thi/, ['monsters/ma_thi']],
+  [W('Hồ|Hồ Ly|Cửu Vĩ'), ['monsters/cuu_vi_ho']], [/Kỳ Lân/, ['monsters/loi_ky_lan']], [W('Quy|Rùa'), ['monsters/kim_giap_quy']],
+  [/Đại Bằng|Kim Sí|Bằng/, ['monsters/kim_si_bang']], [W('Ưng'), ['monsters/song_dau_ung']], [/Phượng/, ['monsters/linh_phuong']],
+  [/Tháp Linh/, ['monsters/thap_linh']], [/Linh Tổ Tàn Hồn|Linh Đế/, ['monsters/linh_to']],
+  [/Lang Vương|Thú Lâm Chi Vương/, ['monsters/lang_vuong']], [/Băng Lang/, ['monsters/soi_yeu']],
+  [/Bức/, ['monsters/huyet_buc', 'monsters/hu_anh']], [/Huyết Lang/, ['monsters/huyet_lang']], [W('Lang|Sói|Khuyển'), ['monsters/soi_yeu', 'monsters/huyet_lang']],
+  [W('Hùng'), ['monsters/thiet_hung', 'monsters/ma_vien']], [W('Trư'), ['monsters/da_tru', 'monsters/ma_vien']],
+  [/Cự Nhân|Thạch|Khôi Lỗi|Nham Thạch/, ['monsters/thach_cu_nhan', 'monsters/hon_don_de_quan']],
+  [W('Hạt'), ['monsters/doc_hat']], [W('Lộc'), ['monsters/loc_than', 'monsters/hon_don_thu']],
+  [W('Long|Ma Long|Long Vương|Long Hậu'), ['monsters/ma_long', 'monsters/hu_khong_thu']],
+  [/Cự Kình|Kình/, ['monsters/cu_kinh', 'monsters/hu_khong_thu']], [/Huyết Sa|Sa Ngư/, ['monsters/huyet_sa', 'monsters/xa_yeu']], [/Hải Yêu/, ['monsters/hai_yeu', 'monsters/xa_yeu']],
+  [/Tinh Thú|Tinh Hải/, ['monsters/tinh_thu', 'monsters/hu_khong_thu']], [W('Trùng|Trùng Mẫu'), ['monsters/hu_trung', 'monsters/hu_khong_thu']],
+  [/Dung Nham/, ['monsters/dung_nham_thu', 'monsters/hon_don_linh']],
+  [/Mộng|Huyễn|Tâm Ma/, ['monsters/mong_yeu', 'monsters/u_hon']],
+  [/Kiếm Khách|Kiếm Chi Chủ|Bá Chủ|Đấu Sĩ/, ['monsters/kiem_khach', 'monsters/hon_don_de_quan']],
+  [/Thiên Binh|Thiên Tướng|Thần Vệ|Thị Vệ|Thánh Vệ|Lôi Vệ|Vệ Binh/, ['monsters/thien_binh', 'monsters/hon_don_de_quan']],
+  [/Băng Xà|Hàn Giao/, ['monsters/bang_xa']], [/Lôi.*Xà|Hư.*Xà|Ma Xà|Cửu Anh/, ['monsters/hu_xa']], [W('Xà|Giao|Đằng Xà'), ['monsters/xa_yeu', 'monsters/hu_xa']],
+  [/Ma Viên/, ['monsters/ma_vien']], [/Hầu|Viên/, ['monsters/hau_yeu']],
+  [/Thi Vương|Thi Mộ|Cương Thi|Thi Hổ/, ['monsters/hac_thi', 'monsters/ma_thi']], [W('Thi'), ['monsters/ma_thi']],
   [/Xương|Bất Tử|Tàn Binh|Kiếm Nô/, ['monsters/xuong_giap']],
-  [/Diêm|Phán Quan|Hoàng Tuyền|Mạnh Bà|Luân Hồi/, ['monsters/hoang_tuyen_quy']], [/Hồn|Quỷ|Âm|Ảnh|Mộng|Huyễn|Tâm Ma/, ['monsters/u_hon', 'monsters/hu_anh']],
+  [/Diêm|Phán Quan|Hoàng Tuyền|Mạnh Bà|Luân Hồi|Tử Vong/, ['monsters/hoang_tuyen_quy']], [/Hồn|Quỷ|Âm|Ảnh/, ['monsters/u_hon', 'monsters/hu_anh']],
   [/Bức|Điệp/, ['monsters/hu_anh']],
   [/Thụ|Mộc|Đằng|Linh Hầu/, ['monsters/moc_yeu', 'monsters/moc_linh']],
-  [/Hỏa|Viêm|Dung Nham|Lửa/, ['monsters/hon_don_linh']], [/Băng|Tuyết|Hàn/, ['monsters/bang_yeu', 'monsters/bang_hoang']],
-  [/Ma Thần|Ma Tôn|Ma Long|Thần Ma|Ma Tướng/, ['monsters/thai_co_ma_than']], [/Ma|Huyết/, ['monsters/huyet_ma']],
-  [/Hư Không|Long|Kình/, ['monsters/hu_khong_thu']], 
+  [/Hỏa|Viêm|Lửa|Lôi Linh/, ['monsters/hon_don_linh']], [/Tuyết|Băng|Hàn/, ['monsters/bang_yeu', 'monsters/bang_hoang']],
+  [/Ma Thần|Ma Tôn|Thần Ma|Ma Tướng|Cổ Thần/, ['monsters/thai_co_ma_than']], [/Ma|Huyết/, ['monsters/huyet_ma']],
+  [/Hư Không|Không Gian/, ['monsters/hu_khong_thu']],
   [/Báo|Hổ/, ['monsters/hoa_van_bao', 'monsters/loi_bao']],
-  [/Bằng|Ưng|Điểu|Phượng|Hạc|Tinh/, ['monsters/bang_hoang']],
-  [/Ngưu|Giác|Lộc|Hỗn Độn|Thú/, ['monsters/hon_don_thu']],
-  [/Tướng|Binh|Vệ|Sĩ|Khách|Pháp Sư|Cự Nhân|Thạch|Đế|Tổ|Chủ|Linh Tộc/, ['monsters/hon_don_de_quan']],
+  [/Điểu|Hạc/, ['monsters/bang_hoang']],
+  [/Ngưu|Giác|Hỗn Độn|Thú/, ['monsters/hon_don_thu']],
+  [/Tướng|Binh|Vệ|Sĩ|Khách|Pháp Sư|Đế|Tổ|Chủ|Linh Tộc|Vương/, ['monsters/hon_don_de_quan']],
 ];
 const MON_ALL = () => ART_LIST.filter((k) => k.startsWith('monsters/'));
 // hướng gốc của tranh: L = nhìn sang trái, R = nhìn sang phải, không ghi = nhìn thẳng
