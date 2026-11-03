@@ -6,6 +6,7 @@ import {
   SURNAMES, NAMES_M, NAMES_F, SECT_A, SECT_B, SECT_COLORS, MONSTERS, MOVES,
   ACTIONS, PILLS, LEGACIES, TAG_NAMES, THE_CHAT, THIEN_PHU, TP_WEIGHT,
   DH_A, DH_B, DH_HON, DH_HON_NU, DH_HON_MA, TITLES, PATHS, MAPS, MAP_MAP, DEFAULT_MAP, MATS,
+  subN, subIdx, subFrac, realmLabel,
 } from './data.js';
 
 const TITLE_MAP = Object.fromEntries(TITLES.map((t) => [t.id, t]));
@@ -63,6 +64,7 @@ export class Game {
     if (!state.opt) state.opt = { retreat: true, autoSalvage: false };
     if (state.opt.autoPill === undefined) state.opt.autoPill = true;
     if (state.opt.autoBuyPill === undefined) state.opt.autoBuyPill = false;
+    if (state.opt.autoEquip === undefined) state.opt.autoEquip = true;
   }
 
   // ---------- Tạo, lưu, tải ----------
@@ -192,13 +194,13 @@ export class Game {
   power(b) {
     const R = REALMS[b.realm];
     const t = THE_MAP[b.the] || THE_MAP.pham;
-    return R.pow * (1 + (b.tuvi / R.need) * 0.5) * (0.85 + b.rootM * 0.15) * (t.fx.fightMul || 1) * BOT_GQ_MUL[b.gq || 0];
+    return R.pow * (1 + subFrac(b.realm, b.tuvi) * 0.5) * (0.85 + b.rootM * 0.15) * (t.fx.fightMul || 1) * BOT_GQ_MUL[b.gq || 0];
   }
   /** Bot tự ước lượng tỉ lệ thắng yêu thú của một vùng (cùng đường cong với người chơi trung bình) */
   botOdds(b, map) {
     const R = REALMS[b.realm];
     const t = THE_MAP[b.the] || THE_MAP.pham;
-    const k = (1 + (b.tuvi / R.need) * 0.3) * (0.85 + b.rootM * 0.15) * (t.fx.fightMul || 1) * BOT_GQ_MUL[b.gq || 0];
+    const k = (1 + subFrac(b.realm, b.tuvi) * 0.3) * (0.85 + b.rootM * 0.15) * (t.fx.fightMul || 1) * BOT_GQ_MUL[b.gq || 0];
     const x = map.pow / k;
     return 1 / (1 + Math.exp((x - 1.38) / 0.17));
   }
@@ -691,8 +693,32 @@ export class Game {
     const P = this.P;
     if (!P.dao) return 0;
     const before = P.tuvi;
-    P.tuvi = Math.min(this.need(), P.tuvi + n);
+    const need = this.need();
+    P.tuvi = Math.min(need, P.tuvi + n);
+    // bình cảnh nhỏ: kẹt ở hậu kỳ một thời gian
+    const nk = P.flags.neck;
+    if (nk && nk.realm === P.realm && P.tuvi > nk.cap) P.tuvi = Math.max(before, nk.cap);
+    if (subN(P.realm) === 4 && before < need * 0.75 && P.tuvi >= need * 0.75) {
+      P.flags.neckDone = P.flags.neckDone || {};
+      if (!P.flags.neckDone[P.realm]) {
+        P.flags.neckDone[P.realm] = true;
+        if (this.r.chance(0.2)) {
+          const yrs = this.r.int(3, 8);
+          P.flags.neck = { realm: P.realm, cap: need * 0.75 - 0.001, until: P.age + yrs };
+          P.tuvi = Math.max(before, P.flags.neck.cap);
+          this.log(`Bình cảnh nhỏ: tu vi kẹt ở ${realmLabel(P.realm, P.tuvi)}, linh khí vào bao nhiêu cũng tan bấy nhiêu. Khoảng ${yrs} năm nữa mới tự thông, hoặc uống Tĩnh Tâm Đan, hoặc chờ một lúc ngộ đạo.`, 'bad');
+        }
+      }
+    }
+    const kb = subIdx(P.realm, before), ka = subIdx(P.realm, P.tuvi);
+    // chỉ báo khi lần đầu lên tới nấc này (đột phá hỏng tụt lùi rồi tu lại thì không báo lại)
+    const key = `${P.realm}`;
+    P.flags.subMax = P.flags.subMax || {};
+    if (ka > kb && ka > (P.flags.subMax[key] ?? 0)) { P.flags.subMax[key] = ka; this.log(`Tu vi tăng tiến, ngươi bước vào ${realmLabel(P.realm, P.tuvi)}.`, 'good'); }
     return Math.round(P.tuvi - before);
+  }
+  subRealmName(P = this.P) {
+    return realmLabel(P.realm, P.tuvi);
   }
   monster(realm) {
     const r = clamp(realm, 0, TOP_REALM);
@@ -705,7 +731,7 @@ export class Game {
   basePower() {
     const P = this.P;
     const R = REALMS[P.realm];
-    return R.pow * (1 + (P.tuvi / R.need) * 0.5) * (1 + (P.stats.can - 50) / 200) * (1 + P.fight) * (P.flags.pet ? (P.path === 'ngu_thu' ? 1.15 : 1.1) : 1) * this.tmul('fightMul');
+    return R.pow * (1 + subFrac(P.realm, P.tuvi) * 0.5) * (1 + (P.stats.can - 50) / 200) * (1 + P.fight) * (P.flags.pet ? (P.path === 'ngu_thu' ? 1.15 : 1.1) : 1) * this.tmul('fightMul');
   }
   /** Sức mạnh quy đổi gồm trang bị, dùng để so với đối thủ */
   rating() {
@@ -1231,9 +1257,26 @@ export class Game {
       this.log(m, 'good');
       return m;
     }
+    if (this.s.opt && this.s.opt.autoEquip && this.betterThanEquipped(it)) {
+      const old = P.eq[it.slot];
+      P.eq[it.slot] = it;
+      P.bag.push(old);
+      let m = `${prefix}: ${tk}${it.n} (${qn}), tốt hơn ${itemName(old)} nên mang vào luôn.`;
+      if (P.bag.length > BAG_MAX) m += this.trimBag();
+      this.log(m, 'good');
+      return m;
+    }
     P.bag.push(it);
     let msg = `${prefix}: ${tk}${it.n} (${qn}).`;
-    if (P.bag.length > BAG_MAX) {
+    if (P.bag.length > BAG_MAX) msg += this.trimBag();
+    this.log(msg, 'good');
+    return msg;
+  }
+  /** Túi đầy: bán hoặc phân giải món kém nhất, trả về câu thông báo */
+  trimBag() {
+    const P = this.P;
+    let msg = '';
+    {
       P.bag.sort((a, b) => a.val - b.val);
       const sold = P.bag[0];
       if (this.s.opt && this.s.opt.autoSalvage) {
@@ -1244,7 +1287,6 @@ export class Game {
         msg += ` Túi đầy, bán ${itemName(sold)} được ${sold.val} linh thạch.`;
       }
     }
-    this.log(msg, 'good');
     return msg;
   }
   equip(itemId) {
@@ -1271,7 +1313,40 @@ export class Game {
     return it.val;
   }
   betterThanEquipped(it) {
-    return itemScore(it) > itemScore(this.P.eq[it.slot]);
+    return this.effScore(it) > this.effScore(this.P.eq[it.slot]);
+  }
+  /** Điểm thực dùng: đồ Thần thoại bị phong ấn thì tính theo sức đang phát huy */
+  effScore(it) {
+    if (!it) return 0;
+    let sc;
+    if (!isSealed(it, this.P.realm)) sc = itemScore(it);
+    else { const g = gearStats({ x: it }, this.P.realm); sc = g.atk * 3 + g.def * 4 + g.hp * 0.5; }
+    // vũ khí không hợp võ kỹ đang mang thì kém giá trị hơn với ngươi
+    if (it.slot === 'vu_khi') { const need = this.wepNeeded(); if (need && it.wt !== need) sc *= 0.6; }
+    return sc;
+  }
+  /** Loại binh khí mà võ kỹ đang mang cần nhiều nhất (null nếu không cần) */
+  wepNeeded() {
+    const cnt = {};
+    for (const id of this.P.loadout || []) { const w = SKILLS[id] && SKILLS[id].wep; if (w) cnt[w] = (cnt[w] || 0) + 1; }
+    const best = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0];
+    return best ? best[0] : null;
+  }
+  /** Võ kỹ đang mang mà không hợp binh khí đang cầm */
+  skillMismatch() {
+    const P = this.P;
+    const w = P.eq && P.eq.vu_khi ? P.eq.vu_khi.wt : null;
+    return (P.loadout || []).filter((id) => SKILLS[id] && SKILLS[id].wep && SKILLS[id].wep !== w);
+  }
+  /** Mặc món tốt nhất cho mỗi ô. Trả về số món đã đổi. */
+  equipBest() {
+    const P = this.P;
+    let n = 0;
+    for (const slot of ['vu_khi', 'ao', 'phu_kien']) {
+      const best = P.bag.filter((x) => x.slot === slot).sort((a, b) => this.effScore(b) - this.effScore(a))[0];
+      if (best && this.effScore(best) > this.effScore(P.eq[slot])) { this.equip(best.id); n++; }
+    }
+    return n;
   }
   /** Hàng của Tụ Bảo Lâu, đổi mỗi 5 năm */
   shopStock() {
@@ -1382,7 +1457,11 @@ export class Game {
     P.pills[id]--;
     const pm = this.tmul('pillMul');
     if (id === 'hoi_xuan') { P.hp = Math.min(100, P.hp + Math.round(40 * pm)); return 'Sinh lực hồi phục.'; }
-    if (id === 'tinh_tam') { this.stat('tam', Math.round(6 * pm)); return `Tâm tính +${Math.round(6 * pm)}.`; }
+    if (id === 'tinh_tam') {
+      this.stat('tam', Math.round(6 * pm));
+      if (P.flags.neck) { P.flags.neck = null; this.log('Tĩnh Tâm Đan tan trong đan điền, bình cảnh nhỏ vỡ tan.', 'good'); return `Tâm tính +${Math.round(6 * pm)}. Bình cảnh nhỏ đã phá.`; }
+      return `Tâm tính +${Math.round(6 * pm)}.`;
+    }
     if (id === 'dien_tho') {
       P.dienTho[P.realm] = true;
       P.lifeBonus += 0.05;
@@ -1544,6 +1623,9 @@ export class Game {
     }
     P.hp = Math.min(100, P.hp + (act === 'be_quan' ? 6 : 4) * this.tmul('regenMul'));
     this.autoHeal();
+    const nk = P.flags.neck;
+    if (nk && (nk.realm !== P.realm || P.age >= nk.until)) { P.flags.neck = null; if (nk.realm === P.realm) this.log('Bình cảnh nhỏ tự tan, linh khí lại chảy thông suốt.', 'good'); }
+    else if (nk && this.r.chance(Math.max(0, P.stats.ngo - 30) / 400)) { P.flags.neck = null; this.log('Một đêm ngồi nhìn trăng, ngươi bỗng ngộ ra. Bình cảnh nhỏ vỡ tan.', 'good'); }
     if (this.thas('coldPoison') && P.age >= 8 && this.r.chance(0.04) && !this.known().some(({ r }) => r.tag === 'dao_lu')) {
       this.log('Hàn độc Cửu Âm phát tác, cả người lạnh như băng.', 'bad');
       if (this.hurt(12, 'hàn độc Cửu Âm phát tác, đông cứng mà chết')) return true;

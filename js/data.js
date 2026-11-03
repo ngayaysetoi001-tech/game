@@ -14,6 +14,30 @@ export const REALMS = [
 ];
 export const TOP_REALM = REALMS.length - 1;
 
+// ---------- Cảnh giới nhỏ ----------
+// Phàm Nhân không chia, Luyện Khí 9 tầng, từ Trúc Cơ: sơ kỳ, trung kỳ, hậu kỳ, đại viên mãn.
+// Tổng tu vi mỗi cảnh giới lớn giữ nguyên, chỉ chia nấc. Lên nấc nhỏ là tự động, đột phá cảnh giới lớn vẫn như cũ.
+export const SUB4 = ['sơ kỳ', 'trung kỳ', 'hậu kỳ', 'đại viên mãn'];
+export const subN = (realm) => (realm === 0 ? 1 : realm === 1 ? 9 : 4);
+export function subIdx(realm, tuvi) {
+  const n = subN(realm);
+  if (n === 1) return 0;
+  return Math.max(0, Math.min(n - 1, Math.floor((tuvi / REALMS[realm].need) * n + 1e-9)));
+}
+/** 0..1 theo nấc (Phàm Nhân thì liên tục), dùng cho sức mạnh */
+export function subFrac(realm, tuvi) {
+  const n = subN(realm);
+  return n === 1 ? Math.min(1, Math.max(0, tuvi / REALMS[realm].need)) : subIdx(realm, tuvi) / (n - 1);
+}
+export function realmLabel(realm, tuvi) {
+  const R = REALMS[realm];
+  const n = subN(realm);
+  if (n === 1) return R.n;
+  const k = subIdx(realm, tuvi);
+  if (n === 9) return `${R.n} tầng ${k + 1}${tuvi >= R.need ? ' viên mãn' : ''}`;
+  return `${R.n} ${SUB4[k]}`;
+}
+
 /** Tu vi một năm tu luyện chuyên tâm, trước các hệ số */
 export const baseGain = (realm) => 6 * Math.pow(1.5, realm);
 
@@ -84,7 +108,7 @@ export const PILLS = {
   hoi_xuan: { n: 'Hồi Xuân Đan', price: 25, desc: 'Hồi 40 sinh lực.' },
   pha_canh: { n: 'Phá Cảnh Đan', price: 100, desc: 'Dùng khi đột phá: tỉ lệ +10%.' },
   dien_tho: { n: 'Diên Thọ Đan', price: 120, desc: 'Thọ nguyên +5%. Mỗi cảnh giới chỉ hấp thu được một viên.' },
-  tinh_tam: { n: 'Tĩnh Tâm Đan', price: 40, desc: 'Tâm tính +6.' },
+  tinh_tam: { n: 'Tĩnh Tâm Đan', price: 40, desc: 'Tâm tính +6. Phá được bình cảnh nhỏ.' },
 };
 
 // Tàn niệm: chọn 1 trong 3 khi chết, mang sang kiếp sau

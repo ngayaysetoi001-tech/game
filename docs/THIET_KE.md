@@ -108,6 +108,27 @@ Thử với yêu thú Trúc Cơ mạnh hơn 60%, mỗi bên cầm binh khí hợ
 - Tỉ lệ đột phá = gốc + (ngộ-50)/250 + (tâm-50)/300 + (cơ duyên-50)/400 + hộ pháp + đan, kẹp trong 5%-95%.
 - Phần thưởng tu vi từ sự kiện tính theo **số năm tu luyện** (ví dụ "+6 năm"), không theo % tu vi cần. Vì vậy cảnh giới cao không bị sự kiện "gánh".
 
+## 4b. Cảnh giới nhỏ
+
+| Cảnh giới | Cảnh giới nhỏ |
+|---|---|
+| Phàm Nhân | không chia |
+| Luyện Khí | tầng 1 → tầng 9 (đầy tu vi thì "tầng 9 viên mãn") |
+| Trúc Cơ trở lên | sơ kỳ → trung kỳ → hậu kỳ → đại viên mãn (mỗi nấc 25% tu vi) |
+
+- Tổng tu vi mỗi cảnh giới lớn giữ nguyên. Lên nấc nhỏ là tự động, có dòng nhật ký. Đột phá lên cảnh giới lớn vẫn như cũ: đầy tu vi thì mới hỏi.
+- Đột phá hỏng làm tu vi tụt lùi; tu lại tới nấc đã từng đạt thì không báo lại.
+- **Sức mạnh tăng theo nấc**, thay cho kiểu tăng đều từng chút:
+  - người chơi: +0% ở nấc đầu tới +50% ở nấc cuối;
+  - bot: cũng theo nấc như vậy;
+  - ước lượng của bot khi chọn vùng lịch luyện: tới +30%;
+  - riêng Phàm Nhân vẫn tăng đều theo tu vi.
+- **Bình cảnh nhỏ:** lần đầu từ hậu kỳ lên đại viên mãn ở mỗi cảnh giới (Trúc Cơ trở lên) có 20% bị kẹt 3–8 năm.
+  - Cách phá: uống Tĩnh Tâm Đan, hoặc chờ "ngộ ra". Mỗi năm có (ngộ tính − 30)/400 khả năng tự ngộ.
+  - Thanh trên có nút cảnh báo ⛓, bấm vào để xem cách phá.
+- **Thanh tu vi** có vạch chia nấc. Tên cảnh giới nhỏ hiện ở thanh trên, bảng Nhân vật, Quan hệ, Bảng Thiên Kiêu.
+- **Số liệu** (mô phỏng 20 kiếp chỉ tu luyện): mỗi kiếp lên khoảng 17 nấc nhỏ, gặp khoảng 0,2 lần bình cảnh nhỏ. Mô phỏng 540 kiếp: tuổi trung bình 310, phi thăng 11. Phân bố cảnh giới của bot không đổi.
+
 ## 5. Thế giới bot
 
 - 40 linh hồn. Mỗi linh hồn có **tính cách** giữ qua các kiếp (70%): Hiền hòa, Tham lam, Cuồng ngạo, Ẩn dật, Mưu sâu, Trọng nghĩa. Tính cách ảnh hưởng tốc độ kết thân, độ hiếu chiến, khả năng phản bội.
@@ -311,6 +332,23 @@ Trên màn hình rộng (từ 900px), bố cục chia 2 cột: trái là nhân v
 - Thẻ kỳ ngộ dài (ví dụ 6 con đường tu hành) thì cuộn được.
 - Cài như ứng dụng: `manifest.webmanifest`, biểu tượng `icons/` vẽ từ sprite của game, các thẻ meta cho iPhone. Phần trên chừa chỗ tai thỏ.
 - Menu ☰ có hướng dẫn cài ra Màn hình chính. Trình duyệt hỗ trợ (Android, máy tính) thì có thêm nút Toàn màn hình.
+
+## 6i. Hành trang, bản lưu, ngoại tuyến
+
+- **Hành trang:**
+  - Mỗi món (đang mang hay trong túi) có nút cường hóa (tỉ lệ và chi phí hiện sẵn) và nút thăng cấp nếu món đó thấp hơn cảnh giới. Kết quả hiện ngay đầu bảng.
+  - Nút "Mặc đồ tốt nhất".
+  - Tùy chọn "nhặt được đồ tốt hơn thì tự mặc" (mặc định bật). Đồ phong ấn tính theo sức đang phát huy. Vũ khí không hợp võ kỹ đang mang bị tính kém đi 40%, để không tự đổi kiếm lấy đao.
+  - Ô trống có gợi ý chỗ kiếm đồ và nút "Rèn" mở thẳng thẻ Rèn mới của Lò rèn.
+- **Võ kỹ lệch binh khí:**
+  - Có nút "Cầm [vũ khí hợp] trong túi"; không có thì có nút "Rèn [loại binh khí]".
+  - Thanh trên hiện cảnh báo ⚠, bấm vào mở Hành trang.
+- **Lọc nhật ký:** Tất cả / Kỳ ngộ / Chiến đấu / Quan trọng. Quan trọng gồm đột phá, thần khí, danh hiệu, tin dữ, bình cảnh, đạo đồ, tâm ma, truyền thừa…
+- **Xuất / nhập bản lưu** (menu ☰):
+  - Mã dạng `TKPS1:` + base64 của bản lưu, khoảng 30 nghìn ký tự.
+  - Có nút chép mã và tải thành tệp.
+  - Nhập sẽ thay thế thế giới hiện tại, có hỏi xác nhận.
+- **Ngoại tuyến:** trang riêng (GitHub Pages) có `sw.js` lưu sẵn 17 tệp. Mở game thì dùng bản đã lưu ngay cho nhanh, đồng thời tải bản mới ở nền, nên cập nhật có hiệu lực từ lần mở sau. Bản gộp một tệp trong Claude không dùng service worker.
 
 ## 7. Kỹ thuật
 

@@ -1,6 +1,6 @@
 // Giao diện trình duyệt. Mọi luật chơi nằm trong core.js.
 import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITLE_MAP, HL_PRICE, HL_REROLL, PATHS, clamp } from './core.js';
-import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEFAULT_MAP } from './data.js';
+import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEFAULT_MAP, realmLabel, subN } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, TACTICS, WEAPON_TYPES, turnText } from './combat.js';
 import { SLOTS, QUALITY, itemLine, TT_MAP, isSealed, gearStats, itemName, PLUS_MAX, AFFIX } from './items.js';
@@ -263,9 +263,11 @@ function renderBirth() {
   $('startBtn').onclick = () => { g.start(); paused = false; tab = 'log'; save(); dirty = true; };
 }
 
-function bar(label, val, max, color, text, key) {
+function bar(label, val, max, color, text, key, ticks = 0) {
   const w = clamp((val / Math.max(1, max)) * 100, 0, 100);
-  return `<div class="bar" data-stat="${key}" role="button" tabindex="0"><span>${label} <i class="qm">?</i></span><div class="track"><div class="fill" style="width:${w}%;background:${color}"></div></div><span class="num">${text}</span></div>`;
+  // vạch chia cảnh giới nhỏ trên thanh tu vi
+  const tk = ticks > 1 ? Array.from({ length: ticks - 1 }, (_, i) => `<i class="tick" style="left:${((i + 1) * 100) / ticks}%"></i>`).join('') : '';
+  return `<div class="bar" data-stat="${key}" role="button" tabindex="0"><span>${label} <i class="qm">?</i></span><div class="track"><div class="fill" style="width:${w}%;background:${color}"></div>${tk}</div><span class="num">${text}</span></div>`;
 }
 
 function renderPlay() {
@@ -275,10 +277,10 @@ function renderPlay() {
   const sc = P.sect ? g.sect(P.sect) : null;
   drawPortrait($('portrait'), P, { life, robe: playerRobe(P), dead: g.s.phase === 'dead' });
   const ttl = P.title && TITLE_MAP[P.title] ? TITLE_MAP[P.title] : null;
-  setHTML($('hudLine'), `${ttl ? `<span class="ttl t${ttl.tier} mini"><span>${esc(ttl.n)}</span></span>` : ''}<b class="hudName">${esc(P.name)}</b> <span class="realm">${REALMS[P.realm].n}</span><span class="meta"> · ${P.age} tuổi${sc ? ` · ${esc(sc.name)}` : ''}</span><span class="more">›</span>`);
+  setHTML($('hudLine'), `${ttl ? `<span class="ttl t${ttl.tier} mini"><span>${esc(ttl.n)}</span></span>` : ''}<b class="hudName">${esc(P.name)}</b> <span class="realm">${esc(g.subRealmName())}</span><span class="meta"> · ${P.age} tuổi${sc ? ` · ${esc(sc.name)}` : ''}</span><span class="more">›</span>`);
   const need = g.need();
   setHTML($('bars'),
-    bar('Tu vi', P.tuvi, need, 'var(--tuvi)', P.dao ? `${fmt(P.tuvi)}/${fmt(need)}` : '-', 'tuvi') +
+    bar('Tu vi', P.tuvi, need, 'var(--tuvi)', P.dao ? `${fmt(P.tuvi)}/${fmt(need)}` : '-', 'tuvi', subN(P.realm)) +
     bar('Sinh lực', P.hp, 100, 'var(--hp)', `${P.hp}/100`, 'hp') +
     bar('Thọ', P.age, life, 'var(--life)', `${P.age}/${life}`, 'tho'));
   const act = g.effectiveAction();
@@ -287,7 +289,10 @@ function renderPlay() {
     : act === 'lon_len' ? (P.age < 6 ? 'Còn nhỏ, cứ lớn lên đã' : 'Chưa nhập đạo, chưa thể tu luyện')
     : `${ACTIONS[act].icon} ${ACTIONS[act].n}${mp ? ` · ${DIFF[mp.d].ic} ${mp.n}` : ''}${mp && P.flags.retreated && MAP_MAP[P.mapGoal] ? ` (dưỡng thương, hồi 80 về ${MAP_MAP[P.mapGoal].n})` : ''}`;
   const nPill = P.pills.hoi_xuan || 0;
-  setHTML($('hudSub'), `<span>${esc(doing)}</span><span class="money">${g.s.opt.autoPill ? `<span title="Hồi Xuân Đan, tự uống khi sinh lực dưới 40" class="${nPill ? '' : 'noPill'}">💊${nPill}</span> · ` : ''}${fmt(P.money)} linh thạch</span>`);
+  const warn = [];
+  if (P.flags.neck && P.flags.neck.realm === P.realm) warn.push(`<button class="hudWarn" data-hw="neck">⛓ Bình cảnh nhỏ · ${Math.max(0, P.flags.neck.until - P.age)} năm</button>`);
+  if (g.skillMismatch().length) warn.push('<button class="hudWarn" data-hw="wep">⚠ Võ kỹ lệch binh khí</button>');
+  setHTML($('hudSub'), `<span>${warn.length ? warn.join(' ') : esc(doing)}</span><span class="money">${g.s.opt.autoPill ? `<span title="Hồi Xuân Đan, tự uống khi sinh lực dưới 40" class="${nPill ? '' : 'noPill'}">💊${nPill}</span> · ` : ''}${fmt(P.money)} linh thạch</span>`);
 
   const canBreak = g.canBreak();
   setHTML($('breakRow'), canBreak ? '<button class="btn primary breakBtn wide" data-do="break">⚡ Tu vi viên mãn · Đột phá</button>' : '');
@@ -338,7 +343,7 @@ function openChar() {
         <h2 class="charName">${esc(P.name)}</h2>
         ${hon ? `<div class="daohieu">${esc(hon)}</div>` : ''}
         <div class="sub">${P.age} tuổi · Kiếp ${P.lifeNo} · ${esc(P.root.n)}</div>
-        <div class="sub"><span class="realm">${REALMS[P.realm].n}</span>${P.path && PATHS[P.path] ? ` · <button class="pathTag" data-stat="path">${esc(PATHS[P.path].n)}</button>` : ''}${P.dao ? '' : ' · chưa nhập đạo'}${sc ? ` · ${esc(sc.name)}` : P.dao ? ' · tán tu' : ''}</div>
+        <div class="sub"><span class="realm">${esc(g.subRealmName())}</span>${P.path && PATHS[P.path] ? ` · <button class="pathTag" data-stat="path">${esc(PATHS[P.path].n)}</button>` : ''}${P.dao ? '' : ' · chưa nhập đạo'}${sc ? ` · ${esc(sc.name)}` : P.dao ? ' · tán tu' : ''}</div>
         <button class="eqStrip" id="eqStrip" aria-label="Mở hành trang">${Object.keys(SLOTS).map((sl) => (P.eq && P.eq[sl] ? itemIco(P.eq[sl]) : icoImg({ kind: SLOT_KIND[sl], faded: true }, 'empty'))).join('')}</button>
       </div></div>
     <h3>Chỉ số · chạm để xem giải thích</h3>
@@ -370,12 +375,23 @@ function openMore() {
   });
 }
 
+// lọc nhật ký
+let logFilter = 'all';
+const IMPORTANT_RE = /Tin dữ|thần khí|Thần khí|Đột phá thành công|Giang hồ bắt đầu gọi|danh hiệu|ngã xuống|Bình cảnh nhỏ|phi thăng|đoạt được/;
+const LOG_FILTER = {
+  all: { n: 'Tất cả', test: () => true },
+  ev: { n: 'Kỳ ngộ', test: (l) => !!l.h },
+  fight: { n: 'Chiến đấu', test: (l) => /Giao đấu|hạ được|đánh bại|đánh chết|Nghênh chiến/.test(l.t + (l.c || '')) },
+  big: { n: 'Quan trọng', test: (l) => l.tone === 'big' || IMPORTANT_RE.test(l.t) || (l.h && /Bình cảnh|Ngã rẽ|Đạo hiệu|Tâm ma|Truyền thừa|Bí cảnh/.test(l.h)) },
+};
 function renderTab(t = tab) {
   if (t === 'log') {
-    const items = g.s.log.slice(-80).reverse();
+    const all = g.s.log.slice(-160).reverse();
+    const items = (logFilter === 'all' ? all : all.filter((l) => LOG_FILTER[logFilter].test(l))).slice(0, 80);
+    const bar = `<div class="logFilter">${Object.entries(LOG_FILTER).map(([k, f]) => `<button class="${logFilter === k ? 'on' : ''}" data-lf="${k}">${f.n}</button>`).join('')}</div>`;
     const n = g.s.log.length;
     const fresh = performance.now() < freshUntil ? freshFrom : Infinity;
-    return `<ul class="log">${items.map((l, i) => {
+    return bar + (items.length ? '' : '<p class="empty">Chưa có dòng nào trong mục này.</p>') + `<ul class="log">${items.map((l, i) => {
       const idx = n - 1 - i;
       const cls = `${l.tone}${idx >= fresh ? ' fresh' : ''}`;
       if (l.h) return `<li class="${cls}"><span class="age">${l.a} tuổi</span><b class="evH">${esc(l.h)}</b>${l.c ? `<span class="evC">→ ${esc(l.c)}</span>` : ''}<div class="evR">${rich(l.t)}</div></li>`;
@@ -394,7 +410,7 @@ function renderTab(t = tab) {
       const theTxt = bt && bt.id !== 'pham' ? ` · <span class="t${bt.tier}c">${esc(bt.n)}</span>` : '';
       const bh = g.botHonorific(b);
       return `<div class="item withAv">${botAvatar(b)}<div class="body"><div class="row"><b>${esc(b.name)}${bh ? ` <span class="dhSmall">${esc(bh)}</span>` : ''}</b><span class="tag ${cls}">${esc(g.relLabel(r))} ${r.v > 0 ? '+' : ''}${r.v}</span></div>
-        <div class="meta">${REALMS[b.realm].n} · ${b.age} tuổi · ${PERSONALITIES[b.pers].n}${sc ? ` · ${esc(sc.name)}` : ''}${theTxt}</div>${botWhere(b)}${past}</div></div>`;
+        <div class="meta">${realmLabel(b.realm, b.tuvi)} · ${b.age} tuổi · ${PERSONALITIES[b.pers].n}${sc ? ` · ${esc(sc.name)}` : ''}${theTxt}</div>${botWhere(b)}${past}</div></div>`;
     }).join('')}</div>`;
   }
   if (tab === 'world') {
@@ -419,7 +435,7 @@ function renderTab(t = tab) {
       const xh = x.me ? g.honorific() : g.botHonorific(g.soul(x.id));
       const leader = sc && !x.me ? g.members(sc.id).sort((a, b) => b.realm - a.realm || b.tuvi - a.tuvi)[0] : null;
       const badge = i === 0 ? '<span class="tag gold">Bảng thủ</span>' : leader && leader.id === x.id ? '<span class="tag">Chưởng môn</span>' : '';
-      return `<div class="item withAv ${x.me ? 'me' : ''}">${av}<div class="body"><div class="row"><b>${i + 1}. ${esc(x.name)}${x.me ? ' (ngươi)' : ''}${xh ? ` <span class="dhSmall">${esc(xh)}</span>` : ''}</b><span class="meta">${REALMS[x.realm].n} ${Math.floor(x.prog * 100)}%</span></div>
+      return `<div class="item withAv ${x.me ? 'me' : ''}">${av}<div class="body"><div class="row"><b>${i + 1}. ${esc(x.name)}${x.me ? ' (ngươi)' : ''}${xh ? ` <span class="dhSmall">${esc(xh)}</span>` : ''}</b><span class="meta">${realmLabel(x.realm, x.prog * REALMS[x.realm].need)}</span></div>
         <div class="meta">${x.age} tuổi${sc ? ` · ${esc(sc.name)}` : ' · tán tu'} ${badge}</div>${x.me ? '' : botWhere(g.soul(x.id))}</div></div>`;
     }).join('')}</div>`;
   }
@@ -874,45 +890,80 @@ function openForge() {
   draw();
 }
 
+/** Nút cường hóa, thăng cấp ngay trên một món (Hành trang) */
+function forgeBtns(it) {
+  if (!g.forgeOpen()) return '';
+  const P = g.P;
+  let h = '';
+  if ((it.plus || 0) < PLUS_MAX) {
+    const c = g.enhanceCost(it);
+    const p = g.enhanceChance(it);
+    h += `<button class="btn ghost" data-enh="${it.id}" ${g.canPay(c) ? '' : 'disabled'}>⚒ +${(it.plus || 0) + 1} · ${Math.round(p * 100)}%</button>`;
+    h += `<div class="cost">Cường hóa: ${costText(c)}</div>`;
+  }
+  if (it.lv < P.realm) {
+    const c = g.upgradeCost(it);
+    h += `<button class="btn ghost" data-up="${it.id}" ${g.canPay(c) ? '' : 'disabled'}>⬆ Thăng lên ${REALMS[P.realm].n}</button><div class="cost">Thăng cấp: ${costText(c)}</div>`;
+  }
+  return h;
+}
 function openBag() {
   const draw = (msg = '') => {
     const P = g.P;
     const F = g.playerFighter();
+    const forgeTip = g.forgeOpen() ? 'rèn ở ⚒ Lò rèn' : 'Lò rèn mở từ 12 tuổi';
     const eq = Object.keys(SLOTS).map((sl) => {
       const it = P.eq[sl];
-      return it ? itemCard(it, `<button class="btn ghost" data-un="${sl}">Tháo</button>`) : `<div class="item withIco">${icoImg({ kind: SLOT_KIND[sl], faded: true }, 'empty')}<div class="body"><b class="meta">${SLOTS[sl]}: trống</b></div></div>`;
+      if (it) return itemCard(it, `<button class="btn ghost" data-un="${sl}">Tháo</button>${forgeBtns(it)}`);
+      const inBag = P.bag.some((x) => x.slot === sl);
+      return `<div class="item withIco">${icoImg({ kind: SLOT_KIND[sl], faded: true }, 'empty')}<div class="body"><b class="meta">${SLOTS[sl]}: trống</b>
+        <div class="meta">${inBag ? 'Trong túi có đồ cho ô này.' : `Mua ở 🏮 Tụ Bảo Lâu, ${forgeTip}, hoặc lịch luyện vùng khó để nhặt.`}</div>
+        <div class="row btnRow">${inBag ? `<button class="btn ghost" data-best="1">Mang món tốt nhất</button>` : ''}${g.forgeOpen() ? `<button class="btn ghost" data-goforge="${sl}">⚒ Rèn ${SLOTS[sl].toLowerCase()}</button>` : ''}</div></div></div>`;
     }).join('');
     const bag = P.bag.slice().sort((a, b) => (a.slot > b.slot ? 1 : a.slot < b.slot ? -1 : b.val - a.val)).map((it) => itemCard(it,
-      `<button class="btn ghost" data-eq="${it.id}">Mang</button><button class="btn ghost" data-sell="${it.id}">Bán · ${fmt(it.val)}</button><button class="btn ghost" data-salv="${it.id}" title="${esc(stripTok(g.matText(g.salvageYield(it))))}">Phân giải</button>${g.betterThanEquipped(it) ? '<span class="tag pos">Tốt hơn</span>' : ''}`)).join('');
+      `<button class="btn ghost" data-eq="${it.id}">Mang</button><button class="btn ghost" data-sell="${it.id}">Bán · ${fmt(it.val)}</button><button class="btn ghost" data-salv="${it.id}" title="${esc(stripTok(g.matText(g.salvageYield(it))))}">Phân giải</button>${g.betterThanEquipped(it) ? '<span class="tag pos">Tốt hơn</span>' : ''}${forgeBtns(it)}`)).join('');
     const wep = P.eq.vu_khi ? P.eq.vu_khi.wt : null;
     const sks = P.skills.map((id) => {
       const sk = SKILLS[id];
       const on = P.loadout.includes(id);
-      const fit = sk.wep && sk.wep !== wep ? `<span class="tag neg">Cần ${WEAPON_TYPES[sk.wep].n.toLowerCase()}, đang yếu 40%</span>` : '';
+      let fit = '';
+      if (sk.wep && sk.wep !== wep) {
+        const alt = P.bag.filter((x) => x.slot === 'vu_khi' && x.wt === sk.wep).sort((a, b) => g.effScore(b) - g.effScore(a))[0];
+        fit = `<span class="tag neg">Cần ${WEAPON_TYPES[sk.wep].n.toLowerCase()}, đang yếu 40%</span>` +
+          (alt ? `<button class="btn ghost" data-eq="${alt.id}">Cầm ${esc(itemName(alt))}</button>` : g.forgeOpen() ? `<button class="btn ghost" data-goforge="vu_khi:${sk.wep}">⚒ Rèn ${WEAPON_TYPES[sk.wep].n.toLowerCase()}</button>` : '');
+      }
       return `<div class="item"><div class="row"><b>${esc(sk.n)}</b><span class="meta">${sk.mp ? `Linh lực ${sk.mp}` : 'Không tốn linh lực'}</span></div><div class="meta">${esc(sk.desc)}</div>
         <div class="row btnRow"><button class="btn ${on ? 'on' : 'ghost'}" data-sk="${id}">${on ? 'Đang mang theo' : 'Mang theo'}</button>${fit}</div></div>`;
     }).join('');
+    const canBest = ['vu_khi', 'ao', 'phu_kien'].some((sl) => P.bag.some((x) => x.slot === sl && g.effScore(x) > g.effScore(P.eq[sl])));
     openSheet(`<h2>Hành trang</h2>
       <div class="cstats"><span>Công <b>${fmt(F.atk)}</b></span><span>Thủ <b>${fmt(F.def)}</b></span><span>Sinh lực <b>${fmt(F.maxHp)}</b></span><span>Bạo kích <b>${Math.round(F.crit * 100)}%</b></span><span>Né <b>${Math.round(F.dodge * 100)}%</b></span></div>
       ${(() => { const ids = [...new Set(Object.values(P.eq).filter((x) => x && x.tt && !isSealed(x, P.realm)).map((x) => x.tt))]; return ids.length ? `<div class="ttActive">Thần thông đang phát huy: ${ids.map((id) => `<span class="ttName">✦ ${esc(TT_MAP[id].n)}</span>`).join(' ')}</div>` : ''; })()}
-      ${msg ? `<p class="intro">${esc(msg)}</p>` : ''}
+      ${msg ? `<p class="forgeMsg">${rich(msg)}</p>` : ''}
+      ${matChips(P)}
+      <div class="row btnRow"><button class="btn ${canBest ? 'primary' : 'ghost'}" data-best="1" ${canBest ? '' : 'disabled'}>✨ Mặc đồ tốt nhất</button>
+        <button class="btn ${g.s.opt.autoEquip ? 'on' : 'ghost'}" data-autoeq="1">Nhặt được đồ tốt hơn thì tự mặc: ${g.s.opt.autoEquip ? 'bật' : 'tắt'}</button></div>
       <h3>Đang mang</h3><div class="list">${eq}</div>
       <h3>Võ kỹ · mang theo ${P.loadout.length}/4</h3><div class="list">${sks}</div>
       <h3>Chiến thuật</h3><div class="tactics">${Object.entries(TACTICS).map(([k, t]) => `<button class="btn ${P.tactic === k ? 'on' : ''}" data-tc="${k}">${t.n}<small>${t.desc}</small></button>`).join('')}</div>
-      <h3>Nguyên liệu</h3>${matChips(P)}
       <h3>Túi đồ · ${P.bag.length}/16</h3>
       <div class="row btnRow"><button class="btn ghost" data-salvall="1" ${P.bag.some((x) => x.q <= 1) ? '' : 'disabled'}>Phân giải hết Hạ, Trung phẩm</button>
         <button class="btn ${g.s.opt.autoSalvage ? 'on' : 'ghost'}" data-autosalv="1">Túi đầy: ${g.s.opt.autoSalvage ? 'tự phân giải' : 'tự bán'}</button></div>
       <div class="list">${bag || '<p class="empty">Túi trống. Đồ rơi từ yêu thú, hang động, bí cảnh, đối thủ, hoặc mua ở Tụ Bảo Lâu.</p>'}</div>`, () => {
-      const q = (sel, fn) => $('sheetBody').querySelectorAll(sel).forEach((b) => { b.onclick = () => { const m = fn(b); save(); draw(typeof m === 'string' ? m : ''); }; });
+      const q = (sel, fn) => $('sheetBody').querySelectorAll(sel).forEach((b) => { b.onclick = () => { const m = fn(b); save(); dirty = true; draw(typeof m === 'string' ? m : ''); }; });
       q('[data-un]', (b) => g.unequip(b.dataset.un));
       q('[data-eq]', (b) => g.equip(+b.dataset.eq));
       q('[data-sell]', (b) => `Bán được ${g.sell(+b.dataset.sell)} linh thạch.`);
-      q('[data-salv]', (b) => `Phân giải được: ${stripTok(g.salvage(+b.dataset.salv))}.`);
-      q('[data-salvall]', () => stripTok(g.salvageAll(1)));
+      q('[data-salv]', (b) => `Phân giải được: ${g.salvage(+b.dataset.salv)}.`);
+      q('[data-salvall]', () => g.salvageAll(1));
       q('[data-autosalv]', () => { g.s.opt.autoSalvage = !g.s.opt.autoSalvage; });
+      q('[data-autoeq]', () => { g.s.opt.autoEquip = !g.s.opt.autoEquip; });
+      q('[data-best]', () => { const n = g.equipBest(); return n ? `Đã thay ${n} món tốt hơn.` : 'Đồ đang mang đã là tốt nhất.'; });
+      q('[data-enh]', (b) => g.enhance(+b.dataset.enh) || 'Không đủ nguyên liệu.');
+      q('[data-up]', (b) => g.upgrade(+b.dataset.up) || 'Không đủ nguyên liệu.');
       q('[data-sk]', (b) => g.toggleSkill(b.dataset.sk));
       q('[data-tc]', (b) => g.setTactic(b.dataset.tc));
+      $('sheetBody').querySelectorAll('[data-goforge]').forEach((b) => { b.onclick = () => { const [sl, wt] = b.dataset.goforge.split(':'); forgeTab = 'moi'; forgeSel.slot = sl; if (wt) forgeSel.wt = wt; openForge(); }; });
     });
   };
   draw();
@@ -1009,7 +1060,12 @@ $('menuBtn').onclick = () => {
     <div class="opts">${Object.entries(BATTLE_VIEW).map(([k, n]) => `<button class="btn ${battleView === k ? 'on' : 'ghost'}" data-bv="${k}">${n}</button>`).join('')}</div>
     <p class="intro">Chỉ trận lớn: trận có thể mất mạng (yêu thú vùng khó, kẻ thù, ma tu...). Từ ${AUTO_SPEED}× luôn bỏ qua. Kết quả trận nào cũng ghi vào nhật ký.</p>
     ${fsInfo()}
+    <h3>Bản lưu</h3>
+    <p class="intro">Chuyển thế giới đang chơi sang trang khác hoặc máy khác: Xuất ra một đoạn mã rồi Nhập ở bên kia.</p>
+    <div class="row btnRow"><button class="btn ghost" id="exportBtn">📤 Xuất bản lưu</button><button class="btn ghost" id="importBtn">📥 Nhập bản lưu</button></div>
     <div class="list">${canFullscreen() ? `<button class="btn" id="fsBtn">${document.fullscreenElement ? 'Thoát toàn màn hình' : '⛶ Toàn màn hình'}</button>` : ''}<button class="btn" id="themeBtn">Đổi giao diện sáng / tối</button><button class="btn" id="newWorld">Tạo thế giới mới (xóa bản lưu)</button></div>`, () => {
+    $('exportBtn').onclick = openExport;
+    $('importBtn').onclick = openImport;
     if ($('fsBtn')) $('fsBtn').onclick = () => { toggleFullscreen(); $('sheet').hidden = true; };
     $('sheetBody').querySelectorAll('[data-bv]').forEach((b) => { b.onclick = () => { battleView = b.dataset.bv; save(); $('menuBtn').onclick(); }; });
     $('themeBtn').onclick = () => {
@@ -1106,6 +1162,20 @@ function dockClick(e) {
 }
 $('actions').addEventListener('click', dockClick);
 $('utils').addEventListener('click', dockClick);
+$('tabbody').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-lf]');
+  if (b) { logFilter = b.dataset.lf; dirty = true; }
+});
+$('hudSub').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-hw]');
+  if (!b) return;
+  if (b.dataset.hw === 'wep') openBag();
+  else openSheet(`<h2>⛓ Bình cảnh nhỏ</h2><p class="intro">Tu vi đang kẹt ở ${esc(g.subRealmName())}. Còn khoảng ${Math.max(0, g.P.flags.neck.until - g.P.age)} năm sẽ tự thông. Uống Tĩnh Tâm Đan (Tụ Bảo Lâu) để phá ngay. Ngộ tính cao thì dễ bỗng ngộ ra sớm.</p>
+    <div class="row btnRow"><button class="btn primary" id="neckPill" ${(g.P.pills.tinh_tam || 0) > 0 ? '' : 'disabled'}>Uống Tĩnh Tâm Đan (có ${g.P.pills.tinh_tam || 0})</button><button class="btn ghost" id="neckShop">🏮 Tụ Bảo Lâu</button></div>`, () => {
+    $('neckPill').onclick = () => { g.usePill('tinh_tam'); save(); $('sheet').hidden = true; dirty = true; };
+    $('neckShop').onclick = openShop;
+  });
+});
 $('tabs').addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (b && b.dataset.tab) { tab = b.dataset.tab; dirty = true; }
@@ -1123,6 +1193,64 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.key === ' ' && !(e.target.closest && e.target.closest('button'))) { e.preventDefault(); paused = !paused; dirty = true; }
 });
+
+// ---------- Xuất / nhập bản lưu ----------
+const SAVE_TAG = 'TKPS1:';
+function exportCode() {
+  save();
+  const raw = g.save();
+  return SAVE_TAG + btoa(unescape(encodeURIComponent(raw)));
+}
+function decodeSave(text) {
+  const t = String(text || '').trim();
+  if (t.startsWith(SAVE_TAG)) return decodeURIComponent(escape(atob(t.slice(SAVE_TAG.length).replace(/\s+/g, ''))));
+  if (t.startsWith('{')) return t;
+  throw new Error('Mã không đúng định dạng');
+}
+function openExport() {
+  const code = exportCode();
+  openSheet(`<h2>📤 Xuất bản lưu</h2>
+    <p class="intro">Đoạn mã dưới đây chứa cả thế giới: kiếp đang chơi, các kiếp trước, Hồn Lực, bốn mươi linh hồn. Chép lại rồi dán ở mục Nhập bản lưu của trang kia. Mã dài ${fmt(code.length)} ký tự.</p>
+    <textarea class="saveBox" id="saveOut" readonly>${esc(code)}</textarea>
+    <div class="row btnRow"><button class="btn primary" id="copySave">Chép mã</button><button class="btn ghost" id="dlSave">Tải về thành tệp</button></div>
+    <p class="intro" id="saveMsg"></p>`, () => {
+    $('copySave').onclick = async () => {
+      try { await navigator.clipboard.writeText(code); $('saveMsg').textContent = 'Đã chép. Giờ mở trang kia, vào ☰ → Nhập bản lưu, rồi dán.'; }
+      catch (e) { const t = $('saveOut'); t.focus(); t.select(); $('saveMsg').textContent = 'Trình duyệt không cho chép tự động. Đã bôi đen sẵn, hãy bấm giữ rồi chọn Sao chép.'; }
+    };
+    $('dlSave').onclick = () => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([code], { type: 'text/plain' }));
+      a.download = `tram-kiep-${g.s.year}.txt`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    };
+  });
+}
+function openImport() {
+  openSheet(`<h2>📥 Nhập bản lưu</h2>
+    <p class="intro">Dán đoạn mã đã xuất (bắt đầu bằng ${SAVE_TAG}). <b>Thế giới hiện tại ở trang này sẽ bị thay thế.</b> Muốn giữ thì Xuất nó ra trước.</p>
+    <textarea class="saveBox" id="saveIn" placeholder="${SAVE_TAG}..."></textarea>
+    <div class="row btnRow"><button class="btn ghost" id="pasteSave">Dán từ bộ nhớ tạm</button><button class="btn primary" id="doImport">Nhập và thay thế</button></div>
+    <p class="intro" id="saveMsg"></p>`, () => {
+    $('pasteSave').onclick = async () => { try { $('saveIn').value = await navigator.clipboard.readText(); } catch (e) { $('saveMsg').textContent = 'Trình duyệt không cho đọc bộ nhớ tạm, hãy bấm giữ vào ô rồi chọn Dán.'; } };
+    $('doImport').onclick = () => {
+      let ng;
+      try { ng = Game.load(decodeSave($('saveIn').value)); if (!ng.s || !ng.s.souls) throw new Error('thiếu dữ liệu'); }
+      catch (e) { $('saveMsg').textContent = `Không đọc được mã: ${e.message}. Hãy chép lại cho đủ, không thiếu ký tự nào.`; return; }
+      if (!confirm('Thay thế thế giới hiện tại bằng bản vừa dán?')) return;
+      g = ng;
+      const ui = g.s.ui || {};
+      speed = SPEEDS.includes(ui.speed) ? ui.speed : 1;
+      askMode = ASK[ui.ask] ? ui.ask : 'big';
+      battleView = BATTLE_VIEW[ui.battle] ? ui.battle : 'big';
+      paused = true;
+      save();
+      $('sheet').hidden = true;
+      dirty = true;
+    };
+  });
+}
 
 // ---------- Toàn màn hình ----------
 const isStandalone = () => matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true;
@@ -1188,6 +1316,10 @@ try {
   const th = localStorage.getItem('tkps.theme');
   if (th) document.documentElement.dataset.theme = th;
 } catch (e) { /* bỏ qua */ }
+// chơi không cần mạng: chỉ khi chạy từ trang riêng (có manifest), không đăng ký ở bản gộp một tệp
+if ('serviceWorker' in navigator && document.querySelector('link[rel="manifest"]') && location.protocol === 'https:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 load();
 document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
 render();
