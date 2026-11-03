@@ -984,3 +984,65 @@ body.inPlay.evOpen .hudPic img.art, body.inPlay.evOpen .hud #portrait { width: 4
 .hudChip.wound { border-color: #d9822b; color: #d9822b; }
 .hudChip.wound.w2 { border-color: var(--bad); color: var(--bad); font-weight: 700; }
 .hudChip.wound.w3 { border-color: var(--bad); color: var(--bad); font-weight: 700; animation: pulseBad 1.6s infinite; }
+
+/* ================= Gọn giao diện (bản 4.4) ================= */
+/* HUD */
+.hudSub:empty { display: none; }
+.hudLine .hl1 .hudName { font-size: 16px; }
+.hudLine .hl1 .realm { font-size: 13px; }
+.hudLine .hl2 { font-size: 11.5px; gap: 5px; }
+.hudLine .hl2 .ttl.mini { font-size: 10.5px; padding: 0 11px; line-height: 1.5; }
+.hud { gap: 10px; }
+.hud .hudMain { gap: 2px; justify-content: center; }
+.hudPic img.art, .hud #portrait { width: 68px; height: 86px; }
+.hud .bar .track { height: 12px; }
+.hudChips { gap: 3px; margin-top: 1px; }
+.hudChip, .hudChips .hudWarn { font-size: 10.5px; line-height: 1.6; padding: 0 7px; border-radius: 999px; }
+.hudChips .hudWarn { background: color-mix(in srgb, var(--bad) 10%, var(--panel)); }
+.hudChip.noPill { background: color-mix(in srgb, var(--bad) 8%, var(--panel)); }
+/* thanh tab gọn */
+body.inPlay .tabs { margin-top: 4px; gap: 0; }
+.tabs button { padding: 6px 9px; font-size: 15px; }
+.logFilter { background: var(--bg); box-shadow: 0 6px 6px -6px rgba(0,0,0,.25); margin-bottom: 2px; }
+.logFilter button { font-size: 11.5px; padding: 1px 9px; }
+/* nút tạm dừng / chạy vẽ bằng CSS, mọi máy như nhau */
+.ic-pause, .ic-play { display: inline-block; vertical-align: middle; }
+.ic-pause { width: 10px; height: 12px; border-left: 3px solid currentColor; border-right: 3px solid currentColor; box-sizing: border-box; }
+.ic-play { width: 0; height: 0; border-top: 7px solid transparent; border-bottom: 7px solid transparent; border-left: 11px solid currentColor; margin-left: 2px; }
+/* thanh dưới */
+.dock { gap: 6px; }
+.dock .seg .sp { min-height: 32px; font-size: 12.5px; }
+.dock .speed .sp.auto { width: 36px; min-height: 32px; font-size: 15px; }
+.btn.act { min-height: 50px; padding: 3px 2px; gap: 0; font-size: 12.5px; }
+.btn.act .btnIco { width: 28px; height: 28px; }
+.btn.act small { font-size: 10.5px; }
+/* tiện ích: thanh điều hướng mỏng */
+.dock .utils { gap: 0; border: 1px solid var(--frame); border-radius: 12px; overflow: hidden; background: var(--panel); }
+.dock .utils .btn.ut { min-height: 44px; border: none; border-radius: 0; border-left: 1px solid color-mix(in srgb, var(--frame) 50%, transparent); background: none; flex-direction: row; gap: 5px; font-size: 12.5px; padding: 2px 4px; }
+.dock .utils .btn.ut:first-child { border-left: none; }
+.dock .utils .btn.ut .btnIco { width: 24px; height: 24px; }
+.dock .utils .btn.ut:disabled { opacity: .55; }
+
+/* điện thoại */
+@media (max-width: 899px) {
+  body.inPlay .top .brand { display: none; }
+  body.inPlay .top .year { text-align: left; font-size: 13px; }
+  body.inPlay .top { padding: 4px 0; }
+  body.inPlay .top .icon { width: 32px; height: 32px; }
+  /* có kỳ ngộ: ẩn tab và nhật ký, HUD chỉ còn tên, cảnh giới, tu vi */
+  body.inPlay.evOpen .tabs, body.inPlay.evOpen .tabbody { display: none !important; }
+  body.inPlay.evOpen .hudLine .hl2, body.inPlay.evOpen .hud .bar[data-stat='tho'], body.inPlay.evOpen .hudChips, body.inPlay.evOpen .hudSub { display: none !important; }
+  body.inPlay.evOpen .hud .bars { display: grid !important; }
+  body.inPlay.evOpen .hudPic img.art, body.inPlay.evOpen .hud #portrait { width: 40px; height: 50px; }
+  body.inPlay.evOpen .evPanel { flex: 1 1 auto; max-height: none; margin: 6px 0; padding: 10px 12px 12px; }
+  body.inPlay.evOpen .evPanel .evText { font-size: 14px; line-height: 1.45; margin-bottom: 8px; }
+  body.inPlay.evOpen .evPanel h2 { font-size: 16px; }
+  body.inPlay.evOpen .evPanel .choices .btn { min-height: 38px; padding: 5px 10px 5px 7px; font-size: 14px; }
+  body.inPlay.evOpen .chNo { width: 22px; height: 22px; font-size: 11px; }
+}
+@media (max-width: 899px) and (max-height: 760px) {
+  body.inPlay.evOpen .dock .actions { display: grid !important; }
+}
+@media (max-width: 899px) { body.inPlay.evOpen .evPanel { flex: 0 1 auto; } }
+.dock .utils .btn.ut { flex-direction: column; gap: 1px; min-height: 46px; font-size: 11.5px; white-space: nowrap; line-height: 1.15; }
+.dock .utils .btn.ut .btnIco { width: 22px; height: 22px; }

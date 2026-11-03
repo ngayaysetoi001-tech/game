@@ -357,19 +357,22 @@ function renderPlay() {
   const chips = [];
   const wl = woundLv(P.hp);
   if (wl) chips.push(`<button class="hudChip wound w${wl}" data-stat="hp">🩸 ${WOUND_N[wl]}</button>`);
-  if (g.s.opt.autoPill) chips.push(`<button class="hudChip ${nPill ? '' : 'noPill'}" data-stat="pill" title="Hồi Xuân Đan, tự uống khi trọng thương">💊 ${nPill}</button>`);
+  chips.push(...warn);
+  if (g.s.opt.autoPill && P.dao) chips.push(nPill ? `<button class="hudChip" data-stat="pill" title="Hồi Xuân Đan, tự uống khi trọng thương">💊 ${nPill}</button>` : '<button class="hudChip noPill" data-stat="pill" title="Hết Hồi Xuân Đan, mua ở Tụ Bảo">💊 hết đan</button>');
   chips.push(`<button class="hudChip" data-stat="money" title="Linh thạch">💎 ${fmtShort(P.money)}</button>`);
   if (P.dao && (g.towerState().f > 0 || P.action === 'vuot_thap')) chips.push(`<button class="hudChip" data-hw="tower" title="Tầng tháp">🗼 ${g.towerState().f}</button>`);
   if (P.sat >= 1) chips.push(`<button class="hudChip sat ${P.sat >= g.satLine(70) ? 'hi' : P.sat >= g.satLine(50) ? 'mid' : ''}" data-stat="sat">☠ ${Math.round(P.sat)}</button>`);
   if (P.plan) chips.push(`<button class="hudChip plan ${P.plan.on ? 'on' : ''}" data-hw="plan">📅 ${P.plan.on ? `${P.plan.i + 1}/${P.plan.steps.length}` : 'dừng'}</button>`);
   if (P.towerWait && !(P.plan && P.plan.on)) chips.push(`<button class="hudChip wait" data-hw="tower">⏳ chờ tầng ${P.towerWait.f}</button>`);
   setHTML($('hudChips'), chips.join(''));
-  setHTML($('hudSub'), `<span>${warn.length ? warn.join(' ') : esc(doing)}</span>`);
+  // dòng trạng thái chỉ hiện khi nút việc làm chưa nói hết (còn nhỏ, chưa nhập đạo, đang lui dưỡng thương)
+  const note = act === 'lon_len' || (mp && P.flags.retreated) ? doing : '';
+  setHTML($('hudSub'), note ? `<span>${esc(note)}</span>` : '');
 
   const canBreak = g.canBreak();
   setHTML($('breakRow'), canBreak ? '<button class="btn primary breakBtn wide" data-do="break">⚡ Tu vi viên mãn · Đột phá</button>' : '');
   setHTML($('speed'),
-    `<div class="seg"><button class="sp ${paused ? 'on' : ''}" data-sp="0" aria-label="Tạm dừng">${paused ? '▶' : '<b class="pz">❚❚</b>'}</button>` +
+    `<div class="seg"><button class="sp ${paused ? 'on' : ''}" data-sp="0" aria-label="${paused ? 'Chạy tiếp' : 'Tạm dừng'}">${paused ? '<i class="ic-play"></i>' : '<i class="ic-pause"></i>'}</button>` +
     SPEEDS.map((s) => `<button class="sp ${!paused && s === speed ? 'on' : ''}" data-sp="${s}">${s}×</button>`).join('') + '</div>' +
     `<button class="btn sp auto ask-${askMode}" data-do="auto" aria-label="${esc(ASK[askMode])}" title="${esc(ASK[askMode])}: ${esc(ASK_TIP[askMode])} Bấm để đổi.">${ASK_ICO[askMode]}</button>`);
 
@@ -379,7 +382,7 @@ function renderPlay() {
       const ok = g.actionOk(id);
       const why = P.age < a.minAge ? `Từ ${a.minAge} tuổi` : a.needDao && !P.dao ? 'Cần nhập đạo' : a.desc;
       const m = id === 'lich_luyen' && ok ? MAP_MAP[P.map] || g.defaultMap() : null;
-      if (id === 'vuot_thap') return `<button class="btn act ${P.action === id ? 'on' : ''}" data-act="${id}" data-tip="${esc(ok ? `${a.desc} Đang ở tầng ${g.towerState().f}. Bấm để xem tháp.` : why)}" ${ok ? '' : 'disabled'}>${uiIcon('thap', a.icon)}<span>Tháp</span>${ok ? `<small>Tầng ${g.towerState().f}</small>` : ''}</button>`;
+      if (id === 'vuot_thap') return `<button class="btn act ${P.action === id ? 'on' : ''}" data-act="${id}" data-tip="${esc(ok ? `${a.desc} Đang ở tầng ${g.towerState().f}. Bấm để xem tháp.` : why)}" ${ok ? '' : 'disabled'}>${uiIcon('thap', a.icon)}<span>Tháp</span>${ok && g.towerState().f > 0 ? `<small>Tầng ${g.towerState().f}</small>` : ''}</button>`;
       const sub = m ? `${DIFF[m.d].ic} ${esc(m.n)}` : id === 'muu_sinh' && P.nghe ? `${NGHE[P.nghe.id].icon} cấp ${P.nghe.lv}` : '';
       return `<button class="btn act ${P.action === id ? 'on' : ''}" data-act="${id}" data-tip="${esc(m ? `${a.desc} Đang chọn: ${m.n} (${DIFF[m.d].n}). Bấm để đổi vùng.` : why)}" ${ok ? '' : 'disabled'}>${uiIcon(id, a.icon)}<span>${a.n}</span>${sub ? `<small>${sub}</small>` : ''}</button>`;
     }).join('');
@@ -391,7 +394,7 @@ function renderPlay() {
       <button class="btn ut" data-do="shop" data-tip="Đan dược, pháp khí, bí kíp" ${P.age < 10 ? 'disabled' : ''}>${uiIcon('tu_bao', '🏮')}<span>Tụ Bảo</span></button>
       <button class="btn ut" data-do="more" data-tip="Nhân vật, danh hiệu, cài đặt">${uiIcon('them', '⋯')}<span>Thêm</span></button>`);
 
-  const tabs = [['log', 'Nhật ký'], ['rel', 'Quan hệ'], ['world', 'Thiên hạ'], ['rank', 'Xếp hạng'], ['lives', 'Sổ kiếp']];
+  const tabs = [['log', 'Nhật ký'], ['rel', 'Quan hệ'], ['world', 'Thiên hạ'], ['rank', 'Bảng'], ['lives', 'Kiếp']];
   setHTML($('tabs'), tabs.map(([id, n]) => `<button class="${tab === id ? 'on' : ''}" data-tab="${id}">${n}</button>`).join(''));
   const compactEv = document.body.classList.contains('evOpen') && matchMedia('(max-height: 760px) and (max-width: 899px)').matches;
   setHTML($('tabbody'), compactEv && tab !== 'log' ? renderTab('log') : renderTab());

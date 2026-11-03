@@ -646,3 +646,19 @@ Mô phỏng 42 kiếp mỗi đạo (lịch trình Leo tháp, có rèn đồ):
   - Tu đạo: tu 20 → lịch luyện tới khi sát khí 40 → tu 10.
   - Làm giàu: mưu sinh 20 → tu 10.
 - **Bản lưu cũ:** đang bế quan thì chuyển sang Tu luyện, đang kết giao thì chuyển sang Mưu sinh. Bước lịch trình cũ được đổi theo.
+
+## Gọn giao diện (bản 4.4)
+
+- **HUD 4 dòng:**
+  1. Tên và cảnh giới.
+  2. Danh hiệu · tuổi · tông môn · đạo lộ.
+  3. Tu vi và Thọ.
+  4. Chip: thương thế, các cảnh báo, đan ("hết đan" màu đỏ), linh thạch, tháp, sát khí.
+- **Dòng trạng thái:** chỉ hiện khi còn nhỏ, chưa nhập đạo, hoặc đang lui dưỡng thương.
+- **Tab:** Nhật ký · Quan hệ · Thiên hạ · Bảng · Kiếp, chữ nhỏ hơn. Hàng lọc nhật ký có nền và bóng nên không đè chữ.
+- **Thanh dưới:**
+  - Tốc độ thấp hơn, nút ⏸/▶ vẽ bằng CSS.
+  - Nút việc làm thấp hơn. Tháp ở tầng 0 không ghi tầng.
+  - Tiện ích thành thanh điều hướng mỏng liền khối.
+- **Điện thoại:** đầu trang bỏ tên game, chỉ còn năm · giới và nút ☰.
+- **Khi có kỳ ngộ:** ẩn tab và nhật ký, HUD còn tên, cảnh giới và thanh tu vi. Thẻ kỳ ngộ chữ nhỏ hơn, nút thấp hơn.
