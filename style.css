@@ -655,3 +655,4 @@ body.inPlay #scr-play > .dock { margin-top: auto; }
 /* nút ✕ của bảng không đè lên dòng chỉ số */
 .sheet h2 + .cstats { padding-right: 52px; }
 .item .btnRow .cost { flex-basis: 100%; }
+.evKicker .lowHp { color: var(--bad); font-weight: 700; }

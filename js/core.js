@@ -827,6 +827,8 @@ export class Game {
   deathChance(gap, lethal, knocked = true) {
     const P = this.P;
     let p = lethal * Math.pow(Math.max(0.5, Math.min(3, gap)), 1.4);
+    // vào trận khi đang bị thương thì thua dễ mất mạng hơn (đầy máu x1, cạn máu tới x1,5)
+    p *= 1 + 0.5 * (1 - clamp(P.hp, 0, 100) / 100);
     if (!knocked) p *= 0.3;
     if (P.age < 16) p *= 0.3;
     p -= (P.stats.co - 50) / 400;
@@ -868,7 +870,8 @@ export class Game {
   oddsText(p, lethal, gap) {
     const pd = this.deathChance(gap, lethal);
     const word = p >= 0.85 ? 'Nắm chắc phần thắng' : p >= 0.6 ? 'Khá có lợi' : p >= 0.4 ? 'Năm ăn năm thua' : p >= 0.15 ? 'Bất lợi' : 'Gần như không có cửa';
-    return `${word}: thắng ~${Math.round(p * 100)}%. Thua thì nguy hiểm tính mạng ~${Math.round(pd * 100)}%.`;
+    const hp = this.P.hp;
+    return `${word}: thắng ~${Math.round(p * 100)}%. Thua thì nguy hiểm tính mạng ~${Math.round(pd * 100)}%.${hp < 100 ? ` (Tính theo sinh lực hiện tại ${hp}/100.)` : ''}`;
   }
   hintMonster(m, scale = 1) {
     const B = this.monsterFighter(m, scale);

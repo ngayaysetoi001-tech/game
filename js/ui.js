@@ -525,7 +525,7 @@ function renderEvent() {
   if (!showCard) return;
   const P = g.P;
   const mp = g.curMap();
-  setHTML($('evKicker'), `Kỳ ngộ · ${P ? P.age : ''} tuổi${mp ? ` · ${DIFF[mp.d].ic} ${esc(mp.n)}` : ''}`);
+  setHTML($('evKicker'), `Kỳ ngộ · ${P ? P.age : ''} tuổi${mp ? ` · ${DIFF[mp.d].ic} ${esc(mp.n)}` : ''}${P ? ` · <span class="${P.hp < 40 ? 'lowHp' : ''}">sinh lực ${P.hp}/100</span>` : ''}`);
   $('evTitle').textContent = v.title;
   setHTML($('evText'), rich(v.text));
   setHTML($('evChoices'), v.choices.map((c, i) => `<button class="btn" data-ch="${i}"><span class="chNo">${i + 1}</span>${esc(c)}</button>`).join(''));
@@ -794,7 +794,7 @@ function openMaps() {
         <div class="meta">${esc(m.desc)}</div>
         <div class="meta">Yêu thú x${String(m.pow).replace('.', ',')} · Thu hoạch x${String(m.loot).replace('.', ',')} · ${m.myth ? `Thần thoại ${String(m.myth * 100).replace('.', ',')}%/món` : 'Không có đồ Thần thoại'}</div>
         <div class="meta">Nguyên liệu: ${matIco(m.mat)} ${MATS[m.mat].n}${m.haz ? ' · Có tai họa thiên nhiên' : ''}</div>
-        <div class="odds ${oddsCls(p)}">Với sức ngươi lúc này: thắng ~${Math.round(p * 100)}%${p < 0.8 ? ` · thua thì nguy hiểm tính mạng ~${Math.round(risk * 100)}%` : ''}</div>
+        <div class="odds ${oddsCls(p)}">Với sức ngươi lúc này (sinh lực ${P.hp}/100): thắng ~${Math.round(p * 100)}%${p < 0.8 ? ` · thua thì nguy hiểm tính mạng ~${Math.round(risk * 100)}%` : ''}</div>
         ${(() => { const bs = g.botsIn(m.id); if (!bs.length) return '<div class="meta">Không có tu sĩ nào khác ở đây.</div>'; const known = bs.filter((b) => g.s.rel[b.id] && g.s.rel[b.id].met); return `<div class="meta">${bs.length} tu sĩ khác đang lịch luyện ở đây${known.length ? `, có người quen: ${known.slice(0, 3).map((b) => esc(b.name)).join(', ')}` : ''}.</div>`; })()}
         ${cur === m.id ? '<div class="meta"><b>Đang lịch luyện ở đây</b></div>' : ''}
       </button>`;
