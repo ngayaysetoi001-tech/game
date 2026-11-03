@@ -206,6 +206,25 @@ Chọn Lịch luyện thì mở bảng chọn vùng. Độ khó **luôn tính th
 - Sinh lực dưới 40% ở vùng Khó trở lên: nếu bật "tự lui" thì về Hắc Phong Lĩnh; nếu tắt thì game dừng lại cảnh báo một lần.
 - Hệ số được chỉnh theo mô phỏng: nhân vật trung bình thắng ~100% / 85% / 65% / 35% / 10% / 2% ở 6 vùng. Lối chơi "luôn vào vùng khó nhất còn thắng được 55%" mang về ~0,4 món Thần thoại mỗi kiếp nhưng 4 trên 10 kiếp chết dưới nanh yêu thú.
 
+**Bot cũng lịch luyện như người chơi.** Từ 10 tuổi, cứ 3 đến 8 năm mỗi bot quyết định ra ngoài hay ở nhà tu luyện, rồi chọn vùng khó nhất mà nó tự tin thắng được. Tỉ lệ thắng bot tự ước lượng theo cùng đường cong với người chơi, tính cả linh căn, thể chất, tu vi và trang bị đang có.
+
+| Tính cách | Tỉ lệ ra ngoài | Chấp nhận tỉ lệ thắng từ |
+|---|---|---|
+| Cuồng | 70% | 35% |
+| Tham | 70% | 45% |
+| Nghĩa | 55% | 55% |
+| Mưu | 50% | 60% |
+| Hiền | 35% | 70% |
+| Ẩn | 30% | 80% |
+
+- **Mỗi năm ở vùng:** bot tu chậm hơn khi ở nhà (x0,6 nhân căn bậc hai hệ số thu hoạch). Bù lại, mỗi lần thắng yêu thú được thêm tu vi và có thể nhặt đồ.
+- **Đồ của bot:** chỉ giữ món có phẩm tốt nhất. Phẩm đó tăng sức mạnh của bot, tới x1,3 khi mang Thần thoại. Bot có thể đoạt thần khí ở vùng Khó trở lên, và Thiên hạ ký sự sẽ báo, khoảng 18 lần mỗi 1000 năm.
+- **Thua yêu thú:** bot có thể bỏ mạng; nếu sống thì về nhà dưỡng thương. Vùng có tai họa thiên nhiên thì thỉnh thoảng cũng có bot chết vì tai họa. Rủi ro "gặp nạn giữa đường" chung trước đây nay chỉ còn tính khi bot ở nhà.
+- **Cân bằng:** phân bố cảnh giới của thế giới bot giữ gần như cũ (Phàm Nhân 35%, Luyện Khí 33%, Trúc Cơ 19%, Kim Đan 8%, Nguyên Anh 3%...).
+- **Gặp người chơi:** khi người chơi và bot cùng một vùng, bot đó dễ được chọn vào kỳ ngộ gấp 3 lần, và được nới thêm một bậc cảnh giới khi xét có gặp nhau không.
+- **Đoạt đồ của bot:** hạ được bot mang bảo vật thì có 25% đoạt món đó. Với thần khí chỉ 8%, để đồ Thần thoại vẫn chủ yếu đến từ vùng khó: người chơi chỉ ở vùng Vừa trung bình được ~0,13 món mỗi kiếp nhờ cướp của bot, còn lối chơi liều được ~0,4.
+- **Giao diện:** tab Quan hệ và Bảng Thiên Kiêu ghi bot đang lịch luyện ở đâu và có thần khí không. Mỗi thẻ vùng ghi số tu sĩ đang ở đó và tên người quen.
+
 ## 6g. Phân giải và lò rèn
 
 **Nguyên liệu:** Tinh thiết (cơ bản), Linh tinh (tẩy luyện, đồ tốt), Thú hạch / Độc nang / Hỏa tinh / Binh hồn (dẫn liệu cho Hút máu / Né tránh / Bạo kích / Phản chấn), Thần hồn (đồ Thần thoại). Nhặt khi lịch luyện, hạ yêu thú, phân giải đồ; Tinh thiết mua được ở lò rèn. Tinh thiết và Linh tinh tính theo cảnh giới (nhiều hơn khi cảnh giới cao, chi phí cũng tăng theo).

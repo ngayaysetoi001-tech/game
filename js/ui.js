@@ -341,7 +341,7 @@ function renderTab() {
       const theTxt = bt && bt.id !== 'pham' ? ` · <span class="t${bt.tier}c">${esc(bt.n)}</span>` : '';
       const bh = g.botHonorific(b);
       return `<div class="item withAv">${botAvatar(b)}<div class="body"><div class="row"><b>${esc(b.name)}${bh ? ` <span class="dhSmall">${esc(bh)}</span>` : ''}</b><span class="tag ${cls}">${esc(g.relLabel(r))} ${r.v > 0 ? '+' : ''}${r.v}</span></div>
-        <div class="meta">${REALMS[b.realm].n} · ${b.age} tuổi · ${PERSONALITIES[b.pers].n}${sc ? ` · ${esc(sc.name)}` : ''}${theTxt}</div>${past}</div></div>`;
+        <div class="meta">${REALMS[b.realm].n} · ${b.age} tuổi · ${PERSONALITIES[b.pers].n}${sc ? ` · ${esc(sc.name)}` : ''}${theTxt}</div>${botWhere(b)}${past}</div></div>`;
     }).join('')}</div>`;
   }
   if (tab === 'world') {
@@ -367,7 +367,7 @@ function renderTab() {
       const leader = sc && !x.me ? g.members(sc.id).sort((a, b) => b.realm - a.realm || b.tuvi - a.tuvi)[0] : null;
       const badge = i === 0 ? '<span class="tag gold">Bảng thủ</span>' : leader && leader.id === x.id ? '<span class="tag">Chưởng môn</span>' : '';
       return `<div class="item withAv ${x.me ? 'me' : ''}">${av}<div class="body"><div class="row"><b>${i + 1}. ${esc(x.name)}${x.me ? ' (ngươi)' : ''}${xh ? ` <span class="dhSmall">${esc(xh)}</span>` : ''}</b><span class="meta">${REALMS[x.realm].n} ${Math.floor(x.prog * 100)}%</span></div>
-        <div class="meta">${x.age} tuổi${sc ? ` · ${esc(sc.name)}` : ' · tán tu'} ${badge}</div></div></div>`;
+        <div class="meta">${x.age} tuổi${sc ? ` · ${esc(sc.name)}` : ' · tán tu'} ${badge}</div>${x.me ? '' : botWhere(g.soul(x.id))}</div></div>`;
     }).join('')}</div>`;
   }
   if (tab === 'lives') return titleCodex() + codex() + '<h3>Các kiếp đã qua</h3>' + livesList();
@@ -655,6 +655,13 @@ function costText(c) {
     return `<span class="${have < n ? 'lack' : ''}">${fmt(n)} ${name}</span>`;
   }).join(' · ');
 }
+/** Bot đang lịch luyện ở đâu, có thần khí không */
+function botWhere(b) {
+  if (!b) return '';
+  const m = b.map && MAP_MAP[b.map];
+  const tt = b.gq >= 4 && b.tt && TT_MAP[b.tt] ? ` · <span class="ttName">✦ thần khí 「${esc(TT_MAP[b.tt].n)}」</span>` : '';
+  return m || tt ? `<div class="meta">${m ? `⛰ Đang lịch luyện ở ${esc(m.n)} <span class="diff d${m.d}">${DIFF[m.d].n}</span>` : ''}${tt}</div>` : '';
+}
 const oddsCls = (p) => (p >= 0.8 ? 'o0' : p >= 0.55 ? 'o1' : p >= 0.3 ? 'o2' : p >= 0.12 ? 'o3' : 'o4');
 
 // ---------- Bản đồ lịch luyện ----------
@@ -682,10 +689,12 @@ function openMaps() {
         <div class="meta">Yêu thú x${String(m.pow).replace('.', ',')} · Thu hoạch x${String(m.loot).replace('.', ',')} · ${m.myth ? `Thần thoại ${String(m.myth * 100).replace('.', ',')}%/món` : 'Không có đồ Thần thoại'}</div>
         <div class="meta">Nguyên liệu: ${matIco(m.mat)} ${MATS[m.mat].n}${m.haz ? ' · Có tai họa thiên nhiên' : ''}</div>
         <div class="odds ${oddsCls(p)}">Với sức ngươi lúc này: thắng ~${Math.round(p * 100)}%${p < 0.8 ? ` · thua thì nguy hiểm tính mạng ~${Math.round(risk * 100)}%` : ''}</div>
+        ${(() => { const bs = g.botsIn(m.id); if (!bs.length) return '<div class="meta">Không có tu sĩ nào khác ở đây.</div>'; const known = bs.filter((b) => g.s.rel[b.id] && g.s.rel[b.id].met); return `<div class="meta">${bs.length} tu sĩ khác đang lịch luyện ở đây${known.length ? `, có người quen: ${known.slice(0, 3).map((b) => esc(b.name)).join(', ')}` : ''}.</div>`; })()}
         ${cur === m.id ? '<div class="meta"><b>Đang lịch luyện ở đây</b></div>' : ''}
       </button>`;
     }).join('');
     openSheet(`<h2>Chọn vùng lịch luyện</h2>
+      <p class="intro">Các tu sĩ khác cũng tự chọn vùng theo sức mình và tính cách: kẻ liều lĩnh vào vùng khó, người cẩn trọng ở vùng dễ. Cùng vùng thì dễ chạm mặt nhau hơn, và hạ được kẻ mang thần khí thì có thể đoạt lấy.</p>
       <p class="intro">Độ khó luôn tính theo cảnh giới hiện tại của ngươi: yêu thú cùng cảnh giới nhưng mạnh hơn theo độ khó, đồ rơi ra hợp với cảnh giới của ngươi. Đồ Thần thoại chỉ xuất hiện từ vùng Khó trở lên. Tỉ lệ thắng tính theo trang bị, võ kỹ và sinh lực hiện tại (${P.hp}/100).</p>
       <div class="row btnRow"><button class="btn ${g.s.opt.retreat ? 'on' : 'ghost'}" data-retreat="1">Sinh lực dưới 40% tự lui về ${MAP_MAP[DEFAULT_MAP].n}: ${g.s.opt.retreat ? 'bật' : 'tắt'}</button></div>
       <div class="list">${cards}</div>`, bind);

@@ -33,6 +33,11 @@ const WEP_N = { kiem: 'Kiếm', dao: 'Đao', thuong: 'Thương', quat: 'Phiến'
 const MAP_RARE_EV = new Set(['hang_dong', 'truyen_thua', 'co_mo', 'kiem_trung', 'bi_canh', 'linh_mach', 'yeu_vuong', 'ban_do', 'trung_la', 'bao_vat', 'linh_thu', 'ngoc_gian']);
 const MAP_FIGHT_EV = new Set(['khieu_chien', 'huyet_tran', 'bat_coc', 'ma_tu_tra_thu']);
 export const matToken = (k) => iconToken(matIconOpts(k, MATS[k]));
+// Bot đi lịch luyện: tỉ lệ ra ngoài và mức tỉ lệ thắng tối thiểu chấp nhận được, theo tính cách
+const BOT_OUT = { cuong: 0.7, tham: 0.7, muu: 0.5, nghia: 0.55, hien: 0.35, an: 0.3 };
+const BOT_RISK = { cuong: 0.35, tham: 0.45, muu: 0.6, nghia: 0.55, hien: 0.7, an: 0.8 };
+// trang bị tốt nhất bot đang mang (phẩm) cộng vào sức mạnh
+const BOT_GQ_MUL = [1, 1.04, 1.08, 1.14, 1.3];
 
 export const SAVE_VERSION = 1;
 export const SOUL_COUNT = 40;
@@ -167,6 +172,7 @@ export class Game {
     const root = this.rollRoot();
     b.rootM = root.m; b.rootN = root.n;
     b.dao = false; b.sect = null; b.life = this.r.int(50, 72);
+    b.map = null; b.mapUntil = 0; b.gq = 0; b.tt = null;
     b.alive = true; b.lives++; b.fame = 0; b.kills = 0; b.cause = null;
     // linh hồn giữ tính cách cũ phần lớn thời gian
     if (this.r.chance(0.3)) b.pers = this.r.pick(PERS_KEYS);
@@ -177,7 +183,59 @@ export class Game {
   power(b) {
     const R = REALMS[b.realm];
     const t = THE_MAP[b.the] || THE_MAP.pham;
-    return R.pow * (1 + (b.tuvi / R.need) * 0.5) * (0.85 + b.rootM * 0.15) * (t.fx.fightMul || 1);
+    return R.pow * (1 + (b.tuvi / R.need) * 0.5) * (0.85 + b.rootM * 0.15) * (t.fx.fightMul || 1) * BOT_GQ_MUL[b.gq || 0];
+  }
+  /** Bot tự ước lượng tỉ lệ thắng yêu thú của một vùng (cùng đường cong với người chơi trung bình) */
+  botOdds(b, map) {
+    const R = REALMS[b.realm];
+    const t = THE_MAP[b.the] || THE_MAP.pham;
+    const k = (1 + (b.tuvi / R.need) * 0.3) * (0.85 + b.rootM * 0.15) * (t.fx.fightMul || 1) * BOT_GQ_MUL[b.gq || 0];
+    const x = map.pow / k;
+    return 1 / (1 + Math.exp((x - 1.38) / 0.17));
+  }
+  /** Bot chọn vùng lịch luyện như người chơi: kẻ liều vào vùng khó, người cẩn trọng ở vùng dễ hoặc ở nhà tu luyện */
+  botPickMap(b) {
+    b.mapUntil = this.s.year + this.r.int(3, 8);
+    if (!b.dao || b.age < 10 || !this.r.chance(BOT_OUT[b.pers] ?? 0.5)) { b.map = null; return; }
+    const thr = (BOT_RISK[b.pers] ?? 0.55) + this.r.range(-0.1, 0.1);
+    let best = MAPS[0];
+    for (const m of MAPS) if (this.botOdds(b, m) >= thr) best = m;
+    // đôi khi chọn thấp hơn một bậc cho chắc
+    if (best.d > 0 && this.r.chance(0.3)) best = MAPS[best.d - 1];
+    b.map = best.id;
+  }
+  /** Một năm lịch luyện của bot: đánh yêu thú, nhặt đồ, có thể bỏ mạng */
+  botMapYear(b) {
+    const map = MAP_MAP[b.map];
+    if (!map) { b.map = null; return false; }
+    const odds = this.botOdds(b, map);
+    const nE = (this.r.chance(0.35 + 0.05 * map.d) ? 1 : 0) + (map.d >= 3 && this.r.chance(0.2) ? 1 : 0);
+    for (let i = 0; i < nE; i++) {
+      if (this.r.chance(odds)) {
+        b.tuvi = Math.min(REALMS[b.realm].need, b.tuvi + this.botGain(b) * map.loot);
+        b.fame += map.d >= 3 ? 1 : 0;
+        if (this.r.chance(Math.min(0.6, 0.15 * map.loot))) {
+          const q = rollQuality(this.r, map.loot, map.myth);
+          if (q > (b.gq || 0)) {
+            b.gq = q;
+            if (q >= 4) {
+              const slot = this.r.pick(['vu_khi', 'ao', 'phu_kien']);
+              b.tt = this.r.pick(THAN_THONG[slot]).id;
+              this.chron(`${this.nm(b)} lịch luyện ở ${map.n}, đoạt được thần khí mang thần thông 「${TT_MAP[b.tt].n}」.`, 2);
+            }
+          }
+        }
+      } else {
+        const pd = 0.35 * map.lethal * 0.18 * (b.age < 16 ? 0.3 : 1);
+        if (this.r.chance(pd)) { this.botDie(b, `bỏ mạng dưới nanh yêu thú ở ${map.n}`); return true; }
+        // bị thương thì về nhà dưỡng
+        b.map = null;
+        b.mapUntil = this.s.year + this.r.int(2, 5);
+        return false;
+      }
+    }
+    if (map.haz && this.r.chance(map.haz[0] * 0.03)) { this.botDie(b, map.haz[3]); return true; }
+    return false;
   }
   botGain(b) {
     let m = b.rootM * (b.sect ? 1.2 : 1) * (b.pers === 'an' ? 1.1 : 1) * ((THE_MAP[b.the] || THE_MAP.pham).fx.gainMul || 1);
@@ -226,9 +284,13 @@ export class Game {
     b.age++;
     if (!b.dao && (b.age === 6 ? this.r.chance(0.9) : b.age > 6 && b.age <= 25 && this.r.chance(0.12))) b.dao = true;
     if (b.dao && !b.sect && b.age >= 8 && b.age <= 16 && this.r.chance(0.13)) this.botJoinSect(b);
+    if (b.dao && b.age >= 10 && this.s.year >= (b.mapUntil || 0)) this.botPickMap(b);
     if (b.dao) {
       const R = REALMS[b.realm];
-      b.tuvi = Math.min(R.need, b.tuvi + this.botGain(b));
+      // đang lịch luyện thì tu chậm hơn, bù lại bằng tu vi khi thắng yêu thú
+      const mp = b.map ? MAP_MAP[b.map] : null;
+      b.tuvi = Math.min(R.need, b.tuvi + this.botGain(b) * (mp ? 0.6 * Math.sqrt(mp.loot) : 1));
+      if (mp && this.botMapYear(b)) return;
       if (b.tuvi >= R.need && this.r.chance(0.35)) {
         const p = R.brk * 0.95 + (b.rootM - 1) * 0.08;
         if (this.r.chance(p)) {
@@ -251,7 +313,8 @@ export class Game {
         }
       }
     }
-    if (this.r.chance(0.004 + (b.pers === 'cuong' ? 0.004 : 0))) return this.botDie(b, 'gặp nạn giữa đường');
+    // hiểm nguy khi lịch luyện đã tính riêng ở vùng; ở nhà vẫn có lúc gặp nạn
+    if (!b.map && this.r.chance(0.003 + (b.pers === 'cuong' ? 0.003 : 0))) return this.botDie(b, 'gặp nạn giữa đường');
     if (b.age >= b.life) return this.botDie(b, 'thọ tận tọa hóa');
   }
   clash(pa, pb) {
@@ -367,7 +430,8 @@ export class Game {
   /** Chọn một bot thỏa điều kiện, ưu tiên người đã quen */
   findBot(pred, metW = 2) {
     const list = this.s.souls.filter((b) => b.alive && pred(b, this.s.rel[b.id]));
-    return this.r.weighted(list, (b) => (this.s.rel[b.id] && this.s.rel[b.id].met ? metW : 1));
+    const mp = this.playing ? this.curMap() : null;
+    return this.r.weighted(list, (b) => (this.s.rel[b.id] && this.s.rel[b.id].met ? metW : 1) * (mp && b.map === mp.id ? 3 : 1));
   }
   meetBot() {
     const P = this.P;
@@ -803,7 +867,18 @@ export class Game {
   }
   fightBot(b, mul = 1, opts = {}) {
     const res = this.runBattle(this.playerFighter(mul), this.botFighter(b), { lethal: this.botLethal(b), cause: `chết dưới tay ${b.name}`, ...opts });
-    if (res.win && this.r.chance(0.15)) {
+    if (res.win && (b.gq || 0) >= 2 && this.r.chance(b.gq >= 4 ? 0.08 : 0.25)) {
+      // đoạt được món tốt nhất của đối thủ (kể cả thần khí bot đoạt được ở vùng khó)
+      const it = makeItem(this.r, this.s.nextItem++, b.realm, b.gq, 'vu_khi');
+      it.wt = this.botWep(b);
+      it.n = it.n.replace(/\S+$/, WEP_N[it.wt]);
+      if (b.gq >= 4 && b.tt) { const tt = TT_MAP[b.tt]; const slot = Object.keys(THAN_THONG).find((k) => THAN_THONG[k].includes(tt)); if (slot === 'vu_khi') it.tt = b.tt; }
+      this._forging = true;
+      res.text += '\n' + this.gainItem(it, `Đoạt được ${b.gq >= 4 ? 'thần khí' : 'bảo vật'} của ${b.name}`);
+      this._forging = false;
+      b.gq = Math.max(0, b.gq - 2);
+      if (b.gq < 4) b.tt = null;
+    } else if (res.win && this.r.chance(0.15)) {
       const it = this.dropItem(b.realm, 'vu_khi');
       it.wt = this.botWep(b);
       it.n = it.n.replace(/\S+$/, WEP_N[it.wt]);
@@ -850,6 +925,10 @@ export class Game {
     m.pow = REALMS[this.P.realm].pow * map.pow;
     const B = this.monsterFighter(m);
     return this.deathChance(B.maxHp / this.playerFighter().maxHp, 0.35 * map.lethal);
+  }
+  /** Tu sĩ (bot) đang lịch luyện ở một vùng */
+  botsIn(id) {
+    return this.s.souls.filter((b) => b.alive && b.map === id);
   }
   /** Đồ rơi ngẫu nhiên, phẩm theo vùng đang ở */
   dropItem(lv = this.P.realm, slot = null, map = this.curMap()) {

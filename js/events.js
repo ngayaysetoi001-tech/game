@@ -8,7 +8,8 @@ import { makeItem } from './items.js';
 import { EVENTS2 } from './events2.js';
 
 const RN = (r) => REALMS[r].n;
-const near = (g, b, d = 1) => Math.abs(b.realm - g.P.realm) <= d;
+// gần cảnh giới; nếu cùng lịch luyện một vùng thì nới thêm một bậc
+const near = (g, b, d = 1) => { const mp = g.curMap(); return Math.abs(b.realm - g.P.realm) <= d + (mp && b.map === mp.id ? 1 : 0); };
 const relOf = (g, b) => g.s.rel[b.id];
 const metOf = (g, b) => !!(relOf(g, b) && relOf(g, b).met);
 const pastLabel = (p) => (p.tag ? TAG_NAMES[p.tag].toLowerCase() : p.v >= 40 ? 'tri kỷ' : p.v > 0 ? 'bằng hữu' : 'kẻ thù');
