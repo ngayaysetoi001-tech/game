@@ -331,7 +331,7 @@ function renderPlay() {
   drawPortrait($('portrait'), P, { life, robe: playerRobe(P), dead: g.s.phase === 'dead' });
   setArt($('portraitArt'), P.closed > 0 && P.dao ? { src: meditateArt(P.g) } : PATHS[P.path] ? { src: heroStandArt(P.path, P.g) } : null, $('portrait'));
   const ttl = P.title && TITLE_MAP[P.title] ? TITLE_MAP[P.title] : null;
-  setHTML($('hudLine'), `${ttl ? `<span class="ttl t${ttl.tier} mini"><span>${esc(ttl.n)}</span></span>` : ''}<b class="hudName">${esc(P.name)}</b> <span class="realm">${esc(g.subRealmName())}</span><span class="meta"> · ${P.age} tuổi${sc ? ` · ${esc(sc.name)}` : ''}</span><span class="more">›</span>`);
+  setHTML($('hudLine'), `${ttl ? `<span class="ttl t${ttl.tier} mini"><span>${esc(ttl.n)}</span></span>` : ''}<b class="hudName">${esc(P.name)}</b><span class="more">›</span><span class="hudSub"><span class="realm">${esc(g.subRealmName())}</span><span class="meta">&nbsp;· ${P.age} tuổi${sc ? ` · ${esc(sc.name)}` : ''}</span></span>`);
   const need = g.need();
   setHTML($('bars'),
     bar('Tu vi', P.tuvi, need, 'var(--tuvi)', P.dao ? `${fmt(P.tuvi)}/${fmt(need)}` : '-', 'tuvi', subN(P.realm), P.loose || 0) +
@@ -346,7 +346,7 @@ function renderPlay() {
   const nPill = P.pills.hoi_xuan || 0;
   const warn = [];
   if (P.flags.neck && P.flags.neck.realm === P.realm) warn.push(`<button class="hudWarn" data-hw="neck">⛓ Bình cảnh nhỏ · ${Math.max(0, P.flags.neck.until - P.age)} năm</button>`);
-  if (g.skillMismatch().length) warn.push('<button class="hudWarn" data-hw="wep">⚠ Binh khí không hợp đạo</button>');
+  if (g.s.opt && g.s.opt.autoEquip === false && g.skillMismatch().length) warn.push('<button class="hudWarn" data-hw="wep">⚠ Binh khí không hợp đạo</button>');
   if (strongerGear()) warn.push('<button class="hudWarn" data-hw="gear">⚠ Có đồ mạnh hơn</button>');
   if (g.atPlaneTop() && P.tuvi >= g.need() && !(P.tokens && P.tokens[P.plane])) warn.push(`<button class="hudWarn" data-hw="tower">🗼 Cần ${PLANES[P.plane].token}</button>`);
   // chip trạng thái: tháp, sát khí, lịch trình
@@ -403,7 +403,7 @@ function openChar() {
   const ttl = P.title && TITLE_MAP[P.title] ? TITLE_MAP[P.title] : null;
   const tinh = P.tinh >= 30 ? 'Hữu tình' : P.tinh <= -30 ? 'Vô tình' : 'Trung dung';
   openSheet(`<div class="hero">
-      <canvas class="portrait" id="charPortrait" width="32" height="40"></canvas>
+      <div class="charPic"><canvas class="portrait" id="charPortrait" width="32" height="40"></canvas><img id="charArt" class="art" alt="" hidden></div>
       <div class="who">
         ${ttl ? `<button class="ttl t${ttl.tier}" id="ttlBtn"><span>${esc(ttl.n)}</span></button>` : ''}
         <h2 class="charName">${esc(P.name)}</h2>
@@ -422,6 +422,7 @@ function openChar() {
     <button class="chip chipBtn" id="traitChip">${esc(g.traits().filter((t) => !t.cond && !t.tt && !t.path).map((t) => t.n).join(' · '))} ›</button>
     <div class="row btnRow"><button class="btn ghost" id="charTitles">🏅 Danh hiệu (${P.titles.length})</button><button class="btn ghost" id="charBag">🎒 Hành trang</button></div>`, () => {
     drawPortrait($('charPortrait'), P, { life: g.lifespan(), robe: playerRobe(P) });
+    setArt($('charArt'), P.closed > 0 && P.dao ? { src: meditateArt(P.g) } : PATHS[P.path] ? { src: heroStandArt(P.path, P.g) } : null, $('charPortrait'));
     $('eqStrip').onclick = () => openBag('eq');
     $('charBag').onclick = () => openBag('eq');
     $('charTitles').onclick = openTitles;

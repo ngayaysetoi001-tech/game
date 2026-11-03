@@ -3098,10 +3098,12 @@ export class Game {
     let gift = '';
     const cur = P.eq.vu_khi;
     if (!cur || cur.wt !== pa.wep) {
-      const it = makeItem(this.r, this.s.nextItem++, P.realm, 0, 'vu_khi');
+      // phẩm không thấp hơn binh khí đang cầm, đeo ngay; món cũ cất vào túi
+      const it = makeItem(this.r, this.s.nextItem++, P.realm, cur ? Math.max(1, cur.q || 0) : 0, 'vu_khi');
       it.wt = pa.wep; it.n = wepName(it.n, pa.wep);
-      if (!cur) P.eq.vu_khi = it; else if (P.bag.length < this.bagCap()) P.bag.push(it);
-      gift = ` Sư phụ dẫn đạo tặng một ${it.n}${cur ? ' (trong túi)' : ''}.`;
+      const room = P.bag.length < this.bagCap();
+      if (!cur || room) { P.eq.vu_khi = it; if (cur) P.bag.push(cur); } else P.bag.push(it);
+      gift = ` Sư phụ dẫn đạo tặng một ${it.n}${cur && !room ? ' (trong túi)' : ''}.`;
     }
     this.log(`${change ? 'Chuyển tu' : 'Ngươi chọn con đường'} ${pa.n}: ${pa.tag}.${bonus ? ' Hợp khuynh hướng trời sinh: ngộ đạo điểm +3.' : ''}${gift}`, 'big');
     return `Từ nay ngươi là ${pa.n}. ${pa.short}\n\nKỹ năng đầu tiên: ${skillToken(PATH_SKILLS[id][0], SKILLS[PATH_SKILLS[id][0]])}${SKILLS[PATH_SKILLS[id][0]].n}. Các kỹ năng khác mở dần theo cảnh giới; nâng cấp bằng ngộ đạo điểm ở Túi trữ vật → Kỹ năng.${bonus ? '\nHợp khuynh hướng trời sinh: ngộ đạo điểm +3.' : ''}`;

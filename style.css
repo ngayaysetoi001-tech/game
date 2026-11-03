@@ -892,3 +892,15 @@ img.art[hidden] { display: none !important; }
 .btn .btnIco { width: 30px; height: 30px; object-fit: contain; display: block; pointer-events: none; filter: drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
 .btn.ut .btnIco { width: 26px; height: 26px; }
 .btn:disabled .btnIco { filter: grayscale(.85); opacity: .55; }
+/* HUD: dòng 2 luôn là cảnh giới · tuổi · tông môn (không rơi dấu chấm lẻ) */
+.hudLine .hudSub { flex: 0 0 100%; display: flex; justify-content: flex-start; gap: 0; align-items: baseline; min-width: 0; white-space: nowrap; }
+.hudLine .hudSub .meta { min-width: 0; }
+/* Danh hiệu nhỏ: chừa chỗ cho hai dấu ◆ */
+.ttl.mini { padding: 0 12px; }
+.ttl.mini::before { left: 3px; } .ttl.mini::after { right: 3px; }
+.ttl::before, .ttl::after { line-height: 1; }
+/* Bảng nhân vật: tranh đứng */
+.charPic { flex: none; width: 104px; height: 130px; display: grid; place-items: center; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); overflow: hidden; }
+.charPic canvas.portrait { border: none; }
+.charPic img.art { width: 100%; height: 100%; object-fit: contain; padding: 4px; box-sizing: border-box; filter: drop-shadow(0 3px 5px rgba(0,0,0,.3)); }
+.ttl span { padding: 0 2px; }
