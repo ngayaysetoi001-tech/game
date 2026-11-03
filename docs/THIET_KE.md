@@ -286,6 +286,21 @@ Trên màn hình rộng (từ 900px), bố cục chia 2 cột: trái là nhân v
 - **Chết:** màn kết thúc kiếp ghi lại "giây phút cuối" (kỳ ngộ, lựa chọn, diễn biến).
 - **Bàn phím:** phím 1–9 chọn phương án, Space tạm dừng hoặc chạy tiếp, Esc đóng bảng.
 - **Màn hình rộng:** thẻ kỳ ngộ ở cột trái, nhật ký bên phải luôn hiện.
+- **Thẻ kỳ ngộ ở dưới:** nằm ngay trên dải điều khiển, cao tối đa 48% màn hình. Nhật ký (dòng mới nhất ở trên) luôn đọc được.
+- **Nút Tự quyết có 3 chế độ** (bấm để đổi, có giải thích ngắn):
+
+  | Chế độ | Tốc độ dưới 8× | Từ 8× |
+  |---|---|---|
+  | Hỏi tất cả | Hỏi mọi kỳ ngộ | Hỏi mọi kỳ ngộ |
+  | Hỏi việc lớn (mặc định) | Việc nhỏ tự quyết | Tự quyết mọi việc tự quyết được |
+  | Tự quyết hết | Tự quyết mọi việc tự quyết được | Tự quyết mọi việc tự quyết được |
+
+  - Ở chế độ "Tự quyết hết", game chỉ hỏi những kỳ ngộ không tự quyết được: đột phá, đạo đồ, đạo hiệu, chuyện quan hệ.
+  - **Việc lớn** gồm:
+    - những kỳ ngộ không tự quyết được (đột phá, đạo đồ, đạo hiệu, chuyện quan hệ, báo thù, cố nhân...);
+    - truyền thừa, bí cảnh, kiếm trủng, yêu vương, tâm ma;
+    - yêu thú ở vùng Nguy hiểm trở lên.
+  - **Tần suất ở 1×** (1 năm mỗi giây, mô phỏng 30 kiếp): "Hỏi tất cả" khoảng 2,7 giây một lần; "Hỏi việc lớn" khoảng 8 giây một lần, trong đó nhiều nhất là đột phá.
 
 ## 7. Kỹ thuật
 

@@ -31,6 +31,8 @@ const WEP_KEYS = ['kiem', 'dao', 'thuong', 'quat'];
 const WEP_N = { kiem: 'Kiếm', dao: 'Đao', thuong: 'Thương', quat: 'Phiến' };
 // kỳ ngộ chịu ảnh hưởng của độ khó vùng lịch luyện
 const MAP_RARE_EV = new Set(['hang_dong', 'truyen_thua', 'co_mo', 'kiem_trung', 'bi_canh', 'linh_mach', 'yeu_vuong', 'ban_do', 'trung_la', 'bao_vat', 'linh_thu', 'ngoc_gian']);
+// kỳ ngộ tự quyết được nhưng đủ quan trọng để hỏi người chơi khi chạy chậm
+const MAJOR_EV = new Set(['truyen_thua', 'bi_canh', 'kiem_trung', 'yeu_vuong', 'tam_ma']);
 const MAP_FIGHT_EV = new Set(['khieu_chien', 'huyet_tran', 'bat_coc', 'ma_tu_tra_thu']);
 export const matToken = (k) => iconToken(matIconOpts(k, MATS[k]));
 // Bot đi lịch luyện: tỉ lệ ra ngoài và mức tỉ lệ thắng tối thiểu chấp nhận được, theo tính cách
@@ -1463,7 +1465,6 @@ export class Game {
     P.tuvi = Math.floor(P.tuvi * 0.7);
     const dmg = 10 + P.realm * 5;
     const deathP = P.realm >= 3 ? clamp(0.05 + P.realm * 0.015 - (P.stats.tam - 50) / 1000, 0.01, 0.3) : 0;
-    this.log('Đột phá thất bại, tu vi tụt lùi.', 'bad');
     if (this.r.chance(deathP)) {
       this.die(P.realm === TOP_REALM ? 'tan biến dưới cửu trùng lôi kiếp' : 'đột phá thất bại, kinh mạch đứt đoạn');
       return `${lightning}Linh khí chạy ngược, kinh mạch nổ tung từng đoạn.${helpTxt}`;
@@ -1675,6 +1676,15 @@ export class Game {
     if (!p || p.result !== undefined) return false;
     const ev = EVENT_MAP[p.id];
     return !!(ev && ev.auto);
+  }
+  /** Việc nhỏ: tự quyết được ở mọi tốc độ. Việc lớn (cơ duyên lớn, sinh tử, quan hệ) vẫn hỏi người chơi. */
+  canAutoMinor() {
+    if (!this.canAuto()) return false;
+    const p = this.s.pending;
+    if (MAJOR_EV.has(p.id)) return false;
+    // yêu thú ở vùng Nguy hiểm trở lên là chuyện sống chết
+    if (p.id === 'yeu_thu') { const mp = this.curMap(); if (mp && mp.d >= 3) return false; }
+    return true;
   }
   /** Tự chọn phương án mặc định của sự kiện nhỏ, bỏ qua phần diễn trận, rồi đóng lại */
   autoResolve() {

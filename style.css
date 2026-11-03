@@ -584,7 +584,7 @@ body.inPlay .tabbody { flex: 1; min-height: 0; overflow-y: auto; overscroll-beha
 }
 
 /* ========== Kỳ ngộ, trận đấu trong vùng giữa ========== */
-.evPanel { flex: 0 1 auto; max-height: 64%; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin-top: 8px; background: var(--panel); border: 2px solid var(--accent); border-radius: 14px; padding: 12px 14px; animation: evIn 0.25s ease-out; }
+.evPanel { flex: 0 1 auto; max-height: 48%; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 6px 0; background: var(--panel); border: 2px solid var(--accent); border-radius: 14px; padding: 12px 14px; animation: evIn 0.25s ease-out; }
 @keyframes evIn { from { opacity: 0; transform: translateY(8px); } }
 .evPanel[hidden], .battleBox[hidden], .evBack[hidden], .tabs[hidden], .tabbody[hidden] { display: none !important; }
 .evHead { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
@@ -594,7 +594,7 @@ body.inPlay .tabbody { flex: 1; min-height: 0; overflow-y: auto; overscroll-beha
 .evPanel .choices .btn { display: flex; gap: 10px; align-items: center; text-align: left; }
 .chNo { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); display: inline-grid; place-items: center; font-size: 12px; color: var(--muted); }
 .evBack { margin-top: 8px; width: 100%; text-align: center; border: 2px dashed var(--accent); background: var(--panel); border-radius: 10px; padding: 8px; font-size: 14px; color: var(--ink); }
-.battleBox { flex: 0 1 auto; max-height: 72%; min-height: 0; overflow-y: auto; margin-top: 8px; }
+.battleBox { flex: 0 1 auto; max-height: 60%; min-height: 0; overflow-y: auto; margin: 6px 0; }
 .battleBox .arena { max-width: none; margin: 0; }
 .log li .evH { color: var(--accent); margin-right: 4px; }
 .log li .evC { color: var(--muted); font-size: 14px; }
@@ -610,3 +610,11 @@ body.inPlay .tabbody { flex: 1; min-height: 0; overflow-y: auto; overscroll-beha
 }
 @media (prefers-reduced-motion: reduce) { .log li.fresh, .evPanel { animation: none; } }
 .hudSub .noPill { color: var(--bad); }
+
+/* thẻ kỳ ngộ ở dưới, ngay trên dải điều khiển: nhật ký (dòng mới nhất ở trên) luôn đọc được */
+body.inPlay .tabbody { min-height: 140px; }
+.evPanel h2 { font-size: 17px; margin-bottom: 4px; }
+.evPanel .evText { margin-bottom: 10px; font-size: 15px; }
+.evPanel .choices { gap: 6px; }
+.evPanel .choices .btn { min-height: 40px; padding: 6px 10px; font-size: 15px; }
+.dock .speed .sp.auto { font-size: 12px; }

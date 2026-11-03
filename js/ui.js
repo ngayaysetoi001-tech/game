@@ -15,7 +15,17 @@ const fmt = (n) => Math.floor(n).toLocaleString('vi-VN');
 let g = null;
 let speed = 1;
 let paused = false;
-let autoOn = true; // tự quyết việc nhỏ từ 8×
+// hỏi người chơi: all = hỏi mọi kỳ ngộ (từ 8× vẫn hỏi), big = chỉ hỏi việc lớn (từ 8× tự quyết mọi việc tự quyết được), max = tự quyết hết những gì tự quyết được
+let askMode = 'big';
+const ASK = { all: 'Hỏi tất cả', big: 'Hỏi việc lớn', max: 'Tự quyết hết' };
+const ASK_NEXT = { all: 'big', big: 'max', max: 'all' };
+const ASK_TIP = { all: 'Kỳ ngộ nào cũng hỏi ngươi', big: 'Việc nhỏ tự quyết, chỉ hỏi đột phá, đạo đồ, chuyện quan hệ, sống chết, cơ duyên lớn. Từ 8× tự quyết mọi việc tự quyết được.', max: 'Tự quyết mọi việc tự quyết được, chỉ hỏi đột phá, đạo đồ và chuyện quan hệ' };
+function shouldAuto() {
+  if (!g.playing || !g.s.pending) return false;
+  if (askMode === 'max') return g.canAuto();
+  if (askMode === 'big') return speed >= AUTO_SPEED && !paused ? g.canAuto() : g.canAutoMinor();
+  return false;
+}
 let battleView = 'big'; // xem diễn lại trận: all | big | off
 const BATTLE_VIEW = { all: 'Luôn xem', big: 'Chỉ trận lớn', off: 'Không xem' };
 const AUTO_SPEED = 8;
@@ -33,7 +43,7 @@ function load() {
       g = Game.load(raw);
       const ui = g.s.ui || {};
       speed = SPEEDS.includes(ui.speed) ? ui.speed : 1;
-      autoOn = ui.auto !== false;
+      askMode = ASK[ui.ask] ? ui.ask : ui.auto === false ? 'all' : 'big';
       battleView = BATTLE_VIEW[ui.battle] ? ui.battle : 'big';
       return;
     }
@@ -44,7 +54,7 @@ function load() {
 }
 function save() {
   try {
-    g.s.ui = { speed, auto: autoOn, battle: battleView };
+    g.s.ui = { speed, ask: askMode, battle: battleView };
     localStorage.setItem(SAVE_KEY, g.save());
   } catch (e) {
     /* hết chỗ hoặc chế độ riêng tư: chơi tiếp không lưu */
@@ -284,7 +294,7 @@ function renderPlay() {
   setHTML($('speed'),
     `<button class="btn sp ${paused ? 'on' : ''}" data-sp="0" aria-label="Tạm dừng">${paused ? '▶' : '⏸'}</button>` +
     SPEEDS.map((s) => `<button class="btn sp ${!paused && s === speed ? 'on' : ''}" data-sp="${s}">${s}×</button>`).join('') +
-    `<button class="btn sp auto ${autoOn ? 'on' : ''}" data-do="auto" title="Từ ${AUTO_SPEED}×, kỳ ngộ nhỏ tự chọn phương án hợp lý">Tự quyết${autoOn ? ' ✓' : ''}</button>`);
+    `<button class="btn sp auto ${askMode !== 'all' ? 'on' : ''}" data-do="auto" title="${esc(ASK_TIP[askMode])} Bấm để đổi.">${ASK[askMode]}</button>`);
 
   let html = '';
   if (P.closed > 0) {
@@ -1045,7 +1055,12 @@ $('speed').addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (!b) return;
   if (b.dataset.do === 'break') { g.openBreak(); dirty = true; return; }
-  if (b.dataset.do === 'auto') { autoOn = !autoOn; save(); dirty = true; return; }
+  if (b.dataset.do === 'auto') {
+    askMode = ASK_NEXT[askMode];
+    $('tip').textContent = `${ASK[askMode]}: ${ASK_TIP[askMode]}`; $('tip').hidden = false; clearTimeout(tipHide); tipHide = setTimeout(closeTip, 3500);
+    if (shouldAuto()) { g.autoResolve(); markFresh(); }
+    save(); dirty = true; return;
+  }
   const v = +b.dataset.sp;
   if (v === 0) paused = !paused;
   else { speed = v; paused = false; }
@@ -1115,8 +1130,9 @@ function frame(t) {
   if (freshUntil && t > freshUntil) { freshUntil = 0; freshFrom = 0; dirty = true; }
   const sheetOpen = !$('sheet').hidden;
   // tốc độ cao: kỳ ngộ nhỏ tự quyết để không bị hộp câu hỏi chặn liên tục
-  if (autoOn && !paused && speed >= AUTO_SPEED && g.playing && g.canAuto()) {
+  if (!bt && shouldAuto()) {
     g.autoResolve();
+    markFresh();
     dirty = true;
   }
   if (g.playing && !paused && !g.s.pending && !sheetOpen) {
@@ -1128,7 +1144,7 @@ function frame(t) {
       n++;
       g.tick();
       dirty = true;
-      if (g.s.pending && autoOn && speed >= AUTO_SPEED && g.canAuto()) g.autoResolve();
+      if (g.s.pending && shouldAuto()) { g.autoResolve(); markFresh(); }
       if (!g.playing || g.s.pending) { acc = 0; break; }
     }
   } else acc = 0;
