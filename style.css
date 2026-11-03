@@ -904,3 +904,77 @@ img.art[hidden] { display: none !important; }
 .charPic canvas.portrait { border: none; }
 .charPic img.art { width: 100%; height: 100%; object-fit: contain; padding: 4px; box-sizing: border-box; filter: drop-shadow(0 3px 5px rgba(0,0,0,.3)); }
 .ttl span { padding: 0 2px; }
+
+/* ================= Giao diện cổ phong (bản 4.2) ================= */
+:root { --frame: color-mix(in srgb, var(--gold) 38%, var(--line)); --frame-hi: color-mix(in srgb, var(--gold) 70%, var(--line)); --panel2: color-mix(in srgb, var(--panel) 85%, var(--gold) 4%); }
+h2, h3, .brand, .charName, .evPanel h2 { font-weight: 700; }
+h3 { color: color-mix(in srgb, var(--gold) 55%, var(--muted)); letter-spacing: .02em; }
+.brand { letter-spacing: .03em; }
+.card, .evPanel, .tile, .chip, .hudChip, .btn, .charPic, .dock .seg { border-color: var(--frame); }
+.card { background: var(--panel); }
+.btn:not(.primary):not(.ghost) { background: linear-gradient(180deg, var(--panel2), var(--panel)); }
+.btn.on, .btn.act.on { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.dock { gap: 8px; }
+.dock .actions, .dock .utils { gap: 7px; }
+
+/* --- HUD --- */
+.hud { gap: 12px; align-items: stretch; }
+.hud .hudMain { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.hudPic { position: relative; flex: none; align-self: center; border-radius: 12px; padding: 0; overflow: visible; --rc: var(--r0); }
+.hudPic[data-rt='1'] { --rc: var(--r1); } .hudPic[data-rt='2'] { --rc: var(--r2); } .hudPic[data-rt='3'] { --rc: var(--r3); } .hudPic[data-rt='4'] { --rc: var(--r4); }
+.hudPic img.art, .hud #portrait { width: 74px; height: 92px; border-radius: 12px; border: 2px solid var(--rc); background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--rc) 18%, var(--panel)), var(--panel) 75%); box-sizing: border-box; }
+.hudPic img.art { transform: none; object-fit: cover; object-position: 50% 4%; padding: 0; filter: none; }
+.hudPic.full img.art, .hudPic.full #portrait { animation: fullGlow 2s ease-in-out infinite; }
+@keyframes fullGlow { 0%, 100% { box-shadow: 0 0 4px 1px color-mix(in srgb, var(--gold) 45%, transparent); } 50% { box-shadow: 0 0 12px 4px color-mix(in srgb, var(--gold) 70%, transparent); } }
+@media (min-width: 900px) { .hudPic img.art, .hud #portrait { width: 92px; height: 115px; } }
+body.inPlay.evOpen .hudPic img.art, body.inPlay.evOpen .hud #portrait { width: 44px; height: 55px; }
+.hudLine { display: flex; flex-direction: column; align-items: stretch; gap: 1px; overflow: visible; }
+.hudLine .hl1, .hudLine .hl2 { display: flex; align-items: baseline; gap: 6px; min-width: 0; white-space: nowrap; }
+.hudLine .hl1 .hudName { font-size: 17px; font-weight: 700; flex: none; }
+.hudLine .hl1 .realm { font-size: 14px; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.hudLine .hl1 .more { margin-left: auto; }
+.hudLine .hl2 { align-items: center; font-size: 12px; }
+.hudLine .hl2 .ttl.mini { flex: none; transform: none; margin: 0; font-size: 11px; }
+.hudLine .hl2 .meta { font-size: 12px; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.hudLine .pathIco { flex: none; font-size: 13px; line-height: 1; }
+.hud .bars { margin-top: 2px; gap: 3px; display: grid; }
+.hud .bar { grid-template-columns: 46px 1fr; gap: 6px; font-size: 11px; line-height: 1; }
+.hud .bar .bl { color: var(--muted); }
+.hud .bar .track, .bar .track { height: 13px; border-radius: 7px; position: relative; overflow: hidden; border: 1px solid color-mix(in srgb, var(--frame) 60%, transparent); box-sizing: border-box; }
+.bar .fill { border-radius: 6px; }
+.bar .track .num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-end; padding: 0 6px; min-width: 0; font-size: 10px; line-height: 1; color: var(--ink); text-shadow: 0 0 2px var(--panel), 0 0 3px var(--panel); font-variant-numeric: tabular-nums; z-index: 1; }
+.hudSub { margin-top: 1px; }
+.hudSub > span { overflow: hidden; text-overflow: ellipsis; }
+.hudChips { margin-top: 0; gap: 4px; }
+.hudChips:empty { display: flex; }
+.hudChip { line-height: 1.7; padding: 0 8px; }
+.hudChip.noPill { color: var(--bad); border-color: var(--bad); }
+
+/* --- Hàng tốc độ liền khối --- */
+.dock .speed { display: flex; gap: 6px; align-items: stretch; }
+.dock .seg { flex: 1; display: flex; border: 1px solid var(--frame); border-radius: 10px; overflow: hidden; background: var(--panel); }
+.dock .seg .sp { flex: 1; min-width: 0; min-height: 34px; padding: 0; border: none; border-left: 1px solid color-mix(in srgb, var(--frame) 55%, transparent); background: none; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.dock .seg .sp:first-child { border-left: none; }
+.dock .seg .sp.on { background: color-mix(in srgb, var(--gold) 22%, var(--panel)); color: var(--ink); font-weight: 700; box-shadow: inset 0 -2px 0 var(--gold); }
+.dock .speed .sp.auto { flex: none; width: 40px; min-height: 34px; padding: 0; font-size: 17px; border-radius: 10px; }
+.dock .speed .sp.auto.ask-big, .dock .speed .sp.auto.ask-max { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.btn.act small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; box-sizing: border-box; }
+
+/* --- Thẻ kỳ ngộ --- */
+.evPanel { border: 1px solid var(--frame-hi); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 10%, transparent), var(--shadow); background: linear-gradient(180deg, var(--panel2), var(--panel)); padding: 12px 14px 14px; }
+.evPanel .evKicker { font-size: 11px; color: var(--muted); letter-spacing: .03em; margin-bottom: 2px; }
+.evPanel h2 { font-size: 17px; margin: 0 0 6px; padding-bottom: 6px; border-bottom: 1px solid color-mix(in srgb, var(--frame) 60%, transparent); }
+.evPanel .evText { font-size: 14.5px; line-height: 1.5; }
+.evPanel .choices { gap: 7px; }
+.evPanel .choices .btn { border-radius: 14px; min-height: 42px; padding: 7px 12px 7px 8px; line-height: 1.35; }
+.evPanel .choices .btn:hover { border-color: var(--gold); }
+.chNo { width: 24px; height: 24px; border-color: var(--frame-hi); color: var(--gold); font-weight: 700; background: color-mix(in srgb, var(--gold) 8%, transparent); }
+
+/* --- Nhật ký --- */
+.log li { position: relative; padding: 6px 0 6px 20px; border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent); line-height: 1.45; }
+.log li .lic { position: absolute; left: 0; top: 8px; width: 16px; text-align: center; font-style: normal; font-size: 12px; line-height: 1.2; color: var(--muted); opacity: .9; }
+.log li.big .lic, .log li .lic:is(:empty) { color: var(--gold); }
+.log li.good .lic { color: var(--good); }
+.log li.bad .lic { color: var(--bad); }
+.log .age { font-size: 11px; }
+.dock .seg .sp .pz { font-size: 11px; letter-spacing: -2px; font-weight: 400; }

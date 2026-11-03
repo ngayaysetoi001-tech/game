@@ -171,6 +171,7 @@ function statInfo(k, P) {
     const pa = PATHS[P.path];
     return { n: pa.n, val: '', about: `${pa.tag}. ${pa.desc}`, now: [...pa.good.map((x) => `Mạnh: ${x}`), ...pa.bad.map((x) => `Yếu: ${x}`)], up: ['Kỹ năng: Túi trữ vật → Kỹ năng', 'Mỗi kiếp được chuyển tu một lần'], upTitle: 'Ghi chú' };
   }
+  if (k === 'pill') return { n: 'Hồi Xuân Đan', val: String(P.pills.hoi_xuan || 0), about: 'Đan hồi sinh lực, tự uống khi sinh lực dưới 40.', now: ['Giữ mạng khi lịch luyện, vượt tháp'], up: ['Mua ở Tụ Bảo Lâu', 'Luyện đan (nghề phụ)', 'Phần thưởng kỳ ngộ'] };
   if (k === 'money') return { n: 'Linh thạch', val: fmt(P.money), about: 'Tiền tệ của giới tu tiên.', now: ['Mua đan dược, pháp khí, bí kíp ở Tụ Bảo Lâu; đấu giá; chuộc người; cược', 'Có 5.000 mở danh hiệu Phú Giáp Nhất Phương'], up: ['Mưu sinh (tăng theo cảnh giới và cơ duyên)', 'Hộ tống thương đội, đầu tư thương hội, linh mạch, kho báu, bán đồ thừa'] };
   if (k === 'fame') return { n: 'Danh vọng', val: fmt(P.fame), about: 'Tiếng tăm trên giang hồ.', now: ['Giúp tự minh oan khi bị vu cáo', 'Đạt 50 và 200 mở danh hiệu'], up: ['Thắng trận, đột phá, cứu người, thắng lôi đài, hạ yêu vương, trừ huyết trận'] };
   if (k === 'tuvi') return { n: 'Tu vi', val: playing ? `${fmt(P.tuvi)}/${fmt(g.need())}` : '-', about: 'Công lực tích lũy ở cảnh giới hiện tại. Đầy thì có thể đột phá. Phần màu cam cuối thanh là tu vi chưa vững (có từ vượt tháp, lịch luyện): tu luyện, bế quan sẽ củng cố. Đột phá khi còn nhiều tu vi chưa vững thì tỉ lệ giảm tới 30%.', now: playing ? [`Mỗi năm tu luyện được khoảng ${fmt(g.gain())} tu vi`, `Chưa vững: ${fmt(P.loose || 0)} (${Math.round(((P.loose || 0) / Math.max(1, g.need())) * 100)}% tu vi cần)`, `Tỉ lệ đột phá hiện tại ~${Math.round(g.breakChance() * 100)}%`, ...g.brkMods().map((x) => `${x.n}: ${pc(x.v)} đột phá`)] : [], up: ['Tu luyện (đủ, củng cố căn cơ), bế quan (x1,6, củng cố rất nhanh; tử quan từ 50 năm x2)', 'Vượt tháp, lịch luyện cho tu vi chưa vững', 'Linh căn, ngộ tính, tông môn (+20%), thể chất, Vô tình, thần thông, đạo lộ'] };
@@ -311,7 +312,7 @@ function bar(label, val, max, color, text, key, ticks = 0, loose = 0) {
   const lw = loose > 0 ? clamp((loose / Math.max(1, max)) * 100, 0, w) : 0;
   // vạch chia cảnh giới nhỏ trên thanh tu vi
   const tk = ticks > 1 ? Array.from({ length: ticks - 1 }, (_, i) => `<i class="tick" style="left:${((i + 1) * 100) / ticks}%"></i>`).join('') : '';
-  return `<div class="bar" data-stat="${key}" role="button" tabindex="0"><span>${label} <i class="qm">?</i></span><div class="track"><div class="fill" style="width:${w}%;background:${color}"></div>${lw ? `<div class="fill loose" style="left:${w - lw}%;width:${lw}%"></div>` : ''}${tk}</div><span class="num">${text}</span></div>`;
+  return `<div class="bar" data-stat="${key}" role="button" tabindex="0"><span class="bl">${label}</span><div class="track"><div class="fill" style="width:${w}%;background:${color}"></div>${lw ? `<div class="fill loose" style="left:${w - lw}%;width:${lw}%"></div>` : ''}${tk}<span class="num">${text}</span></div></div>`;
 }
 
 /** Trong túi có món mặc vào mạnh hơn từ 10% (tính lại khi túi, đồ, cảnh giới đổi) */
@@ -331,8 +332,13 @@ function renderPlay() {
   drawPortrait($('portrait'), P, { life, robe: playerRobe(P), dead: g.s.phase === 'dead' });
   setArt($('portraitArt'), P.closed > 0 && P.dao ? { src: meditateArt(P.g) } : PATHS[P.path] ? { src: heroStandArt(P.path, P.g) } : null, $('portrait'));
   const ttl = P.title && TITLE_MAP[P.title] ? TITLE_MAP[P.title] : null;
-  setHTML($('hudLine'), `${ttl ? `<span class="ttl t${ttl.tier} mini"><span>${esc(ttl.n)}</span></span>` : ''}<b class="hudName">${esc(P.name)}</b><span class="more">›</span><span class="hudSub"><span class="realm">${esc(g.subRealmName())}</span><span class="meta">&nbsp;· ${P.age} tuổi${sc ? ` · ${esc(sc.name)}` : ''}</span></span>`);
   const need = g.need();
+  // khung ảnh: viền theo cảnh giới, sáng lên khi tu vi viên mãn
+  const rt = Math.min(4, Math.floor((P.realm % 10) / 2) + (P.plane || 0));
+  $('hudPic').dataset.rt = P.dao ? rt : 0;
+  $('hudPic').classList.toggle('full', !!P.dao && P.tuvi >= need);
+  const pIco = PATHS[P.path] ? `<span class="pathIco" title="${esc(PATHS[P.path].n)}">${PATH_ICO[P.path] || ''}</span>` : '';
+  setHTML($('hudLine'), `<span class="hl1"><b class="hudName">${esc(P.name)}</b><span class="realm">${esc(g.subRealmName())}</span><span class="more">›</span></span><span class="hl2">${ttl ? `<span class="ttl t${ttl.tier} mini"><span>${esc(ttl.n)}</span></span>` : ''}<span class="meta">${P.age} tuổi${sc ? ` · ${esc(sc.name)}` : ''}</span>${pIco}</span>`);
   setHTML($('bars'),
     bar('Tu vi', P.tuvi, need, 'var(--tuvi)', P.dao ? `${fmt(P.tuvi)}/${fmt(need)}` : '-', 'tuvi', subN(P.realm), P.loose || 0) +
     bar('Sinh lực', P.hp, 100, 'var(--hp)', `${P.hp}/100`, 'hp') +
@@ -351,19 +357,21 @@ function renderPlay() {
   if (g.atPlaneTop() && P.tuvi >= g.need() && !(P.tokens && P.tokens[P.plane])) warn.push(`<button class="hudWarn" data-hw="tower">🗼 Cần ${PLANES[P.plane].token}</button>`);
   // chip trạng thái: tháp, sát khí, lịch trình
   const chips = [];
-  if (P.dao && (g.towerState().f > 0 || P.action === 'vuot_thap')) chips.push(`<button class="hudChip" data-hw="tower">🗼 ${g.towerState().f}/1000</button>`);
+  if (g.s.opt.autoPill) chips.push(`<button class="hudChip ${nPill ? '' : 'noPill'}" data-stat="pill" title="Hồi Xuân Đan, tự uống khi sinh lực dưới 40">💊 ${nPill}</button>`);
+  chips.push(`<button class="hudChip" data-stat="money" title="Linh thạch">💎 ${fmtShort(P.money)}</button>`);
+  if (P.dao && (g.towerState().f > 0 || P.action === 'vuot_thap')) chips.push(`<button class="hudChip" data-hw="tower" title="Tầng tháp">🗼 ${g.towerState().f}</button>`);
   if (P.sat >= 1) chips.push(`<button class="hudChip sat ${P.sat >= g.satLine(70) ? 'hi' : P.sat >= g.satLine(50) ? 'mid' : ''}" data-stat="sat">☠ ${Math.round(P.sat)}</button>`);
   if (P.plan) chips.push(`<button class="hudChip plan ${P.plan.on ? 'on' : ''}" data-hw="plan">📅 ${P.plan.on ? `${P.plan.i + 1}/${P.plan.steps.length}` : 'dừng'}</button>`);
   if (P.towerWait && !(P.plan && P.plan.on)) chips.push(`<button class="hudChip wait" data-hw="tower">⏳ chờ tầng ${P.towerWait.f}</button>`);
   setHTML($('hudChips'), chips.join(''));
-  setHTML($('hudSub'), `<span>${warn.length ? warn.join(' ') : esc(doing)}</span><span class="money">${g.s.opt.autoPill ? `<span title="Hồi Xuân Đan, tự uống khi sinh lực dưới 40" class="${nPill ? '' : 'noPill'}">💊${nPill}</span> · ` : ''}${fmt(P.money)} linh thạch</span>`);
+  setHTML($('hudSub'), `<span>${warn.length ? warn.join(' ') : esc(doing)}</span>`);
 
   const canBreak = g.canBreak();
   setHTML($('breakRow'), canBreak ? '<button class="btn primary breakBtn wide" data-do="break">⚡ Tu vi viên mãn · Đột phá</button>' : '');
   setHTML($('speed'),
-    `<button class="btn sp ${paused ? 'on' : ''}" data-sp="0" aria-label="Tạm dừng">${paused ? '▶' : '⏸'}</button>` +
-    SPEEDS.map((s) => `<button class="btn sp ${!paused && s === speed ? 'on' : ''}" data-sp="${s}">${s}×</button>`).join('') +
-    `<button class="btn sp auto ${askMode !== 'all' ? 'on' : ''}" data-do="auto" title="${esc(ASK_TIP[askMode])} Bấm để đổi.">${ASK[askMode]}</button>`);
+    `<div class="seg"><button class="sp ${paused ? 'on' : ''}" data-sp="0" aria-label="Tạm dừng">${paused ? '▶' : '<b class="pz">❚❚</b>'}</button>` +
+    SPEEDS.map((s) => `<button class="sp ${!paused && s === speed ? 'on' : ''}" data-sp="${s}">${s}×</button>`).join('') + '</div>' +
+    `<button class="btn sp auto ask-${askMode}" data-do="auto" aria-label="${esc(ASK[askMode])}" title="${esc(ASK[askMode])}: ${esc(ASK_TIP[askMode])} Bấm để đổi.">${ASK_ICO[askMode]}</button>`);
 
   let html = '';
   if (P.closed > 0) {
@@ -375,7 +383,7 @@ function renderPlay() {
       const why = P.age < a.minAge ? `Từ ${a.minAge} tuổi` : a.needDao && !P.dao ? 'Cần nhập đạo' : a.desc;
       const m = id === 'lich_luyen' && ok ? MAP_MAP[P.map] || g.defaultMap() : null;
       if (id === 'vuot_thap') return `<button class="btn act ${P.action === id ? 'on' : ''}" data-act="${id}" data-tip="${esc(ok ? `${a.desc} Đang ở tầng ${g.towerState().f}. Bấm để xem tháp.` : why)}" ${ok ? '' : 'disabled'}>${uiIcon('thap', a.icon)}<span>Tháp</span>${ok ? `<small>Tầng ${g.towerState().f}</small>` : ''}</button>`;
-      const sub = m ? `${DIFF[m.d].ic} ${DIFF[m.d].n}` : id === 'muu_sinh' && P.nghe ? `${NGHE[P.nghe.id].icon} cấp ${P.nghe.lv}` : '';
+      const sub = m ? `${DIFF[m.d].ic} ${esc(m.n)}` : id === 'muu_sinh' && P.nghe ? `${NGHE[P.nghe.id].icon} cấp ${P.nghe.lv}` : '';
       return `<button class="btn act ${P.action === id ? 'on' : ''}" data-act="${id}" data-tip="${esc(m ? `${a.desc} Đang chọn: ${m.n} (${DIFF[m.d].n}). Bấm để đổi vùng.` : why)}" ${ok ? '' : 'disabled'}>${uiIcon(id, a.icon)}<span>${a.n}</span>${sub ? `<small>${sub}</small>` : ''}</button>`;
     }).join('');
   }
@@ -453,6 +461,29 @@ const LOG_FILTER = {
   fight: { n: 'Chiến đấu', test: (l) => /Giao đấu|hạ được|đánh bại|đánh chết|Nghênh chiến/.test(l.t + (l.c || '')) },
   big: { n: 'Quan trọng', test: (l) => l.tone === 'big' || IMPORTANT_RE.test(l.t) || (l.h && /Bình cảnh|Ngã rẽ|Đạo hiệu|Tâm ma|Truyền thừa|Bí cảnh/.test(l.h)) },
 };
+const PATH_ICO = { kiem: '⚔', the: '🛡', tinh: '👁' };
+const ASK_ICO = { all: '🔔', big: '🛎', max: '🔕' };
+/** Số gọn: 1.098 / 12,5k / 3,2tr */
+function fmtShort(n) {
+  n = Math.floor(n);
+  if (n < 100000) return fmt(n);
+  if (n < 1e8) return (n / 1000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + 'k';
+  return (n / 1e6).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + 'tr';
+}
+/** Biểu tượng nhỏ đầu dòng nhật ký theo loại */
+function logIco(l) {
+  const t = l.t + ' ' + (l.c || '');
+  if (/Đột phá|đột phá|phi thăng|Phi thăng|lôi kiếp/.test(t)) return '⚡';
+  if (LOG_FILTER.fight.test(l) || /\bTháp\b|vượt tầng|leo tầng/.test(t)) return '⚔';
+  if (l.h) return '✦';
+  if (/danh hiệu/.test(t)) return '🏅';
+  if (/Tâm pháp .* lên tầng|lĩnh ngộ|Lĩnh ngộ|kỹ năng/.test(t)) return '☯';
+  if (/linh thạch|nhặt được|bán |phân giải/.test(t)) return '◈';
+  if (l.tone === 'big') return '★';
+  if (l.tone === 'bad') return '✕';
+  if (l.tone === 'good') return '✓';
+  return '·';
+}
 function renderTab(t = tab) {
   if (t === 'log') {
     const all = g.s.log.slice(-160).reverse();
@@ -463,8 +494,9 @@ function renderTab(t = tab) {
     return bar + (items.length ? '' : '<p class="empty">Chưa có dòng nào trong mục này.</p>') + `<ul class="log">${items.map((l, i) => {
       const idx = n - 1 - i;
       const cls = `${l.tone}${idx >= fresh ? ' fresh' : ''}`;
-      if (l.h) return `<li class="${cls}"><span class="age">${l.a} tuổi</span><b class="evH">${esc(l.h)}</b>${l.c ? `<span class="evC">→ ${esc(l.c)}</span>` : ''}<div class="evR">${rich(l.t)}</div></li>`;
-      return `<li class="${cls}"><span class="age">${l.a} tuổi</span>${rich(l.t)}</li>`;
+      const ic = `<i class="lic">${logIco(l)}</i>`;
+      if (l.h) return `<li class="${cls}">${ic}<span class="age">${l.a} tuổi</span><b class="evH">${esc(l.h)}</b>${l.c ? `<span class="evC">→ ${esc(l.c)}</span>` : ''}<div class="evR">${rich(l.t)}</div></li>`;
+      return `<li class="${cls}">${ic}<span class="age">${l.a} tuổi</span>${rich(l.t)}</li>`;
     }).join('')}</ul>`;
   }
   if (tab === 'rel') {

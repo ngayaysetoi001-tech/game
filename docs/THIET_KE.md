@@ -596,3 +596,17 @@ Mô phỏng 42 kiếp mỗi đạo (lịch trình Leo tháp, có rèn đồ):
 - Bản đồ vùng đất, di chuyển giữa các địa danh.
 - Hồi ký từng kiếp, cây gia phả linh hồn.
 - Âm thanh, ảnh pixel LPC (ghi công tác giả).
+
+## Giao diện cổ phong (bản 4.2)
+
+- **HUD:**
+  - Ảnh nửa người 74×92, viền màu theo bậc cảnh giới trong giới (r0–r4), có vầng sáng vàng khi tu vi viên mãn.
+  - Dòng 1: tên và cảnh giới. Dòng 2: danh hiệu, tuổi (và tông môn), biểu tượng đạo lộ ⚔ / 🛡 / 👁.
+  - Ba thanh mảnh, chữ số nằm trong thanh.
+  - Một hàng chip: 💊 đan, 💎 linh thạch, 🗼 tầng tháp, ☠ sát khí, 📅 lịch trình.
+- **Hàng tốc độ:** một thanh liền khối ⏸ 1×…32×. Chế độ hỏi là nút biểu tượng: 🔔 hỏi tất cả, 🛎 hỏi việc lớn, 🔕 tự quyết hết.
+- **Nút việc làm:** Lịch luyện ghi tên vùng đang đi.
+- **Thẻ kỳ ngộ:** dòng dẫn nhỏ, tiêu đề có gạch dưới, lựa chọn bo tròn có số.
+- **Nhật ký:** biểu tượng đầu dòng theo loại.
+  - ⚡ đột phá, ⚔ trận, ✦ kỳ ngộ, ☯ tâm pháp và kỹ năng, 🏅 danh hiệu, ◈ tài vật, ★ việc lớn, ✓ việc tốt, ✕ việc xấu.
+- **Khung chung:** viền vàng mảnh (--frame) cho thẻ, nút, ô. Tiêu đề in đậm.
