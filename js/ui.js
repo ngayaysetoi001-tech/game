@@ -275,7 +275,7 @@ function renderPlay() {
   const mp = act === 'lich_luyen' ? MAP_MAP[P.map] || MAP_MAP[DEFAULT_MAP] : null;
   const doing = P.closed > 0 ? `🕯 Bế quan, còn ${P.closed} năm`
     : act === 'lon_len' ? (P.age < 6 ? 'Còn nhỏ, cứ lớn lên đã' : 'Chưa nhập đạo, chưa thể tu luyện')
-    : `${ACTIONS[act].icon} ${ACTIONS[act].n}${mp ? ` · ${DIFF[mp.d].ic} ${mp.n}` : ''}`;
+    : `${ACTIONS[act].icon} ${ACTIONS[act].n}${mp ? ` · ${DIFF[mp.d].ic} ${mp.n}` : ''}${mp && P.flags.retreated && MAP_MAP[P.mapGoal] ? ` (dưỡng thương, hồi 80 về ${MAP_MAP[P.mapGoal].n})` : ''}`;
   setHTML($('hudSub'), `<span>${esc(doing)}</span><span class="money">${fmt(P.money)} linh thạch</span>`);
 
   const canBreak = g.canBreak();
@@ -764,7 +764,8 @@ function openMaps() {
     openSheet(`<h2>Chọn vùng lịch luyện</h2>
       <p class="intro">Các tu sĩ khác cũng tự chọn vùng theo sức mình và tính cách: kẻ liều lĩnh vào vùng khó, người cẩn trọng ở vùng dễ. Cùng vùng thì dễ chạm mặt nhau hơn, và hạ được kẻ mang thần khí thì có thể đoạt lấy.</p>
       <p class="intro">Độ khó luôn tính theo cảnh giới hiện tại của ngươi: yêu thú cùng cảnh giới nhưng mạnh hơn theo độ khó, đồ rơi ra hợp với cảnh giới của ngươi. Đồ Thần thoại chỉ xuất hiện từ vùng Khó trở lên. Tỉ lệ thắng tính theo trang bị, võ kỹ và sinh lực hiện tại (${P.hp}/100).</p>
-      <div class="row btnRow"><button class="btn ${g.s.opt.retreat ? 'on' : 'ghost'}" data-retreat="1">Sinh lực dưới 40% tự lui về ${MAP_MAP[DEFAULT_MAP].n}: ${g.s.opt.retreat ? 'bật' : 'tắt'}</button></div>
+      <div class="row btnRow"><button class="btn ${g.s.opt.retreat ? 'on' : 'ghost'}" data-retreat="1">Tự lui khi sinh lực dưới 40, hồi lên 80 tự quay lại: ${g.s.opt.retreat ? 'bật' : 'tắt'}</button></div>
+      ${P.flags.retreated && MAP_MAP[P.mapGoal] ? `<p class="intro"><b>Đang tạm lui</b> về ${MAP_MAP[DEFAULT_MAP].n} dưỡng thương (sinh lực ${P.hp}/100). Hồi lên 80 sẽ quay lại ${esc(MAP_MAP[P.mapGoal].n)}. Uống Hồi Xuân Đan để quay lại sớm, hoặc tắt tự lui để ở lại mặc kệ nguy hiểm.</p>` : ''}
       <div class="list">${cards}</div>`, bind);
   };
   const pick = (id) => { g.setMap(id); save(); $('sheet').hidden = true; dirty = true; };

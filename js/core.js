@@ -894,8 +894,13 @@ export class Game {
   }
   setMap(id) {
     if (!this.playing || !MAP_MAP[id]) return;
-    this.P.map = id;
-    this.P.flags.mapWarned = false;
+    const P = this.P;
+    P.map = id;
+    P.mapGoal = id;
+    P.flags.mapWarned = false;
+    P.flags.retreated = false;
+    // cố ý vào khi đang bị thương thì không tự lui ngay, đợi hồi lên 40 rồi tụt lại mới tính
+    P.flags.enteredLow = P.hp < 40;
     this.setAction('lich_luyen');
   }
   /** Yêu thú của vùng: cùng cảnh giới với ngươi, sức mạnh nhân theo độ khó */
@@ -1470,6 +1475,12 @@ export class Game {
     if (act === 'tu_luyen') this.addTuvi(g * this.r.range(0.85, 1.15));
     else if (act === 'be_quan') this.addTuvi(g * 1.6 * this.tmul('closedMul'));
     else if (act === 'lich_luyen') {
+      // đã tự lui dưỡng thương: hồi đủ 80 thì quay lại vùng đã chọn
+      if (P.flags.retreated && P.hp >= 80 && MAP_MAP[P.mapGoal] && P.map !== P.mapGoal) {
+        P.map = P.mapGoal;
+        P.flags.retreated = false;
+        this.log(`Thương thế đã lành, ngươi quay lại ${MAP_MAP[P.map].n}.`, 'muted');
+      }
       const mp = this.curMap();
       this.addTuvi(g * 0.35 * Math.sqrt(mp.loot));
       if (this.r.chance(0.15)) this.stat('co', 1);
@@ -1480,10 +1491,15 @@ export class Game {
         if (this.hurt(dmg, mp.haz[3])) return true;
       }
       if (mp.d >= 4) P.cnt.hard = (P.cnt.hard || 0) + 1;
-      if (mp.d >= 2 && P.hp < 40) {
+      if (P.hp >= 40) P.flags.enteredLow = false;
+      if (mp.d >= 2 && P.hp < 40 && !P.flags.enteredLow) {
         if (this.s.opt.retreat) {
           P.map = DEFAULT_MAP;
-          this.log(`Sinh lực chỉ còn ${P.hp}, ngươi rút khỏi ${mp.n}, về ${MAP_MAP[DEFAULT_MAP].n} dưỡng thương.`, 'muted');
+          P.mapGoal = P.mapGoal && MAP_MAP[P.mapGoal] && MAP_MAP[P.mapGoal].d >= 2 ? P.mapGoal : mp.id;
+          P.flags.retreated = true;
+          const msg = `Sinh lực chỉ còn ${P.hp}, ngươi rút khỏi ${mp.n} về ${MAP_MAP[DEFAULT_MAP].n} dưỡng thương. Hồi lên 80 sẽ tự quay lại.`;
+          this.log(msg, 'bad');
+          this.toast(msg, 'Tự lui', 0);
         } else if (!P.flags.mapWarned) {
           P.flags.mapWarned = true;
           this.s.alert = { title: `Nguy hiểm ở ${mp.n}`, text: `Sinh lực chỉ còn ${P.hp}. Ở ${mp.n} lúc này, tỉ lệ thắng yêu thú chỉ khoảng ${Math.round(this.mapOdds(mp.id) * 100)}%. Nên về vùng dễ hơn dưỡng thương.` };
