@@ -19,6 +19,16 @@ Hoặc gộp thành một file HTML duy nhất (CSS, JS nhúng sẵn) để đă
 node tools/build-artifact.mjs   # ra dist/tram-kiep-phu-sinh.html
 ```
 
+## Chơi toàn màn hình trên điện thoại
+
+Game cài được như một ứng dụng (có `manifest.webmanifest` và biểu tượng trong `icons/`). Mở từ biểu tượng trên Màn hình chính thì không còn thanh trình duyệt.
+
+1. Bật GitHub Pages cho repo: **Settings → Pages → Build and deployment → Source: Deploy from a branch**, chọn nhánh `tram-kiep-phu-sinh`, thư mục `/ (root)`, bấm **Save**. Sau 1–2 phút game có ở `https://ngayaysetoi001-tech.github.io/game/`.
+2. Trên iPhone: mở địa chỉ đó bằng **Safari**, bấm nút **Chia sẻ** (ô vuông có mũi tên), chọn **Thêm vào MH chính**.
+3. Trên Android: mở bằng Chrome, chọn menu ⋮ → **Thêm vào màn hình chính** (hoặc **Cài đặt ứng dụng**).
+
+Bản lưu nằm trong trình duyệt của từng địa chỉ, nên bản lưu ở trang Claude không tự sang trang GitHub Pages.
+
 ## Mô phỏng cân bằng
 
 ```bash

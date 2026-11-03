@@ -584,7 +584,7 @@ body.inPlay .tabbody { flex: 1; min-height: 0; overflow-y: auto; overscroll-beha
 }
 
 /* ========== Kỳ ngộ, trận đấu trong vùng giữa ========== */
-.evPanel { flex: 0 1 auto; max-height: 48%; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 6px 0; background: var(--panel); border: 2px solid var(--accent); border-radius: 14px; padding: 12px 14px; animation: evIn 0.25s ease-out; }
+.evPanel { flex: 0 1 auto; max-height: 75%; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 6px 0; background: var(--panel); border: 2px solid var(--accent); border-radius: 14px; padding: 12px 14px; animation: evIn 0.25s ease-out; }
 @keyframes evIn { from { opacity: 0; transform: translateY(8px); } }
 .evPanel[hidden], .battleBox[hidden], .evBack[hidden], .tabs[hidden], .tabbody[hidden] { display: none !important; }
 .evHead { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
@@ -618,3 +618,22 @@ body.inPlay .tabbody { min-height: 140px; }
 .evPanel .choices { gap: 6px; }
 .evPanel .choices .btn { min-height: 40px; padding: 6px 10px; font-size: 15px; }
 .dock .speed .sp.auto { font-size: 12px; }
+
+/* Cài ra Màn hình chính (iPhone, thanh trạng thái trong suốt): chừa chỗ tai thỏ */
+#app { padding-top: env(safe-area-inset-top, 0px); }
+body.inPlay .top { top: 0; }
+
+/* Thẻ kỳ ngộ: chữ dài thì cuộn trong khung chữ, các nút lựa chọn luôn hiện */
+.evPanel { display: flex; flex-direction: column; overflow-y: auto; }
+.evPanel .evText { flex: none; }
+.evPanel .choices { flex: none; }
+.evPanel .evKicker, .evPanel h2 { flex: none; }
+/* nhật ký chỉ lấy phần còn lại; thẻ kỳ ngộ được ưu tiên chỗ */
+body.inPlay .tabbody { flex: 1 1 0; min-height: 0; }
+/* màn hình thấp (iPhone nhỏ, hoặc bị thanh trình duyệt chiếm chỗ): lúc có kỳ ngộ thì thu gọn
+   các thanh chỉ số, hàng tab, hàng việc làm để thẻ kỳ ngộ đủ chỗ; tốc độ và tiện ích vẫn giữ */
+@media (max-height: 760px) and (max-width: 899px) {
+  body.inPlay.evOpen .hud .bars, body.inPlay.evOpen .tabs, body.inPlay.evOpen .tabbody, body.inPlay.evOpen .dock .actions { display: none !important; }
+  body.inPlay.evOpen .hud #portrait { width: 36px; height: 45px; }
+  body.inPlay.evOpen .evPanel { max-height: none; }
+}

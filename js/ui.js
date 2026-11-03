@@ -504,6 +504,7 @@ function renderEvent() {
   const ask = !!(v && !v.done);
   const showCard = ask && !bt;
   $('evPanel').hidden = !showCard;
+  document.body.classList.toggle('evOpen', showCard || !!bt);
   if (!showCard) return;
   const P = g.P;
   const mp = g.curMap();
@@ -1006,7 +1007,9 @@ $('menuBtn').onclick = () => {
     <h3>Xem diễn lại trận đấu</h3>
     <div class="opts">${Object.entries(BATTLE_VIEW).map(([k, n]) => `<button class="btn ${battleView === k ? 'on' : 'ghost'}" data-bv="${k}">${n}</button>`).join('')}</div>
     <p class="intro">Chỉ trận lớn: trận có thể mất mạng (yêu thú vùng khó, kẻ thù, ma tu...). Từ ${AUTO_SPEED}× luôn bỏ qua. Kết quả trận nào cũng ghi vào nhật ký.</p>
-    <div class="list"><button class="btn" id="themeBtn">Đổi giao diện sáng / tối</button><button class="btn" id="newWorld">Tạo thế giới mới (xóa bản lưu)</button></div>`, () => {
+    ${fsInfo()}
+    <div class="list">${canFullscreen() ? `<button class="btn" id="fsBtn">${document.fullscreenElement ? 'Thoát toàn màn hình' : '⛶ Toàn màn hình'}</button>` : ''}<button class="btn" id="themeBtn">Đổi giao diện sáng / tối</button><button class="btn" id="newWorld">Tạo thế giới mới (xóa bản lưu)</button></div>`, () => {
+    if ($('fsBtn')) $('fsBtn').onclick = () => { toggleFullscreen(); $('sheet').hidden = true; };
     $('sheetBody').querySelectorAll('[data-bv]').forEach((b) => { b.onclick = () => { battleView = b.dataset.bv; save(); $('menuBtn').onclick(); }; });
     $('themeBtn').onclick = () => {
       const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -1119,6 +1122,21 @@ document.addEventListener('keydown', (e) => {
   }
   if (e.key === ' ' && !(e.target.closest && e.target.closest('button'))) { e.preventDefault(); paused = !paused; dirty = true; }
 });
+
+// ---------- Toàn màn hình ----------
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || navigator.standalone === true;
+// iPhone không cho trang web tự bật toàn màn hình, chỉ cách cài ra Màn hình chính
+const canFullscreen = () => !isStandalone() && !!(document.documentElement.requestFullscreen) && document.fullscreenEnabled !== false;
+function toggleFullscreen() {
+  try {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+  } catch (e) { /* bỏ qua */ }
+}
+function fsInfo() {
+  if (isStandalone()) return '';
+  return `<p class="intro"><b>Chơi toàn màn hình:</b> mở game ở trang riêng của nó (không qua khung xem của Claude), rồi bấm nút Chia sẻ của Safari, chọn <b>Thêm vào MH chính</b>. Mở game từ biểu tượng đó là toàn màn hình, không còn thanh trên dưới.${canFullscreen() ? ' Trên Android và máy tính có thể bấm nút Toàn màn hình bên dưới.' : ''}</p>`;
+}
 
 // ---------- Vòng lặp ----------
 function frame(t) {

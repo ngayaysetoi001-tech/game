@@ -302,6 +302,13 @@ Trên màn hình rộng (từ 900px), bố cục chia 2 cột: trái là nhân v
     - yêu thú ở vùng Nguy hiểm trở lên.
   - **Tần suất ở 1×** (1 năm mỗi giây, mô phỏng 30 kiếp): "Hỏi tất cả" khoảng 2,7 giây một lần; "Hỏi việc lớn" khoảng 8 giây một lần, trong đó nhiều nhất là đột phá.
 
+**Màn hình thấp và toàn màn hình:**
+
+- Màn hình cao dưới 760px (iPhone nhỏ, hoặc bị thanh trình duyệt chiếm chỗ): lúc có kỳ ngộ thì tạm ẩn 3 thanh chỉ số, hàng tab, nhật ký và hàng việc làm. Thẻ kỳ ngộ được cả chỗ; tốc độ và tiện ích vẫn giữ.
+- Thẻ kỳ ngộ dài (ví dụ 6 con đường tu hành) thì cuộn được.
+- Cài như ứng dụng: `manifest.webmanifest`, biểu tượng `icons/` vẽ từ sprite của game, các thẻ meta cho iPhone. Phần trên chừa chỗ tai thỏ.
+- Menu ☰ có hướng dẫn cài ra Màn hình chính. Trình duyệt hỗ trợ (Android, máy tính) thì có thêm nút Toàn màn hình.
+
 ## 7. Kỹ thuật
 
 - HTML, CSS, JavaScript thuần (ES module), không cần build, không cần máy chủ.
