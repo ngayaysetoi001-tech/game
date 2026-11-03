@@ -29,17 +29,17 @@ const MON_RULES = [
   [/Đại Bằng|Kim Sí|Bằng/, ['monsters/kim_si_bang']], [W('Ưng'), ['monsters/song_dau_ung']], [/Phượng/, ['monsters/linh_phuong']],
   [/Tháp Linh/, ['monsters/thap_linh']], [/Linh Tổ Tàn Hồn|Linh Đế/, ['monsters/linh_to']],
   [/Lang Vương|Thú Lâm Chi Vương/, ['monsters/lang_vuong']], [/Băng Lang/, ['monsters/soi_yeu']],
-  [/Bức/, ['monsters/huyet_buc', 'monsters/hu_anh']], [/Huyết Lang/, ['monsters/huyet_lang']], [W('Lang|Sói|Khuyển'), ['monsters/soi_yeu', 'monsters/huyet_lang']],
-  [W('Hùng'), ['monsters/thiet_hung', 'monsters/ma_vien']], [W('Trư'), ['monsters/da_tru', 'monsters/ma_vien']],
-  [/Cự Nhân|Thạch|Khôi Lỗi|Nham Thạch/, ['monsters/thach_cu_nhan', 'monsters/hon_don_de_quan']],
-  [W('Hạt'), ['monsters/doc_hat']], [W('Lộc'), ['monsters/loc_than', 'monsters/hon_don_thu']],
-  [W('Long|Ma Long|Long Vương|Long Hậu'), ['monsters/ma_long', 'monsters/hu_khong_thu']],
-  [/Cự Kình|Kình/, ['monsters/cu_kinh', 'monsters/hu_khong_thu']], [/Huyết Sa|Sa Ngư/, ['monsters/huyet_sa', 'monsters/xa_yeu']], [/Hải Yêu/, ['monsters/hai_yeu', 'monsters/xa_yeu']],
-  [/Tinh Thú|Tinh Hải/, ['monsters/tinh_thu', 'monsters/hu_khong_thu']], [W('Trùng|Trùng Mẫu'), ['monsters/hu_trung', 'monsters/hu_khong_thu']],
-  [/Dung Nham/, ['monsters/dung_nham_thu', 'monsters/hon_don_linh']],
-  [/Mộng|Huyễn|Tâm Ma/, ['monsters/mong_yeu', 'monsters/u_hon']],
-  [/Kiếm Khách|Kiếm Chi Chủ|Bá Chủ|Đấu Sĩ/, ['monsters/kiem_khach', 'monsters/hon_don_de_quan']],
-  [/Thiên Binh|Thiên Tướng|Thần Vệ|Thị Vệ|Thánh Vệ|Lôi Vệ|Vệ Binh/, ['monsters/thien_binh', 'monsters/hon_don_de_quan']],
+  [/Bức/, ['monsters/huyet_buc', '|monsters/hu_anh']], [/Huyết Lang/, ['monsters/huyet_lang']], [W('Lang|Sói|Khuyển'), ['monsters/soi_yeu', 'monsters/huyet_lang']],
+  [W('Hùng'), ['monsters/thiet_hung', '|monsters/ma_vien']], [W('Trư'), ['monsters/da_tru', '|monsters/ma_vien']],
+  [/Cự Nhân|Thạch|Khôi Lỗi|Nham Thạch/, ['monsters/thach_cu_nhan', '|monsters/hon_don_de_quan']],
+  [W('Hạt'), ['monsters/doc_hat']], [W('Lộc'), ['monsters/loc_than', '|monsters/hon_don_thu']],
+  [W('Long|Ma Long|Long Vương|Long Hậu'), ['monsters/ma_long', '|monsters/hu_khong_thu']],
+  [/Cự Kình|Kình/, ['monsters/cu_kinh', '|monsters/hu_khong_thu']], [/Huyết Sa|Sa Ngư/, ['monsters/huyet_sa', '|monsters/xa_yeu']], [/Hải Yêu/, ['monsters/hai_yeu', '|monsters/xa_yeu']],
+  [/Tinh Thú|Tinh Hải/, ['monsters/tinh_thu', '|monsters/hu_khong_thu']], [W('Trùng|Trùng Mẫu'), ['monsters/hu_trung', '|monsters/hu_khong_thu']],
+  [/Dung Nham/, ['monsters/dung_nham_thu', '|monsters/hon_don_linh']],
+  [/Mộng|Huyễn|Tâm Ma/, ['monsters/mong_yeu', '|monsters/u_hon']],
+  [/Kiếm Khách|Kiếm Chi Chủ|Bá Chủ|Đấu Sĩ/, ['monsters/kiem_khach', '|monsters/hon_don_de_quan']],
+  [/Thiên Binh|Thiên Tướng|Thần Vệ|Thị Vệ|Thánh Vệ|Lôi Vệ|Vệ Binh/, ['monsters/thien_binh', '|monsters/hon_don_de_quan']],
   [/Băng Xà|Hàn Giao/, ['monsters/bang_xa']], [/Lôi.*Xà|Hư.*Xà|Ma Xà|Cửu Anh/, ['monsters/hu_xa']], [W('Xà|Giao|Đằng Xà'), ['monsters/xa_yeu', 'monsters/hu_xa']],
   [/Ma Viên/, ['monsters/ma_vien']], [/Hầu|Viên/, ['monsters/hau_yeu']],
   [/Thi Vương|Thi Mộ|Cương Thi|Thi Hổ/, ['monsters/hac_thi', 'monsters/ma_thi']], [W('Thi'), ['monsters/ma_thi']],
@@ -71,7 +71,8 @@ const HUES = [0, 0, 0, 25, -25, 60, -60, 150];
 export function monsterArt(name = '', seed = 1) {
   const n = String(name).replace(/^(\S+ · )+/, '');
   let pool = null;
-  for (const [re, ks] of MON_RULES) if (re.test(n)) { pool = ks.filter((k) => ART[k]); if (pool.length) break; }
+  // mục bắt đầu bằng | là tranh dự phòng: chỉ dùng khi chưa có tranh riêng
+  for (const [re, ks] of MON_RULES) if (re.test(n)) { pool = ks.filter((k) => k[0] !== '|' && ART[k]); if (!pool.length) pool = ks.filter((k) => k[0] === '|' && ART[k.slice(1)]).map((k) => k.slice(1)); if (pool.length) break; }
   if (!pool || !pool.length) pool = MON_ALL();
   if (!pool.length) return null;
   const k = pool[Math.abs(seed) % pool.length];
