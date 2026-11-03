@@ -26,7 +26,7 @@ Game tu tiên luân hồi chơi một mình, chạy offline trên trình duyệt
 | Kết giao | 8 | Gặp bot, tăng thân thiết. Tu vi 25% |
 | Bế quan | 12, cần nhập đạo | Tu vi x1,6, thời gian trôi nhanh x3, gần như không có kỳ ngộ |
 
-3. **Nhập đạo:** sinh ra là phàm nhân, phải gặp cơ duyên mới tu được (ông lão bên giếng, tông môn tuyển đệ tử, sách cũ trong kho, cố nhân dẫn đường). Hậu duệ gia tộc tu tiên và tàn niệm "Ký ức đạo pháp" thì nhập đạo sẵn.
+3. **Nhập đạo:** ai cũng nhập đạo lúc 6 tuổi và bắt đầu tu luyện ngay. Hậu duệ gia tộc tu tiên nhập đạo với sẵn 30% tu vi Phàm Nhân, tàn niệm "Ký ức đạo pháp" sẵn 50%. Ông lão bên giếng (một lần mỗi kiếp) và sách cũ trong kho (khi còn là Phàm Nhân) giờ cho ngộ tính, tu vi hoặc võ kỹ. Bot nhập đạo lúc 6 tuổi (90%), số còn lại gặp cơ duyên muộn hơn; vào tông môn từ 8 đến 16 tuổi. Phàm Nhân cần 60 tu vi nên Luyện Khí thường đến khoảng 11-23 tuổi (trung vị 15).
 4. **Đột phá:** tu vi đầy thì người chơi **tự chọn lúc đột phá**. Có thể uống Phá Cảnh Đan. Từ Kim Đan trở lên, thất bại có thể chết.
 5. **Chết hoặc phi thăng:** chọn 1 trong 3 tàn niệm ngẫu nhiên mang sang kiếp sau.
 
@@ -94,7 +94,7 @@ Thử với yêu thú Trúc Cơ mạnh hơn 60%, mỗi bên cầm binh khí hợ
 
 | Cảnh giới | Tu vi cần | Thọ gốc | Đột phá lên kế tiếp |
 |---|---|---|---|
-| Phàm Nhân | 100 | 60 | 90% |
+| Phàm Nhân | 60 | 60 | 90% |
 | Luyện Khí | 300 | 90 | 70% |
 | Trúc Cơ | 800 | 140 | 55% |
 | Kim Đan | 2.000 | 220 | 45% |

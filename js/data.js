@@ -3,7 +3,7 @@
 // need: tu vi cần để viên mãn cảnh giới này (rồi đột phá lên cảnh giới kế)
 // life: thọ nguyên gốc, pow: sức chiến đấu gốc, brk: tỉ lệ đột phá gốc LÊN cảnh giới kế
 export const REALMS = [
-  { n: 'Phàm Nhân', need: 100, life: 60, pow: 1, brk: 0.9 },
+  { n: 'Phàm Nhân', need: 60, life: 60, pow: 1, brk: 0.9 },
   { n: 'Luyện Khí', need: 300, life: 90, pow: 3, brk: 0.7 },
   { n: 'Trúc Cơ', need: 800, life: 140, pow: 9, brk: 0.55 },
   { n: 'Kim Đan', need: 2000, life: 220, pow: 27, brk: 0.45 },
@@ -32,7 +32,7 @@ export const ORIGINS = [
   { id: 'thu', n: 'Thư hương thế gia', w: 15, fx: { ngo: 8 }, desc: 'Ông nội là tú tài, sách chất đầy nhà.' },
   { id: 'coi', n: 'Cô nhi đầu đường', w: 15, fx: { tam: 8, co: 5 }, desc: 'Không ai nuôi, tự học cách sống.' },
   { id: 'ren', n: 'Con thợ rèn', w: 12, fx: { can: 3, fight: 0.1 }, desc: 'Tiếng búa đập sắt là bài hát ru.' },
-  { id: 'tu', n: 'Hậu duệ tu tiên gia tộc', w: 8, fx: { money: 40, dao: true }, desc: 'Tổ tiên từng có người Kim Đan. Gia tộc nay đã sa sút.' },
+  { id: 'tu', n: 'Hậu duệ tu tiên gia tộc', w: 8, fx: { money: 40 }, desc: 'Tổ tiên từng có người Kim Đan. Gia tộc nay đã sa sút. Nhập đạo có sẵn 30% tu vi Phàm Nhân.' },
 ];
 
 export const PERSONALITIES = {
@@ -89,7 +89,7 @@ export const PILLS = {
 
 // Tàn niệm: chọn 1 trong 3 khi chết, mang sang kiếp sau
 export const LEGACIES = [
-  { id: 'ky_uc', n: 'Ký ức đạo pháp', desc: 'Ngộ tính +15. Sáu tuổi đã tự nhập đạo.' },
+  { id: 'ky_uc', n: 'Ký ức đạo pháp', desc: 'Ngộ tính +15. Nhập đạo lúc 6 tuổi đã có sẵn nửa tầng tu vi.' },
   { id: 'than_the', n: 'Thân thể kiếp trước', desc: 'Căn cốt +15.' },
   { id: 'co_duyen', n: 'Dư âm cơ duyên', desc: 'Cơ duyên +15.' },
   { id: 'kiem_y', n: 'Tàn hồn kiếm ý', desc: 'Sức chiến đấu +20% suốt kiếp sau.' },

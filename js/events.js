@@ -90,24 +90,25 @@ const BASE_EVENTS = [
     ],
   },
 
-  // ===== Nhập đạo =====
+  // ===== Tuổi nhỏ (ai cũng nhập đạo lúc 6 tuổi, các sự kiện này cho thêm cơ duyên) =====
   {
     id: 'lao_gia_gieng', auto: () => 0, w: 6, cd: 3, title: 'Ông lão bên giếng',
-    when: (g) => !g.P.dao && g.P.age >= 6 && g.P.age <= 15,
+    once: true,
+    when: (g) => g.P.age >= 6 && g.P.age <= 15,
     text: () => 'Một ông lão rách rưới ngồi bên miệng giếng làng, chìa cái gáo dừa ra xin nước uống.',
     choices: (g) => [
       {
         t: 'Múc nước mời ông', p: 0.55 + g.P.stats.co / 500, go: (g) => {
           if (g.r.chance(0.55 + g.P.stats.co / 500)) {
-            g.P.dao = true; g.stat('ngo', 3);
-            return 'Ông uống xong, gõ nhẹ lên trán ngươi ba cái. Đêm ấy ngươi mơ thấy một bài khẩu quyết, tỉnh dậy vẫn nhớ từng chữ.\n\nNgươi đã nhập đạo. Giờ có thể chọn Tu luyện.';
+            g.stat('ngo', 5); const t = g.addTuvi(g.need() * 0.4);
+            return `Ông uống xong, gõ nhẹ lên trán ngươi ba cái. Đêm ấy ngươi mơ thấy một bài khẩu quyết tinh diệu hơn hẳn bài đang luyện, tỉnh dậy vẫn nhớ từng chữ.\n\nNgộ tính +5. Tu vi +${t}.`;
           }
           g.stat('tam', 3); return 'Ông cảm ơn rồi chống gậy đi mất. Ngươi thấy lòng nhẹ nhõm. Tâm tính +3.';
         },
       },
       {
         t: 'Hỏi ông có biết phép tiên không', go: (g) => {
-          if (g.P.stats.ngo >= 55) { g.P.dao = true; return 'Ông nheo mắt: "Thằng nhóc này lanh đấy." Rồi ông dạy ngươi cách thở theo nhịp trăng.\n\nNgươi đã nhập đạo.'; }
+          if (g.P.stats.ngo >= 55) { const t = g.learnRandom(1, 2); g.stat('ngo', 2); return `Ông nheo mắt: "Thằng nhóc này lanh đấy." Rồi ông vạch xuống đất mấy đường quyền, bắt ngươi tập tới tối.\n\nNgộ tính +2. ${t || 'Ngươi nhớ được vài thế, nhưng chưa thành chiêu.'}`; }
           return 'Ông cười khà khà, không đáp, chống gậy đi mất.';
         },
       },
@@ -121,7 +122,7 @@ const BASE_EVENTS = [
     ],
   },
   {
-    id: 'khao_hach', auto: () => 0, w: (g) => (g.P.dao ? 3 : 7), cd: 3, title: 'Tông môn tuyển đệ tử',
+    id: 'khao_hach', auto: () => 0, w: 6, cd: 3, title: 'Tông môn tuyển đệ tử',
     when: (g) => !g.P.sect && g.P.age >= 8 && g.P.age <= 16,
     prep: (g) => { const ss = g.aliveSects(); return ss.length ? { sect: g.r.pick(ss).id } : null; },
     text: (g, { data }) => `${g.sect(data.sect).name} mở đợt thu nhận đệ tử ở trấn bên. Trẻ con khắp vùng xếp hàng, lần lượt đặt tay lên trắc linh thạch.`,
@@ -142,12 +143,12 @@ const BASE_EVENTS = [
   },
   {
     id: 'co_duyen_muon', auto: () => 0, w: 4, cd: 5, title: 'Quyển sách trong kho',
-    when: (g) => !g.P.dao && g.P.age >= 16 && g.P.age <= 45,
-    text: () => 'Dọn kho cũ, ngươi tìm thấy một quyển sách chép tay mục nát. Trang đầu viết bốn chữ: "Dẫn khí nhập thể".',
+    when: (g) => g.P.realm === 0 && g.P.age >= 10 && g.P.age <= 45,
+    text: () => 'Dọn kho cũ, ngươi tìm thấy một quyển sách chép tay mục nát. Trang đầu viết bốn chữ: "Dẫn khí nhập thể", nét chữ khác hẳn bài khẩu quyết ngươi đang luyện.',
     choices: (g) => [
       {
         t: 'Thức đêm nghiền ngẫm', p: 0.5 + g.P.stats.ngo / 200, go: (g) => {
-          if (g.r.chance(0.5 + g.P.stats.ngo / 200)) { g.P.dao = true; return 'Ba tháng sau, lần đầu tiên ngươi cảm nhận được một luồng khí mát chạy dọc sống lưng.\n\nNgươi đã nhập đạo, dù muộn.'; }
+          if (g.r.chance(0.5 + g.P.stats.ngo / 200)) { const t = g.addTuvi(g.need() * 0.5); return `Ba tháng sau, một luồng khí mát chạy dọc sống lưng, những chỗ tắc nghẽn bấy lâu bỗng thông suốt.\n\nTu vi +${t}.`; }
           g.stat('ngo', 3); return 'Chữ nghĩa lộn xộn, đọc mãi không hiểu. Nhưng đầu óc ngươi sáng ra đôi chút. Ngộ tính +3.';
         },
       },

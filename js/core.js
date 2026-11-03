@@ -218,10 +218,8 @@ export class Game {
       return;
     }
     b.age++;
-    if (!b.dao && b.age >= 8 && b.age <= 25 && this.r.chance(0.12)) {
-      b.dao = true;
-      if (this.r.chance(0.7)) this.botJoinSect(b);
-    }
+    if (!b.dao && (b.age === 6 ? this.r.chance(0.9) : b.age > 6 && b.age <= 25 && this.r.chance(0.12))) b.dao = true;
+    if (b.dao && !b.sect && b.age >= 8 && b.age <= 16 && this.r.chance(0.13)) this.botJoinSect(b);
     if (b.dao) {
       const R = REALMS[b.realm];
       b.tuvi = Math.min(R.need, b.tuvi + this.botGain(b));
@@ -465,7 +463,7 @@ export class Game {
     const P = {
       the, tps, the2: null, baseStats, baseTinh: tinh0,
       name: this.genName(gender), g: gender, origin: o.id, originN: o.n, root, stats: st,
-      hp: 100, age: 0, realm: 0, tuvi: 0, dao: !!o.fx.dao, sect: null,
+      hp: 100, age: 0, realm: 0, tuvi: 0, dao: false, sect: null,
       money: (o.fx.money || 0) + (leg === 'tai_san' ? this.s.legacy.money : 0),
       fight: (o.fx.fight || 0) + (leg === 'kiem_y' ? 0.2 : 0),
       tinh: tinh0, action: 'tu_luyen', closed: 0, pills: {}, dienTho: {}, lifeBonus: 0,
@@ -1088,9 +1086,15 @@ export class Game {
     this.worldYear();
     P.age++;
     const act = this.effectiveAction();
-    if (P.flags.autoDao && P.age >= 6 && !P.dao) {
+    if (P.age >= 6 && !P.dao) {
       P.dao = true;
-      this.log('Sáu tuổi, những khẩu quyết mơ hồ trong giấc mơ bỗng rõ ràng từng chữ. Ngươi tự nhập đạo.', 'good');
+      const head = (P.flags.autoDao ? 0.5 : 0) + (P.origin === 'tu' ? 0.3 : 0);
+      if (head) P.tuvi = Math.min(this.need(), P.tuvi + this.need() * head);
+      this.log(P.flags.autoDao
+        ? 'Sáu tuổi, những khẩu quyết mơ hồ trong giấc mơ bỗng rõ ràng từng chữ. Ngươi nhập đạo với một nửa tầng tu vi có sẵn.'
+        : P.origin === 'tu'
+          ? 'Sáu tuổi, ông nội lấy ra cuốn gia phả cũ, dạy ngươi bài khẩu quyết tổ truyền. Ngươi nhập đạo, khí tức đã thông được ba phần.'
+          : 'Sáu tuổi, cha mẹ gom góp đưa ngươi tới nghe một tán tu giảng đạo ở đầu làng. Ngươi học được bài dẫn khí đầu tiên và chính thức nhập đạo.', 'good');
     }
     if (P.dao && !P.flags.firstSkill) {
       P.flags.firstSkill = true;
