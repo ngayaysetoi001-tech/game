@@ -318,7 +318,8 @@ function renderPlay() {
 
   const tabs = [['log', 'Nhật ký'], ['rel', 'Quan hệ'], ['world', 'Thiên hạ'], ['rank', 'Xếp hạng'], ['lives', 'Sổ kiếp']];
   setHTML($('tabs'), tabs.map(([id, n]) => `<button class="${tab === id ? 'on' : ''}" data-tab="${id}">${n}</button>`).join(''));
-  setHTML($('tabbody'), renderTab());
+  const compactEv = document.body.classList.contains('evOpen') && matchMedia('(max-height: 760px) and (max-width: 899px)').matches;
+  setHTML($('tabbody'), compactEv && tab !== 'log' ? renderTab('log') : renderTab());
   renderEvent();
 }
 
@@ -369,8 +370,8 @@ function openMore() {
   });
 }
 
-function renderTab() {
-  if (tab === 'log') {
+function renderTab(t = tab) {
+  if (t === 'log') {
     const items = g.s.log.slice(-80).reverse();
     const n = g.s.log.length;
     const fresh = performance.now() < freshUntil ? freshFrom : Infinity;

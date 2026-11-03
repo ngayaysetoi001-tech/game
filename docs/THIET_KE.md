@@ -304,7 +304,10 @@ Trên màn hình rộng (từ 900px), bố cục chia 2 cột: trái là nhân v
 
 **Màn hình thấp và toàn màn hình:**
 
-- Màn hình cao dưới 760px (iPhone nhỏ, hoặc bị thanh trình duyệt chiếm chỗ): lúc có kỳ ngộ thì tạm ẩn 3 thanh chỉ số, hàng tab, nhật ký và hàng việc làm. Thẻ kỳ ngộ được cả chỗ; tốc độ và tiện ích vẫn giữ.
+- Màn hình cao dưới 760px (iPhone nhỏ, hoặc bị thanh trình duyệt chiếm chỗ): lúc có kỳ ngộ thì tạm ẩn 3 thanh chỉ số, hàng nút tab và hàng việc làm.
+  - Nhật ký vẫn hiện (luôn là tab Nhật ký) và lấp phần còn lại.
+  - Dải điều khiển luôn sát đáy; tốc độ và tiện ích vẫn giữ.
+  - Thẻ quá dài thì nhật ký co lại, thẻ cuộn bên trong.
 - Thẻ kỳ ngộ dài (ví dụ 6 con đường tu hành) thì cuộn được.
 - Cài như ứng dụng: `manifest.webmanifest`, biểu tượng `icons/` vẽ từ sprite của game, các thẻ meta cho iPhone. Phần trên chừa chỗ tai thỏ.
 - Menu ☰ có hướng dẫn cài ra Màn hình chính. Trình duyệt hỗ trợ (Android, máy tính) thì có thêm nút Toàn màn hình.
