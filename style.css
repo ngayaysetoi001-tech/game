@@ -802,7 +802,6 @@ img.art { image-rendering: auto; }
 .fighter.foe img.art { transform: scaleX(-1); }
 .fighter.foe img.art[style*="hue-rotate"] { transform: scaleX(-1); }
 .isBoss #fB img.art { width: 160px; height: 170px; filter: drop-shadow(0 0 10px rgba(255, 70, 40, 0.6)); }
-.fighter img.art.swing { width: 150px; object-fit: contain; }
 .lunge img.art { animation: lungeR 0.4s ease-out; }
 .foe.lunge img.art { animation: lungeL 0.4s ease-out; }
 .hit img.art { animation: shake 0.35s; }

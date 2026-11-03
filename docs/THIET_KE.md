@@ -556,9 +556,9 @@ Mô phỏng 30 kiếp mỗi cách chơi (Phàm giới, có rèn đồ):
 - Binh khí còn 3 loại: Kiếm, Quyền Sáo, Pháp Ấn. Đồ cũ: đao, thương thành kiếm; quạt thành pháp ấn. Đồ rơi 70% đúng loại của đạo đang đi. Tương khắc khi đấu bot: Kiếm > Tinh thần > Thể > Kiếm (±15%). Bot cũng theo 3 đạo.
 - Lôi kiếp: Kiếm tu 25% chém tan bớt 20% một đợt; Thể tu có Kim Thân thì lôi kiếp -15%; Tinh thần lực đợt 9 +15%.
 - Bản lưu cũ: võ kỹ đã học quy thành ngộ đạo điểm (3 mỗi chiêu) cộng tầng tâm pháp; đường cũ thì được chọn lại.
-- Tranh vẽ tay của tác giả (repo `tutien`), nén WebP trong `assets/` (khoảng 600KB): nhân vật theo đạo (`heroes/`, Kiếm tu có 6 khung vung kiếm), 24 quái (`monsters/`), 10 linh thú (`pets/`, cũng dùng làm quái hổ, báo, rùa, kỳ lân, hồ ly…), 24 biểu tượng kỹ năng (`skills/`). `js/art.js` chọn tranh quái theo tên, đổi màu nhẹ theo seed. `tools/gen-art.mjs` cập nhật danh sách cho art.js và sw.js; bản gộp một tệp nhúng tranh dạng data URI.
+- Tranh vẽ tay của tác giả (repo `tutien`), nén WebP trong `assets/` (khoảng 600KB): nhân vật theo đạo (`heroes/`; đã bỏ hoạt ảnh vung kiếm vì trông không đẹp), 24 quái (`monsters/`), 10 linh thú (`pets/`, cũng dùng làm quái hổ, báo, rùa, kỳ lân, hồ ly…), 24 biểu tượng kỹ năng (`skills/`). `js/art.js` chọn tranh quái theo tên, đổi màu nhẹ theo seed. `tools/gen-art.mjs` cập nhật danh sách cho art.js và sw.js; bản gộp một tệp nhúng tranh dạng data URI.
 
-- Tranh nữ (vẽ bằng Nano Banana): `heroes/kiem_nu`, `heroes/phu_nu` (nền hồng tím, tách màu và khử ám), `heroes/meditate_nu` (nền xanh, hiện khi bế quan), `heroes/the_nu` (nền hồng tím, giữ lửa). Chưa có tranh nữ thì dùng tranh nam. Kiếm tu nữ có 6 khung vung kiếm `heroes/kiem_atk_nu_0..5` (cắt từ một tấm sprite sheet nền xanh, tách theo từng khối, căn chân cùng đáy).
+- Tranh nữ (vẽ bằng Nano Banana): `heroes/kiem_nu`, `heroes/phu_nu` (nền hồng tím, tách màu và khử ám), `heroes/meditate_nu` (nền xanh, hiện khi bế quan), `heroes/the_nu` (nền hồng tím, giữ lửa). Chưa có tranh nữ thì dùng tranh nam.
 
 Mô phỏng 42 kiếp mỗi đạo (lịch trình Leo tháp, có rèn đồ):
 

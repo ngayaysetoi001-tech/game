@@ -4,7 +4,7 @@ import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITL
 import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEFAULT_MAP, realmLabel, subN, PLANES, mapsOf, WORLD_DIFF, mythMatOf, planeOf, THEME_BG, BOSS_KITS, TOWER_THEMES, TOWER_SHOP, TAM_PHAP, TAM_PHAP_IDS, NGHE, PHU, PLAN_TEMPLATES, PLAN_STEP_ACTS, PLAN_COND, PATH_BAR_N } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, BEAST_SKILLS, TACTICS, WEAPON_TYPES, turnText, PATH_RES, PATH_SKILLS, SKILL_MAX, skillLvMul } from './combat.js';
-import { heroArt, heroFilter, meditateArt, skillArt, monsterArt, artURL } from './art.js';
+import { heroArt, heroFilter, meditateArt, skillArt, monsterArt } from './art.js';
 import { SLOTS, QUALITY, itemLine, TT_MAP, isSealed, isSuppressed, gearStats, itemName, PLUS_MAX, AFFIX } from './items.js';
 import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE, matIconOpts, skillIconOpts } from './icons.js';
 
@@ -699,16 +699,6 @@ function floatText(side, text, cls) {
   host.appendChild(el);
   setTimeout(() => el.remove(), 1100);
 }
-const SWING = { nam: [0, 1, 2, 3, 4, 5].map((i) => artURL(`heroes/kiem_atk_${i}`)).filter(Boolean), nu: [0, 1, 2, 3, 4, 5].map((i) => artURL(`heroes/kiem_atk_nu_${i}`)).filter(Boolean) };
-function swingFrames(img, fast, gd = 'nam') {
-  const SW = SWING[gd === 'nu' ? 'nu' : 'nam'];
-  if (!img || img.hidden || SW.length < 6 || img.dataset.swing) return;
-  const base = img.src;
-  img.dataset.swing = '1';
-  img.classList.add('swing');
-  SW.forEach((u, i) => setTimeout(() => { img.src = u; }, i * (fast ? 35 : 60)));
-  setTimeout(() => { img.src = base; img.classList.remove('swing'); delete img.dataset.swing; }, SW.length * (fast ? 35 : 60) + 40);
-}
 function startBattle(res, fast = false, onClose = null) {
   bt = { res, i: 0, timer: null, closeT: null, fast: btFast || fast || (!!res.tower && fastNow()), done: false, onClose };
   $('battle').hidden = false;
@@ -787,9 +777,6 @@ function stepBattle() {
     $('btBanner').innerHTML = `${skIco(t.skill, 'inl')}${t.ult ? 'Tuyệt kỹ · ' : ''}${esc(t.skillN)}`;
     $('btBanner').className = 'banner show ' + (big ? 'big ' : '') + (t.ult ? 'ult ' : '') + (t.side === 'a' ? 'left' : 'right');
     if (t.ult) { const ar = $('battle').querySelector('.arena'); ar.classList.remove('ultFx'); void ar.offsetWidth; ar.classList.add('ultFx'); }
-    // Kiếm tu: hoạt ảnh vung kiếm
-    const fx = t.side === 'a' ? bt.res.a : bt.res.b;
-    if (fx.path === 'kiem' && fx.look && fx.look.type === 'human') swingFrames(me.querySelector('img.art'), bt.fast, fx.look.g);
     me.classList.remove('lunge'); void me.offsetWidth; me.classList.add('lunge');
     const foeEl = $(foe === 'a' ? 'fA' : 'fB');
     setTimeout(() => {
