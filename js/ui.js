@@ -715,8 +715,9 @@ function startBattle(res, fast = false, onClose = null) {
     box.querySelectorAll('.float').forEach((x) => x.remove());
     box.classList.remove('lunge', 'hit', 'down');
     drawSprite(box.querySelector('canvas'), lookOf(f.look));
-    // bên trái nhìn sang phải, bên phải nhìn sang trái
-    setArt(box.querySelector('img.art'), artOf(f.look), box.querySelector('canvas'), side === 'A' ? 'R' : 'L');
+    // quái: lật theo hướng gốc để nhìn về phía nhân vật; người (ngươi, bot) giữ như ban đầu: bên trái không lật, bên phải lật
+    setArt(box.querySelector('img.art'), artOf(f.look), box.querySelector('canvas'), f.look && f.look.type === 'beast' ? 'L' : null);
+    if (f.look && f.look.type !== 'beast') box.querySelector('img.art').style.setProperty('--sx', side === 'B' ? -1 : 1);
     box.querySelector('.fname').textContent = f.name;
     const chg = box.querySelector('.gauge.ch');
     chg.hidden = !f.chMax;

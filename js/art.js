@@ -40,7 +40,6 @@ const MON_RULES = [
 const MON_ALL = () => ART_LIST.filter((k) => k.startsWith('monsters/'));
 // hướng gốc của tranh: L = nhìn sang trái, R = nhìn sang phải, không ghi = nhìn thẳng
 const FACE = {
-  'heroes/kiem': 'L', 'heroes/kiem_nu': 'L', 'heroes/phu': 'R', 'heroes/phu_nu': 'R',
   'monsters/bang_hoang': 'L', 'monsters/bang_xa': 'L', 'monsters/hac_thi': 'L', 'monsters/hau_yeu': 'L', 'monsters/hon_don_thu': 'L',
   'monsters/hu_khong_thu': 'L', 'monsters/hu_xa': 'L', 'monsters/huyet_lang': 'L', 'monsters/lang_vuong': 'L', 'monsters/soi_yeu': 'L', 'monsters/xa_yeu': 'L',
 };
