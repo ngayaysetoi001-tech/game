@@ -4,7 +4,7 @@ import { Game, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_CHAT, TITLES, TITL
 import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEFAULT_MAP, realmLabel, subN, PLANES, mapsOf, WORLD_DIFF, mythMatOf, planeOf, THEME_BG, BOSS_KITS, TOWER_THEMES, TOWER_SHOP, TAM_PHAP, TAM_PHAP_IDS, NGHE, PHU, PLAN_TEMPLATES, PLAN_STEP_ACTS, PLAN_COND, PATH_BAR_N } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, BEAST_SKILLS, TACTICS, WEAPON_TYPES, turnText, PATH_RES, PATH_SKILLS, SKILL_MAX, skillLvMul } from './combat.js';
-import { heroArt, heroFilter, skillArt, monsterArt, artURL } from './art.js';
+import { heroArt, heroFilter, meditateArt, skillArt, monsterArt, artURL } from './art.js';
 import { SLOTS, QUALITY, itemLine, TT_MAP, isSealed, isSuppressed, gearStats, itemName, PLUS_MAX, AFFIX } from './items.js';
 import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE, matIconOpts, skillIconOpts } from './icons.js';
 
@@ -329,7 +329,7 @@ function renderPlay() {
   const life = g.lifespan();
   const sc = P.sect ? g.sect(P.sect) : null;
   drawPortrait($('portrait'), P, { life, robe: playerRobe(P), dead: g.s.phase === 'dead' });
-  setArt($('portraitArt'), PATHS[P.path] ? { src: heroArt(P.path, P.g) } : null, $('portrait'));
+  setArt($('portraitArt'), P.closed > 0 && P.dao ? { src: meditateArt(P.g) } : PATHS[P.path] ? { src: heroArt(P.path, P.g) } : null, $('portrait'));
   const ttl = P.title && TITLE_MAP[P.title] ? TITLE_MAP[P.title] : null;
   setHTML($('hudLine'), `${ttl ? `<span class="ttl t${ttl.tier} mini"><span>${esc(ttl.n)}</span></span>` : ''}<b class="hudName">${esc(P.name)}</b> <span class="realm">${esc(g.subRealmName())}</span><span class="meta"> · ${P.age} tuổi${sc ? ` · ${esc(sc.name)}` : ''}</span><span class="more">›</span>`);
   const need = g.need();
@@ -1557,7 +1557,7 @@ function openShop() {
 }
 function openClose() {
   const P = g.P;
-  openSheet(`<h2>Bế quan</h2><p class="intro">Phong bế động phủ, tu vi tăng gấp 1,6 lần, gần như không gặp kỳ ngộ. Thời gian trôi nhanh gấp ba. Có chút rủi ro tẩu hỏa. Tu vi viên mãn thì tự xuất quan.</p>
+  openSheet(`<h2>Bế quan</h2><img class="medPic" alt="" src="${meditateArt(P.g)}"><p class="intro">Phong bế động phủ, tu vi tăng gấp 1,6 lần, gần như không gặp kỳ ngộ. Thời gian trôi nhanh gấp ba. Có chút rủi ro tẩu hỏa. Tu vi viên mãn thì tự xuất quan.</p>
     <ul class="statList"><li>Bế quan đủ 10 năm: lần đột phá kế tiếp +15%, xuất quan sinh lực đầy, sát khí tan hết, căn cơ vững chắc.</li><li>Tử quan (50 năm trở lên): tu vi x2, xuất quan 50% đốn ngộ (ngộ đạo điểm +4).</li></ul>
     <div class="cstats"><span>Sát khí <b>${Math.round(P.sat || 0)}</b></span><span>Chưa vững <b>${fmt(P.loose || 0)}</b></span>${P.brkBonus ? `<span>Đang có <b>+15%</b> đột phá</span>` : ''}</div>
     <div class="list">${[5, 10, 20, 50, 100].map((y) => `<button class="btn" data-y="${y}">${y >= 50 ? 'Tử quan' : 'Bế quan'} ${y} năm${y >= 10 ? `<small>${y >= 50 ? 'x2 tu vi, có thể đốn ngộ' : '+15% đột phá, xả sạch sát khí'}</small>` : ''}</button>`).join('')}</div>`, () => {

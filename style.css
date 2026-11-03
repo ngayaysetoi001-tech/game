@@ -861,3 +861,4 @@ body.inPlay.evOpen .hudPic img.art { width: 36px; height: 45px; }
 .ppGood, .ppBad { margin: 0; padding-left: 18px; font-size: 12px; }
 .ppGood li { color: var(--good); } .ppBad li { color: var(--bad); }
 img.art[hidden] { display: none !important; }
+.medPic { display: block; width: 130px; height: 140px; object-fit: contain; margin: 0 auto 4px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
