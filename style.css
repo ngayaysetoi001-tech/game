@@ -521,3 +521,64 @@ h3 { font-size: 15px; margin: 14px 0 6px; color: var(--muted); font-weight: 600;
 .opts .btn { text-align: center; padding: 8px 6px; font-size: 14px; }
 .opts .btn .ico { width: 20px; height: 20px; vertical-align: middle; }
 .mapCard .meta .ico { width: 22px; height: 22px; vertical-align: middle; }
+
+/* ========== Bố cục kiểu ứng dụng khi đang chơi ==========
+   thanh trên gọn · nhật ký ở giữa (vùng cuộn duy nhất) · dải điều khiển cố định ở dưới */
+body.inPlay { overflow: hidden; }
+body.inPlay #app { height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding-bottom: 0; }
+body.inPlay .top { padding: 6px 0; }
+body.inPlay #scr-play { flex: 1; min-height: 0; display: flex; flex-direction: column; padding-top: 8px; }
+
+.hud { display: flex; gap: 10px; align-items: center; flex: none; }
+.hudPic { padding: 0; border: none; background: none; flex: none; }
+.hud #portrait { width: 52px; height: 65px; border-radius: 10px; }
+.hudMain { flex: 1; min-width: 0; }
+.hudLine { display: flex; align-items: baseline; gap: 4px; width: 100%; padding: 0; border: none; background: none; text-align: left; white-space: nowrap; overflow: hidden; }
+.hudLine .hudName { font-size: 16px; }
+.hudLine .realm { color: var(--accent); font-weight: 700; font-size: 14px; }
+.hudLine .meta { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+.hudLine .more { margin-left: auto; color: var(--muted); padding-left: 6px; }
+.ttl.mini { font-size: 11px; padding: 0 6px; margin-right: 2px; transform: translateY(-1px); }
+.hud .bars { margin-top: 3px; gap: 2px; }
+.hud .bar { grid-template-columns: 54px 1fr auto; gap: 6px; font-size: 12px; line-height: 1.35; }
+.hud .bar .track { height: 6px; }
+.hud .bar .num { min-width: 64px; font-size: 12px; }
+.hud .bar .qm { display: none; }
+.hudSub { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); margin-top: 2px; white-space: nowrap; }
+.hudSub span:first-child { overflow: hidden; text-overflow: ellipsis; }
+.hudSub .money { flex: none; }
+
+body.inPlay .tabs { margin-top: 8px; flex: none; }
+body.inPlay .tabbody { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
+
+.dock { flex: none; position: relative; border-top: 1px solid var(--line); background: var(--bg); padding: 6px 0 calc(6px + env(safe-area-inset-bottom)); display: grid; gap: 6px; }
+.dock .breakRow:empty { display: none; }
+.dock .breakBtn { min-height: 40px; }
+.dock .speed { margin: 0; flex-wrap: nowrap; gap: 4px; }
+.dock .speed .sp { flex: 1; min-height: 34px; padding: 2px 0; font-size: 14px; }
+.dock .speed .sp.auto { flex: 2.2; white-space: nowrap; font-size: 13px; }
+.dock .actions { margin: 0; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.dock .utils { grid-column: auto; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.dock .utils .btn:last-child:nth-child(odd) { grid-column: auto; }
+.btn.act, .btn.ut { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4px 2px; min-height: 52px; font-size: 13px; line-height: 1.2; gap: 1px; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.btn.ut { min-height: 46px; font-size: 12px; }
+.btn.act .ai, .btn.ut .ai { font-size: 18px; line-height: 1.1; }
+.btn.act small { font-size: 11px; line-height: 1.1; }
+.btn.act.on { background: color-mix(in srgb, var(--accent) 12%, var(--panel)); font-weight: 700; }
+.dock .actions .hint { grid-column: 1 / 4; align-self: center; }
+.dock .actions [data-do='openDoor'] { grid-column: 4; }
+.tip { position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 6px; background: var(--ink); color: var(--bg); font-size: 13px; padding: 8px 12px; border-radius: 10px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25); z-index: 4; }
+.toastMsg { font-size: 15px; font-weight: 600; }
+.toastMsg .ico { width: 22px; height: 22px; vertical-align: middle; }
+.charName { margin: 0; padding-right: 0; font-size: 20px; }
+
+/* Màn hình rộng: hai cột, trái nhân vật và điều khiển, phải nhật ký */
+@media (min-width: 900px) {
+  body.inPlay #app { max-width: 1100px; }
+  body.inPlay #scr-play { display: grid; grid-template-columns: 420px 1fr; grid-template-rows: auto auto 1fr; column-gap: 24px; grid-template-areas: 'hud tabs' 'dock body' 'dock body'; }
+  body.inPlay .hud { grid-area: hud; }
+  body.inPlay .tabs { grid-area: tabs; margin-top: 0; align-self: end; }
+  body.inPlay .tabbody { grid-area: body; }
+  body.inPlay .dock { grid-area: dock; align-self: start; border-top: none; margin-top: 10px; }
+  .hud #portrait { width: 80px; height: 100px; }
+}

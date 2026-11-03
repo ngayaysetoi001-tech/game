@@ -78,6 +78,7 @@ function setHTML(el, html) {
 // ---------- Màn hình ----------
 function show(id) {
   for (const s of ['scr-birth', 'scr-play', 'scr-dead']) $(s).hidden = s !== id;
+  document.body.classList.toggle('inPlay', id === 'scr-play');
 }
 function render() {
   $('worldYear').textContent = `Năm ${fmt(g.s.year)} Thiên Nguyên`;
@@ -261,67 +262,97 @@ function renderPlay() {
   const life = g.lifespan();
   const sc = P.sect ? g.sect(P.sect) : null;
   drawPortrait($('portrait'), P, { life, robe: playerRobe(P), dead: g.s.phase === 'dead' });
-  const hon = g.honorific();
-  const ttl = P.title && TITLE_MAP[P.title] ? TITLE_MAP[P.title].n : null;
-  $('who').innerHTML = `
-    ${ttl ? `<button class="ttl t${TITLE_MAP[P.title].tier}" id="ttlBtn"><span>${esc(ttl)}</span></button>` : ''}
-    <h1>${esc(P.name)}</h1>
-    ${hon ? `<div class="daohieu">${esc(hon)}</div>` : ''}
-    <div class="sub">${P.age} tuổi · Kiếp ${P.lifeNo} · ${esc(P.root.n)}</div>
-    <div class="sub"><span class="realm">${REALMS[P.realm].n}</span>${P.path && PATHS[P.path] ? ` · <button class="pathTag" data-stat="path">${esc(PATHS[P.path].n)}</button>` : ''}${P.dao ? '' : ' · chưa nhập đạo'}${sc ? ` · ${esc(sc.name)}` : P.dao ? ' · tán tu' : ''}</div>
-    <button class="eqStrip" id="eqStrip" aria-label="Mở hành trang">${Object.keys(SLOTS).map((sl) => (P.eq && P.eq[sl] ? itemIco(P.eq[sl]) : icoImg({ kind: SLOT_KIND[sl], faded: true }, 'empty'))).join('')}</button>`;
-  $('eqStrip').onclick = openBag;
-  if ($('ttlBtn')) $('ttlBtn').onclick = openTitles;
+  const ttl = P.title && TITLE_MAP[P.title] ? TITLE_MAP[P.title] : null;
+  setHTML($('hudLine'), `${ttl ? `<span class="ttl t${ttl.tier} mini"><span>${esc(ttl.n)}</span></span>` : ''}<b class="hudName">${esc(P.name)}</b> <span class="realm">${REALMS[P.realm].n}</span><span class="meta"> · ${P.age} tuổi${sc ? ` · ${esc(sc.name)}` : ''}</span><span class="more">›</span>`);
   const need = g.need();
-  $('bars').innerHTML =
+  setHTML($('bars'),
     bar('Tu vi', P.tuvi, need, 'var(--tuvi)', P.dao ? `${fmt(P.tuvi)}/${fmt(need)}` : '-', 'tuvi') +
     bar('Sinh lực', P.hp, 100, 'var(--hp)', `${P.hp}/100`, 'hp') +
-    bar('Thọ', P.age, life, 'var(--life)', `${P.age}/${life}`, 'tho');
-  const tinh = P.tinh >= 30 ? 'Hữu tình' : P.tinh <= -30 ? 'Vô tình' : 'Trung dung';
-  $('stats').innerHTML =
-    Object.keys(STAT_NAMES).map((k) => `<button class="chip chipBtn" data-stat="${k}">${STAT_NAMES[k]} <b>${P.stats[k]}</b></button>`).join('') +
-    `<button class="chip chipBtn" data-stat="tinh">${tinh} <b>${P.tinh > 0 ? '+' : ''}${P.tinh}</b></button>` +
-    `<button class="chip chipBtn" data-stat="money">Linh thạch <b>${fmt(P.money)}</b></button>` +
-    `<button class="chip chipBtn" data-stat="fame">Danh vọng <b>${fmt(P.fame)}</b></button>` +
-    (P.flags.pet ? `<span class="chip">Linh thú: ${esc(P.flags.pet)}</span>` : '') +
-    `<button class="chip chipBtn" id="traitChip">${esc(g.traits().filter((t) => !t.cond && !t.tt && !t.path).map((t) => t.n).join(' · '))} ›</button>`;
-  $('traitChip').onclick = openTraits;
+    bar('Thọ', P.age, life, 'var(--life)', `${P.age}/${life}`, 'tho'));
+  const act = g.effectiveAction();
+  const mp = act === 'lich_luyen' ? MAP_MAP[P.map] || MAP_MAP[DEFAULT_MAP] : null;
+  const doing = P.closed > 0 ? `🕯 Bế quan, còn ${P.closed} năm`
+    : act === 'lon_len' ? (P.age < 6 ? 'Còn nhỏ, cứ lớn lên đã' : 'Chưa nhập đạo, chưa thể tu luyện')
+    : `${ACTIONS[act].icon} ${ACTIONS[act].n}${mp ? ` · ${DIFF[mp.d].ic} ${mp.n}` : ''}`;
+  setHTML($('hudSub'), `<span>${esc(doing)}</span><span class="money">${fmt(P.money)} linh thạch</span>`);
 
   const canBreak = g.canBreak();
+  setHTML($('breakRow'), canBreak ? '<button class="btn primary breakBtn wide" data-do="break">⚡ Tu vi viên mãn · Đột phá</button>' : '');
   setHTML($('speed'),
     `<button class="btn sp ${paused ? 'on' : ''}" data-sp="0" aria-label="Tạm dừng">${paused ? '▶' : '⏸'}</button>` +
     SPEEDS.map((s) => `<button class="btn sp ${!paused && s === speed ? 'on' : ''}" data-sp="${s}">${s}×</button>`).join('') +
-    `<button class="btn sp ${autoOn ? 'on' : ''}" data-do="auto" title="Từ ${AUTO_SPEED}×, kỳ ngộ nhỏ tự chọn phương án hợp lý">Tự quyết ${autoOn ? 'bật' : 'tắt'}</button>` +
-    `<span class="grow"></span>` +
-    (canBreak ? `<button class="btn primary breakBtn" data-do="break">Đột phá</button>` : ''));
+    `<button class="btn sp auto ${autoOn ? 'on' : ''}" data-do="auto" title="Từ ${AUTO_SPEED}×, kỳ ngộ nhỏ tự chọn phương án hợp lý">Tự quyết${autoOn ? ' ✓' : ''}</button>`);
 
-  const act = g.effectiveAction();
   let html = '';
   if (P.closed > 0) {
-    html = `<p class="hint">Đang bế quan, còn ${P.closed} năm. Tu vi tăng gấp 1,6 lần, gần như không có kỳ ngộ.</p>
-      <button class="btn ghost wide" data-do="openDoor" style="grid-column:1/-1">Xuất quan sớm</button>`;
+    html = `<p class="hint">Đang bế quan, còn ${P.closed} năm. Tu vi x1,6, gần như không có kỳ ngộ.</p>
+      <button class="btn ghost" data-do="openDoor">Xuất quan sớm</button>`;
   } else {
     html = Object.entries(ACTIONS).map(([id, a]) => {
       const ok = g.actionOk(id);
       const why = P.age < a.minAge ? `Từ ${a.minAge} tuổi` : a.needDao && !P.dao ? 'Cần nhập đạo' : a.desc;
-      const mp = id === 'lich_luyen' && ok ? MAP_MAP[P.map] || MAP_MAP[DEFAULT_MAP] : null;
-      const sub = mp ? `${DIFF[mp.d].ic} ${mp.n} · ${DIFF[mp.d].n}` : why;
-      return `<button class="btn ${P.action === id ? 'on' : ''}" data-act="${id}" ${ok ? '' : 'disabled'}>${a.icon} ${a.n}<small>${esc(sub)}</small></button>`;
+      const m = id === 'lich_luyen' && ok ? MAP_MAP[P.map] || MAP_MAP[DEFAULT_MAP] : null;
+      return `<button class="btn act ${P.action === id ? 'on' : ''}" data-act="${id}" data-tip="${esc(m ? `${a.desc} Đang chọn: ${m.n} (${DIFF[m.d].n}). Bấm để đổi vùng.` : why)}" ${ok ? '' : 'disabled'}><span class="ai">${a.icon}</span><span>${a.n}</span>${m ? `<small>${DIFF[m.d].ic} ${DIFF[m.d].n}</small>` : ''}</button>`;
     }).join('');
-    html += `<div class="utils">
-      <button class="btn" data-do="bag">🎒 Hành trang<small>Trang bị, võ kỹ</small></button>
-      <button class="btn" data-do="titles">🏅 Danh hiệu<small>${P.titles.length ? `Đã có ${P.titles.length}` : 'Chưa có'}</small></button>
-      <button class="btn" data-do="shop" ${P.age < 10 ? 'disabled' : ''}>🏮 Tụ Bảo Lâu<small>Đan, pháp khí, bí kíp</small></button>
-      <button class="btn" data-do="close" ${P.dao && P.age >= 12 && !canBreak ? '' : 'disabled'}>🕯 Bế quan<small>${P.dao ? 'Tu nhanh, ít kỳ ngộ' : 'Cần nhập đạo'}</small></button>
-      <button class="btn" data-do="forge" ${g.forgeOpen() ? '' : 'disabled'}>⚒ Lò rèn<small>${g.forgeOpen() ? 'Cường hóa, rèn, tẩy luyện' : 'Từ 12 tuổi'}</small></button>
-    </div>`;
-    if (act === 'lon_len') html += `<p class="hint">${P.age < 6 ? 'Ngươi còn nhỏ, cứ lớn lên đã.' : 'Chưa nhập đạo nên chưa thể tu luyện. Hãy đi đây đi đó, cơ duyên sẽ tới.'}</p>`;
   }
   setHTML($('actions'), html);
+  setHTML($('utils'), `
+      <button class="btn ut" data-do="bag" data-tip="Trang bị, võ kỹ, chiến thuật, phân giải"><span class="ai">🎒</span><span>Hành trang</span></button>
+      <button class="btn ut" data-do="forge" data-tip="${g.forgeOpen() ? 'Cường hóa, thăng cấp, tẩy luyện, rèn mới' : 'Mở từ 12 tuổi'}" ${g.forgeOpen() ? '' : 'disabled'}><span class="ai">⚒</span><span>Lò rèn</span></button>
+      <button class="btn ut" data-do="shop" data-tip="Đan dược, pháp khí, bí kíp" ${P.age < 10 ? 'disabled' : ''}><span class="ai">🏮</span><span>Tụ Bảo</span></button>
+      <button class="btn ut" data-do="close" data-tip="Tu nhanh, ít kỳ ngộ" ${P.dao && P.age >= 12 && !canBreak && !(P.closed > 0) ? '' : 'disabled'}><span class="ai">🕯</span><span>Bế quan</span></button>
+      <button class="btn ut" data-do="more" data-tip="Nhân vật, danh hiệu, cài đặt"><span class="ai">⋯</span><span>Thêm</span></button>`);
 
   const tabs = [['log', 'Nhật ký'], ['rel', 'Quan hệ'], ['world', 'Thiên hạ'], ['rank', 'Xếp hạng'], ['lives', 'Sổ kiếp']];
   setHTML($('tabs'), tabs.map(([id, n]) => `<button class="${tab === id ? 'on' : ''}" data-tab="${id}">${n}</button>`).join(''));
   setHTML($('tabbody'), renderTab());
+}
+
+/** Bảng Nhân vật: ảnh lớn, trang bị, chỉ số, thể chất (trước đây nằm ở màn chính) */
+function openChar() {
+  const P = g.P;
+  if (!P) return;
+  const sc = P.sect ? g.sect(P.sect) : null;
+  const hon = g.honorific();
+  const ttl = P.title && TITLE_MAP[P.title] ? TITLE_MAP[P.title] : null;
+  const tinh = P.tinh >= 30 ? 'Hữu tình' : P.tinh <= -30 ? 'Vô tình' : 'Trung dung';
+  openSheet(`<div class="hero">
+      <canvas class="portrait" id="charPortrait" width="32" height="40"></canvas>
+      <div class="who">
+        ${ttl ? `<button class="ttl t${ttl.tier}" id="ttlBtn"><span>${esc(ttl.n)}</span></button>` : ''}
+        <h2 class="charName">${esc(P.name)}</h2>
+        ${hon ? `<div class="daohieu">${esc(hon)}</div>` : ''}
+        <div class="sub">${P.age} tuổi · Kiếp ${P.lifeNo} · ${esc(P.root.n)}</div>
+        <div class="sub"><span class="realm">${REALMS[P.realm].n}</span>${P.path && PATHS[P.path] ? ` · <button class="pathTag" data-stat="path">${esc(PATHS[P.path].n)}</button>` : ''}${P.dao ? '' : ' · chưa nhập đạo'}${sc ? ` · ${esc(sc.name)}` : P.dao ? ' · tán tu' : ''}</div>
+        <button class="eqStrip" id="eqStrip" aria-label="Mở hành trang">${Object.keys(SLOTS).map((sl) => (P.eq && P.eq[sl] ? itemIco(P.eq[sl]) : icoImg({ kind: SLOT_KIND[sl], faded: true }, 'empty'))).join('')}</button>
+      </div></div>
+    <h3>Chỉ số · chạm để xem giải thích</h3>
+    <div class="stats">${Object.keys(STAT_NAMES).map((k) => `<button class="chip chipBtn" data-stat="${k}">${STAT_NAMES[k]} <b>${P.stats[k]}</b></button>`).join('')}
+      <button class="chip chipBtn" data-stat="tinh">${tinh} <b>${P.tinh > 0 ? '+' : ''}${P.tinh}</b></button>
+      <button class="chip chipBtn" data-stat="money">Linh thạch <b>${fmt(P.money)}</b></button>
+      <button class="chip chipBtn" data-stat="fame">Danh vọng <b>${fmt(P.fame)}</b></button>
+      ${P.flags.pet ? `<span class="chip">Linh thú: ${esc(P.flags.pet)}</span>` : ''}</div>
+    <h3>Thể chất, thiên phú</h3>
+    <button class="chip chipBtn" id="traitChip">${esc(g.traits().filter((t) => !t.cond && !t.tt && !t.path).map((t) => t.n).join(' · '))} ›</button>
+    <div class="row btnRow"><button class="btn ghost" id="charTitles">🏅 Danh hiệu (${P.titles.length})</button><button class="btn ghost" id="charBag">🎒 Hành trang</button></div>`, () => {
+    drawPortrait($('charPortrait'), P, { life: g.lifespan(), robe: playerRobe(P) });
+    $('eqStrip').onclick = openBag;
+    $('charBag').onclick = openBag;
+    $('charTitles').onclick = openTitles;
+    $('traitChip').onclick = openTraits;
+    if ($('ttlBtn')) $('ttlBtn').onclick = openTitles;
+  });
+}
+function openMore() {
+  const P = g.P;
+  openSheet(`<h2>Thêm</h2><div class="list">
+    <button class="btn" id="moChar">👤 Nhân vật<small>Chỉ số, thể chất, trang bị đang mang</small></button>
+    <button class="btn" id="moTitles">🏅 Danh hiệu<small>${P.titles.length ? `Đã có ${P.titles.length}` : 'Chưa có'}</small></button>
+    <button class="btn" id="moMenu">☰ Cài đặt, hướng dẫn<small>Giao diện sáng tối, thế giới mới</small></button></div>`, () => {
+    $('moChar').onclick = openChar;
+    $('moTitles').onclick = openTitles;
+    $('moMenu').onclick = () => $('menuBtn').onclick();
+  });
 }
 
 function renderTab() {
@@ -591,6 +622,7 @@ function openSheet(html, bind) {
   const card = $('sheet').querySelector('.card');
   const fresh = $('sheet').hidden;
   const keep = card.scrollTop;
+  if ($('tip')) $('tip').hidden = true;
   $('sheetBody').innerHTML = html;
   $('sheet').hidden = false;
   // mở mới thì lên đầu, vẽ lại (bấm Đeo, Mua...) thì giữ chỗ đang xem
@@ -863,7 +895,9 @@ function showToasts() {
   toastBusy = true;
   const el = $('toast');
   el.className = `toast t${t.tier}`;
-  el.innerHTML = `<div class="meta">Danh hiệu mới</div><div class="ttl t${t.tier} big"><span>${esc(t.n)}</span></div><div class="meta">Khi đeo: ${esc(t.bonus)}</div>`;
+  el.innerHTML = t.msg
+    ? `<div class="meta">${esc(t.head || 'Tin mới')}</div><div class="toastMsg">${rich(t.msg)}</div>`
+    : `<div class="meta">Danh hiệu mới</div><div class="ttl t${t.tier} big"><span>${esc(t.n)}</span></div><div class="meta">Khi đeo: ${esc(t.bonus)}</div>`;
   el.hidden = false;
   void el.offsetWidth;
   el.classList.add('show');
@@ -931,7 +965,7 @@ $('menuBtn').onclick = () => {
 
 // Chạm chỉ số để xem giải thích. Dùng pointerdown vì chỉ số được vẽ lại liên tục khi thời gian trôi.
 let statTap = null;
-for (const id of ['stats', 'bars', 'scr-birth', 'who']) {
+for (const id of ['bars', 'scr-birth', 'sheetBody']) {
   $(id).addEventListener('pointerdown', (e) => {
     const b = e.target.closest('[data-stat]');
     statTap = b ? { k: b.dataset.stat, x: e.clientX, y: e.clientY } : null;
@@ -961,9 +995,30 @@ $('speed').addEventListener('click', (e) => {
   else { speed = v; paused = false; }
   dirty = true;
 });
-$('actions').addEventListener('click', (e) => {
+// Bấm giữ nút việc làm, tiện ích: hiện mô tả ngắn
+let tipTimer = null, tipShown = false, tipHide = null;
+function closeTip() { clearTimeout(tipHide); $('tip').hidden = true; }
+function hideTip() { clearTimeout(tipTimer); tipTimer = null; if (!$('tip').hidden) { clearTimeout(tipHide); tipHide = setTimeout(closeTip, 1500); } }
+for (const id of ['actions', 'utils']) {
+  $(id).addEventListener('pointerdown', (e) => {
+    const b = e.target.closest('[data-tip]');
+    tipShown = false;
+    clearTimeout(tipTimer);
+    if (!b) return;
+    tipTimer = setTimeout(() => { tipShown = true; $('tip').textContent = b.dataset.tip; $('tip').hidden = false; clearTimeout(tipHide); tipHide = setTimeout(closeTip, 4000); }, 450);
+  });
+  for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) $(id).addEventListener(ev, hideTip);
+  $(id).addEventListener('contextmenu', (e) => { if (e.target.closest('[data-tip]')) e.preventDefault(); });
+}
+$('hudPic').onclick = openChar;
+$('hudLine').onclick = openChar;
+$('breakRow').addEventListener('click', (e) => { if (e.target.closest('[data-do="break"]')) { g.openBreak(); dirty = true; } });
+function dockClick(e) {
   const b = e.target.closest('button');
   if (!b || b.disabled) return;
+  // vừa bấm giữ để xem mô tả thì không tính là bấm
+  if (tipShown) { tipShown = false; return; }
+  if (b.dataset.do === 'more') { openMore(); return; }
   if (b.dataset.act === 'lich_luyen') openMaps();
   else if (b.dataset.act) { g.setAction(b.dataset.act); save(); }
   else if (b.dataset.do === 'forge') openForge();
@@ -973,7 +1028,9 @@ $('actions').addEventListener('click', (e) => {
   else if (b.dataset.do === 'close') openClose();
   else if (b.dataset.do === 'openDoor') { g.P.closed = 0; g.log('Ngươi xuất quan sớm.', 'muted'); }
   dirty = true;
-});
+}
+$('actions').addEventListener('click', dockClick);
+$('utils').addEventListener('click', dockClick);
 $('tabs').addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (b && b.dataset.tab) { tab = b.dataset.tab; dirty = true; }

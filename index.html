@@ -19,16 +19,23 @@
     <section id="scr-birth" class="screen" hidden></section>
 
     <section id="scr-play" class="screen" hidden>
-      <div class="hero">
-        <canvas id="portrait" width="32" height="40"></canvas>
-        <div class="who" id="who"></div>
+      <div class="hud" id="hud">
+        <button class="hudPic" id="hudPic" aria-label="Xem nhân vật"><canvas id="portrait" width="32" height="40"></canvas></button>
+        <div class="hudMain">
+          <button class="hudLine" id="hudLine" aria-label="Xem nhân vật"></button>
+          <div class="bars" id="bars"></div>
+          <div class="hudSub" id="hudSub"></div>
+        </div>
       </div>
-      <div class="bars" id="bars"></div>
-      <div class="stats" id="stats"></div>
-      <div class="speed" id="speed"></div>
-      <div class="actions" id="actions"></div>
       <nav class="tabs" id="tabs"></nav>
       <div class="tabbody" id="tabbody"></div>
+      <div class="dock" id="dock">
+        <div class="tip" id="tip" hidden></div>
+        <div class="breakRow" id="breakRow"></div>
+        <div class="speed" id="speed"></div>
+        <div class="actions" id="actions"></div>
+        <div class="utils" id="utils"></div>
+      </div>
     </section>
 
     <section id="scr-dead" class="screen" hidden></section>

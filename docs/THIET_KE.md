@@ -238,6 +238,25 @@ Chọn Lịch luyện thì mở bảng chọn vùng. Độ khó **luôn tính th
 - Rèn mới: chọn ô, loại binh khí, dẫn liệu. Phẩm 35/38/20/7% (Hạ/Trung/Thượng/Cực). Lò thần khí tốn 3 Thần hồn: ~15% ra Thần thoại, còn lại chắc Cực phẩm.
 - Tay nghề rèn (mỗi kiếp, tối đa 100) cộng tới +15% tỉ lệ; Thể tu +5%. Tay nghề 100 mở danh hiệu Luyện Khí Tông Sư. Sống sót 10 năm ở Tử địa trở lên mở danh hiệu Tử Địa Hành Giả.
 
+## 6h. Bố cục màn chơi
+
+Màn chơi chia làm 3 phần cố định:
+
+- **Thanh trên gọn (~90px):** ảnh nhỏ, tên, cảnh giới, tuổi, tông môn. Bên dưới là 3 thanh tu vi, sinh lực, thọ (chạm vào từng thanh để xem giải thích) và một dòng ghi việc đang làm, vùng lịch luyện, linh thạch. Chạm vào ảnh hoặc tên thì mở bảng **Nhân vật** gồm ảnh lớn, trang bị, 8 chỉ số, thể chất, danh hiệu.
+- **Ở giữa:** các tab (Nhật ký, Quan hệ, Thiên hạ, Xếp hạng, Sổ kiếp) và nội dung tab. Đây là vùng cuộn duy nhất, tự chiếm phần màn hình còn lại.
+- **Dải điều khiển dưới cùng (vùng ngón cái):**
+  - Hàng tốc độ và Tự quyết.
+  - 4 việc làm, chỉ có biểu tượng và tên. Lịch luyện ghi thêm độ khó của vùng đang chọn.
+  - 5 tiện ích: Hành trang, Lò rèn, Tụ Bảo Lâu, Bế quan, Thêm (Nhân vật, Danh hiệu, Cài đặt).
+  - Bấm giữ một nút thì hiện mô tả.
+  - Khi đủ tu vi, nút Đột phá to hiện ngay trên hàng tốc độ.
+
+Tin quan trọng hiện thành thông báo nổi: danh hiệu mới, thần khí vào tay, tin dữ của người thân.
+
+Trên màn hình rộng (từ 900px), bố cục chia 2 cột: trái là nhân vật và điều khiển, phải là các tab.
+
+Ở điện thoại cỡ 390×844, nhật ký bắt đầu ở y=208 và cao 472px, không cần cuộn trang (trước đây nhật ký bắt đầu sau khoảng 1.500px).
+
 ## 7. Kỹ thuật
 
 - HTML, CSS, JavaScript thuần (ES module), không cần build, không cần máy chủ.

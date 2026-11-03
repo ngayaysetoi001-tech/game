@@ -128,6 +128,11 @@ export class Game {
     this.s.chron.push({ y: this.s.year, t, imp });
     if (this.s.chron.length > 220) this.s.chron.splice(0, this.s.chron.length - 220);
   }
+  /** Thông báo nổi cho tin quan trọng (giao diện hiện lần lượt) */
+  toast(msg, head, tier = 4) {
+    (this.s.toasts = this.s.toasts || []).push({ msg, head, tier });
+    if (this.s.toasts.length > 5) this.s.toasts.shift();
+  }
   log(t, tone = 'normal') {
     const P = this.P;
     this.s.log.push({ a: P ? P.age : 0, t, tone });
@@ -260,7 +265,7 @@ export class Game {
     if (!r) return;
     const close = CLOSE_TAGS.includes(r.tag) || r.v >= 60;
     if (this.playing && r.met && !close && r.v >= 30) this.log(`Nghe tin ${b.name} ${cause}.`, 'muted');
-    if (this.playing && r.met && close && !this.cool('tin_du', 6)) this.log(`Tin dữ: ${b.name} ${cause}.`, 'bad');
+    if (this.playing && r.met && close && !this.cool('tin_du', 6)) { this.log(`Tin dữ: ${b.name} ${cause}.`, 'bad'); this.toast(`${b.name} ${cause}.`, 'Tin dữ', 0); }
     else if (this.playing && r.met && close) {
       this.s.queue.push({
         id: 'tin_du', botId: null,
@@ -1220,6 +1225,7 @@ export class Game {
     const qn = QUALITY[it.q].n;
     const tk = itemToken(it);
     if (it.tt && TT_MAP[it.tt]) prefix = `${prefix} thần khí mang thần thông 「${TT_MAP[it.tt].n}」`;
+    if (it.q >= 4) this.toast(`${tk}${it.n}${it.tt && TT_MAP[it.tt] ? ` · 「${TT_MAP[it.tt].n}」` : ''}`, 'Thần khí vào tay', 4);
     if (!P.eq[it.slot]) {
       P.eq[it.slot] = it;
       const m = `${prefix}: ${tk}${it.n} (${qn}), đã mang vào người.`;
