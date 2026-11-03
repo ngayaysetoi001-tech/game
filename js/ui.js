@@ -1212,13 +1212,13 @@ function openExport() {
   openSheet(`<h2>📤 Xuất bản lưu</h2>
     <p class="intro">Đoạn mã dưới đây chứa cả thế giới: kiếp đang chơi, các kiếp trước, Hồn Lực, bốn mươi linh hồn. Chép lại rồi dán ở mục Nhập bản lưu của trang kia. Mã dài ${fmt(code.length)} ký tự.</p>
     <textarea class="saveBox" id="saveOut" readonly>${esc(code)}</textarea>
-    <div class="row btnRow"><button class="btn primary" id="copySave">Chép mã</button><button class="btn ghost" id="dlSave">Tải về thành tệp</button></div>
+    <div class="row btnRow"><button class="btn primary" id="copySave">Chép mã</button>${document.querySelector('link[rel="manifest"]') ? '<button class="btn ghost" id="dlSave">Tải về thành tệp</button>' : ''}</div>
     <p class="intro" id="saveMsg"></p>`, () => {
     $('copySave').onclick = async () => {
       try { await navigator.clipboard.writeText(code); $('saveMsg').textContent = 'Đã chép. Giờ mở trang kia, vào ☰ → Nhập bản lưu, rồi dán.'; }
       catch (e) { const t = $('saveOut'); t.focus(); t.select(); $('saveMsg').textContent = 'Trình duyệt không cho chép tự động. Đã bôi đen sẵn, hãy bấm giữ rồi chọn Sao chép.'; }
     };
-    $('dlSave').onclick = () => {
+    if ($('dlSave')) $('dlSave').onclick = () => {
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([code], { type: 'text/plain' }));
       a.download = `tram-kiep-${g.s.year}.txt`;
