@@ -492,7 +492,14 @@ function logIco(l) {
 function renderTab(t = tab) {
   if (t === 'log') {
     const all = g.s.log.slice(-160).reverse();
-    const items = (logFilter === 'all' ? all : all.filter((l) => LOG_FILTER[logFilter].test(l))).slice(0, 80);
+    const items0 = (logFilter === 'all' ? all : all.filter((l) => LOG_FILTER[logFilter].test(l))).slice(0, 80);
+    // gộp các dòng ngắn liền nhau cùng tuổi, cùng loại (vd. ba danh hiệu cùng năm) thành một dòng
+    const items = [];
+    for (const l of items0) {
+      const last = items[items.length - 1];
+      if (last && !l.h && !last.h && last.a === l.a && last.tone === l.tone && l.t.length < 110 && last.t.length < 260 && logIco(last) === logIco(l)) last.t = `${l.t} · ${last.t}`;
+      else items.push(l.h ? l : { ...l });
+    }
     const bar = `<div class="logFilter">${Object.entries(LOG_FILTER).map(([k, f]) => `<button class="${logFilter === k ? 'on' : ''}" data-lf="${k}">${f.n}</button>`).join('')}</div>`;
     const n = g.s.log.length;
     const fresh = performance.now() < freshUntil ? freshFrom : Infinity;
@@ -506,7 +513,7 @@ function renderTab(t = tab) {
   }
   if (tab === 'rel') {
     const list = g.known().sort((a, b) => Math.abs(b.r.v) - Math.abs(a.r.v) || (b.r.tag ? 1 : 0) - (a.r.tag ? 1 : 0));
-    if (!list.length) return '<p class="empty">Ngươi chưa quen ai. Mưu sinh ở trấn hay lịch luyện sẽ gặp người.</p>';
+    if (!list.length) return '<p class="empty">Ngươi chưa quen ai. Mưu sinh ở trấn là dễ gặp người nhất; lịch luyện, tu luyện trong tông môn hay leo tháp cũng có thể quen biết.</p>';
     return `<div class="list">${list.map(({ b, r }) => {
       const cls = r.v >= 20 || ['huynh_de', 'dao_lu', 'su_phu', 'de_tu'].includes(r.tag) ? 'pos' : r.v <= -20 || r.tag === 'thu' ? 'neg' : '';
       const sc = b.sect ? g.sect(b.sect) : null;
@@ -548,7 +555,7 @@ function renderTab(t = tab) {
         <div class="meta">${x.age} tuổi${sc ? ` · ${esc(sc.name)}` : ' · tán tu'} ${badge}</div>${x.me ? '' : botWhere(g.soul(x.id))}</div></div>`;
     }).join('')}</div>${towerBoard}`;
   }
-  if (tab === 'lives') return titleCodex() + codex() + '<h3>Các kiếp đã qua</h3>' + livesList();
+  if (tab === 'lives') return '<h3>Các kiếp đã qua</h3>' + livesList() + `<details class="more codexBox"><summary>📜 Sổ sưu tầm qua các kiếp (danh hiệu, thể chất)</summary>${titleCodex()}${codex()}</details>`;
   return '';
 }
 

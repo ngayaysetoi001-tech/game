@@ -662,3 +662,24 @@ Mô phỏng 42 kiếp mỗi đạo (lịch trình Leo tháp, có rèn đồ):
   - Tiện ích thành thanh điều hướng mỏng liền khối.
 - **Điện thoại:** đầu trang bỏ tên game, chỉ còn năm · giới và nút ☰.
 - **Khi có kỳ ngộ:** ẩn tab và nhật ký, HUD còn tên, cảnh giới và thanh tu vi. Thẻ kỳ ngộ chữ nhỏ hơn, nút thấp hơn.
+
+## Rà soát tổng thể (bản 4.6)
+
+- **Sót từ bản cũ:**
+  - Nhập đạo không còn ghi "võ kỹ". Chữ bế quan, võ kỹ, sinh lực cũ đã đổi.
+  - Danh hiệu Võ Học Tông Sư giờ tính theo việc mở đủ 8 kỹ năng đạo lộ.
+  - Tự mặc đồ xét lại mỗi năm. Cảnh báo "có đồ mạnh hơn" chỉ hiện khi tắt tự mặc.
+- **Thông báo:** một dải mỏng trên cùng, không che HUD.
+- **Bảng phụ:**
+  - Bỏ nút Đóng thừa.
+  - Túi (cả 4 tab), Tụ Bảo Lâu, Lò rèn dùng lưới ô + popup cạnh ô (`popBox`, `placeItemPop`, `bindPop`).
+  - Vùng lịch luyện mỗi vùng 2 dòng.
+  - Giải thích dài gập lại (`details.more`).
+- **Menu và cài đặt:**
+  - Bỏ nút ☰. Mọi thứ vào nút Thêm, gồm Cài đặt và Hướng dẫn, bản lưu.
+  - Mọi cài đặt (trang bị, đan và thương thế, kỹ năng và tháp, xem trận, giao diện) nằm ở Túi → Cài đặt.
+- **Màn chính:**
+  - Nhật ký 14px. Gộp các dòng ngắn liền nhau cùng tuổi, cùng loại.
+  - Hàng chip luôn một hàng.
+  - Tab Kiếp ghi các kiếp đã qua; sổ sưu tầm (danh hiệu, thể chất) gập lại bên dưới.
+- **Quen người:** thêm cơ hội khi tu luyện trong tông môn (10%/năm) và khi leo tháp (6%/năm).

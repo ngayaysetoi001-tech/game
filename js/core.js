@@ -555,7 +555,7 @@ export class Game {
     const dv = Math.max(1, Math.round(this.r.range(4, 10) * PERSONALITIES[b.pers].relMul * (1 + P.tinh / 200)));
     this.relAdd(b, dv);
     P.tinh = clamp(P.tinh + 1, -100, 100);
-    const what = this.P.action === 'lich_luyen' ? this.r.pick(['tình cờ đi chung một quãng đường', 'cùng trú mưa trong miếu hoang', 'chung tay đánh lui một bầy yêu thú', 'đốt lửa trại luận đạo']) : this.r.pick(['uống trà luận đạo', 'đánh một ván cờ', 'ngồi bàn chuyện giang hồ', 'đi dạo bên hồ', 'cùng ngồi tửu lâu', 'nghe kể chuyện cổ tu']);
+    const what = this.P.action === 'vuot_thap' ? this.r.pick(['cùng nghỉ chân ở một tầng tháp', 'chung tay hạ một con tinh anh trong tháp']) : this.P.action === 'tu_luyen' ? this.r.pick(['cùng luận đạo ở tông môn', 'được trưởng lão xếp cùng luyện công']) : this.P.action === 'lich_luyen' ? this.r.pick(['tình cờ đi chung một quãng đường', 'cùng trú mưa trong miếu hoang', 'chung tay đánh lui một bầy yêu thú', 'đốt lửa trại luận đạo']) : this.r.pick(['uống trà luận đạo', 'đánh một ván cờ', 'ngồi bàn chuyện giang hồ', 'đi dạo bên hồ', 'cùng ngồi tửu lâu', 'nghe kể chuyện cổ tu']);
     this.log(`Cùng ${b.name} ${what}. Thân thiết +${dv}.`);
   }
 
@@ -2838,6 +2838,9 @@ export class Game {
     // gặp người: không còn nút Kết giao, quen biết khi đi lại (mưu sinh ở trấn, lịch luyện trên đường)
     if (act === 'muu_sinh' && this.r.chance(Math.min(0.9, 0.35 * ypt))) { this.meetBot(true); if (this.r.chance(0.4)) this.socialPerks(); }
     else if (act === 'lich_luyen' && this.r.chance(Math.min(0.5, 0.12 * ypt))) this.meetBot(true);
+    // đồng môn trong tông, người cùng leo tháp
+    else if (act === 'tu_luyen' && P.sect && this.r.chance(Math.min(0.4, 0.1 * ypt))) this.meetBot(true);
+    else if (act === 'vuot_thap' && this.r.chance(Math.min(0.3, 0.06 * ypt))) this.meetBot(true);
     if (act !== 'tu_luyen') P.tuStreak = 0;
     // tự mặc: món nào trong túi có lực chiến cao hơn đồ đang mặc thì thay (mỗi 3 năm xét lại)
     if (this.s.opt.autoEquip !== false && P.bag.length) this.equipBest();
