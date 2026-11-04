@@ -1090,3 +1090,36 @@ body.inPlay .tabs { margin-top: 4px; gap: 0; }
 .tile .bdg.cnt { bottom: auto; top: 2px; right: 2px; }
 .tile .tn { -webkit-line-clamp: 2; word-break: break-word; }
 .toast { width: max-content; flex-wrap: nowrap; } .toast > * { white-space: nowrap; } .toast .toastMsg { white-space: normal; }
+#sheetClose { display: none !important; }
+/* popup Lò rèn: thẻ món đồ nằm gọn trong popup */
+.itemPop.forgePop { padding-top: 10px; }
+.itemPop.forgePop .ipX { position: absolute; top: 8px; right: 8px; z-index: 2; }
+.itemPop .item { border: none; padding: 0; background: none; box-shadow: none; }
+.itemPop .item .row:first-child { padding-right: 30px; }
+.itemPop .item .meta { font-size: 11.5px; }
+.itemPop .item .btnRow { gap: 5px; margin-top: 6px; }
+.itemPop .item .btn { min-height: 30px; padding: 2px 9px; font-size: 12px; border-radius: 8px; }
+.itemPop .cost { font-size: 11px; color: var(--muted); }
+.itemPop .affRow { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 12px; margin-top: 4px; }
+.shopTile .tp { font-size: 10px; color: var(--gold); font-weight: 700; line-height: 1.1; }
+#menuBtn { display: none !important; }
+/* giải thích gập lại */
+details.more { margin: 2px 0 8px; }
+details.more > summary { cursor: pointer; font-size: 12px; color: var(--muted); list-style: none; display: inline-block; padding: 1px 8px; border: 1px solid var(--frame); border-radius: 999px; }
+details.more > summary::-webkit-details-marker { display: none; }
+details.more[open] > summary { color: var(--ink); }
+details.more > .intro { margin: 6px 0 0; font-size: 13px; }
+/* hàng vùng lịch luyện gọn */
+.mapCard.mapRow { padding: 8px 10px; }
+.mapRow .mr1 { display: flex; align-items: baseline; gap: 8px; }
+.mapRow .mr1 b { flex: 1; min-width: 0; font-size: 14.5px; }
+.mapRow .mr1 .odds { font-size: 12px; margin: 0; }
+.mapRow .mr2 { font-size: 11.5px; color: var(--muted); margin-top: 2px; display: flex; flex-wrap: wrap; align-items: center; gap: 0 3px; }
+.mapRow .mr2 .ico { width: 16px; height: 16px; }
+.mapRow .mr2 .neg { color: var(--bad); }
+/* cài đặt */
+.setList { display: grid; gap: 6px; }
+.setList h3 { margin: 10px 0 0; }
+.btn.setT { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; font-size: 13.5px; padding: 8px 12px; }
+.btn.setT b { flex: none; font-size: 12px; }
+.btn.setT.on b { color: var(--good); }

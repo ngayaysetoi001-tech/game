@@ -444,7 +444,9 @@ function openMore() {
     <button class="btn" id="moTitles">🏅 Danh hiệu<small>${P.titles.length ? `Đã có ${P.titles.length}` : 'Chưa có'}</small></button>
     <button class="btn" id="moSocial">☕ Quan hệ, trợ chiến<small>Đạo lữ, bạn thân trợ chiến, hộ pháp lôi kiếp</small></button>
     <button class="btn" id="moPlan">📅 Lịch trình tự động<small>${P.plan ? (P.plan.on ? 'Đang chạy' : 'Đang dừng') : 'Tự đổi việc theo vòng: leo tháp, tu luyện, lịch luyện...'}</small></button>
-    <button class="btn" id="moMenu">☰ Cài đặt, hướng dẫn<small>Giao diện sáng tối, thế giới mới</small></button></div>`, () => {
+    <button class="btn" id="moSet">⚙ Cài đặt<small>Tự mặc, xử lý đồ, đan, tháp, xem trận, giao diện</small></button>
+    <button class="btn" id="moMenu">❓ Hướng dẫn, bản lưu<small>Cách chơi, cập nhật, xuất nhập bản lưu, thế giới mới</small></button></div>`, () => {
+    $('moSet').onclick = () => openBag('set');
     $('moChar').onclick = openChar;
     $('moTitles').onclick = openTitles;
     $('moPlan').onclick = openPlan;
@@ -911,18 +913,6 @@ function sealLine(it) {
   const now = [e.atk ? `Công +${Math.round(e.atk)}` : '', e.def ? `Thủ +${Math.round(e.def)}` : '', e.hp ? `Sinh lực +${Math.round(e.hp)}` : ''].filter(Boolean).join(' · ');
   return `<div class="sealLine">🔒 Thần khí kén chủ: cần ${REALMS[it.lv].n} mới phát huy toàn bộ, thần thông bị khóa. Hiện bị áp chế theo cảnh giới của ngươi, chỉ phát huy: <b>${now}</b>.</div>`;
 }
-function shopGear() {
-  const P = g.P;
-  const st = g.shopStock();
-  const bought = P.shopBought || [];
-  const gear = st.gear.map((it) => itemCard(it, bought.includes(it.key)
-    ? '<span class="meta">Đã bán hết</span>'
-    : `<button class="btn ghost" data-bg="${it.key}" ${P.money < it.price ? 'disabled' : ''}>Mua · ${fmt(it.price)}</button>${g.betterThanEquipped(it) ? '<span class="tag pos">Tốt hơn đồ đang mang</span>' : ''}`)).join('');
-  const sg = g.sageStock();
-  const sage = `<div class="item withIco">${icoImg({ kind: 'bi_kip', q: 3 })}<div class="body"><div class="row"><b>Ngọc giản ngộ đạo</b><span class="meta">Còn ${sg.left}/2 · đổi hàng mỗi 5 năm</span></div><div class="meta">Đọc xong được 3 ngộ đạo điểm (◈) để nâng kỹ năng.</div>
-    <div class="row btnRow"><button class="btn ghost" data-sage="1" ${sg.left && P.money >= sg.price ? '' : 'disabled'}>Mua · ${fmt(sg.price)}</button></div></div></div>`;
-  return `<h3>Pháp khí · đổi hàng mỗi 5 năm</h3><div class="list">${gear}</div><h3>Ngọc giản</h3><div class="list">${sage}</div>`;
-}
 
 const stripTok = (t) => String(t).replace(ICON_TOKEN_RE, '');
 const matIco = (k) => icoImg(matIconOpts(k, MATS[k]), `q${Math.min(4, MATS[k].q)}`);
@@ -997,10 +987,9 @@ function openTower() {
       ${msg ? `<p class="forgeMsg">${rich(msg)}</p>` : ''}
       <div class="row btnRow">${T.f < 1000 ? `<button class="btn ${P.action === 'vuot_thap' ? 'on' : 'primary'}" data-climb="1">${P.action === 'vuot_thap' ? '🗼 Đang vượt tháp mỗi lượt' : '🗼 Vượt tháp mỗi lượt'}</button>` : ''}
         <button class="btn ghost" data-sweep="1" ${T.f >= 50 && P.age - T.sweptAt >= 10 ? '' : 'disabled'}>Quét tầng đã qua${T.f < 50 ? ' (từ 50)' : P.age - T.sweptAt < 10 ? ` (${10 - (P.age - T.sweptAt)} năm)` : ''}</button></div>
-      <div class="row btnRow"><button class="btn ${resume ? 'on' : 'ghost'}" data-resume="1">Thua thì tu luyện, đủ sức tự leo lại: ${resume ? 'bật' : 'tắt'}</button></div>
       <h3>Trùm kế tiếp · tầng ${nb}</h3>
       <div class="item"><div class="row"><b>${esc(nb >= 1000 ? `${PL.tower} chi chủ` : g.floorTheme(pl, nb).boss)}</b><span class="meta">${nb >= 1000 ? '3 giai đoạn · có thể mất mạng' : `2 giai đoạn · ${nb < 500 ? 'thua chỉ trọng thương' : 'có thể mất mạng'}`}</span></div><div class="meta">Cơ chế: ${esc(kit.mech)}. Tự đánh khi chắc thắng từ 75%, thấp hơn thì luôn dừng lại hỏi.</div></div>
-      <p class="intro">Mỗi 10 tầng có tinh anh (rương đồ), mỗi 100 tầng có trùm (đồ Cực phẩm, ngộ đạo điểm, từ tầng 500 có thể ra Thần thoại). Đôi khi gặp tầng đặc biệt: thương nhân, thử thách liên hoàn, đối thủ leo tháp, người kẹt trong tháp, bia ngộ đạo... Vượt tháp tích sát khí, tu vi có được chưa vững.</p>
+      <details class="more"><summary>ⓘ Giải thích</summary><p class="intro">Mỗi 10 tầng có tinh anh (rương đồ), mỗi 100 tầng có trùm (đồ Cực phẩm, ngộ đạo điểm, từ tầng 500 có thể ra Thần thoại). Đôi khi gặp tầng đặc biệt: thương nhân, thử thách liên hoàn, đối thủ leo tháp, người kẹt trong tháp, bia ngộ đạo... Vượt tháp tích sát khí, tu vi có được chưa vững.</p></details>
       <h3>Tháp thương điếm · ${fmt(coin)} Tháp tệ</h3>
       <div class="grid5 shopGrid">${TOWER_SHOP.map((x) => {
         const ic = x.pill ? icoImg({ kind: 'dan', q: x.pill[0] === 'pha_canh' ? 2 : 0, col: PILL_COLORS[x.pill[0]] }) : x.mats ? icoImg({ kind: 'thoi', q: 1 }) : x.book ? icoImg({ kind: 'bi_kip', q: 2 }) : icoImg({ kind: 'tam', q: 2 });
@@ -1009,7 +998,6 @@ function openTower() {
       <h3>Bảng ${PL.tower}</h3><div class="list">${g.towerRanking(10).map((x, i) => `<div class="item ${x.me ? 'me' : ''}"><div class="row"><b>${i + 1}. ${esc(x.name)}${x.me ? ' (ngươi)' : ''}</b><span class="meta">Tầng ${x.f} · ${realmLabel(x.realm, x.tuvi)}</span></div></div>`).join('')}</div>`, () => {
       $('sheetBody').querySelectorAll('[data-climb]').forEach((b) => { b.onclick = () => { g.manualAction('vuot_thap'); save(); dirty = true; $('sheet').hidden = true; }; });
       $('sheetBody').querySelectorAll('[data-sweep]').forEach((b) => { b.onclick = () => { const t = g.sweepTower(); save(); dirty = true; draw(t || ''); }; });
-      $('sheetBody').querySelectorAll('[data-resume]').forEach((b) => { b.onclick = () => { g.s.opt.towerResume = !resume; save(); draw(); }; });
       $('sheetBody').querySelectorAll('[data-tb]').forEach((b) => { b.onclick = () => { const t = g.towerBuy(b.dataset.tb); save(); dirty = true; draw(t || 'Không đủ Tháp tệ.'); }; });
     });
   };
@@ -1031,7 +1019,7 @@ function openWork() {
       <div class="row btnRow"><button class="btn ${P.action === 'muu_sinh' ? 'on' : 'primary'}" data-go="1">${P.action === 'muu_sinh' ? '⚖ Đang mưu sinh' : '⚖ Mưu sinh mỗi lượt'}</button></div>
       <h3>Chọn nghề</h3><div class="list">${Object.entries(NGHE).map(([k, x]) => `<button class="btn ${n && n.id === k ? 'on' : ''}" data-ng="${k}">${x.icon} ${x.n}<small>${esc(x.desc)}</small></button>`).join('')}</div>
       <h3>Phù trong người</h3><div class="mats">${phu}</div>
-      <p class="intro">Phù, Bạo Khí Đan tự dùng khi vào trận lớn (trùm tháp, vùng chủ, lôi kiếp). Truyền Tống Phù tự cháy khi sắp mất mạng.</p>`, () => {
+      <details class="more"><summary>ⓘ Giải thích</summary><p class="intro">Phù, Bạo Khí Đan tự dùng khi vào trận lớn (trùm tháp, vùng chủ, lôi kiếp). Truyền Tống Phù tự cháy khi sắp mất mạng.</p></details>`, () => {
       $('sheetBody').querySelectorAll('[data-ng]').forEach((b) => { b.onclick = () => { g.chooseNghe(b.dataset.ng); save(); dirty = true; draw(`Đã chọn nghề ${NGHE[b.dataset.ng].n}.`); }; });
       $('sheetBody').querySelectorAll('[data-go]').forEach((b) => { b.onclick = () => { g.manualAction('muu_sinh'); save(); dirty = true; $('sheet').hidden = true; }; });
       $('sheetBody').querySelectorAll('[data-sn]').forEach((b) => { b.onclick = () => { const t = g.buySanNghiep(); save(); dirty = true; draw(t || ''); }; });
@@ -1070,7 +1058,7 @@ function openPlan() {
       <input type="number" min="0" max="300" inputmode="numeric" data-pv="${i}" value="${x.v}"><span class="meta">${x.a === 'be_quan' || x.k === 'y' ? 'năm' : ''}</span>
       <button class="btn ghost sm" data-pdel="${i}" ${planDraft.length > 1 ? '' : 'disabled'}>✕</button></div>`;
     openSheet(`<h2>📅 Lịch trình tự động</h2>
-      <p class="intro">Tự đổi việc theo vòng. Dừng khi có chuyện lớn: thua trùm tháp, nguy kịch mà hết đan, tẩu hỏa nhập ma, tu vi viên mãn mà chưa thể đột phá. Tự bấm đổi việc cũng dừng lịch trình.</p>
+      <details class="more"><summary>ⓘ Giải thích</summary><p class="intro">Tự đổi việc theo vòng. Dừng khi có chuyện lớn: thua trùm tháp, nguy kịch mà hết đan, tẩu hỏa nhập ma, tu vi viên mãn mà chưa thể đột phá. Tự bấm đổi việc cũng dừng lịch trình.</p></details>
       ${pl ? `<div class="item ${pl.on ? 'me' : ''}"><div class="row"><b>${pl.on ? '▶ Đang chạy' : '⏸ Đang dừng'}</b><span class="meta">Bước ${pl.i + 1}/${pl.steps.length}</span></div><div class="meta">${pl.steps.map((x, i) => (i === pl.i ? `<b>${esc(planStepText(x))}</b>` : esc(planStepText(x)))).join(' → ')}</div>
         <div class="row btnRow">${pl.on ? '<button class="btn ghost" id="plStop">⏸ Dừng</button>' : '<button class="btn primary" id="plRes">▶ Chạy tiếp</button>'}<button class="btn ghost" id="plDel">Xóa lịch trình</button></div></div>` : ''}
       ${msg ? `<p class="forgeMsg">${esc(msg)}</p>` : ''}
@@ -1114,24 +1102,17 @@ function openMaps() {
     const cards = mapsOf(g.plane).map((m) => {
       const p = g.mapOdds(m.id);
       const risk = g.mapRisk(m.id);
-      return `<button class="mapCard d${m.d} ${cur === m.id ? 'on' : ''}" data-map="${m.id}">
-        <div class="row"><b>${esc(m.n)}</b><span class="diff d${m.d}">${DIFF[m.d].ic} ${DIFF[m.d].n}</span></div>
-        <div class="meta">${esc(m.desc)}</div>
-        <div class="meta">Yêu thú x${String(m.pow).replace('.', ',')} · Thu hoạch x${String(m.loot).replace('.', ',')} · ${m.myth ? `Thần thoại ${String(m.myth * 100).replace('.', ',')}%/món` : 'Không có đồ Thần thoại'}</div>
-        <div class="meta">Nguyên liệu: ${matIco(m.mat)} ${MATS[m.mat].n}${m.haz ? ' · Có tai họa thiên nhiên' : ''}</div>
-        <div class="odds ${oddsCls(p)}">Với sức ngươi lúc này (${WOUND_N[woundLv(P.hp)].toLowerCase()}): thắng ~${Math.round(p * 100)}%${p < 0.8 ? ` · thua thì nguy hiểm tính mạng ~${Math.round(risk * 100)}%` : ''}</div>
-        ${(() => { const bs = g.botsIn(m.id); if (!bs.length) return '<div class="meta">Không có tu sĩ nào khác ở đây.</div>'; const known = bs.filter((b) => g.s.rel[b.id] && g.s.rel[b.id].met); return `<div class="meta">${bs.length} tu sĩ khác đang lịch luyện ở đây${known.length ? `, có người quen: ${known.slice(0, 3).map((b) => esc(b.name)).join(', ')}` : ''}.</div>`; })()}
-        ${cur === m.id ? '<div class="meta"><b>Đang lịch luyện ở đây</b></div>' : ''}
+      const bs = g.botsIn(m.id);
+      const known = bs.filter((b) => g.s.rel[b.id] && g.s.rel[b.id].met);
+      return `<button class="mapCard mapRow d${m.d} ${cur === m.id ? 'on' : ''}" data-map="${m.id}">
+        <div class="mr1"><b>${esc(m.n)}</b><span class="diff d${m.d}">${DIFF[m.d].ic} ${DIFF[m.d].n}</span><span class="odds ${oddsCls(p)}">thắng ~${Math.round(p * 100)}%</span></div>
+        <div class="mr2">${matIco(m.mat)} ${MATS[m.mat].n}${m.myth ? ` · Thần thoại ${String(m.myth * 100).replace('.', ',')}%` : ''}${m.haz ? ' · ⚠ tai họa' : ''}${bs.length ? ` · 👤 ${bs.length}${known.length ? ` (quen ${known.length})` : ''}` : ''}${cur === m.id ? ' · <b>đang ở đây</b>' : ''}${p < 0.8 ? ` · <span class="neg">tử ~${Math.round(risk * 100)}%</span>` : ''}</div>
       </button>`;
     }).join('');
     openSheet(`<h2>Chọn vùng lịch luyện</h2>
-      <p class="intro">Các tu sĩ khác cũng tự chọn vùng theo sức mình và tính cách: kẻ liều lĩnh vào vùng khó, người cẩn trọng ở vùng dễ. Cùng vùng thì dễ chạm mặt nhau hơn, và hạ được kẻ mang thần khí thì có thể đoạt lấy.</p>
-      <p class="intro">Độ khó luôn tính theo cảnh giới hiện tại của ngươi: yêu thú cùng cảnh giới nhưng mạnh hơn theo độ khó, đồ rơi ra hợp với cảnh giới của ngươi. Đồ Thần thoại chỉ xuất hiện từ vùng Khó trở lên. Tỉ lệ thắng tính theo trang bị, võ kỹ và sinh lực hiện tại (${P.hp}/100).</p>
-      <div class="row btnRow"><button class="btn ${g.s.opt.retreat ? 'on' : 'ghost'}" data-retreat="1">Tự lui khi trọng thương, lành rồi tự quay lại: ${g.s.opt.retreat ? 'bật' : 'tắt'}</button></div>
-      ${g.plane ? `<p class="intro">Đây là các vùng của ${PLANES[g.plane].n}.</p>` : ''}
-      ${pillOpts()}
-      <p class="intro">Còn ${P.pills.hoi_xuan || 0} viên Hồi Xuân Đan. Đan được uống trước khi xét tự lui, nên còn đan thì ngươi ở lại vùng đã chọn.</p>
-      ${P.flags.retreated && MAP_MAP[P.mapGoal] ? `<p class="intro"><b>Đang tạm lui</b> về ${g.defaultMap().n} dưỡng thương (${WOUND_N[woundLv(P.hp)].toLowerCase()}). Hồi lên 80 sẽ quay lại ${esc(MAP_MAP[P.mapGoal].n)}. Uống Hồi Xuân Đan để quay lại sớm, hoặc tắt tự lui để ở lại mặc kệ nguy hiểm.</p>` : ''}
+      <p class="intro">Vùng càng khó, đồ càng tốt và càng dễ chết. ${g.plane ? `Các vùng của ${PLANES[g.plane].n}.` : ''}</p>
+      <details class="more"><summary>Giải thích thêm</summary><p class="intro">Độ khó tính theo cảnh giới hiện tại: yêu thú cùng cảnh giới nhưng mạnh hơn theo độ khó, đồ rơi hợp cảnh giới của ngươi. Đồ Thần thoại chỉ có từ vùng Khó. Tỉ lệ thắng tính theo trang bị, kỹ năng và thương thế. Tu sĩ khác cũng chọn vùng theo sức và tính cách; cùng vùng dễ chạm mặt, hạ kẻ mang thần khí thì đoạt được. Trọng thương thì tự lui (đổi ở Cài đặt).</p></details>
+      ${P.flags.retreated && MAP_MAP[P.mapGoal] ? `<p class="forgeMsg">Đang tạm lui về ${g.defaultMap().n} dưỡng thương, lành rồi quay lại ${esc(MAP_MAP[P.mapGoal].n)}.</p>` : ''}
       <div class="list">${cards}</div>`, bind);
   };
   const pick = (id) => { g.setMap(id); save(); $('sheet').hidden = true; dirty = true; };
@@ -1157,19 +1138,18 @@ function openForge() {
     // lưới ô chọn đồ + thẻ chi tiết của món đang chọn (cùng kiểu túi trữ vật)
     const pick = (list, card) => {
       if (!list.length) return '';
-      if (!list.some((x) => x.it.id === forgePick)) forgePick = list[0].it.id;
       const cur = list.find((x) => x.it.id === forgePick);
-      return `<div class="grid5">${list.map((x) => `<button class="tile q${x.it.q} ${x.it.id === forgePick ? 'sel' : ''}" data-fp="${x.it.id}">${itemIco(x.it)}${x.it.plus ? `<span class="bdg plus">+${x.it.plus}</span>` : ''}${x.on ? '<span class="bdg up">✓</span>' : ''}<span class="tn">${esc(itemName(x.it))}</span></button>`).join('')}</div><div class="detail">${card(cur)}</div>`;
+      return `<div class="grid5">${list.map((x) => `<button class="tile q${x.it.q} ${x.it.id === forgePick ? 'sel' : ''}" data-fp="${x.it.id}">${itemIco(x.it)}${x.it.plus ? `<span class="bdg plus">+${x.it.plus}</span>` : ''}${x.on ? '<span class="bdg up">✓</span>' : ''}<span class="tn">${esc(itemName(x.it))}</span></button>`).join('')}</div>${cur ? `<div class="itemPop forgePop" id="itemPop"><i class="ipArrow"></i><button class="ipX" data-ipx="1" aria-label="Đóng">✕</button>${card(cur)}</div>` : ''}`;
     };
     let body = '';
     if (forgeTab === 'cuong') {
-      body = `<p class="intro">Mỗi cấp +8% công, thủ, sinh lực, tối đa +${PLUS_MAX}. Từ +5 có thể thất bại. Lên +8 trở lên mà thất bại thì tụt một cấp. Không bao giờ vỡ đồ.${g.ngheLv('luyen_khi') ? ` Luyện khí sư: rẻ hơn ${g.ngheLv('luyen_khi') * 4}%.` : ''}</p>` +
+      body = `<details class="more"><summary>ⓘ Giải thích</summary><p class="intro">Mỗi cấp +8% công, thủ, sinh lực, tối đa +${PLUS_MAX}. Từ +5 có thể thất bại. Lên +8 trở lên mà thất bại thì tụt một cấp. Không bao giờ vỡ đồ.${g.ngheLv('luyen_khi') ? ` Luyện khí sư: rẻ hơn ${g.ngheLv('luyen_khi') * 4}%.` : ''}</p></details>` +
         pick(all, (x) => {
           const it = x.it;
           if ((it.plus || 0) >= PLUS_MAX) return itemCard(it, `${mark(x)}<span class="meta">Đã cường hóa tối đa</span>`);
           const c = g.enhanceCost(it);
           const p = g.enhanceChance(it);
-          return itemCard(it, `${mark(x)}<button class="btn ghost" data-enh="${it.id}" ${g.canPay(c) ? '' : 'disabled'}>Cường hóa lên +${(it.plus || 0) + 1} · ~${Math.round(p * 100)}% · lực chiến khi mặc ${pctS(g.improveGain(it, { ...it, plus: (it.plus || 0) + 1 }))}</button><div class="cost">${costText(c)}</div>`);
+          return itemCard(it, `${mark(x)}<button class="btn primary sm" data-enh="${it.id}" ${g.canPay(c) ? '' : 'disabled'}>⚒ +${(it.plus || 0) + 1} · ${Math.round(p * 100)}% · lực chiến ${pctS(g.improveGain(it, { ...it, plus: (it.plus || 0) + 1 }))}</button><div class="cost">${costText(c)}</div>`);
         });
     } else if (forgeTab === 'thang') {
       const list = all.filter((x) => x.it.lv < P.realm).sort((a, b) => g.effScore(g.upgradedClone(b.it)) - g.effScore(g.upgradedClone(a.it)));
@@ -1177,7 +1157,7 @@ function openForge() {
         (pick(list, (x) => { const c = g.upgradeCost(x.it); return itemCard(x.it, `${mark(x)}<button class="btn ghost" data-up="${x.it.id}" ${g.canPay(c) ? '' : 'disabled'}>Thăng lên ${REALMS[P.realm].n} · lực chiến khi mặc ${pctS(g.improveGain(x.it, g.upgradedClone(x.it)))}</button><div class="cost">${costText(c)}</div>${x.on ? '' : `<div class="meta">So với đồ đang mặc sau khi thăng: ${pctS(g.swapGain(g.upgradedClone(x.it)))}</div>`}`); }) || '<p class="empty">Không có món nào thấp hơn cảnh giới hiện tại.</p>');
     } else if (forgeTab === 'tay') {
       const list = all.filter((x) => x.it.q >= 2 && x.it.affix && x.it.affix.length);
-      body = `<p class="intro">Đổi một dòng thuộc tính của đồ Thượng phẩm trở lên. Tẩy ngẫu nhiên tốn Linh tinh. Thêm 2 dẫn liệu thì chắc chắn ra dòng của dẫn liệu đó.</p>` +
+      body = `<details class="more"><summary>ⓘ Giải thích</summary><p class="intro">Đổi một dòng thuộc tính của đồ Thượng phẩm trở lên. Tẩy ngẫu nhiên tốn Linh tinh. Thêm 2 dẫn liệu thì chắc chắn ra dòng của dẫn liệu đó.</p></details>` +
         (pick(list, (x) => {
           const it = x.it;
           const rows = it.affix.map((k, i) => {
@@ -1192,7 +1172,7 @@ function openForge() {
       const S = forgeSel;
       const cats = Object.keys(MATS).filter((m) => MATS[m].aff);
       const c = g.forgeCost(S.myth, S.cat || null);
-      body = `<p class="intro">Rèn một món mới cấp ${REALMS[P.realm].n}. Phẩm gieo ngẫu nhiên nhưng dễ ra Thượng, Cực phẩm hơn đồ rơi, tay nghề càng cao càng tốt. Rèn thần khí cần 3 ${MATS[mythMatOf(g.plane)].n}: ~${Math.round(g.forgeMythChance() * 100)}% ra Thần thoại, còn lại chắc chắn Cực phẩm.</p>
+      body = `<details class="more"><summary>ⓘ Giải thích</summary><p class="intro">Rèn một món mới cấp ${REALMS[P.realm].n}. Phẩm gieo ngẫu nhiên nhưng dễ ra Thượng, Cực phẩm hơn đồ rơi, tay nghề càng cao càng tốt. Rèn thần khí cần 3 ${MATS[mythMatOf(g.plane)].n}: ~${Math.round(g.forgeMythChance() * 100)}% ra Thần thoại, còn lại chắc chắn Cực phẩm.</p></details>
         <h3>Loại đồ</h3><div class="opts">${Object.entries(SLOTS).map(([k, n]) => `<button class="btn ${S.slot === k ? 'on' : 'ghost'}" data-fs="${k}">${n}</button>`).join('')}</div>
         ${S.slot === 'vu_khi' ? `<div class="opts">${Object.entries(WEAPON_TYPES).filter(([k]) => k !== 'tay').map(([k, w]) => `<button class="btn ${S.wt === k ? 'on' : 'ghost'}" data-fw="${k}">${w.n}</button>`).join('')}</div>` : ''}
         <h3>Dẫn liệu (tùy chọn)</h3><div class="opts wide2"><button class="btn ${!S.cat ? 'on' : 'ghost'}" data-fc="">Không</button>${cats.map((m) => `<button class="btn ${S.cat === m ? 'on' : 'ghost'}" data-fc="${m}">${matIco(m)} ${MATS[m].n} → ${esc(AFFIX.find((y) => y.k === MATS[m].aff).t)}</button>`).join('')}</div>
@@ -1211,7 +1191,8 @@ function openForge() {
       <div class="list">${body}</div>`, () => {
       const q = (sel, fn) => $('sheetBody').querySelectorAll(sel).forEach((b) => { b.onclick = () => { const m = fn(b); save(); draw(typeof m === 'string' ? m : ''); dirty = true; }; });
       q('[data-ft]', (b) => { forgeTab = b.dataset.ft; });
-      q('[data-fp]', (b) => { forgePick = +b.dataset.fp; });
+      q('[data-fp]', (b) => { forgePick = forgePick === +b.dataset.fp ? null : +b.dataset.fp; });
+      bindPop(() => { forgePick = null; }, draw);
       q('[data-iron]', () => g.buyIron());
       q('[data-enh]', (b) => g.enhance(+b.dataset.enh));
       q('[data-up]', (b) => g.upgrade(+b.dataset.up));
@@ -1328,9 +1309,9 @@ function itemPop(it, isEq) {
 /** Đặt popup ngay dưới (hoặc trên) ô đồ đang chọn */
 function placeItemPop() {
   const pop = $('itemPop');
-  if (!pop || bag.sel == null) return;
+  if (!pop) return;
   const B = $('sheetBody');
-  const tile = B.querySelector('.tile.sel[data-it], .tile.sel[data-skt], .tile.sel[data-pl], .tile.sel[data-mt]');
+  const tile = B.querySelector('.tile.sel[data-it], .tile.sel[data-skt], .tile.sel[data-pl], .tile.sel[data-mt], .tile.sel[data-ps], .tile.sel[data-fp]');
   if (!tile) { pop.remove(); return; }
   const card = $('sheet').querySelector('.card');
   const br = B.getBoundingClientRect(), tr = tile.getBoundingClientRect(), cr = card.getBoundingClientRect();
@@ -1348,6 +1329,14 @@ function placeItemPop() {
   const pr = pop.getBoundingClientRect();
   if (pr.bottom > cr.bottom) card.scrollTop += pr.bottom - cr.bottom + 8;
   else if (pr.top < cr.top) card.scrollTop -= cr.top - pr.top + 8;
+}
+/** Gắn popup cho một bảng: đặt vị trí, nút ✕ và chạm chỗ trống thì đóng (clear rồi vẽ lại) */
+function bindPop(clear, redraw) {
+  const B = $('sheetBody');
+  placeItemPop();
+  const x = B.querySelector('[data-ipx]');
+  if (x) x.onclick = (e) => { e.stopPropagation(); clear(); redraw(); };
+  B.onclick = (e) => { if ($('itemPop') && !e.target.closest('button, .itemPop, select, input')) { clear(); redraw(); } };
 }
 function itemTile(it, extra = '') {
   const P = g.P;
@@ -1428,8 +1417,7 @@ function bagCp() {
     ${mism ? `<p class="forgeMsg">⚠ ${esc(pa.n)} cần ${WEAPON_TYPES[pa.wep].n.toLowerCase()}: binh khí đang cầm làm chiêu yếu đi.</p>` : ''}
     <div class="skTree"><div class="skCol"><h4>Chiêu thức</h4>${col(['co', 'c1', 'c2', 'chot'])}</div><div class="skCol"><h4>Tuyệt kỹ</h4>${col(['ult'])}</div><div class="skCol"><h4>Bị động</h4>${col(['p1', 'p2', 'p3'])}</div></div>
     ${detail}
-    <div class="row btnRow"><button class="btn ${g.s.opt.autoSkill !== false ? 'on' : 'ghost'}" data-opt2="autoSkill">Tự nâng kỹ năng khi có điểm: ${g.s.opt.autoSkill !== false ? 'bật' : 'tắt'}</button></div>
-    <p class="intro">Ngộ đạo điểm có từ: đột phá (+5), lên nấc nhỏ (+1), trùm tháp, tông môn, Bia ngộ đạo, kỳ ngộ, ngọc giản ở Tụ Bảo Lâu và Tháp thương điếm.</p>
+    <details class="more"><summary>ⓘ Giải thích</summary><p class="intro">Ngộ đạo điểm có từ: đột phá (+5), lên nấc nhỏ (+1), trùm tháp, tông môn, Bia ngộ đạo, kỳ ngộ, ngọc giản ở Tụ Bảo Lâu và Tháp thương điếm.</p></details>
     ${tac}
     <h3>Chuyển tu</h3>
     ${P.flags.changedPath ? '<p class="meta">Kiếp này đã chuyển tu một lần.</p>' : `<p class="intro">Mỗi kiếp được đổi đạo lộ một lần: mất 50% tu vi, kỹ năng đường cũ về cấp 1, hoàn lại một nửa ngộ đạo điểm đã dùng.</p><div class="row btnRow">${others.map((k) => `<button class="btn ${bag.confirm === `cp:${k}` ? 'danger' : 'ghost'}" data-cpath="${k}">${bag.confirm === `cp:${k}` ? `Bấm lần nữa: chuyển sang ${PATHS[k].n}` : `${PATHS[k].icon} Chuyển sang ${PATHS[k].n}`}</button>`).join('')}</div>`}`;
@@ -1449,8 +1437,7 @@ function bagDan() {
     detail = popBox(ico, `<b>${esc(ps.n)}</b>`, `Đan dược · có ${P.pills[id] || 0}`, `<div class="ipLine">${esc(ps.desc)}</div>${st}`,
       `${id === 'pha_canh' ? '<span class="meta">Dùng khi đột phá</span>' : `<button class="btn primary sm" data-use="${id}" ${(P.pills[id] || 0) ? '' : 'disabled'}>Dùng</button>`}${!ps.craft ? '<button class="btn ghost sm" data-goshop="1">🏮 Mua thêm</button>' : ''}`);
   } else if (fs) detail = popBox(icoImg({ kind: 'ho_phu', q: bag.sel === 'truyen_tong' ? 3 : 1 }), `<b>${esc(fs.n)}</b>`, `Phù · có ${P.phu[bag.sel] || 0}`, `<div class="ipLine">${esc(fs.desc)} Phù sư vẽ được (Mưu sinh).</div>`, '');
-  return `${detail}<h3>Đan dược</h3><div class="grid5">${tiles}</div><h3>Phù</h3><div class="grid5">${phu}</div>${pillOpts()}
-    <div class="row btnRow"><button class="btn ${g.s.opt.autoBaoKhi !== false ? 'on' : 'ghost'}" data-opt2="autoBaoKhi">Trận lớn tự uống Bạo Khí Đan: ${g.s.opt.autoBaoKhi !== false ? 'bật' : 'tắt'}</button></div>`;
+  return `${detail}<h3>Đan dược</h3><div class="grid5">${tiles}</div><h3>Phù</h3><div class="grid5">${phu}</div>`;
 }
 function bagNl() {
   const P = g.P;
@@ -1464,15 +1451,31 @@ function bagNl() {
 function bagSet() {
   const o = g.s.opt;
   const P = g.P;
-  return `<div class="list">
-    <button class="btn ${o.autoEquip !== false ? 'on' : 'ghost'}" data-opt2="autoEquip">Nhặt được đồ lực chiến cao hơn thì tự mặc: ${o.autoEquip !== false ? 'bật' : 'tắt'}</button>
-    <div class="item"><b>Nhặt được đồ thì tự xử lý theo phẩm</b><div class="meta">Áp dụng ngay khi nhặt (và cho món vừa bị thay ra). Đồ đã khóa, đồ Thần thoại luôn được giữ.</div>
+  const tg = (k, label, on, attr = 'data-opt2') => `<button class="btn ${on ? 'on' : 'ghost'} setT" ${attr}="${k}"><span>${label}</span><b>${on ? 'bật' : 'tắt'}</b></button>`;
+  const ex = g.bagExpandCost();
+  return `<div class="setList">
+    <h3>Trang bị</h3>
+    ${tg('autoEquip', 'Nhặt được đồ mạnh hơn thì tự mặc', o.autoEquip !== false)}
+    <div class="item"><b>Nhặt đồ thì tự xử lý theo phẩm</b><div class="meta">Đồ khóa, Thần thoại luôn được giữ.</div>
       <div class="qRules">${[0, 1, 2, 3].map((q) => `<div class="qRule"><span class="q${q}">${QUALITY[q].n}</span>${[['keep', 'Giữ'], ['sell', 'Bán'], ['salv', 'Phân giải']].map(([k, n]) => `<button class="btn sm ${g.qRule(q) === k ? 'on' : 'ghost'}" data-qr="${q}:${k}">${n}</button>`).join('')}</div>`).join('')}</div></div>
-    <button class="btn ${o.autoSalvage ? 'on' : 'ghost'}" data-opt2="autoSalvage">Túi đầy: ${o.autoSalvage ? 'tự phân giải món kém nhất' : 'tự bán món kém nhất'}<small>Không đụng đồ khóa, Thần thoại</small></button>
-    ${(() => { const c = g.bagExpandCost(); return c ? `<div class="item"><b>Mở rộng túi: ${g.bagCap()} → ${g.bagCap() + 8} ô</b><div class="row btnRow"><button class="btn ghost" data-bx="money" ${P.money >= c.money ? '' : 'disabled'}>${fmt(c.money)} linh thạch</button><button class="btn ghost" data-bx="coin" ${(P.towerCoin || 0) >= c.coin ? '' : 'disabled'}>${c.coin} Tháp tệ</button></div></div>` : `<p class="meta">Túi đã mở rộng tối đa ${g.bagCap()} ô.</p>`; })()}
-    <button class="btn ${o.towerResume !== false ? 'on' : 'ghost'}" data-opt2="towerResume">Thua tháp thì tu luyện, đủ sức tự leo lại: ${o.towerResume !== false ? 'bật' : 'tắt'}</button>
-    <button class="btn ghost" data-salvall="1" ${P.bag.some((x) => x.q <= 1) ? '' : 'disabled'}>♻ Phân giải hết Hạ, Trung phẩm trong túi</button>
-    <button class="btn ghost" data-salvall2="1" ${P.bag.some(weakItem) ? '' : 'disabled'}>♻ Phân giải hết đồ Thượng phẩm trở xuống không tốt hơn đồ đang mặc, không khóa</button></div>`;
+    <button class="btn ${o.autoSalvage ? 'on' : 'ghost'} setT" data-opt2="autoSalvage"><span>Túi đầy thì</span><b>${o.autoSalvage ? 'phân giải món kém' : 'bán món kém'}</b></button>
+    ${ex ? `<div class="item"><b>Mở rộng túi: ${g.bagCap()} → ${g.bagCap() + 8} ô</b><div class="row btnRow"><button class="btn ghost sm" data-bx="money" ${P.money >= ex.money ? '' : 'disabled'}>${fmt(ex.money)} linh thạch</button><button class="btn ghost sm" data-bx="coin" ${(P.towerCoin || 0) >= ex.coin ? '' : 'disabled'}>${ex.coin} Tháp tệ</button></div></div>` : ''}
+    <div class="row btnRow"><button class="btn ghost sm" data-salvall="1" ${P.bag.some((x) => x.q <= 1) ? '' : 'disabled'}>♻ Phân giải hết Hạ, Trung phẩm</button><button class="btn ghost sm" data-salvall2="1" ${P.bag.some(weakItem) ? '' : 'disabled'}>♻ Phân giải đồ yếu hơn đồ đang mặc</button></div>
+    <h3>Đan dược, thương thế</h3>
+    ${tg('autoPill', '💊 Trọng thương thì tự uống Hồi Xuân Đan', !!o.autoPill)}
+    ${tg('autoBuyPill', `Hết đan thì tự mua (${fmt(g.pillPrice('hoi_xuan'))}/viên)`, !!o.autoBuyPill)}
+    ${tg('autoBaoKhi', 'Trận lớn tự uống Bạo Khí Đan', o.autoBaoKhi !== false)}
+    ${tg('retreat', 'Lịch luyện trọng thương thì tự lui về vùng dễ', !!o.retreat)}
+    <h3>Kỹ năng, tháp</h3>
+    ${tg('autoSkill', 'Có ngộ đạo điểm thì tự nâng kỹ năng', o.autoSkill !== false)}
+    ${tg('towerResume', 'Thua tháp thì tu luyện, đủ sức tự leo lại', o.towerResume !== false)}
+    <h3>Xem trận</h3>
+    <div class="meta">Trận thường</div><div class="opts">${Object.entries(BATTLE_VIEW).map(([k, n]) => `<button class="btn sm ${battleView === k ? 'on' : 'ghost'}" data-bv="${k}">${n}</button>`).join('')}</div>
+    <div class="meta">Trong tháp</div><div class="opts">${Object.entries(TOWER_VIEW).map(([k, n]) => `<button class="btn sm ${towerView === k ? 'on' : 'ghost'}" data-tv="${k}">${n}</button>`).join('')}</div>
+    <p class="meta">Từ ${AUTO_SPEED}× trận thường luôn bỏ qua, kết quả vẫn ghi vào nhật ký.</p>
+    <h3>Giao diện</h3>
+    <button class="btn ghost" data-theme="1">🌓 Đổi giao diện sáng / tối</button>
+  </div>`;
 }
 const RARE_MATS_UI = new Set(['than_hon', 'dao_van_thach', 'linh_tuy']);
 /** Đồ kém: tự chọn để bán, phân giải hàng loạt */
@@ -1496,6 +1499,9 @@ function openBag(tabId) {
       const undoable = (fn) => { g.undoStart(); const m = fn(); if (g.undoEnd()) undoUntil = performance.now() + 10000; return m; };
       const twice = (k, it, fn) => { if (it && it.q >= 3 && bag.confirm !== `${k}:${it.id}`) { bag.confirm = `${k}:${it.id}`; return ''; } bag.confirm = null; bag.sel = null; return undoable(fn); };
       q('[data-undo]', () => g.undoLast() || '');
+      q('[data-bv]', (b) => { battleView = b.dataset.bv; });
+      q('[data-tv]', (b) => { towerView = b.dataset.tv; });
+      q('[data-theme]', () => { const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); const nx = cur === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = nx; try { localStorage.setItem('tkps.theme', nx); } catch (e) { /* bỏ qua */ } });
       q('[data-ipx]', () => { bag.sel = null; });
       if (bag.tab !== 'set') {
         placeItemPop();
@@ -1551,7 +1557,7 @@ function openBag(tabId) {
             q('[data-pl]', (b) => { bag.sel = bag.sel === b.dataset.pl ? null : b.dataset.pl; });
       q('[data-mt]', (b) => { bag.sel = bag.sel === b.dataset.mt ? null : b.dataset.mt; });
       q('[data-use]', (b) => g.usePill(b.dataset.use) || '');
-      q('[data-opt2]', (b) => { const k = b.dataset.opt2; g.s.opt[k] = k === 'towerResume' || k === 'autoBaoKhi' || k === 'autoSkill' || k === 'autoEquip' ? g.s.opt[k] === false : !g.s.opt[k]; if (k === 'autoSkill' && g.s.opt.autoSkill !== false) g.autoSpendSP(); });
+      q('[data-opt2]', (b) => { const k = b.dataset.opt2; g.s.opt[k] = k === 'towerResume' || k === 'autoBaoKhi' || k === 'autoSkill' || k === 'autoEquip' ? g.s.opt[k] === false : !g.s.opt[k]; if (k === 'autoPill' && !g.s.opt.autoPill) g.s.opt.autoBuyPill = false; if (k === 'autoSkill' && g.s.opt.autoSkill !== false) g.autoSpendSP(); });
       bindPillOpts(draw);
       B.querySelectorAll('[data-goshop]').forEach((b) => { b.onclick = openShop; });
       B.querySelectorAll('[data-goforge]').forEach((b) => { b.onclick = () => { const [sl, wt] = b.dataset.goforge.split(':'); if (sl) { forgeTab = 'moi'; forgeSel.slot = sl; if (wt) forgeSel.wt = wt; } openForge(); }; });
@@ -1578,7 +1584,7 @@ function openTitles() {
     const lock = TITLES.filter((t) => !P.titles.includes(t.id)).sort((a, b) => a.tier - b.tier);
     const cur = P.title ? TITLE_MAP[P.title] : null;
     openSheet(`<h2>Danh hiệu</h2>
-      <p class="intro">Giang hồ xưng tụng theo việc ngươi làm trong kiếp này. Đeo một danh hiệu để nhận lợi ích, danh hiệu sẽ hiện phía trên tên. Kiếp sau phải làm lại từ đầu.</p>
+      <details class="more"><summary>ⓘ Giải thích</summary><p class="intro">Giang hồ xưng tụng theo việc ngươi làm trong kiếp này. Đeo một danh hiệu để nhận lợi ích, danh hiệu sẽ hiện phía trên tên. Kiếp sau phải làm lại từ đầu.</p></details>
       ${cur ? `<div class="tcur"><span class="meta">Đang đeo</span><span class="ttl t${cur.tier} big"><span>${esc(cur.n)}</span></span></div>` : ''}
       <h3>Đã đạt · ${got.length}/${TITLES.length}</h3>
       <div class="list">${got.map((t) => titleCard(t, P.title === t.id ? 'on' : 'got')).join('') || '<p class="empty">Chưa có danh hiệu nào.</p>'}</div>
@@ -1608,29 +1614,52 @@ function showToasts() {
   setTimeout(() => { el.classList.remove('show'); setTimeout(() => { el.hidden = true; toastBusy = false; }, 400); }, 2600);
 }
 
-let shopSel = 'hoi_xuan';
+let shopSel = null;
 function openShop() {
+  shopSel = null;
   const draw = (msg = '') => {
     const P = g.P;
     const ids = Object.keys(PILLS).filter((id) => !PILLS[id].craft);
-    if (!ids.includes(shopSel)) shopSel = ids[0];
-    const p = PILLS[shopSel];
-    const price = g.pillPrice(shopSel);
-    const n = P.pills[shopSel] || 0;
-    openSheet(`<h2>Tụ Bảo Lâu</h2><p class="intro">Linh thạch: <b>${fmt(P.money)}</b>. Giá tăng theo cảnh giới${g.ngheLv('thuong_nhan') ? `, Thương nhân được giảm ${g.ngheLv('thuong_nhan') * 3}%` : ''}.</p>
-      <div class="grid5 shopGrid">${ids.map((id) => `<button class="tile shopTile ${shopSel === id ? 'sel' : ''}" data-ps="${id}">${icoImg({ kind: 'dan', q: id === 'dien_tho' || id === 'pha_canh' ? 2 : 0, col: PILL_COLORS[id] })}<span class="bdg cnt">${P.pills[id] || 0}</span><span class="tn">${esc(PILLS[id].n)}</span><span class="tp">${fmt(g.pillPrice(id))}</span></button>`).join('')}</div>
-      <div class="detail"><div class="item"><div class="row"><b>${esc(p.n)}</b><span class="meta">Có ${n}</span></div><div class="meta">${esc(p.desc)}</div>
-        <div class="row btnRow"><button class="btn primary" data-buy="${shopSel}" ${P.money < price ? 'disabled' : ''}>Mua · ${fmt(price)}</button>
-        ${shopSel !== 'pha_canh' ? `<button class="btn ghost" data-use="${shopSel}" ${n ? '' : 'disabled'}>Dùng</button>` : '<span class="meta">Dùng khi đột phá</span>'}</div></div></div>
-      ${pillOpts()}
-      ${shopGear()}
-      <p class="intro" id="shopMsg">${msg ? esc(msg) : ''}</p>`, () => {
-      bindPillOpts(draw);
-      $('sheetBody').querySelectorAll('[data-ps]').forEach((b) => { b.onclick = () => { shopSel = b.dataset.ps; draw(); }; });
-      $('sheetBody').querySelectorAll('[data-buy]').forEach((b) => { b.onclick = () => { g.buy(b.dataset.buy); save(); draw(); }; });
-      $('sheetBody').querySelectorAll('[data-bg]').forEach((b) => { b.onclick = () => { const m = g.buyGear(b.dataset.bg); save(); draw(m || ''); }; });
-      $('sheetBody').querySelectorAll('[data-sage]').forEach((b) => { b.onclick = () => { const m = g.buySage(); save(); draw(m || ''); }; });
-      $('sheetBody').querySelectorAll('[data-use]').forEach((b) => { b.onclick = () => { const m = g.usePill(b.dataset.use); save(); draw(m || ''); }; });
+    const st = g.shopStock();
+    const bought = P.shopBought || [];
+    const sg = g.sageStock();
+    const pIco = (id) => icoImg({ kind: 'dan', q: id === 'dien_tho' || id === 'pha_canh' ? 2 : 0, col: PILL_COLORS[id] });
+    let pop = '';
+    if (shopSel && PILLS[shopSel]) {
+      const p = PILLS[shopSel], price = g.pillPrice(shopSel), n = P.pills[shopSel] || 0;
+      pop = popBox(pIco(shopSel), `<b>${esc(p.n)}</b>`, `Đan dược · có ${n}`, `<div class="ipLine">${esc(p.desc)}</div>`,
+        `<button class="btn primary sm" data-buy="${shopSel}" ${P.money < price ? 'disabled' : ''}>Mua · ${fmtShort(price)}</button>${shopSel !== 'pha_canh' ? `<button class="btn ghost sm" data-use="${shopSel}" ${n ? '' : 'disabled'}>Dùng</button>` : '<span class="meta">Dùng khi đột phá</span>'}`);
+    } else if (shopSel && shopSel.startsWith('g:')) {
+      const it = st.gear.find((x) => x.key === shopSel.slice(2));
+      if (it) {
+        const sold = bought.includes(it.key);
+        const gn = g.swapGain(it);
+        const wt = it.wt ? ` · ${WEAPON_TYPES[it.wt].n}` : '';
+        pop = popBox(itemIco(it), `<b class="${qCls(it.q)}">${esc(itemName(it))}</b>`, `${QUALITY[it.q].n} · ${SLOTS[it.slot]}${wt}`,
+          `<div class="ipLine">${esc(itemLine(it))}</div>${ttLine(it)}<div class="ipPow">Lực chiến khi mặc <b class="${gn > 0.005 ? 'pos' : gn < -0.005 ? 'neg' : ''}">${pctS(gn)}</b></div>`,
+          sold ? '<span class="meta">Đã bán hết</span>' : `<button class="btn primary sm" data-bg="${it.key}" ${P.money < it.price ? 'disabled' : ''}>Mua · ${fmtShort(it.price)}</button>`);
+      }
+    } else if (shopSel === 'sage') {
+      pop = popBox(icoImg({ kind: 'bi_kip', q: 3 }), '<b>Ngọc giản ngộ đạo</b>', `Còn ${sg.left}/2 · đổi hàng mỗi 5 năm`, '<div class="ipLine">Đọc xong được 3 ngộ đạo điểm (◈) để nâng kỹ năng.</div>',
+        `<button class="btn primary sm" data-sage="1" ${sg.left && P.money >= sg.price ? '' : 'disabled'}>Mua · ${fmtShort(sg.price)}</button>`);
+    }
+    const tile = (key, ico, name, price, extra = '', cls = '') => `<button class="tile shopTile ${cls} ${shopSel === key ? 'sel' : ''}" data-ps="${key}">${ico}${extra}<span class="tn">${esc(name)}</span><span class="tp">${price}</span></button>`;
+    const pills = ids.map((id) => tile(id, pIco(id), PILLS[id].n, fmtShort(g.pillPrice(id)), `<span class="bdg cnt">${P.pills[id] || 0}</span>`)).join('');
+    const gear = st.gear.map((it) => tile(`g:${it.key}`, itemIco(it), itemName(it), bought.includes(it.key) ? 'Hết' : fmtShort(it.price), g.betterThanEquipped(it) && !bought.includes(it.key) ? '<span class="bdg up">▲</span>' : '', `q${it.q} ${bought.includes(it.key) ? 'dim' : ''}`)).join('');
+    const sage = tile('sage', icoImg({ kind: 'bi_kip', q: 3 }), 'Ngọc giản', fmtShort(sg.price), `<span class="bdg cnt">${sg.left}</span>`, sg.left ? '' : 'dim');
+    openSheet(`<h2>Tụ Bảo Lâu</h2><p class="intro">💎 <b>${fmt(P.money)}</b> linh thạch${g.ngheLv('thuong_nhan') ? ` · Thương nhân giảm ${g.ngheLv('thuong_nhan') * 3}%` : ''}. Pháp khí, ngọc giản đổi hàng mỗi 5 năm.</p>
+      ${msg ? `<p class="forgeMsg">${esc(msg)}</p>` : ''}
+      <h3>Đan dược</h3><div class="grid5 shopGrid">${pills}</div>
+      <h3>Pháp khí</h3><div class="grid5 shopGrid">${gear}</div>
+      <h3>Ngọc giản</h3><div class="grid5 shopGrid">${sage}</div>
+      ${pop}`, () => {
+      const B = $('sheetBody');
+      B.querySelectorAll('[data-ps]').forEach((b) => { b.onclick = () => { shopSel = shopSel === b.dataset.ps ? null : b.dataset.ps; draw(); }; });
+      B.querySelectorAll('[data-buy]').forEach((b) => { b.onclick = () => { const id = b.dataset.buy; const n0 = P.pills[id] || 0; g.buy(id); save(); draw((P.pills[id] || 0) > n0 ? `Đã mua 1 ${PILLS[id].n}.` : 'Không đủ linh thạch.'); }; });
+      B.querySelectorAll('[data-bg]').forEach((b) => { b.onclick = () => { const m = g.buyGear(b.dataset.bg); shopSel = null; save(); draw(m || ''); }; });
+      B.querySelectorAll('[data-sage]').forEach((b) => { b.onclick = () => { const m = g.buySage(); save(); draw(m || ''); }; });
+      B.querySelectorAll('[data-use]').forEach((b) => { b.onclick = () => { const m = g.usePill(b.dataset.use); save(); draw(m || ''); }; });
+      bindPop(() => { shopSel = null; }, draw);
     });
   };
   draw();
@@ -1652,12 +1681,6 @@ $('menuBtn').onclick = () => {
     <p class="intro">Mỗi năm chọn một việc. Kỳ ngộ sẽ tự tìm tới. Tu vi đầy thì đột phá. Chết rồi thì đầu thai, mang theo một tàn niệm.</p>
     <p class="intro">Bốn mươi linh hồn khác cũng sống trong thế giới này. Họ tu luyện, kết thù, lập tông môn, chết đi rồi đầu thai như ngươi. Người từng thân với ngươi có thể nhận ra ngươi ở kiếp sau. Kẻ thù cũng vậy.</p>
     <p class="intro">Hữu tình: bạn bè hộ pháp khi ngươi đột phá. Vô tình: tu nhanh hơn, đột phá vững hơn, nhưng cô độc.</p>
-    <h3>Xem diễn lại trận đấu</h3>
-    <div class="opts">${Object.entries(BATTLE_VIEW).map(([k, n]) => `<button class="btn ${battleView === k ? 'on' : 'ghost'}" data-bv="${k}">${n}</button>`).join('')}</div>
-    <p class="intro">Chỉ trận lớn: trận có thể mất mạng (yêu thú vùng khó, kẻ thù, ma tu...). Từ ${AUTO_SPEED}× luôn bỏ qua. Kết quả trận nào cũng ghi vào nhật ký.</p>
-    <h3>Xem trận trong tháp</h3>
-    <div class="opts">${Object.entries(TOWER_VIEW).map(([k, n]) => `<button class="btn ${towerView === k ? 'on' : 'ghost'}" data-tv="${k}">${n}</button>`).join('')}</div>
-    <p class="intro">Tinh anh mỗi 10 tầng, trùm mỗi 100 tầng. Xem cả khi chạy nhanh (từ ${AUTO_SPEED}× diễn tốc độ cao, khoảng 2 giây).</p>
     ${fsInfo()}
     <h3>Phiên bản</h3>
     <p class="intro">Đang chạy bản <b>${APP_VERSION}</b>.${newVersion ? ` Có bản mới <b>${newVersion}</b>.` : ''}</p>
@@ -1666,20 +1689,12 @@ $('menuBtn').onclick = () => {
     <h3>Bản lưu</h3>
     <p class="intro">Chuyển thế giới đang chơi sang trang khác hoặc máy khác: Xuất ra một đoạn mã rồi Nhập ở bên kia.</p>
     <div class="row btnRow"><button class="btn ghost" id="exportBtn">📤 Xuất bản lưu</button><button class="btn ghost" id="importBtn">📥 Nhập bản lưu</button></div>
-    <div class="list">${canFullscreen() ? `<button class="btn" id="fsBtn">${document.fullscreenElement ? 'Thoát toàn màn hình' : '⛶ Toàn màn hình'}</button>` : ''}<button class="btn" id="themeBtn">Đổi giao diện sáng / tối</button><button class="btn" id="newWorld">Tạo thế giới mới (xóa bản lưu)</button></div>`, () => {
+    <div class="list">${canFullscreen() ? `<button class="btn" id="fsBtn">${document.fullscreenElement ? 'Thoát toàn màn hình' : '⛶ Toàn màn hình'}</button>` : ''}<button class="btn" id="newWorld">Tạo thế giới mới (xóa bản lưu)</button></div>`, () => {
     $('checkUpd').onclick = async () => { $('updMsg').textContent = 'Đang kiểm tra...'; $('updMsg').textContent = await checkUpdate(true); if (newVersion && !$('doUpd')) $('menuBtn').onclick(); };
     if ($('doUpd')) $('doUpd').onclick = applyUpdate;
     $('exportBtn').onclick = openExport;
     $('importBtn').onclick = openImport;
     if ($('fsBtn')) $('fsBtn').onclick = () => { toggleFullscreen(); $('sheet').hidden = true; };
-    $('sheetBody').querySelectorAll('[data-bv]').forEach((b) => { b.onclick = () => { battleView = b.dataset.bv; save(); $('menuBtn').onclick(); }; });
-    $('sheetBody').querySelectorAll('[data-tv]').forEach((b) => { b.onclick = () => { towerView = b.dataset.tv; save(); $('menuBtn').onclick(); }; });
-    $('themeBtn').onclick = () => {
-      const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-      const nx = cur === 'dark' ? 'light' : 'dark';
-      document.documentElement.dataset.theme = nx;
-      try { localStorage.setItem('tkps.theme', nx); } catch (e) { /* bỏ qua */ }
-    };
     $('newWorld').onclick = openNewWorld;
   });
 };
@@ -1798,7 +1813,7 @@ document.addEventListener('keydown', (e) => {
 function openNewWorld() {
   let pick = 'thuong';
   const draw = () => openSheet(`<h2>Tạo thế giới mới</h2>
-    <p class="intro"><b>Thế giới hiện tại sẽ bị xóa</b> (cả Sổ kiếp và Hồn Lực). Muốn giữ thì vào ☰ → Xuất bản lưu trước.</p>
+    <p class="intro"><b>Thế giới hiện tại sẽ bị xóa</b> (cả Sổ kiếp và Hồn Lực). Muốn giữ thì vào Thêm → Hướng dẫn, bản lưu → Xuất bản lưu trước.</p>
     <h3>Độ khó</h3><div class="list">${Object.entries(WORLD_DIFF).map(([k, d]) => `<button class="btn ${pick === k ? 'on' : ''}" data-wd="${k}">${d.n}<small>${esc(d.desc)}</small></button>`).join('')}</div>
     <div class="row btnRow"><button class="btn primary" id="nwGo">Xóa và tạo thế giới ${WORLD_DIFF[pick].n}</button><button class="btn ghost" id="nwBack">Thôi</button></div>`, () => {
     $('sheetBody').querySelectorAll('[data-wd]').forEach((b) => { b.onclick = () => { pick = b.dataset.wd; draw(); }; });
