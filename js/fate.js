@@ -52,3 +52,21 @@ export function perkFx(s) {
   }
   return fx;
 }
+
+// ---------- Giai đoạn 2: Chương mười năm ----------
+// Mỗi 10 năm chọn 1 trong 3 lá. act: việc làm của cả chương. fx: hiệu ứng như một thiên phú suốt chương.
+// lock: không đổi việc được cho tới hết chương. ok(g): lá có được bốc ra không. on(g): làm ngay khi chọn.
+export const CHAPTERS = [
+  { id: 'tu_quan', n: 'Bế tử quan', ic: '🕯', act: 'tu_luyen', lock: true, desc: 'Phong bế động phủ 10 năm. Tu vi ×1,6, gần như không gặp kỳ ngộ, không đổi việc được.', fx: { gainMul: 1.6, eventRate: 0.25 }, ok: (g) => g.P.realm >= 1 },
+  { id: 'bai_su', n: 'Theo sư môn khổ luyện', ic: '🏯', act: 'tu_luyen', desc: 'Tu luyện trong tông môn. Tu vi ×1,25, căn cơ vững nhanh, quen nhiều đồng môn.', fx: { gainMul: 1.25 }, ok: (g) => !!g.P.sect },
+  { id: 'an_cu', n: 'Ẩn cư dưỡng sinh', ic: '🍃', act: 'tu_luyen', desc: 'Sống chậm giữa núi rừng. Tu vi ×0,8 nhưng thọ nguyên +4% (cả đời tối đa +12%), thương lành, sát khí tan hết.', fx: { gainMul: 0.8 }, ok: (g) => (g.P.anCu || 0) < 0.12 && (g.P.sat >= 40 || g.P.hp < 80 || g.P.age >= g.lifespan() * 0.7) },
+  { id: 'tham_hiem', n: 'Thám hiểm hiểm địa', ic: '⛰', act: 'lich_luyen', desc: 'Vào vùng khó hơn một bậc. Đồ rơi nhiều và tốt hơn, nhưng dễ trọng thương.', fx: {}, ok: (g) => !!g.harderMap() },
+  { id: 'du_hiep', n: 'Du hiệp giang hồ', ic: '🗡', act: 'lich_luyen', desc: 'Rong ruổi khắp nơi ở vùng vừa sức. Kỳ ngộ dày gấp đôi, danh vọng tăng dần.', fx: { eventRate: 2 } },
+  { id: 'thuong_lo', n: 'Mở thương lộ', ic: '💰', act: 'muu_sinh', desc: 'Buôn bán khắp các trấn. Linh thạch ×1,8, gặp nhiều người.', fx: { moneyMul: 1.8 } },
+  { id: 'ket_giao', n: 'Kết giao bằng hữu', ic: '🍵', act: 'muu_sinh', desc: 'Dành 10 năm cho người. Gặp người ×3, thân thiết tăng nhanh gấp rưỡi.', fx: { relMul: 1.5 } },
+  { id: 'leo_thap', n: 'Công phá Thông Thiên Tháp', ic: '🗼', act: 'vuot_thap', desc: 'Dồn sức leo tháp. Tu vi trong tháp ×1,5, thua thì tự tu luyện rồi quay lại.', fx: {}, ok: (g) => g.P.dao && g.towerState().f < 1000 },
+  { id: 'truy_tuc', n: 'Truy tìm Túc địch', ic: '⚔', act: 'lich_luyen', desc: 'Đi tìm kẻ thù để giải quyết sớm. Lần gặp tới đến ngay, ngươi chuẩn bị kỹ nên mạnh hơn 10%.', fx: {}, ok: (g) => { const N = g.nemesis(); return !!N && !N.n.won && !N.n.q && (N.n.stage || 0) >= 1; } },
+];
+/** Tự quyết: lá hợp việc đang làm trước, rồi lá có lợi cho tu luyện */
+export const CHAPTER_RANK = ['tu_quan', 'bai_su', 'leo_thap', 'tham_hiem', 'truy_tuc', 'thuong_lo', 'du_hiep', 'ket_giao', 'an_cu'];
+export const CHAPTER_MAP = Object.fromEntries(CHAPTERS.map((c) => [c.id, c]));

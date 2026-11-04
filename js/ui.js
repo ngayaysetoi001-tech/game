@@ -4,7 +4,7 @@ import { Game, woundLv, WOUND_N, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_
 import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEFAULT_MAP, realmLabel, subN, PLANES, mapsOf, WORLD_DIFF, mythMatOf, planeOf, THEME_BG, BOSS_KITS, TOWER_THEMES, TOWER_SHOP, TAM_PHAP, TAM_PHAP_IDS, NGHE, PHU, PLAN_TEMPLATES, PLAN_STEP_ACTS, PLAN_COND, PATH_BAR_N } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, BEAST_SKILLS, TACTICS, WEAPON_TYPES, turnText, PATH_RES, PATH_SKILLS, SKILL_MAX, skillLvMul } from './combat.js';
-import { DESTINY_MAP, PERKS, perkLv } from './fate.js';
+import { DESTINY_MAP, PERKS, perkLv, CHAPTER_MAP } from './fate.js';
 import { heroArt, heroStandArt, heroFilter, meditateArt, skillArt, monsterArt, needFlip, uiIcon } from './art.js';
 import { SLOTS, QUALITY, itemLine, TT_MAP, isSealed, isSuppressed, gearStats, itemName, PLUS_MAX, AFFIX } from './items.js';
 import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE, matIconOpts, skillIconOpts } from './icons.js';
@@ -310,6 +310,20 @@ function renderBirth() {
   $('scr-birth').querySelectorAll('[data-dst]').forEach((b) => { b.onclick = () => { g.pickDestiny(b.dataset.dst); save(); dirty = true; }; });
   $('perkBtn').onclick = openPerks;
 }
+/** Nhãn được/mất của một lựa chọn, từ các lần chạy thử */
+function pvTags(a) {
+  if (!a.runs) return '';
+  const R = a.runs;
+  const tag = (k, up, down) => { const x = a.d[k]; if (!x) return ''; const u = x.up / R, d = x.down / R; if (u >= 0.5 && d < 0.2) return `<i class="pv up">${up}</i>`; if (d >= 0.5 && u < 0.2) return `<i class="pv dn">${down}</i>`; if (u + d >= 0.5) return `<i class="pv mix">${up.split(' ')[0]} ±</i>`; return ''; };
+  const t = [
+    tag('tuvi', '☯ Tu vi ↑', '☯ Tu vi ↓'), tag('money', '💎 Linh thạch ↑', '💎 Linh thạch ↓'), tag('fame', '📣 Danh vọng ↑', '📣 Danh vọng ↓'),
+    tag('st', '✦ Chỉ số ↑', '✦ Chỉ số ↓'), tag('sp', '◈ Ngộ đạo ↑', ''), tag('items', '🎁 Được đồ', '🎁 Mất đồ'), tag('rel', '♥ Thân thiết ↑', '✕ Kết thù'), tag('life', '⏳ Thọ ↑', ''),
+  ].filter(Boolean);
+  const hurt = a.hurt / R, dead = a.dead / R;
+  if (hurt >= 0.15) t.push(`<i class="pv dn">🩸 Bị thương ~${Math.round(hurt * 100)}%</i>`);
+  if (dead > 0) t.push(`<i class="pv dead">☠ Có thể chết</i>`);
+  return t.length ? `<span class="pvTags">${t.join('')}</span>` : '';
+}
 /** Bốc lá Thiên mệnh lúc đầu thai */
 function destinyPick(P) {
   const ids = P.destinyOpts || [];
@@ -339,6 +353,16 @@ function openFate() {
     <div class="fateCard on big"><b>${esc(st.d.n)}</b><span>${esc(st.d.desc(g))}</span><em>${st.done ? '✓ Đã hoàn thành' : st.failed ? '✕ Không thành' : `Đang theo${st.d.until ? ` · hạn ${st.d.until} tuổi (còn ${Math.max(0, st.d.until - g.P.age)} năm)` : ''}`} · +${st.d.hl} Hồn lực khi kiếp kết thúc</em></div>
     <p class="intro">Hồn lực dùng ở Cây Hồn lực lúc đầu thai để mạnh dần qua các kiếp.</p>
     ${N ? `<h3>⚔ Túc địch</h3>${nemCard(N)}` : ''}`);
+}
+function openChapter() {
+  const ch = g.chapter();
+  if (!ch) return;
+  openSheet(`<h2>📖 Chương hiện tại</h2>
+    <div class="fateCard on big"><b>${ch.c.ic} ${esc(ch.c.n)}</b><span>${esc(ch.c.desc)}</span><em>Từ ${ch.C.from} đến ${ch.C.until} tuổi · còn ${ch.left} năm</em></div>
+    <p class="intro">Hết chương sẽ được chọn chương mới. ${ch.c.lock ? 'Đang tử quan nên không đổi việc được.' : 'Tự đổi việc khác là bỏ dở chương, mất hiệu ứng.'}</p>
+    <div class="row btnRow"><button class="btn ghost" id="chBreak">${ch.c.lock ? '🚪 Xuất quan sớm' : '✕ Dừng chương'} (mất hiệu ứng)</button></div>`, () => {
+    $('chBreak').onclick = () => { g.breakChapter(); save(); dirty = true; $('sheet').hidden = true; };
+  });
 }
 function nemCard({ n, b }) {
   const stg = ['Chưa chạm mặt', 'Đã tranh cơ duyên', 'Thù đã sâu', 'Chờ quyết chiến'][Math.min(3, n.stage || 0)];
@@ -400,6 +424,8 @@ function renderPlay() {
   const wl = woundLv(P.hp);
   if (wl) chips.push(`<button class="hudChip wound w${wl}" data-stat="hp">🩸 ${WOUND_N[wl]}</button>`);
   chips.push(...warn);
+  const chp = g.chapter();
+  if (chp) chips.push(`<button class="hudChip chap ${chp.c.lock ? 'lock' : ''}" data-hw="chap" title="${esc(chp.c.desc)}">${chp.c.ic} còn ${chp.left} năm</button>`);
   const ds = g.destinyState();
   if (ds) chips.push(`<button class="hudChip fate ${ds.done ? 'ok' : ds.failed ? 'bad' : ''}" data-hw="fate" title="${esc(ds.d.n)}: ${esc(ds.d.desc(g))}">📜 ${ds.done ? '✓' : ds.failed ? '✕' : esc(ds.d.n)}</button>`);
   const nm = g.nemesis();
@@ -693,7 +719,12 @@ function renderEvent() {
   setHTML($('evKicker'), `Kỳ ngộ · ${P ? P.age : ''} tuổi${mp ? ` · ${DIFF[mp.d].ic} ${esc(mp.n)}` : ''}${P && woundLv(P.hp) ? ` · <span class="${P.hp < 40 ? 'lowHp' : ''}">🩸 ${WOUND_N[woundLv(P.hp)].toLowerCase()}</span>` : ''}`);
   $('evTitle').textContent = v.title;
   setHTML($('evText'), rich(v.text));
-  setHTML($('evChoices'), v.choices.map((c, i) => `<button class="btn" data-ch="${i}"><span class="chNo">${i + 1}</span>${esc(c)}</button>`).join(''));
+  const pv = g.s.pending && g.s.pending.id !== 'chuong' ? g.choicePreview() : null;
+  const ACT_N = { tu_luyen: '☯ Tu luyện', lich_luyen: '⛰ Lịch luyện', muu_sinh: '⚖ Mưu sinh', vuot_thap: '🗼 Tháp' };
+  const cards = g.s.pending && g.s.pending.id === 'chuong' ? (g.s.pending.data.cards || []) : null;
+  setHTML($('evChoices'), cards
+    ? cards.map((id, i) => { const c = CHAPTER_MAP[id]; return `<button class="btn chapCard" data-ch="${i}"><span class="chIc">${c.ic}</span><span class="chT"><b>${esc(c.n)}</b><span>${esc(c.desc)}</span><em>${ACT_N[c.act]}${c.lock ? ' · khóa 10 năm' : ''}</em></span></button>`; }).join('')
+    : v.choices.map((c, i) => `<button class="btn" data-ch="${i}"><span class="chNo">${i + 1}</span><span class="chT">${esc(c)}${pv && pv[i] ? pvTags(pv[i]) : ''}</span></button>`).join(''));
 }
 // ---------- Màn chọn đạo lộ ----------
 let ppShown = false;
@@ -1522,6 +1553,7 @@ function bagSet() {
     <h3>Kỹ năng, tháp</h3>
     ${tg('autoSkill', 'Có ngộ đạo điểm thì tự nâng kỹ năng', o.autoSkill !== false)}
     ${tg('towerResume', 'Thua tháp thì tu luyện, đủ sức tự leo lại', o.towerResume !== false)}
+    ${tg('chapters', 'Mỗi 10 năm chọn Chương mới', o.chapters !== false)}
     <h3>Xem trận</h3>
     <div class="meta">Trận thường</div><div class="opts">${Object.entries(BATTLE_VIEW).map(([k, n]) => `<button class="btn sm ${battleView === k ? 'on' : 'ghost'}" data-bv="${k}">${n}</button>`).join('')}</div>
     <div class="meta">Trong tháp</div><div class="opts">${Object.entries(TOWER_VIEW).map(([k, n]) => `<button class="btn sm ${towerView === k ? 'on' : 'ghost'}" data-tv="${k}">${n}</button>`).join('')}</div>
@@ -1610,7 +1642,7 @@ function openBag(tabId) {
             q('[data-pl]', (b) => { bag.sel = bag.sel === b.dataset.pl ? null : b.dataset.pl; });
       q('[data-mt]', (b) => { bag.sel = bag.sel === b.dataset.mt ? null : b.dataset.mt; });
       q('[data-use]', (b) => g.usePill(b.dataset.use) || '');
-      q('[data-opt2]', (b) => { const k = b.dataset.opt2; g.s.opt[k] = k === 'towerResume' || k === 'autoBaoKhi' || k === 'autoSkill' || k === 'autoEquip' ? g.s.opt[k] === false : !g.s.opt[k]; if (k === 'autoPill' && !g.s.opt.autoPill) g.s.opt.autoBuyPill = false; if (k === 'autoSkill' && g.s.opt.autoSkill !== false) g.autoSpendSP(); });
+      q('[data-opt2]', (b) => { const k = b.dataset.opt2; g.s.opt[k] = k === 'towerResume' || k === 'autoBaoKhi' || k === 'autoSkill' || k === 'autoEquip' || k === 'chapters' ? g.s.opt[k] === false : !g.s.opt[k]; if (k === 'autoPill' && !g.s.opt.autoPill) g.s.opt.autoBuyPill = false; if (k === 'autoSkill' && g.s.opt.autoSkill !== false) g.autoSpendSP(); });
       bindPillOpts(draw);
       B.querySelectorAll('[data-goshop]').forEach((b) => { b.onclick = openShop; });
       B.querySelectorAll('[data-goforge]').forEach((b) => { b.onclick = () => { const [sl, wt] = b.dataset.goforge.split(':'); if (sl) { forgeTab = 'moi'; forgeSel.slot = sl; if (wt) forgeSel.wt = wt; } openForge(); }; });
@@ -1813,6 +1845,8 @@ function dockClick(e) {
   // vừa bấm giữ để xem mô tả thì không tính là bấm
   if (tipShown) { tipShown = false; return; }
   if (b.dataset.do === 'more') { openMore(); return; }
+  const chL = g.chapter();
+  if (b.dataset.act && chL && chL.c.lock && b.dataset.act !== chL.c.act) { g.manualAction(b.dataset.act); dirty = true; return; }
   if (b.dataset.act === 'lich_luyen') openMaps();
   else if (b.dataset.act === 'vuot_thap') openTower();
   else if (b.dataset.act === 'muu_sinh') openWork();
@@ -1834,6 +1868,7 @@ function hwClick(e) {
   const b = e.target.closest('[data-hw]');
   if (!b) return;
   if (b.dataset.hw === 'fate') openFate();
+  else if (b.dataset.hw === 'chap') openChapter();
   else if (b.dataset.hw === 'wep') openBag('cp');
   else if (b.dataset.hw === 'gear') openBag('eq');
   else if (b.dataset.hw === 'tower') openTower();

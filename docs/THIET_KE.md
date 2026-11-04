@@ -704,3 +704,28 @@ Mô phỏng 42 kiếp mỗi đạo (lịch trình Leo tháp, có rèn đồ):
   - Thêm lá Thiên mệnh, ngộ đạo điểm khi nhập đạo, Hồi Xuân Đan đầu kiếp, túi +4 ô, thắng Túc địch dễ hơn.
 - **HUD:** chip 📜 Thiên mệnh và chip ⚔ Túc địch. Bấm vào mở bảng Thiên mệnh, Túc địch.
 - **Mô phỏng 36 kiếp:** Túc địch gặp đủ 3 lần; quyết chiến thắng 13 kiếp, bị Túc địch giết 7 kiếp. Hồn lực trung bình mỗi kiếp tăng từ 67 lên 98.
+
+## Bản 5.1: Chương mười năm, xem trước được/mất (giai đoạn 2)
+
+- **Chương mười năm** (`CHAPTERS` trong fate.js, sự kiện `chuong`):
+  - Từ 12 tuổi (đã nhập đạo), cứ hết 10 năm lại bốc 3 lá để chọn 1. Lá hợp Thiên mệnh hoặc đang có Túc địch được ưu tiên.
+  - Mỗi lá gồm một việc làm cho cả chương và hiệu ứng (`fx` đi vào `traits()`).
+  - Có 9 lá:
+    - Bế tử quan: tu vi ×1,6, kỳ ngộ ×0,25, khóa việc; đủ 10 năm thì đột phá +15%.
+    - Theo sư môn: ×1,25 tu vi, củng cố căn cơ.
+    - Ẩn cư: thọ +4%, cả đời tối đa +12%.
+    - Thám hiểm: vào vùng khó hơn một bậc, nhặt nguyên liệu nhiều hơn.
+    - Du hiệp: kỳ ngộ ×2, có danh vọng.
+    - Thương lộ: linh thạch ×1,8.
+    - Kết giao: gặp người ×3, thân thiết ×1,5.
+    - Leo tháp: tu vi trong tháp ×1,5.
+    - Truy Túc địch: lần gặp tới đến ngay, mạnh hơn 10%.
+  - Tự đổi việc là bỏ dở chương. Tử quan không đổi việc được, muốn ra sớm thì bấm chip Chương.
+  - Đang chạy lịch trình tự động thì không có Chương. Có thể tắt trong Cài đặt.
+  - Thẻ Chương là việc lớn nên được hỏi. "Tự quyết hết" chọn lá hợp việc đang làm.
+- **Xem trước lựa chọn** (`choicePreview`):
+  - Mỗi lựa chọn được chạy thử 6 lần trên bản sao, mỗi lần một hạt giống ngẫu nhiên khác (không lộ trước kết quả thật).
+  - Hiện nhãn khi ít nhất một nửa số lần thấy thay đổi: tu vi, linh thạch, danh vọng, chỉ số, ngộ đạo, đồ, thân thiết hay kết thù, thọ, bị thương ~%, có thể chết.
+- **Túc địch:**
+  - Không còn lẫn vào kỳ ngộ ngẫu nhiên.
+  - Tỉ lệ chết khi thua: tranh cơ duyên 2%, thù sâu 3%, quyết chiến 10%. Con số này còn được nhân thêm theo chênh lệch máu.

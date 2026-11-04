@@ -1158,3 +1158,19 @@ details.more > .intro { margin: 6px 0 0; font-size: 13px; }
 .hudChip.fate.bad { color: var(--muted); }
 .hudChip.nem { border-color: var(--bad); color: var(--bad); max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
 .perkBtn small { color: inherit; opacity: .9; }
+
+/* ================= Chương mười năm, nhãn được/mất (bản 5.1) ================= */
+.evPanel .choices .btn .chT { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pvTags { display: flex; flex-wrap: wrap; gap: 3px; }
+.pv { font-style: normal; font-size: 10.5px; line-height: 1.5; padding: 0 6px; border-radius: 999px; border: 1px solid var(--frame); color: var(--muted); white-space: nowrap; }
+.pv.up { color: var(--good); border-color: color-mix(in srgb, var(--good) 50%, transparent); }
+.pv.dn { color: #d9822b; border-color: color-mix(in srgb, #d9822b 50%, transparent); }
+.pv.dead { color: var(--bad); border-color: var(--bad); font-weight: 700; }
+.pv.mix { color: var(--gold); }
+.hudChip.chap { border-color: var(--frame-hi); color: var(--ink); }
+.hudChip.chap.lock { color: var(--gold); }
+.evPanel .choices .btn.chapCard { align-items: flex-start; border-color: var(--frame-hi); padding: 8px 10px; }
+.chapCard .chIc { font-size: 22px; width: 30px; flex: none; text-align: center; line-height: 1.2; }
+.chapCard .chT b { font-size: 14.5px; }
+.chapCard .chT span { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+.chapCard .chT em { font-style: normal; font-size: 11px; color: var(--gold); }

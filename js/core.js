@@ -21,7 +21,8 @@ const THE_CAP_ADD = { brk: 0.15 };
 const THE_MAP = Object.fromEntries(THE_CHAT.map((t) => [t.id, t]));
 const TP_MAP = Object.fromEntries(THIEN_PHU.map((t) => [t.id, t]));
 import { EVENTS, EVENT_MAP, EVENT_TERRAIN, terrainOf } from './events.js';
-import { DESTINIES, DESTINY_MAP, DESTINY_EV, DESTINY_SOCIAL, PERKS, PERK_MAP, perkLv, perkFx } from './fate.js';
+import { DESTINIES, DESTINY_MAP, DESTINY_EV, DESTINY_SOCIAL, PERKS, PERK_MAP, perkLv, perkFx, CHAPTERS, CHAPTER_MAP } from './fate.js';
+import { Rng as PvRng } from './rng.js';
 import { SKILLS, SKILL_IDS, BEAST_SKILLS, fighter, battle, turnText, skillCls, PATH_SKILLS, PATH_RES, SKILL_MAX, skillLvMul } from './combat.js';
 import { makeItem, gearStats, itemScore, QUALITY, THAN_THONG, TT_MAP, isSealed, rollQuality, itemVal, itemName, PLUS_MAX, AFFIX, wepName, setWepBias } from './items.js';
 import { botSeed } from './sprite.js';
@@ -44,7 +45,7 @@ const OLD_WEP = { dao: 'kiem', thuong: 'kiem', quat: 'phap' };
 // kỳ ngộ chịu ảnh hưởng của độ khó vùng lịch luyện
 const MAP_RARE_EV = new Set(['hang_dong', 'truyen_thua', 'co_mo', 'kiem_trung', 'bi_canh', 'linh_mach', 'yeu_vuong', 'ban_do', 'trung_la', 'bao_vat', 'linh_thu', 'ngoc_gian']);
 // kỳ ngộ tự quyết được nhưng đủ quan trọng để hỏi người chơi khi chạy chậm
-const MAJOR_EV = new Set(['truyen_thua', 'bi_canh', 'kiem_trung', 'yeu_vuong', 'tam_ma', 'tuong_quan', 'binh_hon_chu', 'hoa_linh', 'huyet_an_1', 'thien_kieu_chien', 'kiem_y', 'loi_tri', 'tran_phap', 'thu_tien_hoa', 'do_hoa', 'luan_dao', 'ma_dao_xam', 'dai_ty_thi', 'truy_than_khi', 'tranh_chuong_mon', 'tieu_thien_kiep', 'phan_phe', 'huyet_an_2', 'huyet_an_3', 'thap_chu', 'loi_kiep', 'vung_chu', 'thieu_gia_ban_dia', 'linh_vuong_tan_hon', 'tiep_dan_2', 'tiep_dan_3', 'chieu_pho_ma', 'linh_kiep_nho', 'huyet_trieu', 'loi_mach']);
+const MAJOR_EV = new Set(['chuong', 'truyen_thua', 'bi_canh', 'kiem_trung', 'yeu_vuong', 'tam_ma', 'tuong_quan', 'binh_hon_chu', 'hoa_linh', 'huyet_an_1', 'thien_kieu_chien', 'kiem_y', 'loi_tri', 'tran_phap', 'thu_tien_hoa', 'do_hoa', 'luan_dao', 'ma_dao_xam', 'dai_ty_thi', 'truy_than_khi', 'tranh_chuong_mon', 'tieu_thien_kiep', 'phan_phe', 'huyet_an_2', 'huyet_an_3', 'thap_chu', 'loi_kiep', 'vung_chu', 'thieu_gia_ban_dia', 'linh_vuong_tan_hon', 'tiep_dan_2', 'tiep_dan_3', 'chieu_pho_ma', 'linh_kiep_nho', 'huyet_trieu', 'loi_mach']);
 const MAP_FIGHT_EV = new Set(['khieu_chien', 'huyet_tran', 'bat_coc', 'ma_tu_tra_thu']);
 export const matToken = (k) => iconToken(matIconOpts(k, MATS[k]));
 // Bot đi lịch luyện: tỉ lệ ra ngoài và mức tỉ lệ thắng tối thiểu chấp nhận được, theo tính cách
@@ -544,7 +545,9 @@ export class Game {
   /** Chọn một bot thỏa điều kiện, ưu tiên người đã quen */
   findBot(pred, metW = 2) {
     const pl = this.plane;
-    const list = this.s.souls.filter((b) => b.alive && (b.plane || 0) === pl && pred(b, this.s.rel[b.id]));
+    // Túc địch chỉ gặp qua ba lần gặp của riêng hắn, không lẫn vào kỳ ngộ ngẫu nhiên
+    const nid = this.playing && this.P.nemesis && !this.P.nemesis.won && !this.P.nemesis.gone ? this.P.nemesis.id : -1;
+    const list = this.s.souls.filter((b) => b.alive && b.id !== nid && (b.plane || 0) === pl && pred(b, this.s.rel[b.id]));
     const mp = this.playing ? this.curMap() : null;
     return this.r.weighted(list, (b) => (this.s.rel[b.id] && this.s.rel[b.id].met ? metW : 1) * (mp && b.map === mp.id ? 3 : 1));
   }
@@ -593,6 +596,8 @@ export class Game {
     const out = [THE_MAP[P.the] || THE_MAP.pham, ...(P.the2 && THE_MAP[P.the2] ? [THE_MAP[P.the2]] : []), ...(P.tps || []).map((id) => TP_MAP[id]).filter(Boolean)];
     if (P.path && PATHS[P.path]) out.push({ n: PATHS[P.path].n, path: true, fx: PATHS[P.path].fx });
     if (P.title && TITLE_MAP[P.title]) out.push(TITLE_MAP[P.title]);
+    const ch = this.chapter(P);
+    if (ch && Object.keys(ch.c.fx).length) out.push({ n: ch.c.n, chap: true, fx: ch.c.fx });
     const pf = perkFx(this.s);
     if (Object.keys(pf).length) out.push({ n: 'Hồn lực', perk: true, fx: pf });
     // thần thông của đồ Thần thoại đang mặc (trùng thì chỉ tính một)
@@ -749,6 +754,109 @@ export class Game {
     if (id === 'menh' && this.s.phase === 'birth' && this.s.draft) this.rollDestiny(this.s.draft);
     return true;
   }
+  // ---------- Chương mười năm ----------
+  chapter(P = this.P) {
+    const C = P && P.chapter;
+    if (!C || C.broke || P.age >= C.until || !CHAPTER_MAP[C.id]) return null;
+    return { C, c: CHAPTER_MAP[C.id], left: C.until - P.age };
+  }
+  chapIs(id) { const ch = this.chapter(); return !!ch && ch.c.id === id; }
+  /** Vùng khó hơn vùng đang đi một bậc (cùng giới) */
+  harderMap() {
+    const cur = this.curMap() || this.defaultMap();
+    const ms = mapsOf(this.plane).filter((m) => m.d === cur.d + 1);
+    return ms.length && this.mapOdds(ms[0].id) >= 0.45 ? ms[0] : null;
+  }
+  chapterRecap() {
+    const P = this.P;
+    const C = P.chapter;
+    if (!C || !C.snap) return 'Đây là chương đầu tiên trên con đường tu của ngươi.';
+    const c = CHAPTER_MAP[C.id];
+    const bits = [];
+    if (P.realm > C.snap.realm) bits.push(`cảnh giới ${REALMS[C.snap.realm].n} → ${REALMS[P.realm].n}`);
+    else bits.push(`vẫn ở ${REALMS[P.realm].n}`);
+    const dm = P.money - C.snap.money; if (Math.abs(dm) >= 1) bits.push(`linh thạch ${dm > 0 ? '+' : '−'}${fmtN(Math.abs(dm))}`);
+    const df = P.fame - C.snap.fame; if (df) bits.push(`danh vọng ${df > 0 ? '+' : ''}${df}`);
+    return `Chương 「${c.n}」${C.broke ? ' (bỏ dở)' : ''}: ${bits.join(', ')}.`;
+  }
+  /** Bốc 3 lá cho chương mới (lá hợp Thiên mệnh, Túc địch được ưu tiên) */
+  rollChapter() {
+    const P = this.P;
+    const pool = CHAPTERS.filter((c) => !c.ok || c.ok(this));
+    const w = (c) => (c.id === 'truy_tuc' ? 3 : 1) * (P.destiny && !P.destiny.done && ((P.destiny.id === 'thap' && c.id === 'leo_thap') || (DESTINY_SOCIAL.has(P.destiny.id) && c.id === 'ket_giao') || (P.destiny.id === 'danh_vong' && c.id === 'du_hiep') || (P.destiny.id === 'than_khi' && c.id === 'tham_hiem')) ? 3 : 1);
+    const out = [];
+    while (out.length < 3 && pool.length) { const c = this.r.weighted(pool, w); out.push(c.id); pool.splice(pool.indexOf(c), 1); }
+    return out;
+  }
+  chapterTick(ypt) {
+    const P = this.P;
+    const ch = this.chapter();
+    if (ch) {
+      if (ch.c.id === 'an_cu') { P.hp = 100; this.purgeSat(100); const add = Math.min(0.004 * ypt, Math.max(0, 0.12 - (P.anCu || 0))); P.anCu = (P.anCu || 0) + add; P.lifeBonus = (P.lifeBonus || 0) + add; }
+      if (ch.c.id === 'du_hiep' && this.r.chance(0.5)) this.fame(1);
+      if (ch.c.id === 'bai_su') this.firm(this.gain() * 2 * ypt);
+    }
+    // hết chương: tử quan đủ 10 năm được thưởng đột phá
+    const C = P.chapter;
+    if (C && !C.done && P.age >= C.until) {
+      C.done = true;
+      if (C.id === 'tu_quan' && !C.broke) { P.brkBonus = Math.max(P.brkBonus || 0, 0.15); this.log('🕯 Xuất quan sau mười năm tử quan. Lần đột phá tới +15%.', 'good'); }
+    }
+    if (this.s.opt.chapters === false || !P.dao || P.age < 12 || (P.plan && P.plan.on)) return;
+    if (C && P.age < C.until) return;
+    if (this.s.pending || this.s.queue.some((q) => q.id === 'chuong')) return;
+    this.s.queue.push({ id: 'chuong', botId: null, data: { cards: this.rollChapter() } });
+  }
+  startChapter(id) {
+    const P = this.P;
+    const c = CHAPTER_MAP[id];
+    if (!c) return '';
+    if (P.plan && P.plan.on) this.planStop('bắt đầu chương mới');
+    P.towerWait = null;
+    P.chapter = { id, from: P.age, until: P.age + 10, snap: { realm: P.realm, money: P.money, fame: P.fame } };
+    P.action = c.act;
+    let extra = '';
+    if (id === 'tham_hiem') { const m = this.harderMap(); if (m) { P.map = m.id; extra = ` Ngươi lên đường tới ${m.n}.`; } }
+    if (id === 'du_hiep') { const m = this.defaultMap(); P.map = m.id; extra = ` Ngươi rong ruổi quanh ${m.n}.`; }
+    if (id === 'truy_tuc') { const N = this.nemesis(); if (N) { N.n.t = P.age; extra = ` Ngươi lần theo dấu vết ${N.b.name}.`; } }
+    this.log(`📖 Chương mới (${P.age}–${P.age + 10} tuổi): 「${c.n}」. ${c.desc}${extra}`, 'big');
+    return `Ngươi chọn 「${c.n}」.${extra}`;
+  }
+  /** Thoát chương sớm (kể cả tử quan): mất hiệu ứng chương */
+  breakChapter() {
+    const P = this.P;
+    const ch = this.chapter();
+    if (!ch) return;
+    P.chapter.broke = true;
+    this.log(`📖 Ngươi dừng chương 「${ch.c.n}」 giữa chừng.`, 'muted');
+  }
+  // ---------- Xem trước lựa chọn: chạy thử nhiều lần trên bản sao ----------
+  choicePreview(runs = 6) {
+    const p = this.s.pending;
+    if (!p || p.result !== undefined || !this.P) return null;
+    const key = `${p.id}:${this.s.year}:${this.P.age}`;
+    if (this._pv && this._pv.key === key) return this._pv.out;
+    const json = this.save();
+    const snap = (P, s) => ({ tuvi: P.tuvi + REALMS.slice(0, P.realm).reduce((m, r) => m + r.need, 0), money: P.money, fame: P.fame, hp: P.hp, st: Object.values(P.stats).reduce((m, v) => m + v, 0), sp: P.sp || 0, items: P.bag.length + Object.values(P.eq).filter(Boolean).length, sat: P.sat || 0, rel: Object.values(s.rel).reduce((m, r) => m + (r.v || 0), 0), life: P.lifeBonus || 0 });
+    const s0 = snap(this.P, this.s);
+    const n = this.eventView().choices.length;
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const a = { dead: 0, hurt: 0, runs: 0, d: {} };
+      for (let k = 0; k < runs; k++) {
+        let c;
+        try { c = Game.load(json); c.r = new PvRng((Math.random() * 4294967296) >>> 0); c._preview = true; c.choose(i); } catch (e) { continue; }
+        a.runs++;
+        if (c.s.phase === 'dead') { a.dead++; continue; }
+        const s1 = snap(c.P, c.s);
+        if (s1.hp < s0.hp - 8) a.hurt++;
+        for (const kk in s0) { const dv = s1[kk] - s0[kk]; if (!a.d[kk]) a.d[kk] = { up: 0, down: 0 }; if (dv > 0) a.d[kk].up++; else if (dv < 0) a.d[kk].down++; }
+      }
+      out.push(a);
+    }
+    this._pv = { key, out };
+    return out;
+  }
   // ---------- Thiên mệnh ----------
   /** Bốc các lá Thiên mệnh cho bản nháp kiếp mới */
   rollDestiny(P) {
@@ -800,9 +908,10 @@ export class Game {
     const want = Math.min(PLANES[b.plane || 0].top, P.realm + add);
     if (b.realm < want) { b.realm = want; b.tuvi = Math.floor(REALMS[b.realm].need * 0.5); }
   }
-  nemOdds(b, mul) { return this.winOdds(() => this.botFighter(b), mul * (perkLv(this.s, 'tuc') ? 1.1 : 1) * this.pathEdge(b)); }
+  nemMul() { return (perkLv(this.s, 'tuc') ? 1.1 : 1) * (this.chapIs('truy_tuc') ? 1.1 : 1); }
+  nemOdds(b, mul) { return this.winOdds(() => this.botFighter(b), mul * this.nemMul() * this.pathEdge(b)); }
   nemFight(b, mul, lethal) {
-    return this.fightBot(b, mul * (perkLv(this.s, 'tuc') ? 1.1 : 1), { lethal, cause: `chết dưới tay Túc địch ${b.name}` });
+    return this.fightBot(b, mul * this.nemMul(), { lethal, cause: `chết dưới tay Túc địch ${b.name}` });
   }
   nemHarm(b) {
     const fr = this.closeFriends()[0];
@@ -2893,6 +3002,12 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
   manualAction(id) {
     const P = this.P;
     if (!this.playing) return;
+    const ch = this.chapter();
+    if (ch && id !== ch.c.act) {
+      if (ch.c.lock) { this.toast(`Đang ${ch.c.n.toLowerCase()}, còn ${ch.left} năm. Muốn ra sớm thì bấm chip Chương.`, '📖 Chương', 0); return; }
+      P.chapter.broke = true;
+      this.log(`📖 Ngươi bỏ dở chương 「${ch.c.n}」, mất hiệu ứng của chương này.`, 'muted');
+    }
     if (P.plan && P.plan.on) this.planStop('ngươi tự đổi việc');
     P.towerWait = null;
     this.setAction(id);
@@ -2930,7 +3045,7 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
     // củng cố căn cơ: tu vi chưa vững dần thành vững
     const firm = (n) => { P.loose = Math.max(0, (P.loose || 0) - n); };
     if (act === 'vuot_thap') {
-      this.addTuvi(g * 0.6, true);
+      this.addTuvi(g * 0.6 * (this.chapIs('leo_thap') ? 1.5 : 1), true);
       this.climbTower();
     } else if (act === 'tu_luyen') {
       // tu luyện (đã gộp bế quan): tu vi nhanh nhất, củng cố căn cơ, xả sát khí
@@ -2953,7 +3068,7 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
       this.addTuvi(g * 0.35 * Math.sqrt(mp.loot), true);
       this.addSat([0.5, 1, 1.5, 2.5, 3.5, 4.5][mp.d] || 1);
       if (this.r.chance(0.15)) this.stat('co', 1);
-      if (this.r.chance(0.35)) { const t = this.gatherMats(mp, false); if (t && /Linh tinh|Thú hạch|Độc nang|Hỏa tinh|Binh hồn|Thần hồn/.test(t)) this.log(t, 'muted'); }
+      if (this.r.chance(this.chapIs('tham_hiem') ? 0.6 : 0.35)) { const t = this.gatherMats(mp, false); if (t && /Linh tinh|Thú hạch|Độc nang|Hỏa tinh|Binh hồn|Thần hồn/.test(t)) this.log(t, 'muted'); }
       if (mp.haz && this.r.chance(mp.haz[0])) {
         const dmg = Math.round(mp.haz[1] * this.r.range(0.7, 1.3));
         this.log(`${mp.haz[2]}. Sinh lực -${dmg}.`, 'bad');
@@ -2996,7 +3111,7 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
       if (t) this.log(t, 'muted');
     }
     // gặp người: không còn nút Kết giao, quen biết khi đi lại (mưu sinh ở trấn, lịch luyện trên đường)
-    const soc = P.destiny && DESTINY_SOCIAL.has(P.destiny.id) && !P.destiny.done ? 2 : 1;
+    const soc = (P.destiny && DESTINY_SOCIAL.has(P.destiny.id) && !P.destiny.done ? 2 : 1) * (this.chapIs('ket_giao') ? 3 : this.chapIs('thuong_lo') || this.chapIs('bai_su') ? 2 : 1);
     if (act === 'muu_sinh' && this.r.chance(Math.min(0.9, 0.35 * soc * ypt))) { this.meetBot(true); if (this.r.chance(0.4)) this.socialPerks(); }
     else if (act === 'lich_luyen' && this.r.chance(Math.min(0.5, 0.12 * soc * ypt))) this.meetBot(true);
     // đồng môn trong tông, người cùng leo tháp
@@ -3041,6 +3156,7 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
     if (P.realm >= 2 && P.daoHieu === undefined && !this.s.queue.some((q) => q.id === 'dao_hieu')) this.s.queue.push({ id: 'dao_hieu', botId: null, data: { opts: this.genDaoHieuOpts() } });
     this.checkTitles();
     if (this._rank === 1) P.cnt.top1 = (P.cnt.top1 || 0) + 1;
+    this.chapterTick(ypt);
     this.nemTick();
     this.checkDestiny();
     this.nextEvent(act);

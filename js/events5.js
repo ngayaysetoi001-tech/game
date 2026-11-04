@@ -1,4 +1,6 @@
 // Kỳ ngộ đợt 5: chỉ xảy ra khi Tu luyện (nhóm 'tu'). Toàn chuyện nội tu: đốn ngộ, linh khí, tẩu hỏa, kinh mạch, thần thức, dị tượng.
+import { CHAPTER_MAP, CHAPTER_RANK } from './fate.js';
+
 const xp5 = (p) => Math.max(0.05, Math.min(0.95, p));
 const st5 = (g, k) => g.P.stats[k];
 const yrs5 = (g, n) => g.addTuvi(g.gain() * n * 0.6);
@@ -94,25 +96,32 @@ export const EVENTS5 = [
   },
   {
     id: 'tuc_dich_2', queued: true, pool: 'doi', title: 'Mối thù sâu thêm',
-    text: (g, { bot: b }) => `${b.name} (${g.botRealmN(b)}) lại xuất hiện. ${g.nemHarm(b)}\n\n${g.oddsText(g.nemOdds(b, 1.15), 0.08, 0)}`,
+    text: (g, { bot: b }) => `${b.name} (${g.botRealmN(b)}) lại xuất hiện. ${g.nemHarm(b)}\n\n${g.oddsText(g.nemOdds(b, 1.2), 0.03, 0)}`,
     choices: (g, { bot: b }) => {
-      const po = g.nemOdds(b, 1.15);
+      const po = g.nemOdds(b, 1.2);
       return [
-        { t: 'Đòi lại công đạo', p: po, go: (g) => { const f = g.nemFight(b, 1.15, 0.08); if (f.win) { g.fame(10); g.addSP(1); g.nemStep(b, 2); return `${f.text}\n\nGiang hồ đồn ầm lên. Danh vọng +10, ngộ đạo điểm +1. ${b.name} bỏ chạy, để lại một câu: "Lần sau, một trong hai ta phải chết."`; } g.nemStep(b, 2, true); const m = Math.floor(g.P.money * 0.3); g.money(-m); return `${f.text}\n\nNgươi thua, mất ${m.toLocaleString('vi-VN')} linh thạch. Hắn mạnh hơn ngươi nghĩ.`; } },
+        { t: 'Đòi lại công đạo', p: po, go: (g) => { const f = g.nemFight(b, 1.2, 0.03); if (f.win) { g.fame(10); g.addSP(1); g.nemStep(b, 2); return `${f.text}\n\nGiang hồ đồn ầm lên. Danh vọng +10, ngộ đạo điểm +1. ${b.name} bỏ chạy, để lại một câu: "Lần sau, một trong hai ta phải chết."`; } g.nemStep(b, 2, true); const m = Math.floor(g.P.money * 0.3); g.money(-m); return `${f.text}\n\nNgươi thua, mất ${m.toLocaleString('vi-VN')} linh thạch. Hắn mạnh hơn ngươi nghĩ.`; } },
         { t: 'Nhẫn nhịn, khổ luyện chờ ngày', go: (g) => { g.stat('tam', 3); g.nemStep(b, 2, true); return 'Ngươi nuốt cục tức vào bụng. Tâm tính +3. Đêm ấy ngươi luyện công tới sáng.'; } },
       ];
     },
   },
   {
     id: 'tuc_dich_3', queued: true, pool: 'doi', title: 'Quyết chiến',
-    text: (g, { bot: b }) => `Thư khiêu chiến cắm trên cửa động phủ, chữ viết bằng máu: "Đỉnh núi Vọng Nguyệt. Một người đi xuống."\n\n${b.name} đã tu tới ${g.botRealmN(b)}. Đây là trận quyết định giữa hai người. Thua có thể mất mạng.\n\n${g.oddsText(g.nemOdds(b, 1.05), 0.25, 0)}`,
+    text: (g, { bot: b }) => `Thư khiêu chiến cắm trên cửa động phủ, chữ viết bằng máu: "Đỉnh núi Vọng Nguyệt. Một người đi xuống."\n\n${b.name} đã tu tới ${g.botRealmN(b)}. Đây là trận quyết định giữa hai người. Thua có thể mất mạng.\n\n${g.oddsText(g.nemOdds(b, 1.2), 0.1, 0)}`,
     choices: (g, { bot: b }) => {
-      const po = g.nemOdds(b, 1.05);
+      const po = g.nemOdds(b, 1.2);
       const pf = xp5(0.5 + (st5(g, 'co') - 50) / 120);
       return [
-        { t: 'Lên núi quyết chiến', p: po, go: (g) => { const f = g.nemFight(b, 1.05, 0.25); if (f.win) return `${f.text}\n\n${g.nemWin(b)}`; if (!g.playing) return f.text; return `${f.text}\n\n${g.nemLose(b)}`; } },
+        { t: 'Lên núi quyết chiến', p: po, go: (g) => { const f = g.nemFight(b, 1.2, 0.1); if (f.win) return `${f.text}\n\n${g.nemWin(b)}`; if (!g.playing) return f.text; return `${f.text}\n\n${g.nemLose(b)}`; } },
         { t: 'Không đến, ẩn mình chờ thời', p: pf, go: (g) => { if (g.r.chance(pf)) { g.nemDelay(25); return 'Ngươi đóng cửa động phủ. Hắn chờ ba ngày rồi bỏ đi, nhưng thư khiêu chiến sẽ còn quay lại.'; } g.fame(-15); g.nemDelay(15); return 'Cả giang hồ biết ngươi không dám ra mặt. Danh vọng -15. Hắn sẽ còn tìm tới.'; } },
       ];
     },
+  },
+  // ================= Chương mười năm =================
+  {
+    id: 'chuong', queued: true, pool: 'doi', title: (g) => `Chương mới · ${g.P.age} tuổi`,
+    auto: (g, { data }) => { const cs = data.cards || []; const sc = (id) => (CHAPTER_MAP[id].act === g.P.action ? 0 : 10) + CHAPTER_RANK.indexOf(id); let b = 0; cs.forEach((id, i) => { if (sc(id) < sc(cs[b])) b = i; }); return b; },
+    text: (g, { data }) => `${g.P.chapter ? 'Mười năm trôi qua. ' : ''}${g.chapterRecap()}\n\nMười năm tới, ngươi định sống thế nào?`,
+    choices: (g, { data }) => (data.cards || []).map((id) => { const c = CHAPTER_MAP[id]; return { t: `${c.ic} ${c.n}: ${c.desc}`, go: (g) => g.startChapter(id) }; }),
   },
 ];
