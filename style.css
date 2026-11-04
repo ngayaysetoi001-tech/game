@@ -637,7 +637,7 @@ body.inPlay .tabbody { flex: 1 1 0; min-height: 0; }
   body.inPlay.evOpen .tabbody { padding-top: 4px; }
   body.inPlay.evOpen .evPanel { padding: 10px 12px; }
   body.inPlay.evOpen .evPanel h2 { margin-bottom: 2px; }
-  body.inPlay.evOpen .hud #portrait { width: 36px; height: 45px; }
+  body.inPlay.evOpen.evTight .hud #portrait { width: 36px; height: 45px; }
   body.inPlay.evOpen .evPanel { max-height: 80%; }
 }
 
@@ -820,7 +820,7 @@ img.art { image-rendering: auto; }
 .hudPic { position: relative; }
 .hudPic img.art { width: 62px; height: 78px; object-fit: cover; object-position: 50% 8%; border-radius: 10px; display: block; background: color-mix(in srgb, var(--tuvi) 15%, var(--panel)); border: 1px solid var(--line); }
 @media (min-width: 900px) { .hudPic img.art { width: 80px; height: 100px; } }
-body.inPlay.evOpen .hudPic img.art { width: 36px; height: 45px; }
+body.inPlay.evOpen.evTight .hudPic img.art { width: 36px; height: 45px; }
 .dollFig img.art { width: 140px; height: 160px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.35)); }
 .tile .ico.art { width: 40px; height: 40px; }
 .ico.art.big { width: 64px; height: 64px; }
@@ -927,7 +927,7 @@ h3 { color: color-mix(in srgb, var(--gold) 55%, var(--muted)); letter-spacing: .
 .hudPic.full img.art, .hudPic.full #portrait { animation: fullGlow 2s ease-in-out infinite; }
 @keyframes fullGlow { 0%, 100% { box-shadow: 0 0 4px 1px color-mix(in srgb, var(--gold) 45%, transparent); } 50% { box-shadow: 0 0 12px 4px color-mix(in srgb, var(--gold) 70%, transparent); } }
 @media (min-width: 900px) { .hudPic img.art, .hud #portrait { width: 92px; height: 115px; } }
-body.inPlay.evOpen .hudPic img.art, body.inPlay.evOpen .hud #portrait { width: 44px; height: 55px; }
+body.inPlay.evOpen.evTight .hudPic img.art, body.inPlay.evOpen.evTight .hud #portrait { width: 44px; height: 55px; }
 .hudLine { display: flex; flex-direction: column; align-items: stretch; gap: 1px; overflow: visible; }
 .hudLine .hl1, .hudLine .hl2 { display: flex; align-items: baseline; gap: 6px; min-width: 0; white-space: nowrap; }
 .hudLine .hl1 .hudName { font-size: 17px; font-weight: 700; flex: none; }
@@ -1031,9 +1031,9 @@ body.inPlay .tabs { margin-top: 4px; gap: 0; }
   body.inPlay .top .icon { width: 32px; height: 32px; }
   /* có kỳ ngộ: ẩn tab và nhật ký, HUD chỉ còn tên, cảnh giới, tu vi */
   body.inPlay.evOpen.evTight .tabs, body.inPlay.evOpen.evTight .tabbody { display: none !important; }
-  body.inPlay.evOpen .hudLine .hl2, body.inPlay.evOpen .hud .bar[data-stat='tho'], body.inPlay.evOpen .hudChips, body.inPlay.evOpen .hudSub { display: none !important; }
+  body.inPlay.evOpen.evTight .hudLine .hl2, body.inPlay.evOpen.evTight .hud .bar[data-stat='tho'], body.inPlay.evOpen.evTight .hudChips, body.inPlay.evOpen.evTight .hudSub { display: none !important; }
   body.inPlay.evOpen .hud .bars { display: grid !important; }
-  body.inPlay.evOpen .hudPic img.art, body.inPlay.evOpen .hud #portrait { width: 40px; height: 50px; }
+  body.inPlay.evOpen.evTight .hudPic img.art, body.inPlay.evOpen.evTight .hud #portrait { width: 40px; height: 50px; }
   body.inPlay.evOpen .evPanel { flex: 1 1 auto; max-height: none; margin: 6px 0; padding: 10px 12px 12px; }
   body.inPlay.evOpen .evPanel .evText { font-size: 14px; line-height: 1.45; margin-bottom: 8px; }
   body.inPlay.evOpen .evPanel h2 { font-size: 16px; }
