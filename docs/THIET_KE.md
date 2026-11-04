@@ -16,7 +16,7 @@ Game tu tiên luân hồi chơi một mình, chạy offline trên trình duyệt
 ## 2. Vòng chơi một kiếp
 
 1. **Đầu thai:** gieo lá số (tên, giới, xuất thân, linh căn, 4 chỉ số). Được gieo lại 3 lần mỗi kiếp.
-2. **Thời gian tự trôi:** tốc độ 1× đến 32×. Mỗi năm làm một việc:
+2. **Thời gian tự trôi:** tốc độ 1× đến 16× (bỏ 32× từ bản 5.1). Mỗi năm làm một việc:
 
 | Việc | Từ tuổi | Tác dụng |
 |---|---|---|
@@ -604,7 +604,7 @@ Mô phỏng 42 kiếp mỗi đạo (lịch trình Leo tháp, có rèn đồ):
   - Dòng 1: tên và cảnh giới. Dòng 2: danh hiệu, tuổi (và tông môn), biểu tượng đạo lộ ⚔ / 🛡 / 👁.
   - Ba thanh mảnh, chữ số nằm trong thanh.
   - Một hàng chip: 💊 đan, 💎 linh thạch, 🗼 tầng tháp, ☠ sát khí, 📅 lịch trình.
-- **Hàng tốc độ:** một thanh liền khối ⏸ 1×…32×. Chế độ hỏi là nút biểu tượng: 🔔 hỏi tất cả, 🛎 hỏi việc lớn, 🔕 tự quyết hết.
+- **Hàng tốc độ:** một thanh liền khối ⏸ 1×…16×. Chế độ hỏi là nút biểu tượng: 🔔 hỏi tất cả, 🛎 hỏi việc lớn, 🔕 tự quyết hết.
 - **Nút việc làm:** Lịch luyện ghi tên vùng đang đi.
 - **Thẻ kỳ ngộ:** dòng dẫn nhỏ, tiêu đề có gạch dưới, lựa chọn bo tròn có số.
 - **Nhật ký:** biểu tượng đầu dòng theo loại.

@@ -10,7 +10,7 @@ import { SLOTS, QUALITY, itemLine, TT_MAP, isSealed, isSuppressed, gearStats, it
 import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE, matIconOpts, skillIconOpts } from './icons.js';
 
 const SAVE_KEY = 'tkps.save.v1';
-const SPEEDS = [1, 2, 4, 8, 16, 32];
+const SPEEDS = [1, 2, 4, 8, 16];
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const fmt = (n) => Math.floor(n).toLocaleString('vi-VN');
@@ -48,7 +48,7 @@ function load() {
     if (raw) {
       g = Game.load(raw);
       const ui = g.s.ui || {};
-      speed = SPEEDS.includes(ui.speed) ? ui.speed : 1;
+      speed = SPEEDS.includes(ui.speed) ? ui.speed : ui.speed > 16 ? 16 : 1;
       askMode = ASK[ui.ask] ? ui.ask : ui.auto === false ? 'all' : 'big';
       battleView = BATTLE_VIEW[ui.battle] ? ui.battle : 'big';
       towerView = TOWER_VIEW[ui.tower] ? ui.tower : 'all';
@@ -1960,7 +1960,7 @@ function openImport() {
       if (!confirm('Thay thế thế giới hiện tại bằng bản vừa dán?')) return;
       g = ng;
       const ui = g.s.ui || {};
-      speed = SPEEDS.includes(ui.speed) ? ui.speed : 1;
+      speed = SPEEDS.includes(ui.speed) ? ui.speed : ui.speed > 16 ? 16 : 1;
       askMode = ASK[ui.ask] ? ui.ask : 'big';
       battleView = BATTLE_VIEW[ui.battle] ? ui.battle : 'big';
       towerView = TOWER_VIEW[ui.tower] ? ui.tower : 'all';
