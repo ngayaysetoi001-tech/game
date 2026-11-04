@@ -1071,3 +1071,9 @@ body.inPlay .tabs { margin-top: 4px; gap: 0; }
 .itemPop .ipBtns { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
 .itemPop .ipBtns .btn.sm { min-height: 30px; padding: 2px 9px; font-size: 12px; border-radius: 8px; }
 .itemPop .trRes { font-size: 11px; color: var(--muted); }
+.itemPop .ipBtns { flex-wrap: nowrap; gap: 4px; }
+.itemPop .ipBtns .btn.sm { flex: 0 1 auto; min-width: 0; white-space: nowrap; padding: 2px 7px; font-size: 12px; min-height: 30px; }
+.itemPop .ipBtns .btn.sm[data-eq], .itemPop .ipBtns .btn.sm[data-un] { flex: 1 0 auto; }
+.itemPop .ipBtns .btn.sm small { font-size: 10.5px; opacity: .8; }
+.itemPop .ipBtns .btn.sm small { display: inline; margin-left: 3px; }
+.itemPop .ipBtns .btn.sm[data-eq], .itemPop .ipBtns .btn.sm[data-un] { flex: 1 1 auto; }
