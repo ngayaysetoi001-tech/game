@@ -4,6 +4,7 @@ import { Game, woundLv, WOUND_N, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_
 import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEFAULT_MAP, realmLabel, subN, PLANES, mapsOf, WORLD_DIFF, mythMatOf, planeOf, THEME_BG, BOSS_KITS, TOWER_THEMES, TOWER_SHOP, TAM_PHAP, TAM_PHAP_IDS, NGHE, PHU, PLAN_TEMPLATES, PLAN_STEP_ACTS, PLAN_COND, PATH_BAR_N } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, BEAST_SKILLS, TACTICS, WEAPON_TYPES, turnText, PATH_RES, PATH_SKILLS, SKILL_MAX, skillLvMul } from './combat.js';
+import { DESTINY_MAP, PERKS, perkLv } from './fate.js';
 import { heroArt, heroStandArt, heroFilter, meditateArt, skillArt, monsterArt, needFlip, uiIcon } from './art.js';
 import { SLOTS, QUALITY, itemLine, TT_MAP, isSealed, isSuppressed, gearStats, itemName, PLUS_MAX, AFFIX } from './items.js';
 import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE, matIconOpts, skillIconOpts } from './icons.js';
@@ -229,6 +230,7 @@ function altar(P) {
   const rr = [[0, 'Gieo lại thể chất'], [2, 'Bảo đảm Hiếm trở lên'], [3, 'Bảo đảm Truyền thuyết trở lên']];
   return `<div class="altar">
     <div class="row"><b>Đài Luân Hồi</b><span class="hl">Hồn Lực <b>${fmt(hl)}</b></span></div>
+    <button class="btn primary perkBtn" id="perkBtn">🌀 Cây Hồn lực<small>Sức mạnh giữ mãi qua mọi kiếp · đã mở ${PERKS.reduce((m, p) => m + perkLv(g.s, p.id), 0)}/${PERKS.reduce((m, p) => m + p.cost.length, 0)}</small></button>
     <div class="meta">Hồn Lực tích từ các kiếp trước. Dùng để thêm một thể chất đã từng thức tỉnh, hoặc gieo lại thể chất chính.</div>
     <div class="altarRow">
       ${t2 ? `<button class="btn ghost" id="pickThe2">Đổi thể chất cộng thêm</button><button class="btn ghost" id="dropThe2">Bỏ (hoàn ${HL_PRICE[t2.tier]})</button>`
@@ -290,6 +292,7 @@ function renderBirth() {
       <div class="grid">${statGrid(P.stats)}<div><span>Linh thạch</span> <b>${fmt(P.money)}</b></div>${P.dao ? '<div><span>Gia truyền</span> <b>Đã nhập đạo</b></div>' : ''}</div>
       ${leg ? `<div class="legacyNote">Tàn niệm kiếp trước: ${esc(leg.n)}. ${esc(leg.desc)}</div>` : ''}
       ${P.flags.thanKhi ? Object.values(P.eq).filter((it) => it && it.q >= 4).map((it) => itemCard(it)).join('') : ''}
+      ${destinyPick(P)}
       ${planePick(P)}
       ${altar(P)}
       <div class="btns">
@@ -304,7 +307,46 @@ function renderBirth() {
   if ($('dropThe2')) $('dropThe2').onclick = () => { g.dropThe2(); save(); dirty = true; };
   $('scr-birth').querySelectorAll('[data-bp]').forEach((b) => { b.onclick = () => { g.setBirthPlane(+b.dataset.bp); save(); dirty = true; }; });
   $('startBtn').onclick = () => { g.start(); paused = false; tab = 'log'; save(); dirty = true; };
+  $('scr-birth').querySelectorAll('[data-dst]').forEach((b) => { b.onclick = () => { g.pickDestiny(b.dataset.dst); save(); dirty = true; }; });
+  $('perkBtn').onclick = openPerks;
 }
+/** Bốc lá Thiên mệnh lúc đầu thai */
+function destinyPick(P) {
+  const ids = P.destinyOpts || [];
+  if (!ids.length) return '';
+  const cur = P.destiny && P.destiny.id;
+  return `<div class="fatePick"><div class="row"><b>📜 Thiên mệnh kiếp này</b><span class="meta">chọn 1 lá</span></div>
+    <div class="fateCards">${ids.map((id) => { const d = DESTINY_MAP[id]; return `<button class="fateCard ${cur === id ? 'on' : ''}" data-dst="${id}"><b>${esc(d.n)}</b><span>${esc(d.desc(g))}</span><em>+${d.hl} Hồn lực${d.until ? ` · hạn ${d.until} tuổi` : ''}</em></button>`; }).join('')}</div></div>`;
+}
+/** Cây Hồn lực: mua sức mạnh vĩnh viễn */
+function openPerks() {
+  const draw = (msg = '') => {
+    const hl = g.s.honLuc || 0;
+    openSheet(`<h2>🌀 Cây Hồn lực</h2><p class="intro">Hồn lực còn <b>${fmt(hl)}</b>. Có được mỗi khi một kiếp kết thúc (cảnh giới, Thiên mệnh, Túc địch, danh hiệu...). Đã mua là giữ mãi qua mọi kiếp.</p>
+      ${msg ? `<p class="forgeMsg">${esc(msg)}</p>` : ''}
+      <div class="perkList">${PERKS.map((p) => { const l = perkLv(g.s, p.id); const c = g.perkCost(p.id); return `<div class="perk ${l ? 'has' : ''}"><span class="pIc">${p.ic}</span><div class="pBody"><b>${esc(p.n)}</b> <span class="pLv">${'◆'.repeat(l)}${'◇'.repeat(p.cost.length - l)}</span><div class="meta">${esc(p.per)}${p.cost.length > 1 ? ' (mỗi cấp)' : ''}</div></div>${c === null ? '<span class="meta pos">Tối đa</span>' : `<button class="btn ${hl >= c ? 'primary' : 'ghost'} sm" data-perk="${p.id}" ${hl >= c ? '' : 'disabled'}>${c} HL</button>`}</div>`; }).join('')}</div>`, () => {
+      $('sheetBody').querySelectorAll('[data-perk]').forEach((b) => { b.onclick = () => { const p = PERKS.find((x) => x.id === b.dataset.perk); const ok = g.buyPerk(p.id); save(); dirty = true; draw(ok ? `Đã mở ${p.n} cấp ${perkLv(g.s, p.id)}.` : 'Không đủ Hồn lực.'); }; });
+    });
+  };
+  draw();
+}
+/** Thiên mệnh đang theo */
+function openFate() {
+  const st = g.destinyState();
+  if (!st) return;
+  const N = g.nemesis();
+  openSheet(`<h2>📜 Thiên mệnh</h2>
+    <div class="fateCard on big"><b>${esc(st.d.n)}</b><span>${esc(st.d.desc(g))}</span><em>${st.done ? '✓ Đã hoàn thành' : st.failed ? '✕ Không thành' : `Đang theo${st.d.until ? ` · hạn ${st.d.until} tuổi (còn ${Math.max(0, st.d.until - g.P.age)} năm)` : ''}`} · +${st.d.hl} Hồn lực khi kiếp kết thúc</em></div>
+    <p class="intro">Hồn lực dùng ở Cây Hồn lực lúc đầu thai để mạnh dần qua các kiếp.</p>
+    ${N ? `<h3>⚔ Túc địch</h3>${nemCard(N)}` : ''}`);
+}
+function nemCard({ n, b }) {
+  const stg = ['Chưa chạm mặt', 'Đã tranh cơ duyên', 'Thù đã sâu', 'Chờ quyết chiến'][Math.min(3, n.stage || 0)];
+  return `<div class="item nemCard"><div class="row"><b>${esc(b.name)}</b><span class="meta">${esc(REALMS[b.realm].n)} · ${b.age} tuổi</span></div>
+    <div class="meta">${n.won ? '✓ Ngươi đã hạ hắn trong trận quyết chiến.' : `${stg}${n.losses ? ` · ngươi đã thua ${n.losses} lần` : ''}.`}${n.old ? ' Kẻ thù từ kiếp trước.' : ''}</div>
+    <div class="meta">Hắn lớn lên cùng ngươi: ngươi lên cảnh giới nào, hắn cũng không kém bao xa. Gặp ba lần, lần cuối là quyết chiến (có thể mất mạng).</div></div>`;
+}
+
 
 function bar(label, val, max, color, text, key, ticks = 0, loose = 0) {
   const w = clamp((val / Math.max(1, max)) * 100, 0, 100);
@@ -358,6 +400,10 @@ function renderPlay() {
   const wl = woundLv(P.hp);
   if (wl) chips.push(`<button class="hudChip wound w${wl}" data-stat="hp">🩸 ${WOUND_N[wl]}</button>`);
   chips.push(...warn);
+  const ds = g.destinyState();
+  if (ds) chips.push(`<button class="hudChip fate ${ds.done ? 'ok' : ds.failed ? 'bad' : ''}" data-hw="fate" title="${esc(ds.d.n)}: ${esc(ds.d.desc(g))}">📜 ${ds.done ? '✓' : ds.failed ? '✕' : esc(ds.d.n)}</button>`);
+  const nm = g.nemesis();
+  if (nm && !nm.n.won) chips.push(`<button class="hudChip nem" data-hw="fate" title="Túc địch">⚔ ${esc(nm.b.name)}</button>`);
   if (g.s.opt.autoPill && P.dao) chips.push(nPill ? `<button class="hudChip" data-stat="pill" title="Hồi Xuân Đan, tự uống khi trọng thương">💊 ${nPill}</button>` : '<button class="hudChip noPill" data-stat="pill" title="Hết Hồi Xuân Đan, mua ở Tụ Bảo">💊 hết đan</button>');
   chips.push(`<button class="hudChip" data-stat="money" title="Linh thạch">💎 ${fmtShort(P.money)}</button>`);
   if (P.dao && (g.towerState().f > 0 || P.action === 'vuot_thap')) chips.push(`<button class="hudChip" data-hw="tower" title="Tầng tháp">🗼 ${g.towerState().f}</button>`);
@@ -1784,11 +1830,11 @@ $('tabbody').addEventListener('click', (e) => {
   const b = e.target.closest('[data-lf]');
   if (b) { logFilter = b.dataset.lf; dirty = true; }
 });
-$('hudChips').addEventListener('click', (e) => { const b = e.target.closest('[data-hw]'); if (b) { if (b.dataset.hw === 'plan') openPlan(); else openTower(); } });
-$('hudSub').addEventListener('click', (e) => {
+function hwClick(e) {
   const b = e.target.closest('[data-hw]');
   if (!b) return;
-  if (b.dataset.hw === 'wep') openBag('cp');
+  if (b.dataset.hw === 'fate') openFate();
+  else if (b.dataset.hw === 'wep') openBag('cp');
   else if (b.dataset.hw === 'gear') openBag('eq');
   else if (b.dataset.hw === 'tower') openTower();
   else if (b.dataset.hw === 'plan') openPlan();
@@ -1797,7 +1843,9 @@ $('hudSub').addEventListener('click', (e) => {
     $('neckPill').onclick = () => { g.usePill('tinh_tam'); save(); $('sheet').hidden = true; dirty = true; };
     $('neckShop').onclick = openShop;
   });
-});
+}
+$('hudSub').addEventListener('click', hwClick);
+$('hudChips').addEventListener('click', hwClick);
 $('tabs').addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (b && b.dataset.tab) { tab = b.dataset.tab; dirty = true; }

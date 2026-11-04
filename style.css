@@ -1134,3 +1134,27 @@ details.more > .intro { margin: 6px 0 0; font-size: 13px; }
 .hudChips::-webkit-scrollbar { display: none; }
 .hudChip, .hudChips .hudWarn { flex: none; font-size: 10px; padding: 0 6px; line-height: 1.7; }
 .codexBox > summary { margin-top: 6px; }
+
+/* ================= Thiên mệnh, Túc địch, Hồn lực (bản 5) ================= */
+.fatePick { margin: 10px 0; padding: 10px; border: 1px solid var(--frame-hi); border-radius: 12px; background: color-mix(in srgb, var(--gold) 6%, var(--panel)); }
+.fatePick > .row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.fateCards { display: grid; gap: 6px; }
+.fateCard { display: grid; gap: 1px; text-align: left; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--frame); background: var(--panel); color: var(--ink); font: inherit; cursor: pointer; }
+.fateCard b { font-size: 14.5px; }
+.fateCard span { font-size: 13px; }
+.fateCard em { font-style: normal; font-size: 11.5px; color: var(--gold); }
+.fateCard.on { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold), 0 0 10px color-mix(in srgb, var(--gold) 25%, transparent); }
+.fateCard.big { cursor: default; margin: 6px 0 10px; }
+.perkBtn { width: 100%; margin: 6px 0; display: flex; flex-direction: column; align-items: center; }
+.perkBtn small { font-size: 11px; opacity: .85; }
+.perkList { display: grid; gap: 6px; }
+.perk { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--frame); border-radius: 10px; background: var(--panel); }
+.perk.has { border-color: var(--frame-hi); }
+.perk .pIc { font-size: 22px; width: 30px; text-align: center; }
+.perk .pBody { flex: 1; min-width: 0; }
+.perk .pLv { color: var(--gold); font-size: 11px; letter-spacing: 1px; }
+.hudChip.fate { border-color: var(--frame-hi); color: var(--gold); max-width: 130px; overflow: hidden; text-overflow: ellipsis; }
+.hudChip.fate.ok { color: var(--good); border-color: var(--good); }
+.hudChip.fate.bad { color: var(--muted); }
+.hudChip.nem { border-color: var(--bad); color: var(--bad); max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+.perkBtn small { color: inherit; opacity: .9; }

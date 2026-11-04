@@ -21,6 +21,7 @@ const THE_CAP_ADD = { brk: 0.15 };
 const THE_MAP = Object.fromEntries(THE_CHAT.map((t) => [t.id, t]));
 const TP_MAP = Object.fromEntries(THIEN_PHU.map((t) => [t.id, t]));
 import { EVENTS, EVENT_MAP, EVENT_TERRAIN, terrainOf } from './events.js';
+import { DESTINIES, DESTINY_MAP, DESTINY_EV, DESTINY_SOCIAL, PERKS, PERK_MAP, perkLv, perkFx } from './fate.js';
 import { SKILLS, SKILL_IDS, BEAST_SKILLS, fighter, battle, turnText, skillCls, PATH_SKILLS, PATH_RES, SKILL_MAX, skillLvMul } from './combat.js';
 import { makeItem, gearStats, itemScore, QUALITY, THAN_THONG, TT_MAP, isSealed, rollQuality, itemVal, itemName, PLUS_MAX, AFFIX, wepName, setWepBias } from './items.js';
 import { botSeed } from './sprite.js';
@@ -344,6 +345,9 @@ export class Game {
   }
   botDie(b, cause, killer = null) {
     if (!b.alive) return;
+    // Túc địch được thiên mệnh giữ mạng tới khi phân thắng bại với ngươi
+    const N = this.playing && this.P.nemesis;
+    if (N && N.id === b.id && !N.won && !N.gone) { if (b.age >= b.life) b.life = b.age + 40; return; }
     b.alive = false;
     b.cause = cause;
     b.reborn = this.s.year + this.r.int(3, 15);
@@ -589,6 +593,8 @@ export class Game {
     const out = [THE_MAP[P.the] || THE_MAP.pham, ...(P.the2 && THE_MAP[P.the2] ? [THE_MAP[P.the2]] : []), ...(P.tps || []).map((id) => TP_MAP[id]).filter(Boolean)];
     if (P.path && PATHS[P.path]) out.push({ n: PATHS[P.path].n, path: true, fx: PATHS[P.path].fx });
     if (P.title && TITLE_MAP[P.title]) out.push(TITLE_MAP[P.title]);
+    const pf = perkFx(this.s);
+    if (Object.keys(pf).length) out.push({ n: 'Hồn lực', perk: true, fx: pf });
     // thần thông của đồ Thần thoại đang mặc (trùng thì chỉ tính một)
     const seen = new Set();
     for (const it of Object.values(P.eq || {})) {
@@ -678,6 +684,7 @@ export class Game {
       P.flags.thanKhi = it.n;
     }
     this.s.draft = P;
+    this.rollDestiny(P);
     // giữ thể chất cộng thêm đã mua khi gieo lại lá số (trùng thể chất chính thì hoàn Hồn Lực)
     if (prev2) { if (prev2 !== the) P.the2 = prev2; else this.s.honLuc = (this.s.honLuc || 0) + HL_PRICE[THE_MAP[prev2].tier]; }
     this.applyThe(P);
@@ -726,6 +733,149 @@ export class Game {
     return true;
   }
   /** Tính Hồn Lực nhận được khi một kiếp kết thúc */
+  // ---------- Cây Hồn lực ----------
+  perkCost(id) {
+    const p = PERK_MAP[id];
+    const l = perkLv(this.s, id);
+    return p && l < p.cost.length ? p.cost[l] : null;
+  }
+  buyPerk(id) {
+    const c = this.perkCost(id);
+    if (c === null || (this.s.honLuc || 0) < c) return false;
+    this.s.honLuc -= c;
+    this.s.perks = this.s.perks || {};
+    this.s.perks[id] = perkLv(this.s, id) + 1;
+    // mua Nhìn thấu thiên cơ lúc đang đầu thai: bốc lại để có thêm lá
+    if (id === 'menh' && this.s.phase === 'birth' && this.s.draft) this.rollDestiny(this.s.draft);
+    return true;
+  }
+  // ---------- Thiên mệnh ----------
+  /** Bốc các lá Thiên mệnh cho bản nháp kiếp mới */
+  rollDestiny(P) {
+    const n = 3 + perkLv(this.s, 'menh');
+    const saveP = this.s.player;
+    this.s.player = P; // điều kiện need() đọc từ this.P
+    const pool = DESTINIES.filter((d) => !d.need || d.need(this));
+    this.s.player = saveP;
+    const out = [];
+    while (out.length < n && pool.length) out.push(pool.splice(this.r.int(0, pool.length - 1), 1)[0].id);
+    P.destinyOpts = out;
+    P.destiny = { id: out[0] };
+  }
+  pickDestiny(id) {
+    const P = this.s.draft;
+    if (this.s.phase !== 'birth' || !P || !(P.destinyOpts || []).includes(id)) return;
+    P.destiny = { id };
+  }
+  destinyState(P = this.P) {
+    const d = P && P.destiny && DESTINY_MAP[P.destiny.id];
+    if (!d) return null;
+    return { d, done: !!P.destiny.done, failed: !!P.destiny.failed };
+  }
+  checkDestiny() {
+    const P = this.P;
+    const st = this.destinyState();
+    if (!st || st.done || st.failed) return;
+    if (st.d.done(this)) {
+      P.destiny.done = true;
+      this.log(`📜 Thiên mệnh hoàn thành: 「${st.d.n}」. Khi kiếp này kết thúc được ${st.d.hl} Hồn lực.`, 'big');
+      this.toast(`Thiên mệnh 「${st.d.n}」 đã thành. +${st.d.hl} Hồn lực khi kiếp này kết thúc.`, '📜 Thiên mệnh', 3);
+    } else if (st.d.until && P.age > st.d.until) {
+      P.destiny.failed = true;
+      this.log(`📜 Đã quá ${st.d.until} tuổi, Thiên mệnh 「${st.d.n}」 không thành.`, 'bad');
+    }
+  }
+  // ---------- Túc địch ----------
+  nemesis() {
+    const n = this.P && this.P.nemesis;
+    if (!n || n.gone) return null;
+    const b = this.soul(n.id);
+    return b && b.alive ? { n, b } : null;
+  }
+  nemTitle() { return 'Túc địch'; }
+  botRealmN(b) { return REALMS[b.realm].n; }
+  /** Túc địch lớn lên cùng ngươi: không bao giờ tụt quá xa cảnh giới của ngươi */
+  nemBoost(b, add = 0) {
+    const P = this.P;
+    const want = Math.min(PLANES[b.plane || 0].top, P.realm + add);
+    if (b.realm < want) { b.realm = want; b.tuvi = Math.floor(REALMS[b.realm].need * 0.5); }
+  }
+  nemOdds(b, mul) { return this.winOdds(() => this.botFighter(b), mul * (perkLv(this.s, 'tuc') ? 1.1 : 1) * this.pathEdge(b)); }
+  nemFight(b, mul, lethal) {
+    return this.fightBot(b, mul * (perkLv(this.s, 'tuc') ? 1.1 : 1), { lethal, cause: `chết dưới tay Túc địch ${b.name}` });
+  }
+  nemHarm(b) {
+    const fr = this.closeFriends()[0];
+    const sc = this.P.sect ? this.sect(this.P.sect) : null;
+    if (fr) return `Hắn đánh trọng thương ${fr.b.name}, người ngươi thân thiết, chỉ để nhắn một câu: "Bảo hắn ra đây."`;
+    if (sc) return `Hắn giữa ban ngày xông vào ${sc.name}, đánh gãy tay ba đệ tử, gọi tên ngươi ra ứng chiến.`;
+    return 'Hắn tung tin khắp các trấn rằng ngươi là kẻ hèn nhát, cướp mất mối làm ăn và chặn đường tu của ngươi.';
+  }
+  /** Sau mỗi lần gặp: tăng mối thù, hẹn lần gặp tới */
+  nemStep(b, stage, lost = false) {
+    const N = this.P.nemesis;
+    N.stage = stage;
+    N.q = false;
+    N.t = this.P.age;
+    if (lost) N.losses = (N.losses || 0) + 1;
+    this.relSet(b, Math.min(-40, (this.rel(b).v || 0) - 20), 'thu');
+  }
+  /** Thua trận quyết chiến mà còn sống: 30 năm sau tái đấu; thua lần hai thì hắn thắng hẳn kiếp này */
+  nemLose(b) {
+    const N = this.P.nemesis;
+    N.finalLoss = (N.finalLoss || 0) + 1;
+    this.nemStep(b, 3, true);
+    if (N.finalLoss >= 2) { N.gone = true; N.beaten = true; this.fame(-20); return `Ngươi lại thua. ${b.name} bỏ đi, coi như ngươi không còn đáng để hắn ra tay. Danh vọng -20. Mối thù này để kiếp sau.`; }
+    N.t = this.P.age + 30;
+    return `Ngươi thua nhưng còn sống. ${b.name} đứng trên đỉnh núi nhìn xuống: "Ba mươi năm nữa, ta chờ ngươi ở đây." Nỗi nhục này còn đau hơn cái chết.`;
+  }
+  nemDelay(years) {
+    const N = this.P.nemesis;
+    N.q = false;
+    N.t = this.P.age + years;
+  }
+  nemWin(b) {
+    const N = this.P.nemesis;
+    N.won = true; N.q = false; N.stage = 3;
+    this.fame(30);
+    const it = this.gainItem(makeItem(this.r, this.s.nextItem++, this.P.realm, 3, null));
+    this.chron(`${this.fullName()} hạ được Túc địch ${b.name} trên đỉnh Vọng Nguyệt.`, 2);
+    return `${b.name} quỳ xuống, máu nhuộm đỏ đá núi. Mối thù kéo dài bao năm kết thúc tại đây. Danh vọng +30. ${it}
+Kết thúc kiếp này sẽ được thêm Hồn lực.`;
+  }
+  /** Mỗi năm: chọn Túc địch, hẹn các lần gặp */
+  nemTick() {
+    const P = this.P;
+    if (!P.dao || P.age < 10) return;
+    if (!P.nemesis) {
+      // ưu tiên kẻ thù kiếp trước, không thì một người cùng lứa
+      const pl = P.plane || 0;
+      const alive = this.s.souls.filter((b) => b.alive && (b.plane || 0) === pl && b.age >= 8 && !(this.s.rel[b.id] && this.s.rel[b.id].v >= 30));
+      const old = alive.filter((b) => { const r = this.s.rel[b.id]; return r && r.cn && (r.cn.tag === 'thu' || r.cn.v <= -20); });
+      const b = old.length ? this.r.pick(old) : this.r.weighted(alive, (x) => 1 / (1 + Math.abs(x.age - P.age) / 10));
+      if (!b) return;
+      P.nemesis = { id: b.id, stage: 0, t: P.age, old: old.includes(b) };
+      this.relSet(b, Math.min(-10, this.rel(b).v || 0));
+      this.log(`⚔ Ngươi nghe nói về ${b.name}, một kẻ cùng lứa tu luyện rất nhanh.${P.nemesis.old ? ' Gặp mặt lần đầu mà ngươi đã thấy máu sôi lên, như có món nợ từ kiếp nào.' : ''} Định mệnh đã buộc hai người vào nhau.`, 'big');
+      return;
+    }
+    const N = P.nemesis;
+    if (N.gone || N.won || N.q) return;
+    const b = this.soul(N.id);
+    if (!b || !b.alive) { N.gone = true; this.log(`⚔ Túc địch ${b ? b.name : ''} đã chết trước khi hai người phân thắng bại.`, 'muted'); return; }
+    if (P.age < N.t) return;
+    const lr = P.realm - (PLANES[P.plane || 0].base || 0);
+    const since = P.age - N.t;
+    const due = N.stage === 0 ? lr >= 1 && since >= 6
+      : N.stage === 1 ? (lr >= 3 && since >= 10) || since >= 60
+      : N.stage === 2 ? (lr >= 4 && since >= 10) || since >= 80 || (since >= 10 && P.age >= this.lifespan() * 0.6)
+      : N.finalLoss ? since >= 0 : (lr >= 4 && since >= 10) || since >= 60;
+    if (!due || this.s.queue.some((q) => q.id.startsWith('tuc_dich'))) return;
+    const id = N.stage >= 2 ? 'tuc_dich_3' : `tuc_dich_${N.stage + 1}`;
+    this.nemBoost(b, N.stage >= 2 ? 0 : 0);
+    N.q = true;
+    this.s.queue.push({ id, botId: b.id, data: {} });
+  }
   honLucGain(P) {
     const lines = [];
     const add = (n, t) => { if (n > 0) lines.push({ n, t }); };
@@ -742,6 +892,9 @@ export class Game {
     if (P.flags.ascendedFrom === 0) add(Math.round(100 * dr), 'Phi thăng Linh giới');
     if (P.ascended) add(Math.round(200 * dr), `Phi thăng ${PLANES[P.plane || 0].next}`);
     add(Math.round(this.towerBest() / 20), `Tháp: tầng ${this.towerBest()}`);
+    const ds = this.destinyState(P);
+    if (ds && ds.done) add(ds.d.hl, `Thiên mệnh 「${ds.d.n}」`);
+    if (P.nemesis && P.nemesis.won) add(Math.round(30 * (perkLv(this.s, 'tuc') ? 1.5 : 1)), 'Hạ Túc địch');
     let total = lines.reduce((m, x) => m + x.n, 0);
     // kiếp sống ở Linh giới (sinh ra hay phi thăng lên) được nhân đôi Hồn Lực
     if ((P.plane || 0) >= 1) { lines.push({ n: total, t: 'Kiếp ở Linh giới: nhân đôi' }); total *= 2; }
@@ -782,6 +935,10 @@ export class Game {
     ]);
     this.log(`${omen} Ngươi tên ${P.name}, ${P.originN.toLowerCase()}. ${P.root.n}.`, 'big');
     if (P.lifeNo > 1) this.log(`Đây là kiếp thứ ${P.lifeNo} của linh hồn này.`, 'muted');
+    if (perkLv(this.s, 'dan')) P.pills.hoi_xuan = (P.pills.hoi_xuan || 0) + 2 * perkLv(this.s, 'dan');
+    if (!P.destiny || !DESTINY_MAP[P.destiny.id]) P.destiny = { id: (P.destinyOpts && P.destinyOpts[0]) || 'truc_co' };
+    const D = DESTINY_MAP[P.destiny.id];
+    this.log(`📜 Thiên mệnh kiếp này: 「${D.n}」. ${D.desc(this)}. Thành thì được ${D.hl} Hồn lực.`, 'big');
     if (P.flags.thanKhi) this.log(`Thần khí ${P.flags.thanKhi} vượt qua luân hồi, tìm về bên ngươi. Đủ cảnh giới mới giải được phong ấn.`, 'big');
   }
   lifespan(P = this.P) {
@@ -1749,6 +1906,8 @@ export class Game {
     for (const it of [...P.bag, ...Object.values(P.eq)]) {
       if (it && it.q >= 4 && !it.tt) { const pool = THAN_THONG[it.slot]; it.tt = pool[Math.abs(it.id) % pool.length].id; }
     }
+    // bản 5: kiếp đang chơi từ bản cũ chưa có Thiên mệnh
+    if (P === this.s.player && !P.destiny) { this.rollDestiny(P); P.destiny = { id: P.destinyOpts.find((id) => !DESTINY_MAP[id].until) || P.destinyOpts[0] }; }
     // bản 4.3: bế quan gộp vào tu luyện, bỏ kết giao
     if (P.closed > 0) { P.closed = 0; P.closeServed = 0; P.closeLen = 0; P.action = 'tu_luyen'; }
     if (P.action === 'be_quan' || P.action === 'ket_giao') P.action = P.action === 'ket_giao' ? 'muu_sinh' : 'tu_luyen';
@@ -1949,7 +2108,7 @@ export class Game {
     return ` Túi đầy, bán ${itemName(sold)} được ${sold.val} linh thạch.`;
   }
   bagCap() {
-    return this.P.bagMax || BAG_MAX;
+    return (this.P.bagMax || BAG_MAX) + 4 * perkLv(this.s, 'tui');
   }
   /** Mở rộng túi: 16 → 24 → 32. by: 'money' | 'coin' */
   bagExpandCost() {
@@ -2764,6 +2923,7 @@ export class Game {
     if (P.dao && !P.flags.firstSkill) {
       P.flags.firstSkill = true;
       const t = this.learnRandom(1, 1);
+      if (perkLv(this.s, 'nho')) this.addSP(2 * perkLv(this.s, 'nho'));
     }
     const g = this.gain() * ypt;
     const lu = act === 'tu_luyen' && this.daoLu() ? this.daoLu() : null;
@@ -2836,11 +2996,12 @@ export class Game {
       if (t) this.log(t, 'muted');
     }
     // gặp người: không còn nút Kết giao, quen biết khi đi lại (mưu sinh ở trấn, lịch luyện trên đường)
-    if (act === 'muu_sinh' && this.r.chance(Math.min(0.9, 0.35 * ypt))) { this.meetBot(true); if (this.r.chance(0.4)) this.socialPerks(); }
-    else if (act === 'lich_luyen' && this.r.chance(Math.min(0.5, 0.12 * ypt))) this.meetBot(true);
+    const soc = P.destiny && DESTINY_SOCIAL.has(P.destiny.id) && !P.destiny.done ? 2 : 1;
+    if (act === 'muu_sinh' && this.r.chance(Math.min(0.9, 0.35 * soc * ypt))) { this.meetBot(true); if (this.r.chance(0.4)) this.socialPerks(); }
+    else if (act === 'lich_luyen' && this.r.chance(Math.min(0.5, 0.12 * soc * ypt))) this.meetBot(true);
     // đồng môn trong tông, người cùng leo tháp
-    else if (act === 'tu_luyen' && P.sect && this.r.chance(Math.min(0.4, 0.1 * ypt))) this.meetBot(true);
-    else if (act === 'vuot_thap' && this.r.chance(Math.min(0.3, 0.06 * ypt))) this.meetBot(true);
+    else if (act === 'tu_luyen' && (P.sect || soc > 1) && this.r.chance(Math.min(0.4, 0.1 * soc * ypt))) this.meetBot(true);
+    else if (act === 'vuot_thap' && this.r.chance(Math.min(0.3, 0.06 * soc * ypt))) this.meetBot(true);
     if (act !== 'tu_luyen') P.tuStreak = 0;
     // tự mặc: món nào trong túi có lực chiến cao hơn đồ đang mặc thì thay (mỗi 3 năm xét lại)
     if (this.s.opt.autoEquip !== false && P.bag.length) this.equipBest();
@@ -2880,6 +3041,8 @@ export class Game {
     if (P.realm >= 2 && P.daoHieu === undefined && !this.s.queue.some((q) => q.id === 'dao_hieu')) this.s.queue.push({ id: 'dao_hieu', botId: null, data: { opts: this.genDaoHieuOpts() } });
     this.checkTitles();
     if (this._rank === 1) P.cnt.top1 = (P.cnt.top1 || 0) + 1;
+    this.nemTick();
+    this.checkDestiny();
     this.nextEvent(act);
     return true;
   }
@@ -2938,6 +3101,7 @@ export class Game {
       let w = typeof e.w === 'function' ? e.w(this) : e.w ?? 1;
       if (e.acts && e.acts.includes(act)) w *= 3;
       if (e.pool === 'doi' && (act === 'tu_luyen' || act === 'vuot_thap')) w *= 0.5; // tu luyện: chuyện đời thưa hơn
+      if (P.destiny && !P.destiny.done && (DESTINY_EV[P.destiny.id] || []).includes(e.id)) w *= 3; // thiên mệnh dẫn lối
       if (act === 'lich_luyen' && EVENT_TERRAIN[e.id] && EVENT_TERRAIN[e.id] === terrainOf(mapNow)) w *= 2.5; // hợp địa hình
       if (mapNow) w *= MAP_RARE_EV.has(e.id) ? 0.5 + 0.35 * mapNow.d : e.id === 'yeu_thu' ? 0.6 + 0.3 * mapNow.d : MAP_FIGHT_EV.has(e.id) ? 0.8 + 0.15 * mapNow.d : 1;
       w *= this.tevW(e.id);
@@ -3064,6 +3228,7 @@ export class Game {
     };
     this.s.lives.push(rec);
     if (P.realm >= 3 || P.ascended) this.chron(`${this.fullName()} (${REALMS[P.realm].n}) ${cause}.`, 2);
+    if (P.nemesis && !P.nemesis.won && !P.nemesis.gone) { const nb = this.soul(P.nemesis.id); if (nb) this.relSet(nb, Math.min(-50, this.rel(nb).v), 'thu'); }
     for (const id in this.s.rel) {
       const r = this.s.rel[id];
       const b = this.soul(+id);

@@ -683,3 +683,24 @@ Mô phỏng 42 kiếp mỗi đạo (lịch trình Leo tháp, có rèn đồ):
   - Hàng chip luôn một hàng.
   - Tab Kiếp ghi các kiếp đã qua; sổ sưu tầm (danh hiệu, thể chất) gập lại bên dưới.
 - **Quen người:** thêm cơ hội khi tu luyện trong tông môn (10%/năm) và khi leo tháp (6%/năm).
+
+## Bản 5: Thiên mệnh, Túc địch, Cây Hồn lực (giai đoạn 1 của hướng "roguelite luân hồi")
+
+- **Thiên mệnh** (`js/fate.js`, `DESTINIES`):
+  - Lúc đầu thai bốc 3 lá (thêm 1 lá mỗi cấp "Nhìn thấu thiên cơ") và chọn 1.
+  - Có 15 loại: theo cảnh giới (một số có hạn tuổi), Bảng Thiên Kiêu, tháp 200, khai tông, đạo lữ, 3 tri kỷ, hạ Túc địch, sống 400 tuổi, danh vọng 80, đồ Cực phẩm +5, phi thăng, nối duyên người quen kiếp trước.
+  - Lá khó chỉ ra khi linh hồn từng đạt cảnh giới đủ cao (`need`).
+  - Thiên mệnh đang theo làm kỳ ngộ liên quan ra nhiều hơn ×3 (`DESTINY_EV`); Thiên mệnh về quan hệ làm gặp người nhiều hơn ×2.
+  - Hoàn thành thì có thông báo; Hồn lực được cộng khi kiếp kết thúc.
+- **Túc địch** (`nemTick`, sự kiện `tuc_dich_1..3` trong events5):
+  - Từ 10 tuổi (đã nhập đạo) chọn một linh hồn làm Túc địch. Ưu tiên kẻ thù kiếp trước, không thì người cùng lứa.
+  - Gặp 3 lần: tranh cơ duyên (Luyện Khí), thù sâu thêm (Kim Đan hoặc sau 60 năm), quyết chiến (Nguyên Anh, sau 80 năm, hoặc khi đã sống 60% thọ).
+  - Mỗi lần gặp hắn được nâng lên ngang cảnh giới của ngươi. Hắn không chết trước khi phân thắng bại.
+  - Quyết chiến có thể mất mạng (25%). Thua mà sống thì 30 năm sau tái đấu; thua 2 lần thì hắn thắng hẳn kiếp đó.
+  - Chết khi chưa hạ được thì hắn mang thù sang kiếp sau.
+  - Hạ được: danh vọng +30, một món Cực phẩm, +30 Hồn lực (+50% với "Biết người biết ta").
+- **Cây Hồn lực** (`PERKS`, `s.perks`): mua ở màn đầu thai, giữ mãi.
+  - Tu luyện +10%/cấp, chiến đấu +8%/cấp, thọ +10%/cấp (mỗi loại 3 cấp).
+  - Thêm lá Thiên mệnh, ngộ đạo điểm khi nhập đạo, Hồi Xuân Đan đầu kiếp, túi +4 ô, thắng Túc địch dễ hơn.
+- **HUD:** chip 📜 Thiên mệnh và chip ⚔ Túc địch. Bấm vào mở bảng Thiên mệnh, Túc địch.
+- **Mô phỏng 36 kiếp:** Túc địch gặp đủ 3 lần; quyết chiến thắng 13 kiếp, bị Túc địch giết 7 kiếp. Hồn lực trung bình mỗi kiếp tăng từ 67 lên 98.

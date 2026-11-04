@@ -77,4 +77,42 @@ export const EVENTS5 = [
       ];
     },
   },
+
+  // ================= Túc địch: ba lần gặp, lần cuối là quyết chiến =================
+  {
+    id: 'tuc_dich_1', queued: true, pool: 'doi', title: 'Kẻ tranh cơ duyên',
+    text: (g, { bot: b }) => `Trong khe núi mọc một gốc linh dược ngàn năm. Ngươi vừa đưa tay thì một bóng người lao tới trước: ${b.name} (${g.botRealmN(b)}). Hắn cười lạnh: "Thứ này của ta. Cút."\n\nTừ giây phút ấy, ngươi biết người này sẽ là ${g.nemTitle()} của mình.\n\n${g.oddsText(g.nemOdds(b, 1.25), 0.02, 0)}`,
+    choices: (g, { bot: b }) => {
+      const po = g.nemOdds(b, 1.25);
+      const pm = xp5(0.4 + (st5(g, 'co') - 50) / 100);
+      return [
+        { t: 'Ra tay tranh đoạt', p: po, go: (g) => { const f = g.nemFight(b, 1.25, 0.02); if (f.win) { const t = yrs5(g, 6); g.fame(5); g.nemStep(b, 1); return `${f.text}\n\nNgươi đoạt được linh dược. Tu vi +${t}, danh vọng +5. ${b.name} lau máu khóe miệng: "Ta nhớ mặt ngươi."`; } g.nemStep(b, 1, true); return `${f.text}\n\n${b.name} cầm linh dược bỏ đi, không thèm quay đầu.`; } },
+        { t: 'Dùng mưu đánh lạc hướng', p: pm, go: (g) => { if (g.r.chance(pm)) { const t = yrs5(g, 5); g.nemStep(b, 1); return `Ngươi ném hòn đá về phía bụi rậm, hắn quay đầu, ngươi đã ngắt xong linh dược. Tu vi +${t}. Hắn gào lên tên ngươi giữa rừng.`; } g.hurt(15, `bị ${b.name} đánh chết`); g.nemStep(b, 1, true); return 'Hắn không mắc lừa, một chưởng đánh ngươi văng ra. Bị thương.'; } },
+        { t: 'Nhường, ngày dài còn gặp', go: (g) => { g.stat('tam', 2); g.nemStep(b, 1, true); return `Ngươi lùi lại. ${b.name} cười khẩy, cầm linh dược đi. Tâm tính +2, nhưng hắn sẽ còn mạnh hơn.`; } },
+      ];
+    },
+  },
+  {
+    id: 'tuc_dich_2', queued: true, pool: 'doi', title: 'Mối thù sâu thêm',
+    text: (g, { bot: b }) => `${b.name} (${g.botRealmN(b)}) lại xuất hiện. ${g.nemHarm(b)}\n\n${g.oddsText(g.nemOdds(b, 1.15), 0.08, 0)}`,
+    choices: (g, { bot: b }) => {
+      const po = g.nemOdds(b, 1.15);
+      return [
+        { t: 'Đòi lại công đạo', p: po, go: (g) => { const f = g.nemFight(b, 1.15, 0.08); if (f.win) { g.fame(10); g.addSP(1); g.nemStep(b, 2); return `${f.text}\n\nGiang hồ đồn ầm lên. Danh vọng +10, ngộ đạo điểm +1. ${b.name} bỏ chạy, để lại một câu: "Lần sau, một trong hai ta phải chết."`; } g.nemStep(b, 2, true); const m = Math.floor(g.P.money * 0.3); g.money(-m); return `${f.text}\n\nNgươi thua, mất ${m.toLocaleString('vi-VN')} linh thạch. Hắn mạnh hơn ngươi nghĩ.`; } },
+        { t: 'Nhẫn nhịn, khổ luyện chờ ngày', go: (g) => { g.stat('tam', 3); g.nemStep(b, 2, true); return 'Ngươi nuốt cục tức vào bụng. Tâm tính +3. Đêm ấy ngươi luyện công tới sáng.'; } },
+      ];
+    },
+  },
+  {
+    id: 'tuc_dich_3', queued: true, pool: 'doi', title: 'Quyết chiến',
+    text: (g, { bot: b }) => `Thư khiêu chiến cắm trên cửa động phủ, chữ viết bằng máu: "Đỉnh núi Vọng Nguyệt. Một người đi xuống."\n\n${b.name} đã tu tới ${g.botRealmN(b)}. Đây là trận quyết định giữa hai người. Thua có thể mất mạng.\n\n${g.oddsText(g.nemOdds(b, 1.05), 0.25, 0)}`,
+    choices: (g, { bot: b }) => {
+      const po = g.nemOdds(b, 1.05);
+      const pf = xp5(0.5 + (st5(g, 'co') - 50) / 120);
+      return [
+        { t: 'Lên núi quyết chiến', p: po, go: (g) => { const f = g.nemFight(b, 1.05, 0.25); if (f.win) return `${f.text}\n\n${g.nemWin(b)}`; if (!g.playing) return f.text; return `${f.text}\n\n${g.nemLose(b)}`; } },
+        { t: 'Không đến, ẩn mình chờ thời', p: pf, go: (g) => { if (g.r.chance(pf)) { g.nemDelay(25); return 'Ngươi đóng cửa động phủ. Hắn chờ ba ngày rồi bỏ đi, nhưng thư khiêu chiến sẽ còn quay lại.'; } g.fame(-15); g.nemDelay(15); return 'Cả giang hồ biết ngươi không dám ra mặt. Danh vọng -15. Hắn sẽ còn tìm tới.'; } },
+      ];
+    },
+  },
 ];
