@@ -1287,6 +1287,10 @@ function compareLine(it) {
     <button class="btn ghost sm" data-trial="${it.id}">⚔ Đánh thử</button>${tr ? `<span class="trRes">${isEq ? `Tỉ lệ thắng: <b>${Math.round(tr.now * 100)}%</b>` : `Đang mặc <b>${Math.round(tr.now * 100)}%</b> → mặc món này <b class="${tr.with > tr.now ? 'pos' : tr.with < tr.now ? 'neg' : ''}">${Math.round(tr.with * 100)}%</b>${tr.rl !== null ? ` · xếp lại võ kỹ <b>${Math.round(tr.rl * 100)}%</b>` : ''}`} (sinh lực ${P.hp}/100)</span>` : ''}</div>`);
   return `<div class="cmp">${out.join('')}</div>`;
 }
+/** Khung popup nhỏ cạnh ô (dùng chung cho đồ, kỹ năng, đan phù) */
+const popBox = (ico, title, meta, body, btns) => `<div class="itemPop" id="itemPop"><i class="ipArrow"></i>
+    <div class="ipHead">${ico}<div class="ipT">${title}<span class="meta">${meta}</span></div><button class="ipX" data-ipx="1" aria-label="Đóng">✕</button></div>
+    ${body}${btns ? `<div class="ipBtns">${btns}</div>` : ''}</div>`;
 /** Popup nhỏ cạnh món đồ: tên, chỉ số, so sánh lực chiến, các nút gọn */
 function itemPop(it, isEq) {
   const P = g.P;
@@ -1326,7 +1330,7 @@ function placeItemPop() {
   const pop = $('itemPop');
   if (!pop || bag.sel == null) return;
   const B = $('sheetBody');
-  const tile = B.querySelector(`.tile.sel[data-it="${bag.sel}"]`);
+  const tile = B.querySelector('.tile.sel[data-it], .tile.sel[data-skt], .tile.sel[data-pl]');
   if (!tile) { pop.remove(); return; }
   const card = $('sheet').querySelector('.card');
   const br = B.getBoundingClientRect(), tr = tile.getBoundingClientRect(), cr = card.getBoundingClientRect();
@@ -1413,10 +1417,10 @@ function bagCp() {
     const max = SKILL_MAX(sel);
     const c = g.skillCost(sel);
     const need = sk.realm >= 10 ? '' : REALMS[Math.max(0, sk.realm || 0)].n;
-    detail = `<div class="detail"><div class="item withIco skDetail">${skIco(sel, 'big')}<div class="body"><div class="row"><b>${esc(sk.n)}</b><span class="meta">${SLOT_N[sk.slot]}${open ? ` · cấp ${L}/${max}` : ` · mở ở ${need}`}</span></div>
-      <div class="meta">${esc(sk.desc)}</div>
-      <div class="meta">${sk.kind === 'passive' ? `Hiệu lực x${skillLvMul(sel, L).toFixed(2)}` : `Sức chiêu x${skillLvMul(sel, L).toFixed(2)}`}${sk.mp ? ` · linh lực ${sk.mp}` : ''}${sk.hpCost ? ` · đốt ${Math.round(sk.hpCost * 100)}% máu` : ''}${sk.cd ? ` · hồi ${sk.cd} lượt` : ''}${sk.slot === 'ult' ? ` · tự tung khi ${PATH_RES[P.path].n} đầy` : ''}</div>
-      ${open && L < max ? `<div class="row btnRow"><button class="btn primary" data-sku="${sel}" ${(P.sp || 0) >= c ? '' : 'disabled'}>◈ Nâng lên cấp ${L + 1} · ${c} điểm</button></div>` : open ? '<div class="meta pos">Đã tối đa.</div>' : ''}</div></div></div>`;
+    const info = `${sk.kind === 'passive' ? `Hiệu lực x${skillLvMul(sel, L).toFixed(2)}` : `Sức chiêu x${skillLvMul(sel, L).toFixed(2)}`}${sk.mp ? ` · linh lực ${sk.mp}` : ''}${sk.hpCost ? ` · đốt ${Math.round(sk.hpCost * 100)}% máu` : ''}${sk.cd ? ` · hồi ${sk.cd} lượt` : ''}`;
+    detail = popBox(skIco(sel), `<b>${esc(sk.n)}</b>`, `${SLOT_N[sk.slot]}${open ? ` · cấp ${L}/${max}` : ` · mở ở ${need}`}`,
+      `<div class="ipLine">${esc(sk.desc)}</div><div class="ipPow">${info}</div>`,
+      open && L < max ? `<button class="btn primary sm" data-sku="${sel}" ${(P.sp || 0) >= c ? '' : 'disabled'}>◈ Lên cấp ${L + 1} <small>${c} điểm</small></button>` : open ? '<span class="meta pos">Đã tối đa</span>' : '');
   }
   const mism = g.skillMismatch().length;
   const others = Object.keys(PATHS).filter((k) => k !== P.path);
@@ -1432,7 +1436,7 @@ function bagCp() {
 }
 function bagDan() {
   const P = g.P;
-  const sel = typeof bag.sel === 'string' && PILLS[bag.sel] ? bag.sel : null;
+  const sel = typeof bag.sel === 'string' && (PILLS[bag.sel] || PHU[bag.sel]) ? bag.sel : null;
   const tiles = Object.entries(PILLS).map(([id, p]) => `<button class="tile ${sel === id ? 'sel' : ''} ${(P.pills[id] || 0) ? '' : 'dim'}" data-pl="${id}">${icoImg({ kind: 'dan', q: id === 'dien_tho' || id === 'pha_canh' ? 2 : id === 'bao_khi' ? 3 : 0, col: PILL_COLORS[id] })}<span class="bdg cnt">${P.pills[id] || 0}</span><span class="tn">${esc(p.n)}</span></button>`).join('');
   const phu = Object.entries(PHU).map(([k, x]) => `<button class="tile ${sel === k ? 'sel' : ''} ${(P.phu[k] || 0) ? '' : 'dim'}" data-pl="${k}">${icoImg({ kind: 'ho_phu', q: k === 'truyen_tong' ? 3 : 1 })}<span class="bdg cnt">${P.phu[k] || 0}</span><span class="tn">${esc(x.n)}</span></button>`).join('');
   let detail = '';
@@ -1441,9 +1445,10 @@ function bagDan() {
   if (ps) {
     const id = bag.sel;
     const st = id === 'dien_tho' ? (P.dienTho[P.realm] ? `<div class="sealLine">Đã dùng ở ${REALMS[P.realm].n}, lên cảnh giới mới mới hấp thu được.</div>` : '<div class="meta pos">Cảnh giới này chưa dùng.</div>') : id === 'bao_khi' && P.flags.baoKhi ? '<div class="meta pos">Dược lực đang chờ trận lớn kế tiếp.</div>' : '';
-    detail = `<div class="detail"><div class="item"><div class="row"><b>${esc(ps.n)}</b><span class="meta">Có ${P.pills[id] || 0}</span></div><div class="meta">${esc(ps.desc)}</div>${st}
-      <div class="row btnRow">${id === 'pha_canh' ? '<span class="meta">Dùng khi đột phá</span>' : `<button class="btn primary" data-use="${id}" ${(P.pills[id] || 0) ? '' : 'disabled'}>Dùng</button>`}${!ps.craft ? '<button class="btn ghost" data-goshop="1">🏮 Mua thêm</button>' : ''}</div></div></div>`;
-  } else if (fs) detail = `<div class="detail"><div class="item"><div class="row"><b>${esc(fs.n)}</b><span class="meta">Có ${P.phu[bag.sel] || 0}</span></div><div class="meta">${esc(fs.desc)} Phù sư vẽ được (Mưu sinh).</div></div></div>`;
+    const ico = icoImg({ kind: 'dan', q: id === 'dien_tho' || id === 'pha_canh' ? 2 : id === 'bao_khi' ? 3 : 0, col: PILL_COLORS[id] });
+    detail = popBox(ico, `<b>${esc(ps.n)}</b>`, `Đan dược · có ${P.pills[id] || 0}`, `<div class="ipLine">${esc(ps.desc)}</div>${st}`,
+      `${id === 'pha_canh' ? '<span class="meta">Dùng khi đột phá</span>' : `<button class="btn primary sm" data-use="${id}" ${(P.pills[id] || 0) ? '' : 'disabled'}>Dùng</button>`}${!ps.craft ? '<button class="btn ghost sm" data-goshop="1">🏮 Mua thêm</button>' : ''}`);
+  } else if (fs) detail = popBox(icoImg({ kind: 'ho_phu', q: bag.sel === 'truyen_tong' ? 3 : 1 }), `<b>${esc(fs.n)}</b>`, `Phù · có ${P.phu[bag.sel] || 0}`, `<div class="ipLine">${esc(fs.desc)} Phù sư vẽ được (Mưu sinh).</div>`, '');
   return `${detail}<h3>Đan dược</h3><div class="grid5">${tiles}</div><h3>Phù</h3><div class="grid5">${phu}</div>${pillOpts()}
     <div class="row btnRow"><button class="btn ${g.s.opt.autoBaoKhi !== false ? 'on' : 'ghost'}" data-opt2="autoBaoKhi">Trận lớn tự uống Bạo Khí Đan: ${g.s.opt.autoBaoKhi !== false ? 'bật' : 'tắt'}</button></div>`;
 }
@@ -1492,7 +1497,7 @@ function openBag(tabId) {
       const twice = (k, it, fn) => { if (it && it.q >= 3 && bag.confirm !== `${k}:${it.id}`) { bag.confirm = `${k}:${it.id}`; return ''; } bag.confirm = null; bag.sel = null; return undoable(fn); };
       q('[data-undo]', () => g.undoLast() || '');
       q('[data-ipx]', () => { bag.sel = null; });
-      if (bag.tab === 'eq') {
+      if (bag.tab === 'eq' || bag.tab === 'cp' || bag.tab === 'dan') {
         placeItemPop();
         // chạm chỗ trống trong túi thì đóng popup
         B.onclick = (e) => { if (bag.sel != null && !e.target.closest('button, .itemPop, select, input')) { bag.sel = null; draw(); } };
