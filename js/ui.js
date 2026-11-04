@@ -1815,6 +1815,14 @@ function fsInfo() {
 }
 
 // ---------- Vòng lặp ----------
+/** Có kỳ ngộ: nhật ký chỉ hiện khi còn đủ chỗ (từ 120px), không thì ẩn hẳn để khỏi bị ép thành một khe */
+function fitEv() {
+  const B = document.body;
+  if (!B.classList.contains('evOpen') || $('evPanel').hidden) { B.classList.remove('evTight'); return; }
+  if (!B.classList.contains('evTight')) { if ($('tabbody').clientHeight < 120) B.classList.add('evTight'); return; }
+  const gap = $('dock').getBoundingClientRect().top - $('evPanel').getBoundingClientRect().bottom;
+  if (gap > 120 + 90) B.classList.remove('evTight'); // 90: chỗ cho hàng tab và hàng lọc
+}
 function frame(t) {
   const dt = Math.min(250, t - lastT);
   lastT = t;
@@ -1861,6 +1869,7 @@ function frame(t) {
   if (dirty) render();
   if (g.s.toasts && g.s.toasts.length) showToasts();
   if (t - lastSave > 5000) save();
+  fitEv();
   requestAnimationFrame(frame);
 }
 
