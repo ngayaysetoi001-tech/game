@@ -1307,8 +1307,6 @@ function itemPop(it, isEq) {
       if (parts.length) cmp += `<div class="ipDiff">${parts.join(' ')}</div>`;
     }
   }
-  const tr = bag.trialRes && bag.trialRes.id === it.id && bag.trialRes.t === bag.trial ? bag.trialRes : null;
-  const trTxt = tr ? (isEq ? `thắng ${Math.round(tr.now * 100)}%` : `${Math.round(tr.now * 100)}% → <b class="${tr.with > tr.now ? 'pos' : tr.with < tr.now ? 'neg' : ''}">${Math.round(tr.with * 100)}%</b>`) : '';
   const btns = [];
   btns.push(isEq ? `<button class="btn ghost sm" data-un="${it.slot}">Tháo</button>` : `<button class="btn primary sm" data-eq="${it.id}">Mang</button>`);
   btns.push(`<button class="btn ghost sm" data-lock="${it.id}" title="${it.lock ? 'Mở khóa' : 'Khóa'}">${it.lock ? '🔓' : '🔒'}</button>`);
@@ -1318,7 +1316,6 @@ function itemPop(it, isEq) {
     const c = g.enhanceCost(it);
     btns.push(`<button class="btn ghost sm" data-enh="${it.id}" ${g.canPay(c) ? '' : 'disabled'} title="Cường hóa: ${esc(stripTok(costText(c)))}">⚒ +${(it.plus || 0) + 1} · ${Math.round(g.enhanceChance(it) * 100)}%</button>`);
   }
-  btns.push(`<button class="btn ghost sm" data-trial="${it.id}" title="Đánh thử với quái vùng đang đi">⚔ Thử${trTxt ? ` <span class="trRes">${trTxt}</span>` : ''}</button>`);
   return `<div class="itemPop" id="itemPop"><i class="ipArrow"></i>
     <div class="ipHead">${itemIco(it)}<div class="ipT"><b class="${qCls(it.q)}">${esc(itemName(it))}</b><span class="meta">${QUALITY[it.q].n} · ${SLOTS[it.slot]}${wt}${isEq ? ' · đang mặc' : ''}</span></div><button class="ipX" data-ipx="1" aria-label="Đóng">✕</button></div>
     <div class="ipLine">${esc(itemLine(it))}</div>${ttLine(it)}${cmp}
