@@ -879,6 +879,7 @@ function openSheet(html, bind) {
   const keep = card.scrollTop;
   if ($('tip')) $('tip').hidden = true;
   $('sheetClose').hidden = false;
+  $('sheetBody').onclick = null;
   $('sheetBody').innerHTML = html;
   $('sheet').hidden = false;
   // mở mới thì lên đầu, vẽ lại (bấm Đeo, Mua...) thì giữ chỗ đang xem
@@ -1286,6 +1287,67 @@ function compareLine(it) {
     <button class="btn ghost sm" data-trial="${it.id}">⚔ Đánh thử</button>${tr ? `<span class="trRes">${isEq ? `Tỉ lệ thắng: <b>${Math.round(tr.now * 100)}%</b>` : `Đang mặc <b>${Math.round(tr.now * 100)}%</b> → mặc món này <b class="${tr.with > tr.now ? 'pos' : tr.with < tr.now ? 'neg' : ''}">${Math.round(tr.with * 100)}%</b>${tr.rl !== null ? ` · xếp lại võ kỹ <b>${Math.round(tr.rl * 100)}%</b>` : ''}`} (sinh lực ${P.hp}/100)</span>` : ''}</div>`);
   return `<div class="cmp">${out.join('')}</div>`;
 }
+/** Popup nhỏ cạnh món đồ: tên, chỉ số, so sánh lực chiến, các nút gọn */
+function itemPop(it, isEq) {
+  const P = g.P;
+  const wt = it.wt ? ` · ${WEAPON_TYPES[it.wt].n}` : '';
+  const cf = (k) => bag.confirm === `${k}:${it.id}`;
+  const cur = P.eq[it.slot];
+  let cmp = '';
+  if (!isEq) {
+    const gn = g.swapGain(it);
+    cmp = `<div class="ipPow">Lực chiến <b class="${gn > 0.005 ? 'pos' : gn < -0.005 ? 'neg' : ''}">${pctS(gn)}</b>${cur ? ` so với ${esc(itemName(cur))}` : ''}</div>`;
+    if (cur) {
+      const a = gearStats({ x: it }, P.realm), b = gearStats({ x: cur }, P.realm);
+      const parts = [['atk', 'Công'], ['def', 'Thủ'], ['hp', 'Máu'], ['crit', 'Bạo', 100], ['dodge', 'Né', 100], ['ls', 'Hút', 100], ['sp', 'Tốc']].map(([k, n, m = 1]) => {
+        const d = ((a[k] || 0) - (b[k] || 0)) * m;
+        if (Math.abs(d) < (m > 1 ? 0.5 : 1)) return '';
+        return `<span class="${d > 0 ? 'pos' : 'neg'}">${n} ${d > 0 ? '+' : '−'}${fmt(Math.abs(d))}${m > 1 ? '%' : ''}</span>`;
+      }).filter(Boolean);
+      if (parts.length) cmp += `<div class="ipDiff">${parts.join(' ')}</div>`;
+    }
+  }
+  const tr = bag.trialRes && bag.trialRes.id === it.id && bag.trialRes.t === bag.trial ? bag.trialRes : null;
+  const trTxt = tr ? (isEq ? `thắng ${Math.round(tr.now * 100)}%` : `${Math.round(tr.now * 100)}% → <b class="${tr.with > tr.now ? 'pos' : tr.with < tr.now ? 'neg' : ''}">${Math.round(tr.with * 100)}%</b>`) : '';
+  const btns = [];
+  btns.push(isEq ? `<button class="btn ghost sm" data-un="${it.slot}">Tháo</button>` : `<button class="btn primary sm" data-eq="${it.id}">Mang</button>`);
+  btns.push(`<button class="btn ghost sm" data-lock="${it.id}" title="${it.lock ? 'Mở khóa' : 'Khóa'}">${it.lock ? '🔓' : '🔒'}</button>`);
+  if (!isEq && !it.lock) btns.push(`<button class="btn ${cf('sell') ? 'danger' : 'ghost'} sm" data-sell="${it.id}" title="Bán">${cf('sell') ? 'Bấm lại để bán' : `💰 ${fmtShort(it.val)}`}</button>`);
+  if (!isEq) btns.push(`<button class="btn ${cf('salv') ? 'danger' : 'ghost'} sm" data-salv="${it.id}" title="Phân giải">${cf('salv') ? 'Bấm lại' : '♻'}</button>`);
+  if (g.forgeOpen() && (it.plus || 0) < PLUS_MAX) {
+    const c = g.enhanceCost(it);
+    btns.push(`<button class="btn ghost sm" data-enh="${it.id}" ${g.canPay(c) ? '' : 'disabled'} title="Cường hóa: ${esc(stripTok(costText(c)))}">⚒ +${(it.plus || 0) + 1} · ${Math.round(g.enhanceChance(it) * 100)}%</button>`);
+  }
+  btns.push(`<button class="btn ghost sm" data-trial="${it.id}" title="Đánh thử với quái vùng đang đi">⚔ Thử${trTxt ? ` <span class="trRes">${trTxt}</span>` : ''}</button>`);
+  return `<div class="itemPop" id="itemPop"><i class="ipArrow"></i>
+    <div class="ipHead">${itemIco(it)}<div class="ipT"><b class="${qCls(it.q)}">${esc(itemName(it))}</b><span class="meta">${QUALITY[it.q].n} · ${SLOTS[it.slot]}${wt}${isEq ? ' · đang mặc' : ''}</span></div><button class="ipX" data-ipx="1" aria-label="Đóng">✕</button></div>
+    <div class="ipLine">${esc(itemLine(it))}</div>${ttLine(it)}${cmp}
+    <div class="ipBtns">${btns.join('')}</div></div>`;
+}
+/** Đặt popup ngay dưới (hoặc trên) ô đồ đang chọn */
+function placeItemPop() {
+  const pop = $('itemPop');
+  if (!pop || bag.sel == null) return;
+  const B = $('sheetBody');
+  const tile = B.querySelector(`.tile.sel[data-it="${bag.sel}"]`);
+  if (!tile) { pop.remove(); return; }
+  const card = $('sheet').querySelector('.card');
+  const br = B.getBoundingClientRect(), tr = tile.getBoundingClientRect(), cr = card.getBoundingClientRect();
+  const w = Math.min(300, br.width - 8);
+  pop.style.width = `${w}px`;
+  const h = pop.offsetHeight;
+  const cx = tr.left + tr.width / 2 - br.left;
+  const left = Math.max(4, Math.min(br.width - w - 4, cx - w / 2));
+  const below = tr.bottom + 8 + h <= cr.bottom || tr.top - 8 - h < cr.top;
+  const top = below ? tr.bottom - br.top + 8 : tr.top - br.top - 8 - h;
+  pop.style.left = `${left}px`;
+  pop.style.top = `${top}px`;
+  pop.classList.toggle('up', !below);
+  pop.querySelector('.ipArrow').style.left = `${Math.max(14, Math.min(w - 14, cx - left))}px`;
+  const pr = pop.getBoundingClientRect();
+  if (pr.bottom > cr.bottom) card.scrollTop += pr.bottom - cr.bottom + 8;
+  else if (pr.top < cr.top) card.scrollTop -= cr.top - pr.top + 8;
+}
 function itemTile(it, extra = '') {
   const P = g.P;
   const on = Object.values(P.eq).includes(it);
@@ -1314,9 +1376,7 @@ function bagEq() {
   const cf = (k) => bag.confirm === `${k}:${sel.id}`;
   const sellB = sel && !isEq ? (sel.lock ? '<span class="meta">Đã khóa: không bán, phân giải được</span>'
     : `<button class="btn ${cf('sell') ? 'danger' : 'ghost'}" data-sell="${sel.id}">${cf('sell') ? `Bấm lần nữa để bán ${QUALITY[sel.q].n}` : `💰 Bán · ${fmt(sel.val)}`}</button><button class="btn ${cf('salv') ? 'danger' : 'ghost'}" data-salv="${sel.id}" title="${esc(stripTok(g.matText(g.salvageYield(sel))))}">${cf('salv') ? 'Bấm lần nữa để phân giải' : '♻ Phân giải'}</button>`) : '';
-  const detail = sel ? `<div class="detail">${itemCard(sel, isEq
-    ? `<button class="btn ghost" data-un="${sel.slot}">Tháo</button>${lockB}${forgeBtns(sel)}`
-    : `<button class="btn primary" data-eq="${sel.id}">Mang</button>${lockB}${sellB}${forgeBtns(sel)}`)}${compareLine(sel)}</div>` : '';
+  const detail = sel ? itemPop(sel, isEq) : '';
   const picked = [...bag.picked].filter((id) => P.bag.some((x) => x.id === id));
   const cap = g.bagCap();
   const emptyCells = Array.from({ length: Math.max(0, cap - list.length) }, () => '<div class="tile cell"></div>').join('');
@@ -1434,6 +1494,12 @@ function openBag(tabId) {
       const undoable = (fn) => { g.undoStart(); const m = fn(); if (g.undoEnd()) undoUntil = performance.now() + 10000; return m; };
       const twice = (k, it, fn) => { if (it && it.q >= 3 && bag.confirm !== `${k}:${it.id}`) { bag.confirm = `${k}:${it.id}`; return ''; } bag.confirm = null; bag.sel = null; return undoable(fn); };
       q('[data-undo]', () => g.undoLast() || '');
+      q('[data-ipx]', () => { bag.sel = null; });
+      if (bag.tab === 'eq') {
+        placeItemPop();
+        // chạm chỗ trống trong túi thì đóng popup
+        B.onclick = (e) => { if (bag.sel != null && !e.target.closest('button, .itemPop, select, input')) { bag.sel = null; draw(); } };
+      } else B.onclick = null;
       q('[data-lock]', (b) => g.toggleLock(+b.dataset.lock));
       q('[data-qr]', (b) => { const [qq, k] = b.dataset.qr.split(':'); g.s.opt.qRule = { ...(g.s.opt.qRule || {}), [qq]: k }; });
       q('[data-bx]', (b) => g.expandBag(b.dataset.bx) || 'Không đủ.');
