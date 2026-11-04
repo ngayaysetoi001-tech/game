@@ -174,7 +174,7 @@ function statInfo(k, P) {
   if (k === 'pill') return { n: 'Hồi Xuân Đan', val: String(P.pills.hoi_xuan || 0), about: 'Đan chữa thương, tự uống khi trọng thương.', now: ['Giữ mạng khi lịch luyện, vượt tháp'], up: ['Mua ở Tụ Bảo Lâu', 'Luyện đan (nghề phụ)', 'Phần thưởng kỳ ngộ'] };
   if (k === 'money') return { n: 'Linh thạch', val: fmt(P.money), about: 'Tiền tệ của giới tu tiên.', now: ['Mua đan dược, pháp khí, bí kíp ở Tụ Bảo Lâu; đấu giá; chuộc người; cược', 'Có 5.000 mở danh hiệu Phú Giáp Nhất Phương'], up: ['Mưu sinh (tăng theo cảnh giới và cơ duyên)', 'Hộ tống thương đội, đầu tư thương hội, linh mạch, kho báu, bán đồ thừa'] };
   if (k === 'fame') return { n: 'Danh vọng', val: fmt(P.fame), about: 'Tiếng tăm trên giang hồ.', now: ['Giúp tự minh oan khi bị vu cáo', 'Đạt 50 và 200 mở danh hiệu'], up: ['Thắng trận, đột phá, cứu người, thắng lôi đài, hạ yêu vương, trừ huyết trận'] };
-  if (k === 'tuvi') return { n: 'Tu vi', val: playing ? `${fmt(P.tuvi)}/${fmt(g.need())}` : '-', about: 'Công lực tích lũy ở cảnh giới hiện tại. Đầy thì có thể đột phá. Phần màu cam cuối thanh là tu vi chưa vững (có từ vượt tháp, lịch luyện): tu luyện, bế quan sẽ củng cố. Đột phá khi còn nhiều tu vi chưa vững thì tỉ lệ giảm tới 30%.', now: playing ? [`Mỗi năm tu luyện được khoảng ${fmt(g.gain())} tu vi`, `Chưa vững: ${fmt(P.loose || 0)} (${Math.round(((P.loose || 0) / Math.max(1, g.need())) * 100)}% tu vi cần)`, `Tỉ lệ đột phá hiện tại ~${Math.round(g.breakChance() * 100)}%`, ...g.brkMods().map((x) => `${x.n}: ${pc(x.v)} đột phá`)] : [], up: ['Tu luyện (đủ, củng cố căn cơ), bế quan (x1,6, củng cố rất nhanh; tử quan từ 50 năm x2)', 'Vượt tháp, lịch luyện cho tu vi chưa vững', 'Linh căn, ngộ tính, tông môn (+20%), thể chất, Vô tình, thần thông, đạo lộ'] };
+  if (k === 'tuvi') return { n: 'Tu vi', val: playing ? `${fmt(P.tuvi)}/${fmt(g.need())}` : '-', about: 'Công lực tích lũy ở cảnh giới hiện tại. Đầy thì có thể đột phá. Phần màu cam cuối thanh là tu vi chưa vững (có từ vượt tháp, lịch luyện): tu luyện sẽ củng cố. Đột phá khi còn nhiều tu vi chưa vững thì tỉ lệ giảm tới 30%.', now: playing ? [`Mỗi năm tu luyện được khoảng ${fmt(g.gain())} tu vi`, `Chưa vững: ${fmt(P.loose || 0)} (${Math.round(((P.loose || 0) / Math.max(1, g.need())) * 100)}% tu vi cần)`, `Tỉ lệ đột phá hiện tại ~${Math.round(g.breakChance() * 100)}%`, ...g.brkMods().map((x) => `${x.n}: ${pc(x.v)} đột phá`)] : [], up: ['Tu luyện (đủ, củng cố căn cơ), bế quan (x1,6, củng cố rất nhanh; tử quan từ 50 năm x2)', 'Vượt tháp, lịch luyện cho tu vi chưa vững', 'Linh căn, ngộ tính, tông môn (+20%), thể chất, Vô tình, thần thông, đạo lộ'] };
   if (k.startsWith('f_') && playing) {
     const F = g.playerFighter();
     const gs = gearStats(P.eq || {}, P.realm);
@@ -187,7 +187,7 @@ function statInfo(k, P) {
     }[k];
     if (X) return { n: X[0], val: X[1], about: X[2], now: X[3], up: X[4] };
   }
-  if (k === 'sat') return { n: 'Sát khí', val: playing ? Math.round(P.sat) : '-', about: 'Tích tụ khi vượt tháp, lịch luyện, chiến đấu. Vùng càng khó tích càng nhanh.', now: [`Từ ${g.satLine(50)}: tu vi từ chiến đấu -20%`, `Từ ${g.satLine(70)}: đột phá -10%, dễ gặp tâm ma`, '100: tẩu hỏa nhập ma (trọng thương, mất 20% tu vi)', 'Tinh Thần Lực xả sát khí nhanh hơn 30%'], up: ['Tu luyện (xả chậm), bế quan (xả rất nhanh, đủ 10 năm thì sạch), kết giao (vừa), mưu sinh (ít)', 'Đạo lữ song tu, Ngưng Thần Đan (-40)'], upTitle: 'Cách giảm' };
+  if (k === 'sat') return { n: 'Sát khí', val: playing ? Math.round(P.sat) : '-', about: 'Tích tụ khi vượt tháp, lịch luyện, chiến đấu. Vùng càng khó tích càng nhanh.', now: [`Từ ${g.satLine(50)}: tu vi từ chiến đấu -20%`, `Từ ${g.satLine(70)}: đột phá -10%, dễ gặp tâm ma`, '100: tẩu hỏa nhập ma (trọng thương, mất 20% tu vi)', 'Tinh Thần Lực xả sát khí nhanh hơn 30%'], up: ['Tu luyện (xả nhanh nhất), mưu sinh (ít)', 'Đạo lữ song tu, Ngưng Thần Đan (-40)'], upTitle: 'Cách giảm' };
   if (k === 'hp') { const w = woundLv(P.hp); return { n: 'Thương thế', val: WOUND_N[w], about: 'Bị thương do yêu thú, hiểm địa, kỳ ngộ. Nặng quá thì mất mạng.', now: [w === 0 ? 'Khỏe mạnh: chiến đấu bình thường' : `Đang ${WOUND_N[w].toLowerCase()}: sức chiến đấu x${(0.5 + P.hp / 200).toFixed(2)}`, w >= 2 ? 'Trọng thương: tu luyện chậm, lịch luyện tự rút về vùng dễ' : 'Trọng thương thì tu luyện chậm, lịch luyện tự rút về vùng dễ', 'Nguy kịch: tự uống Hồi Xuân Đan nếu có'], up: ['Tu luyện dưỡng thương nhanh nhất, Mưu sinh vừa, Lịch luyện gần như không hồi', 'Hồi Xuân Đan', 'Thể chất, thần thông hồi phục'] }; }
   if (k === 'tho') return { n: 'Thọ nguyên', val: playing ? `${P.age}/${g.lifespan()}` : '-', about: 'Hết thọ là tọa hóa.', now: ['Mỗi lần đột phá lên cảnh giới mới thì thọ nguyên tăng mạnh', 'Căn cốt cao thì sống lâu hơn'], up: ['Đột phá cảnh giới', 'Diên Thọ Đan (+5%, mỗi cảnh giới một viên)', 'Tìm thuốc trường sinh lúc tuổi già, Huyền Quy, thể chất, thần thông Trường Sinh'] };
   return null;
@@ -351,7 +351,7 @@ function renderPlay() {
   const warn = [];
   if (P.flags.neck && P.flags.neck.realm === P.realm) warn.push(`<button class="hudWarn" data-hw="neck">⛓ Bình cảnh nhỏ · ${Math.max(0, P.flags.neck.until - P.age)} năm</button>`);
   if (g.s.opt && g.s.opt.autoEquip === false && g.skillMismatch().length) warn.push('<button class="hudWarn" data-hw="wep">⚠ Binh khí không hợp đạo</button>');
-  if (strongerGear()) warn.push('<button class="hudWarn" data-hw="gear">⚠ Có đồ mạnh hơn</button>');
+  if (g.s.opt.autoEquip === false && strongerGear()) warn.push('<button class="hudWarn" data-hw="gear">⚠ Có đồ mạnh hơn</button>');
   if (g.atPlaneTop() && P.tuvi >= g.need() && !(P.tokens && P.tokens[P.plane])) warn.push(`<button class="hudWarn" data-hw="tower">🗼 Cần ${PLANES[P.plane].token}</button>`);
   // chip trạng thái: tháp, sát khí, lịch trình
   const chips = [];
@@ -1265,7 +1265,7 @@ function compareLine(it) {
       const L = g.loadoutFor(it.wt);
       if (L.join() !== P.loadout.join()) {
         const gr = g.swapGain(it, true);
-        if (gr > gn + 0.01) out.push(`<div class="pw">Mặc + xếp lại võ kỹ hợp ${WEAPON_TYPES[it.wt].n.toLowerCase()}: <b class="${gr > 0 ? 'pos' : 'neg'}">${pctS(gr)}</b> <button class="btn ghost sm" data-eqrl="${it.id}">Mặc + xếp võ kỹ</button></div>`);
+        if (gr > gn + 0.01) out.push(`<div class="pw">Mặc + xếp lại kỹ năng hợp ${WEAPON_TYPES[it.wt].n.toLowerCase()}: <b class="${gr > 0 ? 'pos' : 'neg'}">${pctS(gr)}</b> <button class="btn ghost sm" data-eqrl="${it.id}">Mặc + xếp võ kỹ</button></div>`);
       }
     }
     if (cur) {
@@ -1330,7 +1330,7 @@ function placeItemPop() {
   const pop = $('itemPop');
   if (!pop || bag.sel == null) return;
   const B = $('sheetBody');
-  const tile = B.querySelector('.tile.sel[data-it], .tile.sel[data-skt], .tile.sel[data-pl]');
+  const tile = B.querySelector('.tile.sel[data-it], .tile.sel[data-skt], .tile.sel[data-pl], .tile.sel[data-mt]');
   if (!tile) { pop.remove(); return; }
   const card = $('sheet').querySelector('.card');
   const br = B.getBoundingClientRect(), tr = tile.getBoundingClientRect(), cr = card.getBoundingClientRect();
@@ -1457,7 +1457,7 @@ function bagNl() {
   const groups = [['Cơ bản', (k, m) => !m.aff && !RARE_MATS_UI.has(k) && m.q < 3], ['Dẫn liệu (tẩy luyện, rèn ra dòng chọn sẵn)', (k, m) => !!m.aff], ['Hiếm', (k, m) => !m.aff && (RARE_MATS_UI.has(k) || m.q >= 3)]];
   const sel = typeof bag.sel === 'string' && MATS[bag.sel] ? bag.sel : null;
   const tile = (k) => `<button class="tile q${Math.min(4, MATS[k].q)} ${sel === k ? 'sel' : ''} ${(P.mats[k] || 0) ? '' : 'dim'}" data-mt="${k}">${matIco(k)}<span class="bdg cnt">${fmt(P.mats[k] || 0)}</span><span class="tn">${esc(MATS[k].n)}</span></button>`;
-  const detail = sel ? `<div class="detail"><div class="item withIco">${matIco(sel)}<div class="body"><div class="row"><b>${esc(MATS[sel].n)}</b><span class="meta">Có ${fmt(P.mats[sel] || 0)}</span></div><div class="meta">${esc(MATS[sel].desc)}</div></div></div></div>` : '';
+  const detail = sel ? popBox(matIco(sel), `<b>${esc(MATS[sel].n)}</b>`, `Nguyên liệu · có ${fmt(P.mats[sel] || 0)}`, `<div class="ipLine">${esc(MATS[sel].desc)}</div>`, '') : '';
   return `${detail}${groups.map(([n, f]) => { const ks = Object.keys(MATS).filter((k) => f(k, MATS[k]) && ((P.mats[k] || 0) > 0 || MATS[k].plane === undefined || (MATS[k].plane || 0) <= g.plane)); return ks.length ? `<h3>${n}</h3><div class="grid5">${ks.map(tile).join('')}</div>` : ''; }).join('')}
     <div class="row btnRow"><button class="btn primary" data-goforge="" ${g.forgeOpen() ? '' : 'disabled'}>⚒ Tới Lò rèn</button></div>`;
 }
@@ -1497,7 +1497,7 @@ function openBag(tabId) {
       const twice = (k, it, fn) => { if (it && it.q >= 3 && bag.confirm !== `${k}:${it.id}`) { bag.confirm = `${k}:${it.id}`; return ''; } bag.confirm = null; bag.sel = null; return undoable(fn); };
       q('[data-undo]', () => g.undoLast() || '');
       q('[data-ipx]', () => { bag.sel = null; });
-      if (bag.tab === 'eq' || bag.tab === 'cp' || bag.tab === 'dan') {
+      if (bag.tab !== 'set') {
         placeItemPop();
         // chạm chỗ trống trong túi thì đóng popup
         B.onclick = (e) => { if (bag.sel != null && !e.target.closest('button, .itemPop, select, input')) { bag.sel = null; draw(); } };
@@ -1505,7 +1505,7 @@ function openBag(tabId) {
       q('[data-lock]', (b) => g.toggleLock(+b.dataset.lock));
       q('[data-qr]', (b) => { const [qq, k] = b.dataset.qr.split(':'); g.s.opt.qRule = { ...(g.s.opt.qRule || {}), [qq]: k }; });
       q('[data-bx]', (b) => g.expandBag(b.dataset.bx) || 'Không đủ.');
-      q('[data-eqrl]', (b) => { g.equip(+b.dataset.eqrl, true); g.autoLoadout(); return `Đã mặc và xếp võ kỹ: ${g.P.loadout.map((id) => SKILLS[id].n).join(', ')}.`; });
+      q('[data-eqrl]', (b) => { g.equip(+b.dataset.eqrl, true); g.autoLoadout(); return `Đã mặc và xếp kỹ năng: ${g.P.loadout.map((id) => SKILLS[id].n).join(', ')}.`; });
       q('[data-trt]', (b) => { bag.trial = b.dataset.trt; });
       q('[data-trial]', (b) => {
         const it = g.findItem(+b.dataset.trial);
@@ -1543,10 +1543,10 @@ function openBag(tabId) {
       q('[data-skt]', (b) => { bag.sel = bag.sel === b.dataset.skt ? null : b.dataset.skt; });
       q('[data-sku]', (b) => g.upgradeSkill(b.dataset.sku) || 'Chưa đủ ngộ đạo điểm.');
       q('[data-cpath]', (b) => { const k = b.dataset.cpath; if (bag.confirm !== `cp:${k}`) { bag.confirm = `cp:${k}`; return ''; } bag.confirm = null; bag.sel = null; return g.changePath(k) || ''; });
-      q('[data-hs]', () => 'Chạm một võ kỹ bên dưới rồi chọn ô để đặt vào.');
+      q('[data-hs]', () => 'Chạm một kỹ năng bên dưới rồi chọn ô để đặt vào.');
       q('[data-put]', (b) => { g.setSkillSlot(+b.dataset.put, bag.sel); });
       q('[data-rm]', () => { g.toggleSkill(bag.sel); });
-      q('[data-autosk]', () => (g.autoLoadout() ? `Đã xếp: ${g.P.loadout.map((id) => SKILLS[id].n).join(', ')}.` : 'Bộ võ kỹ đang mang đã hợp nhất rồi.'));
+      q('[data-autosk]', () => (g.autoLoadout() ? `Đã xếp: ${g.P.loadout.map((id) => SKILLS[id].n).join(', ')}.` : 'Bộ kỹ năng đang mang đã hợp nhất rồi.'));
       q('[data-tc]', (b) => g.setTactic(b.dataset.tc));
             q('[data-pl]', (b) => { bag.sel = bag.sel === b.dataset.pl ? null : b.dataset.pl; });
       q('[data-mt]', (b) => { bag.sel = bag.sel === b.dataset.mt ? null : b.dataset.mt; });
@@ -1600,8 +1600,8 @@ function showToasts() {
   const el = $('toast');
   el.className = `toast t${t.tier}`;
   el.innerHTML = t.msg
-    ? `<div class="meta">${esc(t.head || 'Tin mới')}</div><div class="toastMsg">${rich(t.msg)}</div>`
-    : `<div class="meta">Danh hiệu mới</div><div class="ttl t${t.tier} big"><span>${esc(t.n)}</span></div><div class="meta">Khi đeo: ${esc(t.bonus)}</div>`;
+    ? `<b class="tHead">${esc(t.head || 'Tin mới')}</b><span class="toastMsg">${rich(t.msg)}</span>`
+    : `<b class="tHead">🏅 Danh hiệu mới</b><span class="ttl t${t.tier} mini"><span>${esc(t.n)}</span></span><span class="meta">${esc(t.bonus)}</span>`;
   el.hidden = false;
   void el.offsetWidth;
   el.classList.add('show');

@@ -141,7 +141,7 @@ export const ACTIONS = {
 
 // Đan dược bán ở Tụ Bảo Lâu. price là giá ở Phàm Nhân, nhân (1 + cảnh giới) khi mua.
 export const PILLS = {
-  hoi_xuan: { n: 'Hồi Xuân Đan', price: 25, desc: 'Hồi 40 sinh lực.' },
+  hoi_xuan: { n: 'Hồi Xuân Đan', price: 25, desc: 'Chữa thương: hồi 40 (trọng thương thành thương nhẹ).' },
   pha_canh: { n: 'Phá Cảnh Đan', price: 100, desc: 'Dùng khi đột phá: tỉ lệ +10%.' },
   dien_tho: { n: 'Diên Thọ Đan', price: 120, desc: 'Thọ nguyên +5%. Mỗi cảnh giới chỉ hấp thu được một viên.' },
   tinh_tam: { n: 'Tĩnh Tâm Đan', price: 40, desc: 'Tâm tính +6. Phá được bình cảnh nhỏ.' },
@@ -201,7 +201,7 @@ export const THE_CHAT = [
   { id: 'huyen_bang', n: 'Huyền Băng Thể', tier: 2, w: 1.2, desc: 'Tâm tính +8, tu luyện +10%, tâm ma hiếm khi gặp.', fx: { tam: 8, gainMul: 1.1, evW: { tam_ma: 0.5 } } },
   { id: 'tiem_long', n: 'Tiềm Long Thể', tier: 2, w: 1.2, desc: 'Rồng nằm dưới vực: đến Trúc Cơ tu luyện -20%, từ Nguyên Anh trở đi +50%.', fx: { earlyGain: 0.8, lateGain: 1.5 } },
   { id: 'than_dong', n: 'Thần Đồng Thể', tier: 2, w: 1.2, desc: 'Đến Trúc Cơ tu luyện +60%. Từ Nguyên Anh trở đi -15%.', fx: { earlyGain: 1.6, lateGain: 0.85 } },
-  { id: 'thach_tam', n: 'Thạch Tâm Thể', tier: 2, w: 1.2, desc: 'Ngồi yên như đá: bế quan hiệu quả gấp rưỡi. Ít gặp kỳ ngộ hơn 30%.', fx: { closedMul: 1.5, eventRate: 0.7 } },
+  { id: 'thach_tam', n: 'Thạch Tâm Thể', tier: 2, w: 1.2, desc: 'Ngồi yên như đá: tu luyện hiệu quả gấp rưỡi. Ít gặp kỳ ngộ hơn 30%.', fx: { closedMul: 1.5, eventRate: 0.7 } },
   { id: 'tu_bao', n: 'Tụ Bảo Thể', tier: 2, w: 1.2, desc: 'Tiền tự tìm đến: mưu sinh kiếm gấp đôi, cơ duyên +5. Kẻ tham dễ sinh lòng phản.', fx: { moneyMul: 2, co: 5, evW: { phan_boi: 2 } } },
   { id: 'huyet_sat', n: 'Huyết Sát Thể', tier: 2, w: 1.2, desc: 'Sức chiến đấu +15%, mỗi trận thắng tu vi bằng hai năm tu luyện. Khởi đầu Vô tình -20.', fx: { fightMul: 1.15, winTuvi: 2, tinh: -20 } },
   // --- Truyền thuyết ---
@@ -269,7 +269,7 @@ export const TITLES = [
   { id: 'bang_thu', n: 'Thiên Kiêu Bảng Thủ', cond: 'Giữ ngôi đầu Bảng Thiên Kiêu 100 năm', bonus: 'Tu luyện +8%, chiến đấu +5%', fx: { gainMul: 1.08, fightMul: 1.05 }, check: (g) => g.P.cnt.top1 >= 100 },
   { id: 'tru_cot', n: 'Trụ Cột Sơn Môn', cond: 'Mạnh nhất tông môn của mình', bonus: 'Tu luyện +5%', fx: { gainMul: 1.05 }, check: (g) => !!g.P.sect && g.P.realm >= 2 && g.members(g.P.sect).every((b) => b.realm < g.P.realm || (b.realm === g.P.realm && b.tuvi <= g.P.tuvi)) },
   { id: 'tang_bao', n: 'Tàng Bảo Các Chủ', cond: 'Mang một món Cực phẩm trở lên', bonus: 'Kỳ ngộ +5%', fx: { eventRate: 1.05 }, check: (g) => Object.values(g.P.eq || {}).some((it) => it && it.q >= 3) },
-  { id: 'vo_hoc', n: 'Võ Học Tông Sư', cond: 'Biết 8 võ kỹ', bonus: 'Chiến đấu +4%', fx: { fightMul: 1.04 }, check: (g) => g.P.skills.length >= 8 },
+  { id: 'vo_hoc', n: 'Võ Học Tông Sư', cond: 'Mở đủ 8 kỹ năng của đạo lộ', bonus: 'Chiến đấu +4%', fx: { fightMul: 1.04 }, check: (g) => Object.keys(g.skillLvs()).length >= 8 },
   { id: 'tong_su_ren', n: 'Luyện Khí Tông Sư', cond: 'Tay nghề rèn đạt 100', bonus: 'Cường hóa, rèn +5%', fx: { forgeBonus: 0.05 }, check: (g) => (g.P.forge || 0) >= 100 },
   { id: 'tu_dia', n: 'Tử Địa Hành Giả', cond: 'Sống sót 10 năm lịch luyện ở Tử địa trở lên', bonus: 'Chiến đấu +5%, chịu đòn -5%', fx: { fightMul: 1.05, hurtMul: 0.95 }, check: (g) => (g.P.cnt.hard || 0) >= 10 },
   { id: 'thap_100', n: 'Bách Tầng Tháp Khách', cond: 'Vượt tầng 100 của tháp', bonus: 'Chiến đấu +3%', fx: { fightMul: 1.03 }, check: (g) => g.towerBest() >= 100 },

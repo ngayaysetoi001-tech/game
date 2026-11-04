@@ -1078,3 +1078,15 @@ body.inPlay .tabs { margin-top: 4px; gap: 0; }
 .itemPop .ipBtns .btn.sm small { display: inline; margin-left: 3px; }
 .itemPop .ipBtns .btn.sm[data-eq], .itemPop .ipBtns .btn.sm[data-un] { flex: 1 1 auto; }
 .itemPop .ipBtns .btn.primary small { color: inherit; opacity: .85; }
+
+/* ================= Bản 4.6 ================= */
+/* thông báo: một dải nhỏ trên cùng, không che HUD */
+.toast { top: calc(env(safe-area-inset-top, 0px) + 4px); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 8px; padding: 6px 12px; border-width: 1px; border-radius: 14px; font-size: 12.5px; line-height: 1.3; max-width: min(420px, calc(100vw - 24px)); }
+.toast .tHead { font-size: 12px; color: var(--muted); font-weight: 700; white-space: nowrap; }
+.toast .toastMsg { font-size: 12.5px; font-weight: 600; }
+.toast .ttl.mini { font-size: 11px; }
+.toast .meta { font-size: 11.5px; }
+/* số lượng ở góc trên, tên ô không bị che */
+.tile .bdg.cnt { bottom: auto; top: 2px; right: 2px; }
+.tile .tn { -webkit-line-clamp: 2; word-break: break-word; }
+.toast { width: max-content; flex-wrap: nowrap; } .toast > * { white-space: nowrap; } .toast .toastMsg { white-space: normal; }

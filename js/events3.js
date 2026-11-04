@@ -241,7 +241,7 @@ export const EVENTS3 = [
     choices: (g) => [
       { t: 'Gia nhập phòng tuyến', go: (g) => { const f = g.fight('Huyết Ma sứ giả', pw3(g) * 1.1, 1, { lethal: 0.3, cause: 'tử trận khi chống ma đạo' }); if (f.win) { g.fame(10); g.tinh(5); const m = 60 * (1 + g.P.realm); g.money(m); return `${f.text}\n\nPhòng tuyến giữ vững. Ngươi được các tông môn ghi công đầu. Danh vọng +10, linh thạch +${m}.`; } return `${f.text}\n\nPhòng tuyến vỡ một đoạn.`; } },
       { t: 'Nhập bọn ma đạo', if: g.P.path === 'ma' || g.P.tinh <= -30, go: (g) => { g.tinh(-10); g.fame(-5); const m = 120 * (1 + g.P.realm); g.money(m); const t = yrs3(g, 5); return `Ma đạo đón ngươi như khách quý. Ngươi được chia ${m} linh thạch và một phần huyết tinh. Tu vi +${t}. Chính đạo bắt đầu gọi tên ngươi với giọng căm hận.`; } },
-      { t: 'Tránh xa chiến sự', go: (g) => { g.tinh(-2); return 'Ngươi đóng cửa bế quan. Khi ra ngoài, chiến sự đã qua.'; } },
+      { t: 'Tránh xa chiến sự', go: (g) => { g.tinh(-2); return 'Ngươi đóng cửa tu luyện. Khi ra ngoài, chiến sự đã qua.'; } },
     ],
   },
   {

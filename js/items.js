@@ -67,7 +67,7 @@ export const THAN_THONG = {
     { id: 'ngo_dao', n: 'Ngộ Đạo', t: 'Tu luyện +25%.', fx: { gainMul: 1.25 } },
     { id: 'thien_co', n: 'Thiên Cơ', t: 'Đột phá +8%.', fx: { brk: 0.08 } },
     { id: 'khi_van', n: 'Khí Vận Hộ Thân', t: 'Kỳ ngộ xuất hiện nhiều hơn 30%.', fx: { eventRate: 1.3 } },
-    { id: 'tu_linh', n: 'Tụ Linh', t: 'Bế quan hiệu quả gấp rưỡi.', fx: { closedMul: 1.5 } },
+    { id: 'tu_linh', n: 'Tụ Linh', t: 'Tu luyện hiệu quả gấp rưỡi.', fx: { closedMul: 1.5 } },
     { id: 'chieu_tai', n: 'Chiêu Tài', t: 'Mưu sinh kiếm gấp đôi.', fx: { moneyMul: 2 } },
     { id: 'van_duyen', n: 'Vạn Duyên', t: 'Thân thiết tăng nhanh 50%.', fx: { relMul: 1.5 } },
     { id: 'duoc_vuong', n: 'Dược Vương', t: 'Đan dược hiệu quả gấp đôi.', fx: { pillMul: 2 } },

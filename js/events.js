@@ -28,7 +28,7 @@ const BASE_EVENTS = [
       const h = g.breakHelpers();
       if (h.length) t += `\nCó ${h.length} người thân thiết đủ sức hộ pháp cho ngươi (+${h.length * 4}%).`;
       for (const m of g.atPlaneTop() ? [] : g.brkMods()) t += `\n${m.n}: ${m.v >= 0 ? '+' : ''}${Math.round(m.v * 100)}%.`;
-      if ((P.loose || 0) > g.need() * 0.2 && !g.atPlaneTop()) t += '\nCăn cơ chưa vững: tu luyện hoặc bế quan một thời gian để củng cố trước khi đột phá thì chắc hơn.';
+      if ((P.loose || 0) > g.need() * 0.2 && !g.atPlaneTop()) t += '\nCăn cơ chưa vững: tu luyện một thời gian để củng cố trước khi đột phá thì chắc hơn.';
       if (top) t += '\n\nĐây là bước cuối cùng: phi thăng, hoặc tan thành tro bụi.';
       else if (P.realm >= 3) t += '\nTừ Kim Đan trở lên, đột phá thất bại có thể mất mạng.';
       return t;

@@ -1032,7 +1032,7 @@ export class Game {
     const pd = this.deathChance(gap, lethal);
     const word = p >= 0.85 ? 'Nắm chắc phần thắng' : p >= 0.6 ? 'Khá có lợi' : p >= 0.4 ? 'Năm ăn năm thua' : p >= 0.15 ? 'Bất lợi' : 'Gần như không có cửa';
     const hp = this.P.hp;
-    return `${word}: thắng ~${Math.round(p * 100)}%. Thua thì nguy hiểm tính mạng ~${Math.round(pd * 100)}%.${hp < 100 ? ` (Tính theo sinh lực hiện tại ${hp}/100.)` : ''}`;
+    return `${word}: thắng ~${Math.round(p * 100)}%. Thua thì nguy hiểm tính mạng ~${Math.round(pd * 100)}%.${hp < 80 ? ' (Đang bị thương nên yếu hơn.)' : ''}`;
   }
   hintMonster(m, scale = 1) {
     const B = this.monsterFighter(m, scale);
@@ -1836,7 +1836,7 @@ export class Game {
   /** Trước đây: học võ kỹ ngẫu nhiên. Nay: lĩnh ngộ, được ngộ đạo điểm */
   learnRandom(minT, maxT) {
     const n = 1 + minT + maxT;
-    const m = `Lĩnh ngộ đạo pháp: ◈ Ngộ đạo điểm +${n}.`;
+    const m = `Bước đầu lĩnh ngộ đạo pháp: ◈ Ngộ đạo điểm +${n}.`;
     this.addSP(n);
     this.log(m, 'good');
     return m;
@@ -2388,7 +2388,7 @@ export class Game {
     const lo = Math.min(1, (P.loose || 0) / Math.max(1, this.need()));
     if (lo > 0.02) out.push({ n: `Căn cơ chưa vững (${Math.round(lo * 100)}% tu vi)`, v: -0.3 * lo });
     if (P.sat >= this.satLine(70)) out.push({ n: `Sát khí ${Math.round(P.sat)}`, v: -0.1 });
-    if (P.brkBonus) out.push({ n: 'Vừa bế quan xong', v: P.brkBonus });
+    if (P.brkBonus) out.push({ n: 'Căn cơ đã chuẩn bị kỹ', v: P.brkBonus });
 
     return out;
   }
@@ -2507,7 +2507,7 @@ export class Game {
     P.loose = Math.min(P.loose || 0, P.tuvi);
     P.sat = 60;
     this.log(`Sát khí ngập đầu, ngươi tẩu hỏa nhập ma! Kinh mạch rối loạn, tu vi mất ${fmtN(lost)}.`, 'bad');
-    this.toast('Tẩu hỏa nhập ma: trọng thương, mất tu vi. Hãy bế quan hoặc tu luyện để xả sát khí.', '☠ Tẩu hỏa nhập ma', 0);
+    this.toast('Tẩu hỏa nhập ma: trọng thương, mất tu vi. Hãy tu luyện để xả sát khí.', '☠ Tẩu hỏa nhập ma', 0);
     if (P.plan && P.plan.on) this.planStop('tẩu hỏa nhập ma');
     if (P.action === 'vuot_thap') { const T = this.towerState(); P.towerWait = { f: T.f + 1, boss: false, at: P.age, chk: P.age }; }
     if (P.action === 'vuot_thap' || P.action === 'lich_luyen') P.action = 'tu_luyen';
@@ -2764,7 +2764,6 @@ export class Game {
     if (P.dao && !P.flags.firstSkill) {
       P.flags.firstSkill = true;
       const t = this.learnRandom(1, 1);
-      if (t) this.log(`Bước vào đường tu, ngươi tự mò ra một môn võ kỹ. ${t}`, 'good');
     }
     const g = this.gain() * ypt;
     const lu = act === 'tu_luyen' && this.daoLu() ? this.daoLu() : null;
@@ -2841,7 +2840,7 @@ export class Game {
     else if (act === 'lich_luyen' && this.r.chance(Math.min(0.5, 0.12 * ypt))) this.meetBot(true);
     if (act !== 'tu_luyen') P.tuStreak = 0;
     // tự mặc: món nào trong túi có lực chiến cao hơn đồ đang mặc thì thay (mỗi 3 năm xét lại)
-    if (this.s.opt.autoEquip !== false && P.age % 3 === 0 && P.bag.length) this.equipBest();
+    if (this.s.opt.autoEquip !== false && P.bag.length) this.equipBest();
     if (P.sanNghiep > 0) this.money(Math.round(P.sanNghiep * 6 * ypt * (1 + P.realm * 1.5)));
     if (act !== 'vuot_thap' && act !== 'lich_luyen' && act !== 'tu_luyen' && act !== 'muu_sinh') this.purgeSat(2);
     if (this.checkSat()) return true; else if (act === 'lon_len' && P.age >= 6 && this.r.chance(0.2)) {
