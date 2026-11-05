@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1b1713" />
+  <!-- cài như ứng dụng: mở từ Màn hình chính thì toàn màn hình, không còn thanh trình duyệt -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Trăm Kiếp" />
+  <title>Trăm Kiếp Phù Sinh</title>
+  <meta name="description" content="Game tu tiên luân hồi chơi một mình trong một thế giới bot tự sống." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="top">
+      <div class="brand">Trăm Kiếp Phù Sinh</div>
+      <div class="year" id="worldYear"></div>
+      <button class="icon" id="menuBtn" aria-label="Menu">☰</button>
+    </header>
+
+    <section id="scr-birth" class="screen" hidden></section>
+
+    <section id="scr-play" class="screen" hidden>
+      <div class="hud" id="hud">
+        <button class="hudPic" id="hudPic" aria-label="Xem nhân vật"><canvas id="portrait" width="32" height="40"></canvas><img id="portraitArt" class="art" alt="" hidden></button>
+        <div class="hudMain">
+          <button class="hudLine" id="hudLine" aria-label="Xem nhân vật"></button>
+          <div class="bars" id="bars"></div>
+          <div class="hudSub" id="hudSub"></div>
+          <div class="hudChips" id="hudChips"></div>
+        </div>
+      </div>
+      <nav class="tabs" id="tabs"></nav>
+      <div class="tabbody" id="tabbody"></div>
+      <div class="evPanel" id="evPanel" hidden>
+        <div class="evKicker" id="evKicker"></div><h2 id="evTitle"></h2>
+        <div class="evText" id="evText"></div>
+        <div class="choices" id="evChoices"></div>
+      </div>
+      <div class="battleBox" id="battle" hidden>
+    <div class="card arena" aria-label="Giao chiến">
+      <div class="arenaTop"><b id="btTitle"></b><span class="btPhase" id="btPhase" hidden></span><span id="btRound" class="meta"></span></div>
+      <div class="stage">
+        <div class="fighter" id="fA">
+          <canvas width="32" height="40"></canvas>
+          <img class="art" alt="" hidden>
+          <div class="fname"></div>
+          <div class="gauge hp"><i></i><span></span></div>
+          <div class="gauge mp"><i></i></div>
+          <div class="gauge ch" hidden><i></i><span></span></div>
+        </div>
+        <div class="fighter foe" id="fB">
+          <canvas width="32" height="40"></canvas>
+          <img class="art" alt="" hidden>
+          <div class="fname"></div>
+          <div class="gauge hp"><i></i><span></span></div>
+          <div class="gauge mp"><i></i></div>
+          <div class="gauge ch" hidden><i></i><span></span></div>
+        </div>
+        <div class="banner" id="btBanner"></div>
+      </div>
+      <ul class="btlog" id="btLog"></ul>
+      <div class="btBtns"><button class="btn ghost" id="btFast">Nhanh ×2</button><button class="btn primary" id="btNext">Bỏ qua</button></div>
+    </div>
+      </div>
+      <div class="dock" id="dock">
+        <div class="tip" id="tip" hidden></div>
+        <div class="breakRow" id="breakRow"></div>
+        <div class="speed" id="speed"></div>
+        <div class="actions" id="actions"></div>
+        <div class="utils" id="utils"></div>
+      </div>
+    </section>
+
+    <section id="scr-dead" class="screen" hidden></section>
+  </div>
+
+  <div class="overlay" id="sheet" hidden>
+    <div class="card sheet" role="dialog" aria-modal="true">
+      <div class="sheetTop"><button class="sheetX" id="sheetX" aria-label="Đóng">✕</button></div>
+      <div id="sheetBody"></div>
+      <button class="btn ghost wide" id="sheetClose">Đóng</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden role="status" aria-live="polite"></div>
+  <div class="updBar" id="updBar" hidden role="status"><span id="updText">Có bản mới</span><button class="btn primary" id="updBtn">Cập nhật</button><button class="updX" id="updX" aria-label="Để sau">✕</button></div>
+
+  <script type="module" src="js/ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "Trăm Kiếp Phù Sinh",
+  "short_name": "Trăm Kiếp",
+  "description": "Game tu tiên luân hồi chơi một mình trong một thế giới bot tự sống.",
+  "lang": "vi",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1b1713",
+  "theme_color": "#1b1713",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
