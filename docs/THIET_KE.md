@@ -729,3 +729,33 @@ Mô phỏng 42 kiếp mỗi đạo (lịch trình Leo tháp, có rèn đồ):
 - **Túc địch:**
   - Không còn lẫn vào kỳ ngộ ngẫu nhiên.
   - Tỉ lệ chết khi thua: tranh cơ duyên 2%, thù sâu 3%, quyết chiến 10%. Con số này còn được nhân thêm theo chênh lệch máu.
+
+## Bản 5.2: Thời đại, Xuất thân, Nhánh đạo lộ, độ khó mới
+
+- **Thời đại** (`ERAS` trong fate.js, `s.era`):
+  - Mỗi thời đại kéo dài 100–300 năm. Có 7 loại:
+    - Thái bình.
+    - Mạt pháp: tu vi −20%, kỳ ngộ +30%.
+    - Ma kiếp: kẻ địch +15%.
+    - Linh khí phục hồi: tu vi +30%, đột phá +5%.
+    - Đại chiến tông môn: kẻ địch +10%.
+    - Bí cảnh mở cửa: kỳ ngộ +40%.
+    - Thiên địa dị biến: tu vi +15%, thọ −10%.
+  - Kỳ ngộ của thời đại ra nhiều hơn ×3.
+  - Hiện ở đầu màn hình (trừ Thái bình) và trong tab Thiên hạ. Đổi thời đại có thông báo và ghi vào Thiên hạ ký sự.
+- **Xuất thân mới** (`ORIGINS`, `unlock` = số kiếp đã sống; `ORIGIN_FX`; kỳ ngộ có `r3.origin`):
+  - Con rơi của tông chủ (từ kiếp 2): nhận cha vào tông → đấu với đại công tử.
+  - Ăn mày đầu chợ (từ kiếp 2; kỳ ngộ +15%): chia cơm cho lão ăn mày → 20 năm sau được truyền ngọc giản.
+  - Hậu duệ ma tộc (từ kiếp 4; tu vi +15%): ma huyết thức tỉnh → chính đạo truy sát.
+  - Hoàng tộc mất nước (từ kiếp 6): di thần tìm tới → trận phục quốc.
+- **Nhánh đạo lộ** (`BRANCHES`): tới Kim Đan (tính trong giới) chọn 1 trong 2 nhánh, giữ cả kiếp. Nhánh cộng vào hệ số đạo lộ (`pm`) và chỉ số trận (`gear`).
+  - Kiếm Tu: Vạn Kiếm hoặc Kiếm Thể.
+  - Thể Tu: Bá Thể hoặc Bất Diệt.
+  - Tinh Thần Lực: Phù Trận hoặc Mị Hồn.
+- **Độ khó:**
+  - Mọi kẻ địch ×1,5 (`ENEMY_HARD` trong `diffPow`).
+  - Cường hóa +15%/cấp (trước +8%), +10 là ×2,5.
+  - Thần thoại hệ số 3,6 (trước 5). Tỉ lệ rơi Thần thoại ở vùng giảm một nửa.
+  - Thần khí mang qua kiếp: về +0 và bị phong ấn (một nửa sức mạnh, không có thần thông) tới khi tu lại tới cảnh giới cũ (`sealTo`).
+  - Tinh Thần Lực được bù nhẹ hệ số máu, thủ, công.
+- **Mô phỏng (lịch trình leo tháp, 36 kiếp mỗi đạo):** cảnh giới trung bình Kiếm 5,1 / Thể 5,5 / Tinh 4,2 (trước 6,6 / 8,3 / 6,9). Tầng tháp trung vị khoảng 300 (trước khoảng 700).

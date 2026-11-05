@@ -21,7 +21,8 @@ const THE_CAP_ADD = { brk: 0.15 };
 const THE_MAP = Object.fromEntries(THE_CHAT.map((t) => [t.id, t]));
 const TP_MAP = Object.fromEntries(THIEN_PHU.map((t) => [t.id, t]));
 import { EVENTS, EVENT_MAP, EVENT_TERRAIN, terrainOf } from './events.js';
-import { DESTINIES, DESTINY_MAP, DESTINY_EV, DESTINY_SOCIAL, PERKS, PERK_MAP, perkLv, perkFx, CHAPTERS, CHAPTER_MAP } from './fate.js';
+import { DESTINIES, DESTINY_MAP, DESTINY_EV, DESTINY_SOCIAL, PERKS, PERK_MAP, perkLv, perkFx, CHAPTERS, CHAPTER_MAP, ERAS, ERA_MAP, BRANCHES, BRANCH_MAP } from './fate.js';
+import { ORIGIN_FX } from './data.js';
 import { Rng as PvRng } from './rng.js';
 import { SKILLS, SKILL_IDS, BEAST_SKILLS, fighter, battle, turnText, skillCls, PATH_SKILLS, PATH_RES, SKILL_MAX, skillLvMul } from './combat.js';
 import { makeItem, gearStats, itemScore, QUALITY, THAN_THONG, TT_MAP, isSealed, rollQuality, itemVal, itemName, PLUS_MAX, AFFIX, wepName, setWepBias } from './items.js';
@@ -45,7 +46,7 @@ const OLD_WEP = { dao: 'kiem', thuong: 'kiem', quat: 'phap' };
 // kỳ ngộ chịu ảnh hưởng của độ khó vùng lịch luyện
 const MAP_RARE_EV = new Set(['hang_dong', 'truyen_thua', 'co_mo', 'kiem_trung', 'bi_canh', 'linh_mach', 'yeu_vuong', 'ban_do', 'trung_la', 'bao_vat', 'linh_thu', 'ngoc_gian']);
 // kỳ ngộ tự quyết được nhưng đủ quan trọng để hỏi người chơi khi chạy chậm
-const MAJOR_EV = new Set(['chuong', 'truyen_thua', 'bi_canh', 'kiem_trung', 'yeu_vuong', 'tam_ma', 'tuong_quan', 'binh_hon_chu', 'hoa_linh', 'huyet_an_1', 'thien_kieu_chien', 'kiem_y', 'loi_tri', 'tran_phap', 'thu_tien_hoa', 'do_hoa', 'luan_dao', 'ma_dao_xam', 'dai_ty_thi', 'truy_than_khi', 'tranh_chuong_mon', 'tieu_thien_kiep', 'phan_phe', 'huyet_an_2', 'huyet_an_3', 'thap_chu', 'loi_kiep', 'vung_chu', 'thieu_gia_ban_dia', 'linh_vuong_tan_hon', 'tiep_dan_2', 'tiep_dan_3', 'chieu_pho_ma', 'linh_kiep_nho', 'huyet_trieu', 'loi_mach']);
+const MAJOR_EV = new Set(['nhanh_dao', 'con_roi', 'ma_huyet', 'phuc_quoc', 'phuc_quoc_2', 'chinh_dao_truy', 'chuong', 'truyen_thua', 'bi_canh', 'kiem_trung', 'yeu_vuong', 'tam_ma', 'tuong_quan', 'binh_hon_chu', 'hoa_linh', 'huyet_an_1', 'thien_kieu_chien', 'kiem_y', 'loi_tri', 'tran_phap', 'thu_tien_hoa', 'do_hoa', 'luan_dao', 'ma_dao_xam', 'dai_ty_thi', 'truy_than_khi', 'tranh_chuong_mon', 'tieu_thien_kiep', 'phan_phe', 'huyet_an_2', 'huyet_an_3', 'thap_chu', 'loi_kiep', 'vung_chu', 'thieu_gia_ban_dia', 'linh_vuong_tan_hon', 'tiep_dan_2', 'tiep_dan_3', 'chieu_pho_ma', 'linh_kiep_nho', 'huyet_trieu', 'loi_mach']);
 const MAP_FIGHT_EV = new Set(['khieu_chien', 'huyet_tran', 'bat_coc', 'ma_tu_tra_thu']);
 export const matToken = (k) => iconToken(matIconOpts(k, MATS[k]));
 // Bot đi lịch luyện: tỉ lệ ra ngoài và mức tỉ lệ thắng tối thiểu chấp nhận được, theo tính cách
@@ -70,6 +71,8 @@ export const pct = (p) => Math.round(p * 100) + '%';
 
 // Xác suất có sự kiện mỗi năm theo việc đang làm
 const TU_MUL = 1.3;
+// bản 5.2: mọi kẻ địch (quái, bot, tháp) mạnh hơn hẳn; bù lại cường hóa, nhánh đạo lộ, Hồn lực mạnh hơn
+const ENEMY_HARD = 1.5;
 const REGEN = { tu_luyen: 9, muu_sinh: 5, lich_luyen: 1.5, vuot_thap: 4, lon_len: 6 };
 const EVENT_RATE = { lon_len: 0.3, tu_luyen: 0.12, lich_luyen: 0.55, muu_sinh: 0.3, vuot_thap: 0.08 };
 // Nhóm kỳ ngộ được gặp theo việc làm (bản 4.3)
@@ -100,6 +103,7 @@ export class Game {
     if (state.player && PATHS[state.player.path]) setWepBias(PATHS[state.player.path].wep);
     if (state.opt.autoSell === undefined) state.opt.autoSell = false;
     if (!state.opt.qRule) state.opt.qRule = { 0: 'salv', 1: 'salv', 2: 'keep', 3: 'keep' };
+    if (!state.era || !ERA_MAP[state.era.id]) state.era = { id: 'thai_binh', from: state.year, until: state.year + 120 };
   }
 
   /** Bản lưu cũ (Phàm giới 8 cảnh giới): thêm Hợp Thể vào giữa nên Đại Thừa từ 7 thành 8 */
@@ -501,6 +505,7 @@ export class Game {
   }
   worldYear() {
     this.s.year++;
+    if (this.s.era && this.s.year >= this.s.era.until) this.nextEra();
     for (const b of this.s.souls) { this._pl = b.plane || 0; this.botYear(b); }
     for (const pl of [0, 1]) { this.botDuels(pl); this.sectYear(pl); }
     this._pl = undefined;
@@ -596,6 +601,9 @@ export class Game {
     const out = [THE_MAP[P.the] || THE_MAP.pham, ...(P.the2 && THE_MAP[P.the2] ? [THE_MAP[P.the2]] : []), ...(P.tps || []).map((id) => TP_MAP[id]).filter(Boolean)];
     if (P.path && PATHS[P.path]) out.push({ n: PATHS[P.path].n, path: true, fx: PATHS[P.path].fx });
     if (P.title && TITLE_MAP[P.title]) out.push(TITLE_MAP[P.title]);
+    const era = this.s.era && ERA_MAP[this.s.era.id];
+    if (era && Object.keys(era.fx).length) out.push({ n: era.n, era: true, fx: era.fx });
+    if (ORIGIN_FX[P.origin]) out.push({ n: P.originN, origin: true, fx: ORIGIN_FX[P.origin] });
     const ch = this.chapter(P);
     if (ch && Object.keys(ch.c.fx).length) out.push({ n: ch.c.n, chap: true, fx: ch.c.fx });
     const pf = perkFx(this.s);
@@ -644,7 +652,7 @@ export class Game {
   rollDraft() {
     const leg = this.s.legacy ? this.s.legacy.id : null;
     const gender = this.r.chance(0.5) ? 'nam' : 'nu';
-    const o = this.r.weighted(ORIGINS, (x) => x.w);
+    const o = this.r.weighted(ORIGINS.filter((x) => (x.unlock || 0) <= this.s.lives.length), (x) => x.w);
     let root = this.rollRoot();
     if (leg === 'linh_can') {
       const r2 = this.rollRoot();
@@ -684,6 +692,9 @@ export class Game {
     // thần khí tìm về chủ cũ
     if (leg === 'than_khi' && this.s.legacy.item) {
       const it = { ...this.s.legacy.item };
+      // bản 5.2: thần khí vượt luân hồi mất hết cường hóa, bị phong ấn tới khi tu lại tới cảnh giới cũ
+      it.sealTo = Math.max(it.sealTo || 0, it.lv || 0);
+      it.plus = 0;
       if (P.eq[it.slot]) P.bag.push(P.eq[it.slot]);
       P.eq[it.slot] = it;
       P.flags.thanKhi = it.n;
@@ -753,6 +764,24 @@ export class Game {
     // mua Nhìn thấu thiên cơ lúc đang đầu thai: bốc lại để có thêm lá
     if (id === 'menh' && this.s.phase === 'birth' && this.s.draft) this.rollDestiny(this.s.draft);
     return true;
+  }
+  // ---------- Thời đại ----------
+  era() { return this.s.era && ERA_MAP[this.s.era.id] ? { e: ERA_MAP[this.s.era.id], ...this.s.era } : null; }
+  nextEra() {
+    const cur = this.s.era ? this.s.era.id : null;
+    const e = this.r.weighted(ERAS.filter((x) => x.id !== cur), (x) => x.w);
+    this.s.era = { id: e.id, from: this.s.year, until: this.s.year + this.r.int(100, 300) };
+    this.chron(`Thiên hạ bước vào thời ${e.n}. ${e.desc}`, 2);
+    if (this.playing) { this.log(`${e.ic} Thời đại mới: 「${e.n}」. ${e.desc}`, 'big'); this.toast(`${e.ic} ${e.n}: ${e.desc}`, 'Thời đại mới', 3); }
+  }
+  // ---------- Nhánh đạo lộ ----------
+  pathName() { return PATHS[this.P.path] ? PATHS[this.P.path].n : ''; }
+  pickBranch(id) {
+    const b = BRANCH_MAP[id];
+    if (!b) return '';
+    this.P.branch = id;
+    this.log(`${b.ic} Ngươi bước vào nhánh 「${b.n}」 của ${this.pathName()}. ${b.desc}`, 'big');
+    return `Từ nay ngươi đi theo ${b.n}. ${b.desc}`;
   }
   // ---------- Chương mười năm ----------
   chapter(P = this.P) {
@@ -1147,6 +1176,8 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
     const lv = this.skillLvs();
     const hpx = this.tpFx('hpPct');
     if (hpx) pm.hpPct = (pm.hpPct || 0) + hpx;
+    const br = P.branch && BRANCH_MAP[P.branch];
+    if (br) { for (const k in br.pm) pm[k] = (pm[k] || 0) + br.pm[k]; for (const k in br.gear) gear[k] = (gear[k] || 0) + br.gear[k]; }
     // Ma tu: sát khí hóa thành sức mạnh
     return fighter({
       name: P.name, pw: this.basePower() * mul, hpPct: (hp ?? P.hp) / 100,
@@ -1238,7 +1269,8 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
   /** Xác suất mất mạng khi thua. gap: sức đối phương / sức mình */
   /** Hệ số sức mạnh của đối thủ theo độ khó thế giới */
   diffPow() {
-    return (WORLD_DIFF[this.s.diff] || WORLD_DIFF.thuong).pow;
+    const era = this.s.era && ERA_MAP[this.s.era.id];
+    return (WORLD_DIFF[this.s.diff] || WORLD_DIFF.thuong).pow * ENEMY_HARD * ((era && era.enemy) || 1);
   }
   diffReward() {
     return (WORLD_DIFF[this.s.diff] || WORLD_DIFF.thuong).reward;
@@ -3156,6 +3188,7 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
     if (P.realm >= 2 && P.daoHieu === undefined && !this.s.queue.some((q) => q.id === 'dao_hieu')) this.s.queue.push({ id: 'dao_hieu', botId: null, data: { opts: this.genDaoHieuOpts() } });
     this.checkTitles();
     if (this._rank === 1) P.cnt.top1 = (P.cnt.top1 || 0) + 1;
+    if (PATHS[P.path] && !P.branch && P.realm - (PLANES[P.plane || 0].base || 0) >= 3 && !this.s.queue.some((q) => q.id === 'nhanh_dao') && !(this.s.pending && this.s.pending.id === 'nhanh_dao')) this.s.queue.push({ id: 'nhanh_dao', botId: null, data: {} });
     this.chapterTick(ypt);
     this.nemTick();
     this.checkDestiny();
@@ -3208,6 +3241,7 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
       if (ru.plane !== undefined && (P.plane || 0) !== ru.plane) continue;
       if (ru.realm && P.realm < ru.realm) continue;
       if (ru.path && P.path !== ru.path) continue;
+      if (ru.origin && P.origin !== ru.origin) continue;
       if (ru.sect && !(P.sect && this.sect(P.sect) && this.sect(P.sect).alive)) continue;
       if (e.when && !e.when(this)) continue;
       const bot = e.bot ? e.bot(this) : null;
@@ -3218,6 +3252,7 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
       if (e.acts && e.acts.includes(act)) w *= 3;
       if (e.pool === 'doi' && (act === 'tu_luyen' || act === 'vuot_thap')) w *= 0.5; // tu luyện: chuyện đời thưa hơn
       if (P.destiny && !P.destiny.done && (DESTINY_EV[P.destiny.id] || []).includes(e.id)) w *= 3; // thiên mệnh dẫn lối
+      { const era = this.s.era && ERA_MAP[this.s.era.id]; if (era && era.ev && era.ev.includes(e.id)) w *= 3; } // chuyện của thời đại
       if (act === 'lich_luyen' && EVENT_TERRAIN[e.id] && EVENT_TERRAIN[e.id] === terrainOf(mapNow)) w *= 2.5; // hợp địa hình
       if (mapNow) w *= MAP_RARE_EV.has(e.id) ? 0.5 + 0.35 * mapNow.d : e.id === 'yeu_thu' ? 0.6 + 0.3 * mapNow.d : MAP_FIGHT_EV.has(e.id) ? 0.8 + 0.15 * mapNow.d : 1;
       w *= this.tevW(e.id);

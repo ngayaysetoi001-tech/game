@@ -4,7 +4,7 @@ import { Game, woundLv, WOUND_N, REALMS, ACTIONS, PILLS, LEGACIES, THE_MAP, THE_
 import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEFAULT_MAP, realmLabel, subN, PLANES, mapsOf, WORLD_DIFF, mythMatOf, planeOf, THEME_BG, BOSS_KITS, TOWER_THEMES, TOWER_SHOP, TAM_PHAP, TAM_PHAP_IDS, NGHE, PHU, PLAN_TEMPLATES, PLAN_STEP_ACTS, PLAN_COND, PATH_BAR_N } from './data.js';
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, BEAST_SKILLS, TACTICS, WEAPON_TYPES, turnText, PATH_RES, PATH_SKILLS, SKILL_MAX, skillLvMul } from './combat.js';
-import { DESTINY_MAP, PERKS, perkLv, CHAPTER_MAP } from './fate.js';
+import { DESTINY_MAP, PERKS, perkLv, CHAPTER_MAP, BRANCH_MAP } from './fate.js';
 import { heroArt, heroStandArt, heroFilter, meditateArt, skillArt, monsterArt, needFlip, uiIcon } from './art.js';
 import { SLOTS, QUALITY, itemLine, TT_MAP, isSealed, isSuppressed, gearStats, itemName, PLUS_MAX, AFFIX } from './items.js';
 import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE, matIconOpts, skillIconOpts } from './icons.js';
@@ -114,7 +114,8 @@ function show(id) {
   document.body.classList.toggle('inPlay', id === 'scr-play');
 }
 function render() {
-  $('worldYear').textContent = `Năm ${fmt(g.s.year)} · ${PLANES[g.plane].n}${g.s.diff && g.s.diff !== 'thuong' ? ` · ${WORLD_DIFF[g.s.diff].n}` : ''}`;
+  const er = g.era();
+  $('worldYear').textContent = `Năm ${fmt(g.s.year)} · ${PLANES[g.plane].n}${er && er.e.id !== 'thai_binh' ? ` · ${er.e.ic} ${er.e.n}` : ''}${g.s.diff && g.s.diff !== 'thuong' ? ` · ${WORLD_DIFF[g.s.diff].n}` : ''}`;
   const ph = g.s.phase;
   if (ph === 'birth') renderBirth();
   else if (ph === 'play' || (ph === 'dead' && g.s.pending)) renderPlay();
@@ -607,7 +608,8 @@ function renderTab(t = tab) {
     }).join('');
     const pl = g.plane;
     const ch = g.s.chron.filter((c) => (c.pl ?? 0) === pl || c.imp >= 3).slice(-60).reverse();
-    return `<h3>Tông môn · ${PLANES[pl].n}</h3><div class="list">${ss || '<p class="empty">Thiên hạ không còn tông môn nào.</p>'}</div>
+    const er = g.era();
+    return `${er ? `<div class="eraCard"><b>${er.e.ic} Thời ${esc(er.e.n)}</b><span>${esc(er.e.desc)}</span><em>Từ năm ${fmt(er.from)} · còn khoảng ${fmt(Math.max(0, er.until - g.s.year))} năm</em></div>` : ''}<h3>Tông môn · ${PLANES[pl].n}</h3><div class="list">${ss || '<p class="empty">Thiên hạ không còn tông môn nào.</p>'}</div>
       <h3>Thiên hạ ký sự · ${PLANES[pl].n}</h3><ul class="log">${ch.map((c) => `<li class="${c.imp >= 3 ? 'big' : ''}"><span class="age">Năm ${fmt(c.y)}${(c.pl ?? 0) !== pl ? ` · ${PLANES[c.pl ?? 0].n}` : ''}</span>${esc(c.t)}</li>`).join('') || '<li class="empty">Thiên hạ thái bình.</li>'}</ul>`;
   }
   if (tab === 'rank') {
@@ -1497,7 +1499,7 @@ function bagCp() {
   }
   const mism = g.skillMismatch().length;
   const others = Object.keys(PATHS).filter((k) => k !== P.path);
-  return `<div class="pathHead"><img class="pathPic" alt="" src="${heroStandArt(P.path, P.g)}"><div><b>${pa.icon} ${esc(pa.n)}</b><div class="meta">${esc(pa.tag)} · thanh ${esc(pa.res)}</div><div class="spBox">◈ Ngộ đạo điểm: <b>${P.sp || 0}</b></div></div></div>
+  return `<div class="pathHead"><img class="pathPic" alt="" src="${heroStandArt(P.path, P.g)}"><div><b>${pa.icon} ${esc(pa.n)}</b><div class="meta">${esc(pa.tag)} · thanh ${esc(pa.res)}</div><div class="spBox">◈ Ngộ đạo điểm: <b>${P.sp || 0}</b></div>${P.branch && BRANCH_MAP[P.branch] ? `<div class="meta">Nhánh: <b>${BRANCH_MAP[P.branch].ic} ${esc(BRANCH_MAP[P.branch].n)}</b> · ${esc(BRANCH_MAP[P.branch].desc)}</div>` : '<div class="meta">Tới Kim Đan sẽ chọn nhánh đạo lộ.</div>'}</div></div>
     ${mism ? `<p class="forgeMsg">⚠ ${esc(pa.n)} cần ${WEAPON_TYPES[pa.wep].n.toLowerCase()}: binh khí đang cầm làm chiêu yếu đi.</p>` : ''}
     <div class="skTree"><div class="skCol"><h4>Chiêu thức</h4>${col(['co', 'c1', 'c2', 'chot'])}</div><div class="skCol"><h4>Tuyệt kỹ</h4>${col(['ult'])}</div><div class="skCol"><h4>Bị động</h4>${col(['p1', 'p2', 'p3'])}</div></div>
     ${detail}

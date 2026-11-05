@@ -1,5 +1,6 @@
 // Kỳ ngộ đợt 5: chỉ xảy ra khi Tu luyện (nhóm 'tu'). Toàn chuyện nội tu: đốn ngộ, linh khí, tẩu hỏa, kinh mạch, thần thức, dị tượng.
-import { CHAPTER_MAP, CHAPTER_RANK } from './fate.js';
+import { CHAPTER_MAP, CHAPTER_RANK, BRANCHES } from './fate.js';
+import { REALMS } from './data.js';
 
 const xp5 = (p) => Math.max(0.05, Math.min(0.95, p));
 const st5 = (g, k) => g.P.stats[k];
@@ -123,5 +124,89 @@ export const EVENTS5 = [
     auto: (g, { data }) => { const cs = data.cards || []; const sc = (id) => (CHAPTER_MAP[id].act === g.P.action ? 0 : 10) + CHAPTER_RANK.indexOf(id); let b = 0; cs.forEach((id, i) => { if (sc(id) < sc(cs[b])) b = i; }); return b; },
     text: (g, { data }) => `${g.P.chapter ? 'Mười năm trôi qua. ' : ''}${g.chapterRecap()}\n\nMười năm tới, ngươi định sống thế nào?`,
     choices: (g, { data }) => (data.cards || []).map((id) => { const c = CHAPTER_MAP[id]; return { t: `${c.ic} ${c.n}: ${c.desc}`, go: (g) => g.startChapter(id) }; }),
+  },
+  // ================= Nhánh đạo lộ (tới Kim Đan) =================
+  {
+    id: 'nhanh_dao', queued: true, pool: 'doi', title: 'Ngã rẽ đạo lộ',
+    text: (g) => `Kết thành kim đan, ngươi thấy con đường ${g.pathName()} trước mặt tách làm hai. Mỗi ngả dẫn tới một cảnh giới võ học khác hẳn nhau. Đi rồi thì không quay lại được trong kiếp này.`,
+    choices: (g) => (BRANCHES[g.P.path] || []).map((b) => ({ t: `${b.ic} ${b.n}: ${b.desc}`, go: (g) => g.pickBranch(b.id) })),
+  },
+
+  // ================= Xuất thân: Con rơi của tông chủ =================
+  {
+    id: 'con_roi', w: 6, cd: 99, once: true, pool: 'doi', title: 'Tín vật của mẹ', r3: { age: 13, origin: 'con_roi' },
+    prep: (g) => { const ss = g.aliveSects(); return ss.length ? { sect: ss.sort((a, b) => g.members(b.id).length - g.members(a.id).length)[0].id } : null; },
+    text: (g, { data }) => `Mẹ ngươi trước khi mất để lại một miếng ngọc bội khắc huy hiệu ${g.sect(data.sect).name}. Người ta nói tông chủ ở đó chính là cha ngươi.`,
+    choices: (g, { data }) => [
+      { t: 'Cầm ngọc bội lên núi nhận cha', go: (g) => { const sc = g.sect(data.sect); g.joinSect(sc); g.fame(5); g.P.flags.conRoi = sc.id; g.later(12, 'con_roi_2'); return `Tông chủ nhìn ngọc bội rất lâu rồi nhận ngươi làm đệ tử thân truyền, không nói thêm lời nào. Nhưng mấy người con chính thất của ông nhìn ngươi bằng ánh mắt rất lạnh.`; } },
+      { t: 'Đập vỡ ngọc bội, tự đi đường mình', go: (g) => { g.stat('tam', 6); g.stat('can', 3); return 'Kẻ đã bỏ mẹ con ngươi không đáng làm cha. Tâm tính +6, căn cốt +3.'; } },
+    ],
+  },
+  {
+    id: 'con_roi_2', queued: true, pool: 'doi', title: 'Huynh đệ cùng cha',
+    text: () => 'Đêm trước đại tỷ thí, đại công tử của tông chủ chặn ngươi sau núi: "Đồ con hoang. Ngày mai ngươi phải thua, hoặc khỏi bao giờ xuống núi nữa."',
+    choices: (g) => {
+      const po = g.winOdds(() => g.genericFighter('Đại công tử', REALMS[g.P.realm].pow * 1.1));
+      return [
+        { t: 'Ngày mai thắng cho hắn xem', p: po, go: (g) => { const f = g.fight('Đại công tử', REALMS[g.P.realm].pow * 1.1, 1, { lethal: 0.05 }); if (f.win) { g.fame(15); g.addSP(2); return `${f.text}\n\nNgươi thắng giữa tiếng hò reo. Tông chủ lần đầu gật đầu với ngươi. Danh vọng +15, ngộ đạo điểm +2.`; } return `${f.text}\n\nNgươi thua. Đại công tử cười khẩy bỏ đi.`; } },
+        { t: 'Nhường hắn, giữ hòa khí', go: (g) => { g.stat('tam', 3); g.money(Math.round(200 * (1 + g.P.realm))); return 'Ngươi cố ý thua. Hôm sau có người lặng lẽ gửi tới một túi linh thạch: lời cảm ơn không nói ra.'; } },
+      ];
+    },
+  },
+  // ================= Xuất thân: Ăn mày đầu chợ =================
+  {
+    id: 'an_may_hoi', w: 6, cd: 99, once: true, pool: 'doi', title: 'Bát cơm cuối cùng', r3: { age: 9, origin: 'an_may' },
+    text: () => 'Mùa đông năm ấy ngươi chỉ còn nửa bát cơm. Bên cạnh có một lão ăn mày khác đói tới mức không đứng dậy nổi.',
+    choices: () => [
+      { t: 'Chia cho lão một nửa', go: (g) => { g.tinh(8); g.stat('co', 6); g.P.flags.anMayLao = true; g.later(20, 'an_may_hoi_2'); return 'Lão ăn xong, nhìn ngươi cười móm mém rồi biến mất trong gió tuyết. Cơ duyên +6.'; } },
+      { t: 'Ăn hết, sống đã', go: (g) => { g.stat('can', 4); g.tinh(-4); return 'Ngươi sống qua mùa đông. Căn cốt +4.'; } },
+    ],
+  },
+  {
+    id: 'an_may_hoi_2', queued: true, pool: 'doi', title: 'Lão ăn mày năm xưa',
+    text: () => 'Một lão già rách rưới chặn đường ngươi, chìa ra cái bát mẻ: "Nửa bát cơm năm ấy, lão phu nhớ." Trong bát là một cuộn ngọc giản tỏa ánh vàng.',
+    choices: () => [
+      { t: 'Nhận lấy', go: (g) => { g.addSP(4); const t = g.addTuvi(g.gain() * 6); return `Lão là một tán tiên ẩn thế. Ngọc giản chứa nửa đời tâm đắc của lão. Ngộ đạo điểm +4, tu vi +${t}.`; } },
+    ],
+  },
+  // ================= Xuất thân: Hậu duệ ma tộc =================
+  {
+    id: 'ma_huyet', w: 6, cd: 99, once: true, pool: 'doi', title: 'Ma huyết thức tỉnh', r3: { age: 15, origin: 'ma_toc' },
+    text: () => 'Đêm trăng máu, mắt ngươi đỏ rực, sức mạnh cuồn cuộn trong người như muốn xé toạc da thịt. Dòng máu ma tộc đã thức tỉnh.',
+    choices: (g) => [
+      { t: 'Đón nhận ma huyết', go: (g) => { g.P.flags.maHuyet = true; g.stat('can', 8); g.P.fight = (g.P.fight || 0) + 0.15; g.later(30, 'chinh_dao_truy'); return 'Ngươi gầm lên một tiếng, đá núi quanh mình nứt toác. Căn cốt +8, chiến đấu +15%. Từ nay chính đạo sẽ coi ngươi là ma.'; } },
+      { t: 'Dùng ý chí áp chế', p: xp5(0.5 + (st5(g, 'tam') - 50) / 80), go: (g) => { const ok = g.r.chance(xp5(0.5 + (st5(g, 'tam') - 50) / 80)); if (ok) { g.stat('tam', 8); return 'Ngươi ngồi suốt đêm, ép từng giọt ma huyết về đan điền. Tâm tính +8.'; } g.hurt(25, 'ma huyết phản phệ'); return 'Ma huyết phản phệ, ngươi ngất lịm ba ngày.'; } },
+    ],
+  },
+  {
+    id: 'chinh_dao_truy', queued: true, pool: 'doi', title: 'Chính đạo truy sát',
+    text: () => 'Ba tu sĩ áo trắng vây lấy ngươi giữa đường: "Ma nghiệt! Hôm nay thay trời hành đạo."',
+    choices: (g) => {
+      const po = g.winOdds(() => g.genericFighter('Chính đạo tu sĩ', REALMS[g.P.realm].pow * 1.3));
+      return [
+        { t: 'Liều mạng một trận', p: po, go: (g) => { const f = g.fight('Chính đạo tu sĩ', REALMS[g.P.realm].pow * 1.3, 1, { lethal: 0.25, cause: 'bị chính đạo trừ ma' }); if (f.win) { g.addSat(25); g.fame(-10); return `${f.text}\n\nBa xác áo trắng nằm dưới chân ngươi. Sát khí +25, tiếng xấu càng lan xa.`; } return f.text; } },
+        { t: 'Bỏ chạy về phía núi sâu', p: xp5(0.5 + (st5(g, 'co') - 50) / 100), go: (g) => { if (g.r.chance(xp5(0.5 + (st5(g, 'co') - 50) / 100))) return 'Ngươi thoát được, nhưng biết chúng sẽ còn tới.'; g.hurt(30, 'bị chính đạo đuổi kịp'); return 'Một đạo kiếm quang đuổi kịp sau lưng.'; } },
+      ];
+    },
+  },
+  // ================= Xuất thân: Hoàng tộc mất nước =================
+  {
+    id: 'phuc_quoc', w: 6, cd: 99, once: true, pool: 'doi', title: 'Di thần tìm tới', r3: { age: 18, origin: 'hoang_toc' },
+    text: () => 'Một lão tướng tóc bạc quỳ trước mặt ngươi, dâng lên một thanh kiếm gỉ: "Điện hạ. Ba vạn binh mã vẫn chờ người trong núi. Xin người phục quốc."',
+    choices: () => [
+      { t: 'Gánh lấy giang sơn', go: (g) => { const cost = Math.round(400 * (1 + g.P.realm)); g.money(-Math.min(g.P.money, cost)); g.fame(25); g.later(25, 'phuc_quoc_2'); return `Ngươi bỏ hết gia sản nuôi quân. Danh vọng +25. Hai mươi lăm năm nữa sẽ là trận quyết định.`; } },
+      { t: 'Thời của vương triều đã qua', go: (g) => { g.stat('tam', 5); g.addSP(1); return 'Ngươi đỡ lão dậy: "Ta chỉ muốn tu đạo." Lão khóc, nhưng không trách. Tâm tính +5, ngộ đạo điểm +1.'; } },
+    ],
+  },
+  {
+    id: 'phuc_quoc_2', queued: true, pool: 'doi', title: 'Trận chiến phục quốc',
+    text: () => 'Quân phục quốc áp sát kinh thành. Trên tường thành, quốc sư của triều mới đứng chờ. Hắn là tu sĩ cùng cảnh giới với ngươi.',
+    choices: (g) => {
+      const po = g.winOdds(() => g.genericFighter('Quốc sư', REALMS[g.P.realm].pow * 1.25));
+      return [
+        { t: 'Đích thân lên tường thành', p: po, go: (g) => { const f = g.fight('Quốc sư', REALMS[g.P.realm].pow * 1.25, 1, { lethal: 0.2, cause: 'tử trận trong chiến tranh phục quốc' }); if (f.win) { g.fame(50); g.money(Math.round(3000 * (1 + g.P.realm))); g.P.sanNghiep = (g.P.sanNghiep || 0) + 3; return `${f.text}\n\nCờ cũ lại tung bay trên kinh thành. Ngươi trao ngai vàng cho người khác rồi quay về núi tu luyện. Danh vọng +50, quốc khố dâng nhiều linh thạch, sản nghiệp sinh lời mỗi năm.`; } return `${f.text}\n\nQuân phục quốc tan vỡ.`; } },
+        { t: 'Rút quân, tránh đổ máu', go: (g) => { g.fame(-10); g.tinh(5); return 'Ngươi ra lệnh lui binh. Lão tướng nhìn ngươi lần cuối rồi tự vẫn bên bờ sông.'; } },
+      ];
+    },
   },
 ];

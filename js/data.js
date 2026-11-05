@@ -80,7 +80,14 @@ export const ORIGINS = [
   { id: 'coi', n: 'Cô nhi đầu đường', w: 15, fx: { tam: 8, co: 5 }, desc: 'Không ai nuôi, tự học cách sống.' },
   { id: 'ren', n: 'Con thợ rèn', w: 12, fx: { can: 3, fight: 0.1 }, desc: 'Tiếng búa đập sắt là bài hát ru.' },
   { id: 'tu', n: 'Hậu duệ tu tiên gia tộc', w: 8, fx: { money: 40 }, desc: 'Tổ tiên từng có người Kim Đan. Gia tộc nay đã sa sút. Nhập đạo có sẵn 30% tu vi Phàm Nhân.' },
+  // bản 5.2: xuất thân có cốt truyện riêng (unlock: số kiếp đã sống)
+  { id: 'con_roi', n: 'Con rơi của tông chủ', w: 6, unlock: 1, fx: { ngo: 5, money: 30 }, desc: 'Mẹ ngươi là người tông chủ một đêm say rượu quên mất. Tuổi trẻ sẽ có người tìm tới.' },
+  { id: 'an_may', n: 'Ăn mày đầu chợ', w: 8, unlock: 1, fx: { co: 14, tam: 4 }, desc: 'Không một xu dính túi, nhưng ông trời hay để mắt tới kẻ khốn cùng.' },
+  { id: 'ma_toc', n: 'Hậu duệ ma tộc', w: 5, unlock: 3, fx: { can: 6 }, desc: 'Trong người chảy dòng máu ma tộc. Tu nhanh hơn 15%, nhưng chính đạo không dung.' },
+  { id: 'hoang_toc', n: 'Hoàng tộc mất nước', w: 4, unlock: 5, fx: { money: 150, tam: -4 }, desc: 'Vương triều đã sụp. Ngươi là giọt máu cuối cùng, và di thần vẫn đang tìm ngươi.' },
 ];
+/** Hiệu ứng lâu dài của xuất thân (như thiên phú) */
+export const ORIGIN_FX = { ma_toc: { gainMul: 1.15 }, an_may: { eventRate: 1.15 } };
 
 export const PERSONALITIES = {
   hien: { n: 'Hiền hòa', relMul: 1.3, fight: 0.5, betray: 0 },
@@ -322,7 +329,7 @@ export const PATHS = {
     good: ['Sát thương chuẩn xuyên giáp, khiên', 'Khống chế: loạn thần, hỗn loạn, tiên tri', 'Đột phá, tu luyện, nghề phụ, kỳ ngộ tốt nhất'],
     bad: ['Máu, thủ thấp nhất', 'Quái vô hồn (cương thi, khôi lỗi, trùng) miễn khống chế, chịu -50%', 'Lôi kiếp đợt 9 đánh vào hồn nặng hơn'],
     bars: { cong: 3, thu: 2, khong: 5, tu: 5, ky: 5 },
-    pm: { hpPct: -0.2, defPct: -0.2 }, fx: { brk: 0.06, gainMul: 1.05 },
+    pm: { hpPct: -0.14, defPct: -0.16, atkPct: 0.04 }, fx: { brk: 0.06, gainMul: 1.05 },
   },
 };
 export const PATH_BAR_N = { cong: 'Công', thu: 'Thủ', khong: 'Khống chế', tu: 'Tốc tu', ky: 'Kỳ ngộ, nghề' };
@@ -338,10 +345,10 @@ export const DIFF = [
 export const MAPS = [
   { id: 'ngoai_o', n: 'Ngoại ô Thanh Thạch', d: 0, pow: 0.6, loot: 0.6, myth: 0, lethal: 0.3, haz: null, mat: 'tinh_thiet', beast: 'Dã', desc: 'Đồng cỏ và rừng thưa quanh trấn. Yêu thú nhút nhát, người qua lại đông.' },
   { id: 'hac_phong', n: 'Hắc Phong Lĩnh', d: 1, pow: 1, loot: 1, myth: 0, lethal: 1, haz: null, mat: 'thu_hach', beast: '', desc: 'Dãy núi gió đen, bầy sói và gấu sắt làm tổ.' },
-  { id: 'vu_an', n: 'Vụ Ẩn Đầm Lầy', d: 2, pow: 1.25, loot: 1.5, myth: 0.01, lethal: 1.3, haz: [0.06, 12, 'Sương độc tràn qua đầm, ngươi hít phải mấy hơi', 'trúng sương độc giữa đầm lầy'], mat: 'doc_nang', beast: 'Độc', desc: 'Sương độc quanh năm. Thảo dược quý mọc giữa bùn lầy.' },
-  { id: 'xich_diem', n: 'Xích Diệm Cốc', d: 3, pow: 1.5, loot: 2.2, myth: 0.025, lethal: 1.6, haz: [0.09, 18, 'Nham thạch phun trào, ngươi chạy không kịp, bỏng một mảng lưng', 'chết cháy trong dòng nham thạch'], mat: 'hoa_tinh', beast: 'Hỏa', desc: 'Lòng núi lửa, nham thạch chảy thành sông. Hỏa tinh kết trong đá.' },
-  { id: 'co_chien', n: 'Cổ Chiến Trường', d: 4, pow: 1.8, loot: 3, myth: 0.05, lethal: 2, haz: [0.12, 24, 'Oán hồn vạn năm quấn lấy ngươi suốt một đêm', 'bị oán hồn cổ chiến trường hút cạn sinh khí'], mat: 'binh_hon', beast: 'Huyết', desc: 'Nơi chư tiên đại chiến vạn năm trước. Oán hồn và binh khí cổ nằm la liệt.' },
-  { id: 'hu_khong', n: 'Hư Không Liệt Cốc', d: 5, pow: 2.1, loot: 4, myth: 0.09, lethal: 2.5, haz: [0.15, 32, 'Một vết nứt không gian lướt qua, suýt cắt ngươi làm đôi', 'bị vết nứt không gian xé nát'], mat: 'than_hon', beast: 'Hư Không', desc: 'Vết nứt của trời đất. Không gian vỡ vụn, mười người vào chỉ một trở về.' },
+  { id: 'vu_an', n: 'Vụ Ẩn Đầm Lầy', d: 2, pow: 1.25, loot: 1.5, myth: 0.005, lethal: 1.3, haz: [0.06, 12, 'Sương độc tràn qua đầm, ngươi hít phải mấy hơi', 'trúng sương độc giữa đầm lầy'], mat: 'doc_nang', beast: 'Độc', desc: 'Sương độc quanh năm. Thảo dược quý mọc giữa bùn lầy.' },
+  { id: 'xich_diem', n: 'Xích Diệm Cốc', d: 3, pow: 1.5, loot: 2.2, myth: 0.012, lethal: 1.6, haz: [0.09, 18, 'Nham thạch phun trào, ngươi chạy không kịp, bỏng một mảng lưng', 'chết cháy trong dòng nham thạch'], mat: 'hoa_tinh', beast: 'Hỏa', desc: 'Lòng núi lửa, nham thạch chảy thành sông. Hỏa tinh kết trong đá.' },
+  { id: 'co_chien', n: 'Cổ Chiến Trường', d: 4, pow: 1.8, loot: 3, myth: 0.025, lethal: 2, haz: [0.12, 24, 'Oán hồn vạn năm quấn lấy ngươi suốt một đêm', 'bị oán hồn cổ chiến trường hút cạn sinh khí'], mat: 'binh_hon', beast: 'Huyết', desc: 'Nơi chư tiên đại chiến vạn năm trước. Oán hồn và binh khí cổ nằm la liệt.' },
+  { id: 'hu_khong', n: 'Hư Không Liệt Cốc', d: 5, pow: 2.1, loot: 4, myth: 0.045, lethal: 2.5, haz: [0.15, 32, 'Một vết nứt không gian lướt qua, suýt cắt ngươi làm đôi', 'bị vết nứt không gian xé nát'], mat: 'than_hon', beast: 'Hư Không', desc: 'Vết nứt của trời đất. Không gian vỡ vụn, mười người vào chỉ một trở về.' },
 ];
 export const MAP_MAP = Object.fromEntries(MAPS.map((m) => [m.id, m]));
 export const DEFAULT_MAP = 'hac_phong';
@@ -362,10 +369,10 @@ export const MATS = {
 MAPS.push(
   { id: 'tiep_dan_coc', plane: 1, n: 'Tiếp Dẫn Cốc', d: 0, pow: 0.6, loot: 0.6, myth: 0, lethal: 0.3, haz: null, mat: 'linh_moc', beast: '', desc: 'Thung lũng dưới chân Tiếp Dẫn Đài, nơi người phi thăng đáp xuống. Linh thú ở đây hiền lành.' },
   { id: 'van_linh_lam', plane: 1, n: 'Vạn Linh Sâm Lâm', d: 1, pow: 1, loot: 1, myth: 0, lethal: 1, haz: null, mat: 'linh_tuy', beast: '', desc: 'Rừng cổ vạn năm, cây nào cũng có linh trí. Thụ yêu và linh hầu làm chủ.' },
-  { id: 'huyet_linh_hai', plane: 1, n: 'Huyết Linh Hải', d: 2, pow: 1.25, loot: 1.5, myth: 0.01, lethal: 1.3, haz: [0.06, 12, 'Huyết vụ bốc lên từ mặt biển, ngươi hít phải mấy hơi', 'bị huyết vụ ăn mòn ngũ tạng'], mat: 'huyet_linh_chau', beast: 'Huyết', desc: 'Biển nước đỏ như máu, hải yêu ẩn dưới sóng.' },
-  { id: 'loi_minh_nguyen', plane: 1, n: 'Lôi Minh Cao Nguyên', d: 3, pow: 1.5, loot: 2.2, myth: 0.025, lethal: 1.6, haz: [0.09, 18, 'Một đạo sét từ trời giáng xuống ngay cạnh chỗ ngươi đứng', 'bị sét cao nguyên đánh thành tro'], mat: 'loi_tinh', beast: 'Lôi', desc: 'Cao nguyên sấm sét quanh năm. Lôi thú sinh ra từ tia chớp.' },
-  { id: 'linh_hu_chien', plane: 1, n: 'Linh Hư Chiến Trường', d: 4, pow: 1.8, loot: 3, myth: 0.05, lethal: 2, haz: [0.12, 24, 'Tàn hồn linh tộc gào thét lao qua người ngươi', 'bị tàn hồn linh tộc xé nát thần hồn'], mat: 'linh_hon_tinh', beast: 'Tàn Hồn', desc: 'Cổ chiến trường nơi linh tộc diệt vong. Tàn hồn vẫn đánh nhau không ngừng.' },
-  { id: 'van_linh_uyen', plane: 1, n: 'Vẫn Linh Uyên', d: 5, pow: 2.1, loot: 4, myth: 0.09, lethal: 2.5, haz: [0.15, 32, 'Vực sâu hút lấy linh hồn ngươi, suýt nữa không về được', 'linh hồn tan biến dưới đáy Vẫn Linh Uyên'], mat: 'dao_van_thach', beast: 'Vẫn Linh', desc: 'Vực sâu không đáy, nơi linh hồn tiêu tán. Đá dưới đáy khắc đầy đạo văn.' },
+  { id: 'huyet_linh_hai', plane: 1, n: 'Huyết Linh Hải', d: 2, pow: 1.25, loot: 1.5, myth: 0.005, lethal: 1.3, haz: [0.06, 12, 'Huyết vụ bốc lên từ mặt biển, ngươi hít phải mấy hơi', 'bị huyết vụ ăn mòn ngũ tạng'], mat: 'huyet_linh_chau', beast: 'Huyết', desc: 'Biển nước đỏ như máu, hải yêu ẩn dưới sóng.' },
+  { id: 'loi_minh_nguyen', plane: 1, n: 'Lôi Minh Cao Nguyên', d: 3, pow: 1.5, loot: 2.2, myth: 0.012, lethal: 1.6, haz: [0.09, 18, 'Một đạo sét từ trời giáng xuống ngay cạnh chỗ ngươi đứng', 'bị sét cao nguyên đánh thành tro'], mat: 'loi_tinh', beast: 'Lôi', desc: 'Cao nguyên sấm sét quanh năm. Lôi thú sinh ra từ tia chớp.' },
+  { id: 'linh_hu_chien', plane: 1, n: 'Linh Hư Chiến Trường', d: 4, pow: 1.8, loot: 3, myth: 0.025, lethal: 2, haz: [0.12, 24, 'Tàn hồn linh tộc gào thét lao qua người ngươi', 'bị tàn hồn linh tộc xé nát thần hồn'], mat: 'linh_hon_tinh', beast: 'Tàn Hồn', desc: 'Cổ chiến trường nơi linh tộc diệt vong. Tàn hồn vẫn đánh nhau không ngừng.' },
+  { id: 'van_linh_uyen', plane: 1, n: 'Vẫn Linh Uyên', d: 5, pow: 2.1, loot: 4, myth: 0.045, lethal: 2.5, haz: [0.15, 32, 'Vực sâu hút lấy linh hồn ngươi, suýt nữa không về được', 'linh hồn tan biến dưới đáy Vẫn Linh Uyên'], mat: 'dao_van_thach', beast: 'Vẫn Linh', desc: 'Vực sâu không đáy, nơi linh hồn tiêu tán. Đá dưới đáy khắc đầy đạo văn.' },
 );
 for (const m of MAPS) if (m.plane === undefined) m.plane = 0;
 for (const m of MAPS) MAP_MAP[m.id] = m;

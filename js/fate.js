@@ -70,3 +70,34 @@ export const CHAPTERS = [
 /** Tự quyết: lá hợp việc đang làm trước, rồi lá có lợi cho tu luyện */
 export const CHAPTER_RANK = ['tu_quan', 'bai_su', 'leo_thap', 'tham_hiem', 'truy_tuc', 'thuong_lo', 'du_hiep', 'ket_giao', 'an_cu'];
 export const CHAPTER_MAP = Object.fromEntries(CHAPTERS.map((c) => [c.id, c]));
+
+// ---------- Bản 5.2: Thời đại của thế giới ----------
+// fx: tác động lên người chơi như một thiên phú. enemy: hệ số sức mạnh mọi kẻ địch. ev: kỳ ngộ ra nhiều hơn ×3.
+export const ERAS = [
+  { id: 'thai_binh', n: 'Thái bình', ic: '🌤', w: 3, desc: 'Thiên hạ yên ổn, không có gì đặc biệt.', fx: {} },
+  { id: 'mat_phap', n: 'Mạt pháp', ic: '🌑', w: 2, desc: 'Linh khí cạn dần: tu vi −20%. Bảo vật cổ lộ ra, kỳ ngộ nhiều hơn 30%.', fx: { gainMul: 0.8, eventRate: 1.3 }, ev: ['bao_vat', 'co_mo', 'di_bao', 'truyen_thua', 'ngoc_gian'] },
+  { id: 'ma_kiep', n: 'Ma kiếp', ic: '🩸', w: 2, desc: 'Ma tu tràn lan: mọi kẻ địch mạnh hơn 15%, chuyện ma đạo khắp nơi. Diệt ma được nhiều danh vọng.', fx: {}, enemy: 1.15, ev: ['ma_dao_xam', 'huyet_tran', 'do_hoa', 'huyet_an_1', 'phan_phe'] },
+  { id: 'linh_khi', n: 'Linh khí phục hồi', ic: '✨', w: 2, desc: 'Linh khí dồi dào: tu vi +30%, đột phá +5%.', fx: { gainMul: 1.3, brk: 0.05 } },
+  { id: 'dai_chien', n: 'Đại chiến tông môn', ic: '⚔', w: 2, desc: 'Các tông môn giao tranh: kẻ địch mạnh hơn 10%, chuyện tông môn chiến, chọn phe dồn dập.', fx: {}, enemy: 1.1, ev: ['tong_mon_chien', 'chon_phe', 'nhiem_vu_tong', 'phan_do'] },
+  { id: 'bi_canh', n: 'Bí cảnh mở cửa', ic: '🌀', w: 1, desc: 'Các bí cảnh thượng cổ mở ra: kỳ ngộ nhiều hơn 40%, cơ duyên lớn ra dày.', fx: { eventRate: 1.4 }, ev: ['bi_canh', 'tran_phap', 'kiem_trung', 'truyen_thua', 'khe_thoi_gian'] },
+  { id: 'di_bien', n: 'Thiên địa dị biến', ic: '🌋', w: 1, desc: 'Trời đất đảo lộn: tu vi +15% nhưng thọ nguyên −10%, tai họa ở vùng lịch luyện nhiều hơn.', fx: { gainMul: 1.15, lifeMul: 0.9 } },
+];
+export const ERA_MAP = Object.fromEntries(ERAS.map((e) => [e.id, e]));
+
+// ---------- Bản 5.2: Nhánh đạo lộ (chọn khi tới Kim Đan) ----------
+// pm: cộng vào hệ số đạo lộ (atkPct, defPct, hpPct). gear: cộng vào chỉ số trận (crit, dodge, ls, rf, dmgRed, regenTurn, mpRegen). fx: thiên phú.
+export const BRANCHES = {
+  kiem: [
+    { id: 'van_kiem', n: 'Vạn Kiếm', ic: '🗡', desc: 'Phi kiếm dày đặc, bạo kích cao. Công +12%, bạo kích +12%, nhưng thủ −8%.', pm: { atkPct: 0.12, defPct: -0.08 }, gear: { crit: 0.12 } },
+    { id: 'kiem_the', n: 'Kiếm Thể', ic: '🛡', desc: 'Lấy thân làm kiếm, cận chiến phản đòn. Sinh lực +18%, phản đòn 15%, giảm sát thương nhận 8%.', pm: { hpPct: 0.18 }, gear: { rf: 0.15, dmgRed: 0.08 } },
+  ],
+  the: [
+    { id: 'ba_the', n: 'Bá Thể', ic: '👊', desc: 'Một quyền phá núi. Công +18%, bạo kích +6%.', pm: { atkPct: 0.18 }, gear: { crit: 0.06 } },
+    { id: 'bat_diet', n: 'Bất Diệt', ic: '🔥', desc: 'Đánh mãi không ngã. Sinh lực +25%, hồi máu mỗi lượt, hút máu 6%.', pm: { hpPct: 0.25 }, gear: { regenTurn: 0.03, ls: 0.06 } },
+  ],
+  tinh: [
+    { id: 'phu_tran', n: 'Phù Trận', ic: '📜', desc: 'Bày phù trận thiêu hồn. Công +14%, linh lực hồi nhanh.', pm: { atkPct: 0.14 }, gear: { mpRegen: 6 } },
+    { id: 'mi_hon', n: 'Mị Hồn', ic: '👁', desc: 'Mê hoặc tâm thần đối thủ. Né +10%, hút máu 6%, giảm sát thương nhận 8%.', pm: {}, gear: { dodge: 0.1, ls: 0.06, dmgRed: 0.08 } },
+  ],
+};
+export const BRANCH_MAP = Object.fromEntries(Object.values(BRANCHES).flat().map((b) => [b.id, b]));

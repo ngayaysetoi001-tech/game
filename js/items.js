@@ -7,7 +7,7 @@ export const QUALITY = [
   { n: 'Trung phẩm', m: 1.35 },
   { n: 'Thượng phẩm', m: 1.8 },
   { n: 'Cực phẩm', m: 2.5 },
-  { n: 'Thần thoại', m: 5 },
+  { n: 'Thần thoại', m: 3.6 },
 ];
 // tên riêng cho đồ Thần thoại
 const MYTH_PREFIX = ['Hồng Mông', 'Thái Sơ', 'Cửu U', 'Diệt Thế', 'Chư Thiên', 'Thái Cổ', 'Hỗn Nguyên', 'Vạn Kiếp'];
@@ -90,7 +90,7 @@ export function rollQuality(r, loot = 1, myth = 0) {
   return r.weighted([0, 1, 2, 3], (x) => w[x]);
 }
 /** Hệ số cường hóa: mỗi cấp +8% công, thủ, sinh lực */
-export const plusMul = (it) => 1 + 0.08 * ((it && it.plus) || 0);
+export const plusMul = (it) => 1 + 0.15 * ((it && it.plus) || 0);
 export const PLUS_MAX = 10;
 /** Tên hiển thị kèm cấp cường hóa */
 export const itemName = (it) => (it.plus ? `${it.n} +${it.plus}` : it.n);
@@ -135,7 +135,8 @@ export function makeItem(r, id, lv, q = null, slot = null) {
 /** Tổng chỉ số từ các món đang mặc */
 /** Thần khí kén chủ: đồ Thần thoại cao cảnh giới hơn chủ thì bị phong ấn */
 // đồ không phân cảnh giới nữa: không còn phong ấn, áp chế
-export const isSealed = () => false;
+/** Thần khí mang từ kiếp trước: phong ấn tới khi tu lại tới cảnh giới cũ */
+export const isSealed = (it, realm) => !!(it && it.sealTo !== undefined && realm !== undefined && realm < it.sealTo);
 /** Đồ hạ giới đang bị áp chế ở giới trên */
 export const isSuppressed = () => false;
 
