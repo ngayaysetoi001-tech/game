@@ -311,7 +311,7 @@ export const PATHS = {
     good: ['Sát thương cao nhất, leo tháp nhanh', 'Bạo kích, né tránh, ra tay trước', 'Lôi kiếp: kiếm trảm lôi, mỗi đợt 25% yếu đi 20%'],
     bad: ['Máu mỏng, thủ thấp', 'Sợ giáp dày, phản đòn', 'Không cầm kiếm thì chiêu chỉ còn 60%'],
     bars: { cong: 5, thu: 2, khong: 3, tu: 3, ky: 3 },
-    pm: { hpPct: -0.05, defPct: -0.05, atkPct: 0.05 }, fx: {},
+    pm: { hpPct: 0.04, defPct: -0.03, atkPct: 0.2 }, fx: {},
   },
   the: {
     n: 'Thể Tu', icon: '🛡', res: 'Nộ huyết', wep: 'quyen', hero: 'the',

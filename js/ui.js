@@ -6,7 +6,7 @@ import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, BEAST_SKILLS, TACTICS, WEAPON_TYPES, turnText, PATH_RES, PATH_SKILLS, SKILL_MAX, skillLvMul } from './combat.js';
 import { DESTINY_MAP, PERKS, perkLv, CHAPTER_MAP, BRANCH_MAP } from './fate.js';
 import { heroArt, heroStandArt, heroFilter, meditateArt, skillArt, monsterArt, needFlip, uiIcon, ART } from './art.js';
-import { GEMS, GEM_IDS, GEM_MAX, parseGem, gemName, gemText, PETS, PET_MAX, PET_TIER_N, petNeed } from './gear2.js';
+import { GEMS, GEM_IDS, GEM_MAX, parseGem, gemName, gemText, PETS, PET_MAX, PET_TIER_N, petNeed, PHAP_BAO, PB_IDS, PB_MAX } from './gear2.js';
 import { SLOTS, QUALITY, itemLine, TT_MAP, isSealed, isSuppressed, gearStats, itemName, PLUS_MAX, AFFIX } from './items.js';
 import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE, matIconOpts, skillIconOpts } from './icons.js';
 
@@ -879,6 +879,7 @@ function setCh(el, v) {
   el.classList.toggle('full', v >= max);
 }
 function applySnap(t) {
+  if (!bt) return; // trận đã đóng (bấm Bỏ qua) trong lúc hiệu ứng đòn còn chờ
   const r = bt.res;
   if (r.a.chMax && t.aCh !== undefined) setCh($('fA').querySelector('.gauge.ch'), t.aCh);
   if (r.b.chMax && t.bCh !== undefined) setCh($('fB').querySelector('.gauge.ch'), t.bCh);
@@ -923,7 +924,7 @@ function stepBattle() {
   $('btLog').prepend(li);
   while ($('btLog').children.length > 6) $('btLog').lastChild.remove();
   bt.i++;
-  bt.timer = setTimeout(stepBattle, bt.fast ? (fastNow() && bt.res.tower ? 150 : 420) : 900);
+  bt.timer = setTimeout(stepBattle, bt.fast ? (fastNow() && bt.res.tower ? 110 : 280) : 600);
 }
 function endBattle() {
   clearTimeout(bt.timer);
@@ -1387,6 +1388,21 @@ function gemBag() {
   if (!ks.length) return '<p class="meta">Túi ngọc trống.</p>';
   return `<h3>Túi ngọc</h3><div class="gemBag">${ks.map((k) => { const { lv } = parseGem(k); const can = P.gems[k] >= 3 && lv < GEM_MAX; return `<div class="gemRow">${gemIco(k)}<span><b>${esc(gemName(k))}</b> ×${P.gems[k]}<em>${esc(gemText(k))}</em></span>${can ? `<button class="btn ghost sm" data-merge="${k}">Ghép 3→1 · ${fmtShort(g.mergeCost(k))}</button>` : ''}</div>`; }).join('')}</div>`;
 }
+/** Popup pháp bảo: món đang đeo, luyện hóa, đổi món khác trong kho */
+function pbPop() {
+  const P = g.P;
+  const cur = P.pb.eq;
+  const own = PB_IDS.filter((id) => P.pb.own[id]);
+  const d = cur && PHAP_BAO[cur];
+  const lv = cur ? P.pb.own[cur] : 0;
+  const c = cur && lv < PB_MAX ? g.pbUpCost(cur) : null;
+  const can = c && P.money >= c.money && (P.mats.linh_tinh || 0) >= c.linh_tinh;
+  const list = own.map((id) => `<button class="btn ${id === cur ? 'on' : 'ghost'} sm pbPick" data-pbeq="${id}">${ART['treasures/' + id] ? `<img src="${ART['treasures/' + id]}" alt="">` : ''}${esc(PHAP_BAO[id].n)} <small>c${P.pb.own[id]}</small></button>`).join('');
+  return popBox(cur && ART['treasures/' + cur] ? `<img class="petImg big" src="${ART['treasures/' + cur]}" alt="">` : '🔮', `<b class="t3c">${d ? esc(d.n) : 'Chưa đeo pháp bảo'}</b>`, d ? `Pháp bảo · cấp ${lv}/${PB_MAX} · mỗi cấp +12%` : `Có ${own.length} món`,
+    `${d ? `<div class="ipLine">${esc(d.t)}.</div>${c ? `<div class="meta">Luyện hóa lên cấp ${lv + 1}: ${fmtShort(c.money)} linh thạch, ${c.linh_tinh} Linh tinh (có ${P.mats.linh_tinh || 0})</div>` : '<div class="meta pos">Đã luyện hóa tối đa.</div>'}` : ''}
+    ${own.length > 1 || !cur ? `<div class="pbList">${list}</div>` : ''}<div class="meta">Pháp bảo rơi từ trùm tháp, vùng chủ, rương tinh anh. Chết là mất.</div>`,
+    c ? `<button class="btn primary sm" data-pbup="${cur}" ${can ? '' : 'disabled'}>⚒ Luyện hóa</button>` : '');
+}
 /** Popup trân thú: cấp, kinh nghiệm, hiệu ứng, cho ăn */
 function petPop(pet) {
   const P = g.P;
@@ -1436,7 +1452,7 @@ function placeItemPop() {
   const pop = $('itemPop');
   if (!pop) return;
   const B = $('sheetBody');
-  const tile = B.querySelector('.tile.sel[data-it], .tile.sel[data-skt], .tile.sel[data-pl], .tile.sel[data-mt], .tile.sel[data-ps], .tile.sel[data-fp], .tile.sel[data-pets]');
+  const tile = B.querySelector('.tile.sel[data-it], .tile.sel[data-skt], .tile.sel[data-pl], .tile.sel[data-mt], .tile.sel[data-ps], .tile.sel[data-fp], .tile.sel[data-pets], .tile.sel[data-pbs]');
   if (!tile) { pop.remove(); return; }
   const card = $('sheet').querySelector('.card');
   const br = B.getBoundingClientRect(), tr = tile.getBoundingClientRect(), cr = card.getBoundingClientRect();
@@ -1491,7 +1507,7 @@ function bagEq() {
   const cf = (k) => bag.confirm === `${k}:${sel.id}`;
   const sellB = sel && !isEq ? (sel.lock ? '<span class="meta">Đã khóa: không bán, phân giải được</span>'
     : `<button class="btn ${cf('sell') ? 'danger' : 'ghost'}" data-sell="${sel.id}">${cf('sell') ? `Bấm lần nữa để bán ${QUALITY[sel.q].n}` : `💰 Bán · ${fmt(sel.val)}`}</button><button class="btn ${cf('salv') ? 'danger' : 'ghost'}" data-salv="${sel.id}" title="${esc(stripTok(g.matText(g.salvageYield(sel))))}">${cf('salv') ? 'Bấm lần nữa để phân giải' : '♻ Phân giải'}</button>`) : '';
-  const detail = sel ? itemPop(sel, isEq) : bag.sel === 'pet' && P.pet ? petPop(P.pet) : '';
+  const detail = sel ? itemPop(sel, isEq) : bag.sel === 'pet' && P.pet ? petPop(P.pet) : bag.sel === 'pb' && P.pb ? pbPop() : '';
   const picked = [...bag.picked].filter((id) => P.bag.some((x) => x.id === id));
   const cap = g.bagCap();
   const emptyCells = Array.from({ length: Math.max(0, cap - list.length) }, () => '<div class="tile cell"></div>').join('');
@@ -1499,7 +1515,7 @@ function bagEq() {
   const nGem = Object.values(P.gems || {}).reduce((m, n) => m + n, 0);
   const spare = `<div class="dollSlot"><span class="meta">Trân thú</span><button class="tile petT ${pet ? `t${PETS[pet.id].tier}` : 'empty'} ${bag.sel === 'pet' ? 'sel' : ''}" data-pets="1">${pet && ART['pets/' + pet.id] ? `<img class="petImg" src="${ART['pets/' + pet.id]}" alt="">` : '<span class="ai">🐾</span>'}${pet ? `<span class="bdg plus">${pet.lv}</span>` : ''}<span class="tn">${pet ? esc(pet.name) : 'Chưa có'}</span></button></div>
     <div class="dollSlot"><span class="meta">Ngọc khảm</span><button class="tile gemT" data-gems="1"><span class="ai">💎</span><span class="tn">${nGem ? `${nGem} viên` : 'Trống'}</span></button></div>
-    <div class="dollSlot"><div class="tile spare"><span class="tn">Sắp có</span></div></div>`;
+    <div class="dollSlot"><span class="meta">Pháp bảo</span><button class="tile pbT ${P.pb && P.pb.eq ? '' : 'empty'} ${bag.sel === 'pb' ? 'sel' : ''}" data-pbs="1">${P.pb && P.pb.eq && ART['treasures/' + P.pb.eq] ? `<img class="petImg" src="${ART['treasures/' + P.pb.eq]}" alt="">${`<span class="bdg plus">${P.pb.own[P.pb.eq]}</span>`}` : '<span class="ai">🔮</span>'}<span class="tn">${P.pb && P.pb.eq ? esc(PHAP_BAO[P.pb.eq].n) : 'Chưa có'}</span></button></div>`;
   return `<div class="doll doll2"><div class="dollCol">${slotTile('vu_khi')}${slotTile('ao')}${slotTile('phu_kien')}</div><div class="dollFig"><canvas id="dollCv" width="32" height="40"></canvas><img id="dollArt" class="art" alt="" hidden></div><div class="dollCol">${spare}</div></div>
     <div class="statIcons">${stats.map(([k, n, v]) => `<button class="si" data-stat="f_${k}">${icoImg({ kind: STAT_ICO[k] })}<span>${n}</span><b>${v}</b></button>`).join('')}</div>
     ${tt.length ? `<div class="ttActive">Thần thông: ${tt.map((id) => `<span class="ttName">✦ ${esc(TT_MAP[id].n)}</span>`).join(' ')}</div>` : ''}
@@ -1655,6 +1671,9 @@ function openBag(tabId) {
         bag.trialRes = { id: it.id, t: bag.trial, now, with: w, rl };
       });
       q('[data-bt]', (b) => { bag.tab = b.dataset.bt; bag.sel = null; bag.multi = false; bag.picked.clear(); });
+      q('[data-pbs]', () => { if (!P.pb || !Object.keys(P.pb.own).length) return 'Chưa có pháp bảo. Hạ trùm tháp (mỗi 100 tầng), vùng chủ, mở rương tinh anh để có.'; bag.sel = bag.sel === 'pb' ? null : 'pb'; });
+      q('[data-pbeq]', (b) => g.equipPb(b.dataset.pbeq));
+      q('[data-pbup]', (b) => g.upgradePb(b.dataset.pbup));
       q('[data-pets]', () => { if (!P.pet) return 'Chưa có trân thú. Lịch luyện sẽ có lúc gặp ấu thú, linh thú bị thương để thu nhận.'; bag.sel = bag.sel === 'pet' ? null : 'pet'; });
       q('[data-gems]', () => { if (!g.forgeOpen()) return 'Lò rèn mở từ 12 tuổi.'; forgeTab = 'ngoc'; setTimeout(openForge, 0); return ''; });
       q('[data-feed]', (b) => g.feedPet(+b.dataset.feed));

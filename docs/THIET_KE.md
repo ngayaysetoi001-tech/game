@@ -800,3 +800,23 @@ Mô phỏng 42 kiếp mỗi đạo (lịch trình Leo tháp, có rèn đồ):
   - Hiện ở ô "Trân thú" bên phải túi trữ vật.
 - **Thể Tu:** hệ số đạo lộ bù lên (máu +25%, thủ +12%, công +8%, tu vi ×0,92).
 - **Mô phỏng (lịch trình, 36 kiếp mỗi đạo, có cường hóa, khảm ngọc, cho trân thú ăn):** cảnh giới trung bình Kiếm 5,2 / Thể 5,4 / Tinh 4,8.
+
+## Bản 5.5: Máu dày, pháp bảo, đồ không qua kiếp
+
+- **Máu ×3** (`HP_BASE = 180` trong combat.js, trước 60; sinh lực của đồ `HP_MUL = 3`):
+  - Máu khoảng 16–18 lần công (trước khoảng 5 lần).
+  - Trận thường 12–17 hiệp, tháp khoảng 19 hiệp (trước 4–6). Giới hạn hiệp 14 → 40.
+  - Hồi máu theo % (mỗi lượt, chiêu hồi, hồi khi trúng) ×0,45 (`HEAL_SCALE`), vì trận dài hơn nhiều.
+  - Thiêu đốt và độc: 30% công mỗi lượt (trước 15%).
+  - Diễn trận nhanh hơn mỗi lượt (600ms / nhanh 280ms).
+  - Đã thử ×5: trận 20–30 hiệp, quá dài, nên chọn ×3.
+  - Kiếm Tu bù công +20%, máu +4% (trận dài làm mất lợi thế hạ nhanh).
+- **Pháp bảo** (`PHAP_BAO` trong gear2.js, `P.pb = { eq, own: {id: cấp} }`):
+  - 11 món dùng tranh trong kho của người dùng (assets/treasures).
+  - Đeo 1 món, luyện hóa cấp 1–10 (mỗi cấp +12%, tốn linh thạch và Linh tinh).
+  - Hiệu ứng trong trận: khiên khi máu thấp, không chết 1 lần, đánh thêm mỗi N lượt, choáng lượt đầu, hút máu, giảm sát thương, phản đòn, hồi máu. Có món cho hiệu ứng ngoài trận: tu luyện, kỳ ngộ, đột phá.
+  - Nguồn: trùm tháp 50%, vùng chủ 35%, rương tinh anh 3%. Có rồi thì món trùng thành +1 cấp.
+  - Chết là mất. Danh sách đã gặp lưu ở `s.seenPb`.
+- **Không mang đồ qua kiếp:** bỏ tàn niệm "Thần khí nhận chủ".
+- **Sửa lỗi:** bấm "Bỏ qua" giữa trận đôi khi báo lỗi JS (`applySnap` khi trận đã đóng).
+- **Mô phỏng (lịch trình, 36 kiếp mỗi đạo):** Thể 5,0 / Tinh 5,2 / Kiếm khoảng 4,3.

@@ -307,7 +307,7 @@ Ngươi bị đẩy ra ngoài. ${bot.name} vẫn kẹt trong trận, nhưng nh�
             g.fame(4 + mp.d * 2);
             const myth = mp.d >= 5 ? 0.25 : mp.d >= 4 ? 0.12 : mp.d >= 3 ? 0.05 : 0;
             const m = { [mp.mat]: RARE(mp.mat) ? 1 : 3, linh_tinh: fr4(g) * 2 };
-            return `${r.text}\n\nVùng chủ ${mp.n} gục ngã.\n${item4(g, g.r.chance(myth) ? 4 : 3, null, 'Vùng chủ rơi')}\n${mats4(g, m)}`;
+            return `${r.text}\n\nVùng chủ ${mp.n} gục ngã.\n${item4(g, g.r.chance(myth) ? 4 : 3, null, 'Vùng chủ rơi')}\n${mats4(g, m)}${g.r.chance(0.35) ? `\n${g.gainPb()}` : ''}`;
           },
         }].flatMap((c) => [c, allyChoice(g, 'cùng nghênh chiến', c.go)].filter(Boolean)),
         { t: 'Tránh đi, rời vùng này một thời gian', go: (g) => { g.P.map = g.defaultMap().id; return `Ngươi rút về ${g.defaultMap().n}. Vùng chủ gầm vang sau lưng.`; } },

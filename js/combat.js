@@ -117,6 +117,10 @@ const findSkill = (id) => SKILLS[id] || BEAST_SKILLS[id];
  * Tạo một bên giao chiến.
  * o: { name, pw, hpPct, skills, wep, tactic, gear, beast, look, path, lv (cấp kỹ năng), mindless }
  */
+// bản 5.5: máu ×3 (60 → 180 mỗi điểm sức mạnh) để trận dài 10–15 hiệp, thấy rõ diễn biến.
+// Trận dài hơn nên mọi hiệu ứng hồi máu theo % mỗi lượt / mỗi chiêu bị giảm theo HEAL_SCALE.
+export const HP_BASE = 180;
+export const HEAL_SCALE = 0.45;
 export function fighter(o) {
   const gear = { ...(o.gear || {}) };
   const wt = o.wep ? WEAPON_TYPES[o.wep] : null;
@@ -125,7 +129,7 @@ export function fighter(o) {
   // bị động của đường tu cộng vào như trang bị
   const pas = o.path ? pathPassives(o.path, lv) : {};
   for (const k in pas) gear[k] = typeof pas[k] === 'number' && typeof gear[k] !== 'boolean' ? (gear[k] || 0) + pas[k] : pas[k];
-  const maxHp = (60 * o.pw + (gear.hp || 0)) * (1 + (pm.hpPct || 0));
+  const maxHp = (HP_BASE * o.pw + (gear.hp || 0)) * (1 + (pm.hpPct || 0));
   const res = o.path ? PATH_RES[o.path] : null;
   const ult = o.path ? (o.skills || []).find((id) => SKILLS[id] && SKILLS[id].slot === 'ult') : null;
   return {
@@ -138,7 +142,7 @@ export function fighter(o) {
     ls: (gear.ls || 0) + (pm.ls || 0), rf: gear.rf || 0,
     pierce: (gear.pierce || 0) + (wt && wt.pierce ? wt.pierce : 0),
     spd: 10 + (gear.sp || 0) + (o.spd || 0),
-    mp: 100, wep: o.wep || null,
+    mp: 100, wep: o.wep || null, pb: o.pb || null, pbN: 0, pbSh: false,
     skills: (o.skills && o.skills.length ? o.skills : ['quyen']).filter((id) => findSkill(id) && findSkill(id).kind !== 'passive' && id !== ult).slice(0, 6),
     tactic: o.tactic || 'can_bang',
     st: { burn: 0, burnDmg: 0, burnName: '', stun: false, stunName: '', shield: Math.round(maxHp * (gear.startShield || 0)), shieldT: gear.startShield ? 99 : 0, armor: 0, evade: 0, rage: 0, thorns: 0, dizzy: 0, confuse: 0, chaos: false },
@@ -244,6 +248,7 @@ function hit(att, def, sk, r, ev, extra = {}) {
   const real = dmg - absorbed;
   def.hp = Math.max(0, def.hp - real);
   if (def.hp <= 0 && def.lastStand && !def.usedLS) { def.usedLS = true; def.hp = Math.round(def.maxHp * (def.path === 'the' ? 0.4 : 0.3)); ev.lastStand = true; }
+  else if (def.hp <= 0 && def.pb && def.pb.last && !def.pbLast) { def.pbLast = true; def.hp = Math.round(def.maxHp * def.pb.last); ev.lastStand = true; ev.pbSave = def.pb.n; }
   if (att.mpDrain && real > 0) { const m = Math.min(def.mp, att.mpDrain); def.mp -= m; att.mp = Math.min(100, att.mp + m); }
   ev.hits.push({ dmg: real, crit, absorbed });
   // nộ huyết của Thể tu: bị đánh +8, đánh trúng +4
@@ -269,7 +274,7 @@ function cast(f, foe, id, r, ev, k = 1) {
   for (let i = 0; i < (sk.hits || 1) && foe.hp > 0; i++) hit(f, foe, sk, r, ev, { mul, pierce: sk.defStack ? sk.defStack * i : 0 });
   if (comboOn && sk.clearCombo) foe.st[sk.combo] = 0;
   const landed = ev.hits.slice(before).some((h) => !h.miss && h.dmg > 0);
-  if (landed && sk.healHit) { const h = Math.round(f.maxHp * sk.healHit); f.hp = Math.min(f.maxHp, f.hp + h); ev.heal = (ev.heal || 0) + h; }
+  if (landed && sk.healHit) { const h = Math.round(f.maxHp * sk.healHit * HEAL_SCALE); f.hp = Math.min(f.maxHp, f.hp + h); ev.heal = (ev.heal || 0) + h; }
   if (landed && sk.mpDrainS) { const d = Math.min(foe.mp, sk.mpDrainS); foe.mp -= d; ev.applied = ev.applied || 'mất linh lực'; }
   return landed;
 }
@@ -285,7 +290,7 @@ export function battle(A, B, r) {
   B.atk *= r.range(0.78, 1.22);
   const snap = () => ({ aHp: Math.round(A.hp), bHp: Math.round(B.hp), aMp: Math.round(A.mp), bMp: Math.round(B.mp), aSh: Math.round(A.st.shield), bSh: Math.round(B.st.shield), aCh: A.ch, bCh: B.ch });
   let round = 0;
-  while (A.hp > 0 && B.hp > 0 && round < 14) {
+  while (A.hp > 0 && B.hp > 0 && round < 40) {
     round++;
     const aFirst = A.first && !B.first ? true : B.first && !A.first ? false : A.spd * (A.st.confuse ? 0.7 : 1) + r.range(-3, 3) >= B.spd * (B.st.confuse ? 0.7 : 1) + r.range(-3, 3);
     const order = aFirst ? [[A, B, 'a'], [B, A, 'b']] : [[B, A, 'b'], [A, B, 'a']];
@@ -305,7 +310,20 @@ export function battle(A, B, r) {
       if (f.st.shieldT > 0 && --f.st.shieldT === 0) f.st.shield = 0;
       f.mp = Math.min(100, f.mp + 12 + f.mpRegen);
       if (f.path === 'tinh') gainCh(f, 6 + f.chargeTurn);
-      if (f.regenTurn && f.hp < f.maxHp) { const h = Math.round(f.maxHp * f.regenTurn); f.hp = Math.min(f.maxHp, f.hp + h); ev.regen = h; }
+      if (f.regenTurn && f.hp < f.maxHp) { const h = Math.round(f.maxHp * f.regenTurn * HEAL_SCALE); f.hp = Math.min(f.maxHp, f.hp + h); ev.regen = h; }
+      // pháp bảo
+      if (f.pb) {
+        const pb = f.pb;
+        if (pb.shield && !f.pbSh && f.hp / f.maxHp < 0.3) { f.pbSh = true; const sh = Math.round(f.maxHp * pb.shield); f.st.shield += sh; f.st.shieldT = 99; ev.pb = `${pb.n} ngân vang, hiện khiên ${sh}`; }
+        if (pb.stun && round === 1 && !foe.immune && r.chance(pb.stun)) { foe.st.stun = true; foe.st.stunName = 'choáng'; ev.pb = `${pb.n} quạt ra cuồng phong, ${foe.name} bị choáng`; }
+        if (pb.every && ++f.pbN % pb.every === 0) {
+          const d = pb.pierce ? 0 : foe.def * 0.6;
+          const dmg = Math.max(1, Math.round(f.atk * pb.mult * (1 - d / (d + f.atk * 1.5)) * r.range(0.9, 1.1) * (1 - (foe.dmgRed || 0))));
+          foe.hp = Math.max(0, foe.hp - dmg);
+          ev.pb = `${pb.hitN || pb.n}: ${foe.name} mất ${dmg}`;
+          if (foe.hp <= 0) { Object.assign(ev, snap()); ev.skill = null; turns.push(ev); break; }
+        }
+      }
       if (f.st.stun) {
         f.st.stun = false;
         // vừa bị choáng thì kháng choáng 2 lượt, không bị khóa mãi
@@ -353,7 +371,7 @@ export function battle(A, B, r) {
         if (landed && foe.hp > 0 && !foe.immune && !foe.st.stunImm && f.stunHit && r.chance(f.stunHit)) { foe.st.stun = true; foe.st.stunName = 'choáng vì sấm'; ev.applied = 'choáng vì sấm'; }
         if (landed && foe.hp > 0 && foe.immune && (sk.burn || sk.stun)) ev.applied = 'miễn nhiễm';
         if (landed && foe.hp > 0 && !foe.immune) {
-          if (sk.burn) { foe.st.burn = sk.burn; foe.st.burnDmg = f.atk * 0.15; foe.st.burnName = sk.burnName || 'thiêu đốt'; ev.applied = foe.st.burnName; }
+          if (sk.burn) { foe.st.burn = sk.burn; foe.st.burnDmg = f.atk * 0.3; foe.st.burnName = sk.burnName || 'thiêu đốt'; ev.applied = foe.st.burnName; }
           if (sk.armorBreak) { foe.st.armor = sk.armorBreak; ev.applied = 'phá giáp'; }
           if (sk.dizzy) { foe.st.dizzy = sk.dizzy; ev.applied = ev.applied || 'choáng váng'; }
           if (sk.stun && !foe.immuneStun && !foe.st.stunImm && r.chance(sk.stun)) { foe.st.stun = true; foe.st.stunName = sk.stunName || 'choáng'; ev.applied = foe.st.stunName; }
@@ -362,13 +380,13 @@ export function battle(A, B, r) {
         }
         if (sk.evade) { f.st.evade = sk.evade; ev.self = 'thân pháp'; }
       } else if (sk.kind === 'heal') {
-        const h = Math.round(f.maxHp * sk.heal * (f.clsMul.ho || 1));
+        const h = Math.round(f.maxHp * sk.heal * HEAL_SCALE * (f.clsMul.ho || 1));
         f.hp = Math.min(f.maxHp, f.hp + h);
         ev.heal = h;
       } else if (sk.kind === 'shield') {
         f.st.shield = Math.round(f.maxHp * sk.shield * (f.clsMul.ho || 1));
         f.st.shieldT = 4;
-        if (sk.heal) { const h = Math.round(f.maxHp * sk.heal * (f.clsMul.ho || 1)); f.hp = Math.min(f.maxHp, f.hp + h); ev.heal = h; }
+        if (sk.heal) { const h = Math.round(f.maxHp * sk.heal * HEAL_SCALE * (f.clsMul.ho || 1)); f.hp = Math.min(f.maxHp, f.hp + h); ev.heal = h; }
         if (sk.thorns) f.st.thorns = sk.thorns;
         ev.shield = f.st.shield;
       } else if (sk.kind === 'buff') {
@@ -390,6 +408,7 @@ export function turnText(t, aName, bName) {
   const foe = t.side === 'a' ? bName : aName;
   const parts = [];
   if (t.dot) parts.push(`${who} bị ${t.dot.name}, mất ${t.dot.dmg}.`);
+  if (t.pb) parts.push(`✦ ${t.pb}.`);
   if (t.stunned) { parts.push(`${who} bị ${t.stunned}, không ra tay được.`); return parts.join(' '); }
   if (!t.skill) return parts.join(' ');
   let s = `${who} ${t.ult ? 'tung tuyệt kỹ' : 'dùng'} ${t.skillN}${t.misfit ? ' (không hợp binh khí)' : ''}${t.hpCost ? ` (đốt ${t.hpCost} máu)` : ''}`;

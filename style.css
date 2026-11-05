@@ -1200,3 +1200,9 @@ details.more > .intro { margin: 6px 0 0; font-size: 13px; }
 .itemPop .petImg.big { width: 44px; height: 44px; object-fit: contain; flex: none; }
 .petXp { height: 6px; border-radius: 3px; background: var(--bar); overflow: hidden; margin: 5px 0 2px; }
 .petXp i { display: block; height: 100%; background: var(--gold); }
+/* pháp bảo (bản 5.5) */
+.tile.pbT .petImg { width: 54px; height: 54px; object-fit: contain; }
+.tile.pbT:not(.empty) { border-color: var(--gold); }
+.pbList { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 4px; }
+.pbPick { display: inline-flex; align-items: center; gap: 4px; }
+.pbPick img { width: 20px; height: 20px; object-fit: contain; }

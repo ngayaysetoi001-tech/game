@@ -92,6 +92,8 @@ export function rollQuality(r, loot = 1, myth = 0) {
 }
 /** Hệ số cường hóa: mỗi cấp +8% công, thủ, sinh lực */
 export const plusMul = (it) => 1 + 0.15 * ((it && it.plus) || 0);
+/** Bản 5.5: sinh lực của đồ ×3 cho khớp máu nền mới */
+export const HP_MUL = 3;
 export const PLUS_MAX = 10;
 /** Tên hiển thị kèm cấp cường hóa */
 export const itemName = (it) => (it.plus ? `${it.n} +${it.plus}` : it.n);
@@ -154,10 +156,10 @@ export function gearStats(eq, realm) {
     if (sealed) {
       // bị áp chế: công, thủ, sinh lực ép về cảnh giới của chủ rồi còn một nửa; dòng % còn một nửa
       const k2 = 0.5 * pm * REALMS[Math.max(0, realm)].pow / REALMS[it.lv].pow;
-      for (const s in g) g[s] += (it[s] || 0) * (s === 'atk' || s === 'def' || s === 'hp' ? k2 : 0.5);
+      for (const s in g) g[s] += (it[s] || 0) * (s === 'atk' || s === 'def' || s === 'hp' ? k2 : 0.5) * (s === 'hp' ? HP_MUL : 1);
       continue;
     }
-    for (const s in g) g[s] += (it[s] || 0) * (s === 'atk' || s === 'def' || s === 'hp' ? pm : low ? 0.5 : 1);
+    for (const s in g) g[s] += (it[s] || 0) * (s === 'atk' || s === 'def' || s === 'hp' ? pm : low ? 0.5 : 1) * (s === 'hp' ? HP_MUL : 1);
     // thần thông trùng nhau chỉ tính một lần
     const tt = it.tt && TT_MAP[it.tt];
     if (tt && tt.gear && !seen.has(tt.id)) {
@@ -174,7 +176,7 @@ export function itemLine(it) {
   const pm = plusMul(it);
   if (it.atk) p.push(`Công +${Math.round(it.atk * pm)}`);
   if (it.def) p.push(`Thủ +${Math.round(it.def * pm)}`);
-  if (it.hp) p.push(`Sinh lực +${Math.round(it.hp * pm)}`);
+  if (it.hp) p.push(`Sinh lực +${Math.round(it.hp * pm * HP_MUL)}`);
   for (const k of it.affix || []) {
     const a = AFFIX.find((x) => x.k === k);
     if (a) p.push(a.t);

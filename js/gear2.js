@@ -66,3 +66,39 @@ export function petBonus(pet) {
   for (const k in d.fx || {}) fx[k] = 1 + d.fx[k] * l;
   return { pm, gear, fx };
 }
+
+// ---------- Bản 5.5: Pháp bảo ----------
+// Mỗi kiếp đeo 1 món. Cấp luyện hóa 1..10, mỗi cấp mạnh thêm 12% (pm, gear, hiệu ứng trận). Chết là mất.
+// pb: hiệu ứng trong trận — shield: máu dưới 30% hiện khiên (% máu, 1 lần); every/mult/pierce: cứ N lượt đánh thêm;
+// stun: lượt đầu có tỉ lệ làm choáng; last: không chết 1 lần. fx: ngoài trận.
+export const PHAP_BAO = {
+  hon_nguyen_chung: { n: 'Hỗn Nguyên Chung', t: 'Máu dưới 30%: hiện khiên 25% máu (1 lần mỗi trận). Thủ +6%', pm: { defPct: 0.06 }, pb: { shield: 0.25 } },
+  ho_than_phu: { n: 'Hộ Thân Phù', t: 'Đòn chí mạng không làm chết, đứng dậy với 20% máu (1 lần mỗi trận). Sinh lực +5%', pm: { hpPct: 0.05 }, pb: { last: 0.2 } },
+  that_tinh_kiem: { n: 'Thất Tinh Kiếm', t: 'Cứ 4 lượt chém thêm một đòn 150% công. Công +5%', pm: { atkPct: 0.05 }, pb: { every: 4, mult: 1.5, hitN: 'Thất Tinh kiếm khí' } },
+  van_loi_an: { n: 'Vạn Lôi Ấn', t: 'Cứ 3 lượt giáng lôi 80% công, xuyên giáp', pm: {}, pb: { every: 3, mult: 0.8, pierce: true, hitN: 'Vạn Lôi giáng thế' } },
+  phong_loi_phien: { n: 'Phong Lôi Phiến', t: 'Lượt đầu 40% làm địch choáng. Né +4%', gear: { dodge: 0.04 }, pb: { stun: 0.4 } },
+  huyet_sat_chau: { n: 'Huyết Sát Châu', t: 'Hút máu 6%, máu dưới 30% thì công +25%', gear: { ls: 0.06, lowHpAtk: 0.25 } },
+  huyen_vu_an: { n: 'Huyền Vũ Ấn', t: 'Giảm sát thương nhận 10%, thủ +8%', gear: { dmgRed: 0.1 }, pm: { defPct: 0.08 } },
+  can_khon_dinh: { n: 'Càn Khôn Đỉnh', t: 'Thủ +15%, phản đòn 10%', pm: { defPct: 0.15 }, gear: { rf: 0.1 } },
+  tinh_ha_binh: { n: 'Tinh Hà Bình', t: 'Hồi 3% máu mỗi lượt, sinh lực +6%', gear: { regenTurn: 0.03 }, pm: { hpPct: 0.06 } },
+  tu_linh_binh: { n: 'Tụ Linh Bình', t: 'Linh lực hồi nhanh; ngoài trận tu luyện +8%', gear: { mpRegen: 6 }, fx: { gainMul: 0.08 } },
+  thien_co_la_ban: { n: 'Thiên Cơ La Bàn', t: 'Né +5%; ngoài trận kỳ ngộ +12%, đột phá +3%', gear: { dodge: 0.05 }, fx: { eventRate: 0.12, brk: 0.03 } },
+};
+export const PB_IDS = Object.keys(PHAP_BAO);
+export const PB_MAX = 10;
+const pbK = (lv) => 1 + 0.12 * ((lv || 1) - 1);
+/** Hiệu ứng pháp bảo đang đeo ở cấp lv: pm, gear (cộng vào chỉ số trận), fight (hiệu ứng trong trận), fx (ngoài trận) */
+export function pbBonus(id, lv) {
+  const d = PHAP_BAO[id];
+  const pm = {}, gear = {}, fx = {};
+  if (!d) return { pm, gear, fx, fight: null };
+  const k = pbK(lv);
+  for (const x in d.pm || {}) pm[x] = d.pm[x] * k;
+  for (const x in d.gear || {}) gear[x] = d.gear[x] * k;
+  for (const x in d.fx || {}) fx[x] = x === 'brk' ? d.fx[x] * k : 1 + d.fx[x] * k;
+  const fight = d.pb ? { ...d.pb, n: d.n } : null;
+  if (fight) { if (fight.shield) fight.shield *= k; if (fight.mult) fight.mult *= k; if (fight.stun) fight.stun = Math.min(0.8, fight.stun * k); if (fight.last) fight.last = Math.min(0.5, fight.last * k); }
+  return { pm, gear, fx, fight };
+}
+/** Chi phí luyện hóa lên cấp kế tiếp */
+export const pbCost = (lv, realm) => ({ money: Math.round(150 * lv * (1 + realm)), linh_tinh: 2 * lv });
