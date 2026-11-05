@@ -320,7 +320,7 @@ export const PATHS = {
     good: ['Sống dai nhất, hồi máu mỗi lượt', 'Miễn choáng, phản đòn, Bất Diệt', 'Lịch luyện vùng hiểm an toàn, thọ cao'],
     bad: ['Tu vi chậm nhất', 'Không có sát thương chuẩn', 'Sợ địch né cao và đòn tinh thần'],
     bars: { cong: 3, thu: 5, khong: 3, tu: 2, ky: 2 },
-    pm: { hpPct: 0.15, defPct: 0.05 }, fx: { gainMul: 0.88, lifeMul: 1.2, hurtMul: 0.5 },
+    pm: { hpPct: 0.25, defPct: 0.12, atkPct: 0.08 }, fx: { gainMul: 0.92, lifeMul: 1.2, hurtMul: 0.5 },
   },
   tinh: {
     n: 'Tinh Thần Lực', icon: '👁', res: 'Thần thức', wep: 'phap', hero: 'phu',

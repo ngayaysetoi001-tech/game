@@ -1179,3 +1179,24 @@ details.more > .intro { margin: 6px 0 0; font-size: 13px; }
 .eraCard b { font-size: 15px; }
 .eraCard span { font-size: 13px; }
 .eraCard em { font-style: normal; font-size: 11.5px; color: var(--muted); }
+
+/* ================= Khảm ngọc, trân thú (bản 5.4) ================= */
+.sockLine { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.sockLine .sk { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 1px 6px 1px 2px; border: 1px dashed var(--frame); border-radius: 999px; color: var(--muted); }
+.sockLine .sk.on { border-style: solid; color: var(--ink); }
+.sockLine .sk .ico, .sockRow .ico, .gemRow .ico { width: 18px; height: 18px; }
+.sockLine .sk em { font-style: normal; }
+.sockRow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 12px; margin-top: 5px; }
+.sockRow > span { flex: 1 1 100%; color: var(--muted); }
+.sockRow .btn.sm { font-size: 11.5px; padding: 2px 7px; min-height: 28px; display: inline-flex; align-items: center; gap: 3px; }
+.gemBag { display: grid; gap: 4px; margin-bottom: 8px; }
+.gemRow { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border: 1px solid var(--frame); border-radius: 10px; background: var(--panel); font-size: 12.5px; }
+.gemRow > span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.gemRow em { font-style: normal; font-size: 11px; color: var(--muted); }
+.gemRow .ico { width: 26px; height: 26px; }
+.tile.petT .petImg { width: 54px; height: 54px; object-fit: contain; }
+.tile.petT.t1 { border-color: #7b4fc4; } .tile.petT.t2 { border-color: var(--gold); box-shadow: 0 0 8px color-mix(in srgb, var(--gold) 40%, transparent); }
+.tile.gemT .ai, .tile.petT .ai { font-size: 26px; }
+.itemPop .petImg.big { width: 44px; height: 44px; object-fit: contain; flex: none; }
+.petXp { height: 6px; border-radius: 3px; background: var(--bar); overflow: hidden; margin: 5px 0 2px; }
+.petXp i { display: block; height: 100%; background: var(--gold); }

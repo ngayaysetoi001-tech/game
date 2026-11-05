@@ -1,6 +1,7 @@
 // Kỳ ngộ đợt 5: chỉ xảy ra khi Tu luyện (nhóm 'tu'). Toàn chuyện nội tu: đốn ngộ, linh khí, tẩu hỏa, kinh mạch, thần thức, dị tượng.
 import { CHAPTER_MAP, CHAPTER_RANK, BRANCHES } from './fate.js';
 import { REALMS } from './data.js';
+import { PETS, PET_IDS } from './gear2.js';
 
 const xp5 = (p) => Math.max(0.05, Math.min(0.95, p));
 const st5 = (g, k) => g.P.stats[k];
@@ -206,6 +207,20 @@ export const EVENTS5 = [
       return [
         { t: 'Đích thân lên tường thành', p: po, go: (g) => { const f = g.fight('Quốc sư', REALMS[g.P.realm].pow * 1.25, 1, { lethal: 0.2, cause: 'tử trận trong chiến tranh phục quốc' }); if (f.win) { g.fame(50); g.money(Math.round(3000 * (1 + g.P.realm))); g.P.sanNghiep = (g.P.sanNghiep || 0) + 3; return `${f.text}\n\nCờ cũ lại tung bay trên kinh thành. Ngươi trao ngai vàng cho người khác rồi quay về núi tu luyện. Danh vọng +50, quốc khố dâng nhiều linh thạch, sản nghiệp sinh lời mỗi năm.`; } return `${f.text}\n\nQuân phục quốc tan vỡ.`; } },
         { t: 'Rút quân, tránh đổ máu', go: (g) => { g.fame(-10); g.tinh(5); return 'Ngươi ra lệnh lui binh. Lão tướng nhìn ngươi lần cuối rồi tự vẫn bên bờ sông.'; } },
+      ];
+    },
+  },
+  // ================= Trân thú hiếm ở vùng khó =================
+  {
+    id: 'thuan_thu', w: 2, cd: 25, pool: 'lich', title: 'Ấu thú lạc đàn', r3: { age: 14, minD: 2 },
+    when: (g) => !g.P.pet,
+    prep: (g) => { const mp = g.curMap(); const d = mp ? mp.d : 0; const tier = d >= 4 && g.r.chance(0.35) ? 2 : d >= 3 && g.r.chance(0.5) ? 1 : g.r.chance(0.4) ? 1 : 0; const ids = PET_IDS.filter((id) => PETS[id].tier === tier); return { id: g.r.pick(ids), tier }; },
+    text: (g, { data }) => `Trong hang đá có một con ${PETS[data.id].n} non bị thương, mẹ nó đã chết bên cạnh. Nó gầm gừ nhưng không còn sức đứng dậy.${data.tier >= 1 ? ' Huyết mạch của nó rất hiếm thấy.' : ''}`,
+    choices: (g, { data }) => {
+      const p = xp5(0.55 + (st5(g, 'co') - 50) / 100 - data.tier * 0.1);
+      return [
+        { t: 'Băng bó, thu làm trân thú', p, go: (g) => { if (g.r.chance(p)) { g.gainPet(data.id); g.tinh(3); return `${PETS[data.id].n} liếm tay ngươi rồi rúc vào lòng. Từ nay nó đi theo ngươi. ${PETS[data.id].t}.`; } g.hurt(12, 'bị ấu thú cắn'); return 'Nó cắn ngươi một phát rồi chạy mất vào rừng sâu.'; } },
+        { t: 'Để nó yên', go: (g) => { g.tinh(1); return 'Ngươi để lại ít thịt khô rồi đi.'; } },
       ];
     },
   },

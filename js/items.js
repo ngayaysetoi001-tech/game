@@ -1,4 +1,5 @@
 // Trang bị: vũ khí, y phục, phụ kiện. Sinh ngẫu nhiên theo cảnh giới và phẩm.
+import { SOCKETS } from './gear2.js';
 import { REALMS, planeOf } from './data.js';
 
 export const SLOTS = { vu_khi: 'Vũ khí', ao: 'Y phục', phu_kien: 'Phụ kiện' };
@@ -104,7 +105,7 @@ export function makeItem(r, id, lv, q = null, slot = null) {
   slot = slot || r.pick(['vu_khi', 'vu_khi', 'ao', 'phu_kien']);
   const pow = REALMS[lv].pow;
   const m = QUALITY[q].m * r.range(0.9, 1.1);
-  const it = { id, slot, q, lv, n: '', atk: 0, def: 0, hp: 0, affix: [] };
+  const it = { id, slot, q, lv, n: '', atk: 0, def: 0, hp: 0, affix: [], sock: Array(SOCKETS[q] || 0).fill(null) };
   const pre = q >= 4 ? r.pick(MYTH_PREFIX) : r.pick(PREFIX);
   if (slot === 'vu_khi') {
     // binh khí rơi ra 70% đúng loại của con đường đang đi

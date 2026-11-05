@@ -23,6 +23,7 @@ const TP_MAP = Object.fromEntries(THIEN_PHU.map((t) => [t.id, t]));
 import { EVENTS, EVENT_MAP, EVENT_TERRAIN, terrainOf } from './events.js';
 import { DESTINIES, DESTINY_MAP, DESTINY_EV, DESTINY_SOCIAL, PERKS, PERK_MAP, perkLv, perkFx, CHAPTERS, CHAPTER_MAP, ERAS, ERA_MAP, BRANCHES, BRANCH_MAP } from './fate.js';
 import { ORIGIN_FX } from './data.js';
+import { GEMS, GEM_IDS, GEM_MAX, SOCKETS, gemKey, parseGem, gemName, gemBonus, PETS, PET_IDS, PET_MAX, petNeed, petBonus } from './gear2.js';
 import { Rng as PvRng } from './rng.js';
 import { SKILLS, SKILL_IDS, BEAST_SKILLS, fighter, battle, turnText, skillCls, PATH_SKILLS, PATH_RES, SKILL_MAX, skillLvMul } from './combat.js';
 import { makeItem, gearStats, itemScore, QUALITY, THAN_THONG, TT_MAP, isSealed, rollQuality, itemVal, itemName, PLUS_MAX, AFFIX, wepName, setWepBias } from './items.js';
@@ -75,6 +76,21 @@ export const pct = (p) => Math.round(p * 100) + '%';
 const TU_MUL = 1.3;
 // bản 5.2: mọi kẻ địch (quái, bot, tháp) mạnh hơn hẳn; bù lại cường hóa, nhánh đạo lộ, Hồn lực mạnh hơn
 const ENEMY_HARD = 1.5;
+// bản 5.4: yêu thú (vùng lịch luyện và tháp) mạnh thêm, mỗi họ một bộ chiêu
+const MON_HARD = 1.3;
+const MON_KITS = [
+  [/Lang|Sói|Hổ|Báo|Hùng|Trư|Ngưu|Hầu|Viên|Sư/, ['xe_xac', 'vo_moi', 'gam_thet']],
+  [/Xà|Mãng|Hạt|Độc|Cổ|Thiềm|Rết|Nhện|Chu|Trùng/, ['phun_doc', 'doc_nha', 'xuyen_giap']],
+  [/Quy|Giáp|Thạch|Cự|Nham|Thiết|Sơn/, ['thach_giap', 'vay_giap', 'choang_vang']],
+  [/Ưng|Bằng|Phượng|Hạc|Điểu|Bức|Dơi|Tước/, ['phong_dao', 'vo_moi', 'xe_xac']],
+  [/Lôi|Kỳ Lân|Điện/, ['loi_kich', 'phong_dao', 'gam_thet']],
+  [/Hỏa|Viêm|Diệm|Dung/, ['hoa_phun', 'cuong_bao', 'vo_moi']],
+  [/Băng|Tuyết|Hàn/, ['bang_tho', 'thach_giap', 'xe_xac']],
+  [/Thi|Quỷ|Hồn|Ma|U Linh|Cương|Oán|Âm/, ['hut_hon', 'me_hoac', 'xe_xac']],
+  [/Long|Giao|Kình|Hải|Sa/, ['long_tuc', 'thach_giap', 'vo_moi']],
+  [/Hồ|Mị|Yêu|Mộng|Tinh/, ['me_hoac', 'hut_hon', 'phong_dao']],
+];
+const monKit = (name) => { for (const [re, k] of MON_KITS) if (re.test(name)) return k; return ['xe_xac', 'gam_thet', 'vo_moi']; };
 const REGEN = { tu_luyen: 9, muu_sinh: 5, lich_luyen: 1.5, vuot_thap: 4, lon_len: 6 };
 const EVENT_RATE = { lon_len: 0.3, tu_luyen: 0.12, lich_luyen: 0.55, muu_sinh: 0.3, vuot_thap: 0.08 };
 // Nhóm kỳ ngộ được gặp theo việc làm (bản 4.3)
@@ -615,6 +631,8 @@ export class Game {
     const out = [THE_MAP[P.the] || THE_MAP.pham, ...(P.the2 && THE_MAP[P.the2] ? [THE_MAP[P.the2]] : []), ...(P.tps || []).map((id) => TP_MAP[id]).filter(Boolean)];
     if (P.path && PATHS[P.path]) out.push({ n: PATHS[P.path].n, path: true, fx: PATHS[P.path].fx });
     if (P.title && TITLE_MAP[P.title]) out.push(TITLE_MAP[P.title]);
+    const pb = petBonus(P.pet);
+    if (Object.keys(pb.fx).length) out.push({ n: P.pet.name || PETS[P.pet.id].n, pet: true, fx: pb.fx });
     const era = this.s.era && ERA_MAP[this.s.era.id];
     if (era && Object.keys(era.fx).length) out.push({ n: era.n, era: true, fx: era.fx });
     if (ORIGIN_FX[P.origin]) out.push({ n: P.originN, origin: true, fx: ORIGIN_FX[P.origin] });
@@ -778,6 +796,126 @@ export class Game {
     // mua Nhìn thấu thiên cơ lúc đang đầu thai: bốc lại để có thêm lá
     if (id === 'menh' && this.s.phase === 'birth' && this.s.draft) this.rollDestiny(this.s.draft);
     return true;
+  }
+  // ---------- Khảm ngọc ----------
+  gainGem(k, n = 1) {
+    const P = this.P;
+    P.gems = P.gems || {};
+    P.gems[k] = (P.gems[k] || 0) + n;
+  }
+  /** Gỡ hết ngọc của một món (khi bán, phân giải) về túi ngọc */
+  ungemAll(it) {
+    if (!it || !it.sock) return;
+    for (let i = 0; i < it.sock.length; i++) if (it.sock[i]) { this.gainGem(it.sock[i]); it.sock[i] = null; }
+  }
+  /** Tự khảm: lỗ trống trên đồ đang mặc nhận viên tốt nhất; đủ 3 viên thì tự ghép */
+  autoGem() {
+    const P = this.P;
+    if (this.s.opt.autoGem === false || !P.gems) return;
+    for (const k of Object.keys(P.gems).sort((a, b) => parseGem(a).lv - parseGem(b).lv)) {
+      while (P.gems[k] >= 3 && parseGem(k).lv < GEM_MAX && P.money >= this.mergeCost(k) * 3) this.mergeGem(k);
+    }
+    for (const sl of ['vu_khi', 'ao', 'phu_kien']) {
+      const it = P.eq[sl];
+      if (!it || !it.sock) continue;
+      for (let i = 0; i < it.sock.length; i++) {
+        if (it.sock[i]) continue;
+        const best = Object.keys(P.gems).filter((k) => P.gems[k] > 0).sort((a, b) => parseGem(b).lv - parseGem(a).lv)[0];
+        if (!best) return;
+        this.socketGem(it.id, i, best);
+      }
+    }
+  }
+  gemPrice() { return Math.round(90 * (1 + this.P.realm) * this.shopMul()); }
+  buyGem(id) {
+    const c = this.gemPrice();
+    if (!GEMS[id] || this.P.money < c) return '';
+    this.money(-c);
+    const k = gemKey(id, 1);
+    this.gainGem(k);
+    return `Mua 1 ${gemName(k)}.`;
+  }
+  unsockCost(k) { return Math.round(25 * parseGem(k).lv * (1 + this.P.realm)); }
+  mergeCost(k) { return Math.round(40 * parseGem(k).lv * (1 + this.P.realm)); }
+  socketGem(itemId, idx, k) {
+    const P = this.P;
+    const it = this.findItem(itemId);
+    if (!it || !it.sock || idx < 0 || idx >= it.sock.length || it.sock[idx] || !(P.gems && P.gems[k] > 0)) return '';
+    P.gems[k]--;
+    if (!P.gems[k]) delete P.gems[k];
+    it.sock[idx] = k;
+    this._cv = null;
+    return `Khảm ${gemName(k)} vào ${itemName(it)}.`;
+  }
+  unsocketGem(itemId, idx) {
+    const P = this.P;
+    const it = this.findItem(itemId);
+    const k = it && it.sock && it.sock[idx];
+    if (!k) return '';
+    const c = this.unsockCost(k);
+    if (P.money < c) return 'Không đủ linh thạch để gỡ.';
+    this.money(-c);
+    it.sock[idx] = null;
+    this.gainGem(k);
+    this._cv = null;
+    return `Gỡ ${gemName(k)} (${fmtN(c)} linh thạch).`;
+  }
+  /** Ghép 3 viên cùng loại cùng cấp thành 1 viên cấp trên */
+  mergeGem(k) {
+    const P = this.P;
+    const { id, lv } = parseGem(k);
+    if (lv >= GEM_MAX || !(P.gems && P.gems[k] >= 3)) return '';
+    const c = this.mergeCost(k);
+    if (P.money < c) return 'Không đủ linh thạch để ghép.';
+    this.money(-c);
+    P.gems[k] -= 3;
+    if (!P.gems[k]) delete P.gems[k];
+    const nk = gemKey(id, lv + 1);
+    this.gainGem(nk);
+    return `Ghép thành ${gemName(nk)}.`;
+  }
+  // ---------- Trân thú ----------
+  gainPet(id, name) {
+    const P = this.P;
+    if (!PETS[id]) return '';
+    P.pet = { id, lv: 1, xp: 0, name: name || PETS[id].n };
+    this.log(`🐾 ${P.pet.name} (${PETS[id].n}) trở thành trân thú của ngươi. ${PETS[id].t}.`, 'good');
+    return P.pet.name;
+  }
+  petXp(n) {
+    const P = this.P;
+    const pet = P.pet;
+    if (!pet || pet.lv >= PET_MAX) return;
+    pet.xp = (pet.xp || 0) + n;
+    while (pet.lv < PET_MAX && pet.xp >= petNeed(pet.lv) * 2) { pet.xp -= petNeed(pet.lv) * 2; pet.lv++; this.log(`🐾 ${pet.name} lớn thêm một bậc, lên cấp ${pet.lv}.`, 'good'); }
+  }
+  /** Cho ăn thú hạch: mỗi viên bằng 2 trận thắng */
+  feedPet(n = 1) {
+    const P = this.P;
+    const pet = P.pet;
+    if (!pet || pet.lv >= PET_MAX) return '';
+    const have = P.mats.thu_hach || 0;
+    const use = Math.min(n, have);
+    if (!use) return 'Hết thú hạch. Thắng yêu thú khi lịch luyện để nhặt.';
+    P.mats.thu_hach -= use;
+    const lv0 = pet.lv;
+    this.petXp(use * 2);
+    return `${pet.name} ăn ${use} thú hạch${pet.lv > lv0 ? `, lên cấp ${pet.lv}` : ''}.`;
+  }
+  releasePet() {
+    const P = this.P;
+    if (!P.pet) return '';
+    const n = P.pet.name;
+    P.pet = null;
+    P.flags.pet = null;
+    this.log(`🐾 Ngươi thả ${n} về rừng.`, 'muted');
+    return `Đã thả ${n} về rừng.`;
+  }
+  /** Linh thú từ kỳ ngộ cũ (chỉ có tên) thành trân thú */
+  petFromName(name) {
+    const R = [[/Phượng/, 'hoa_phuong'], [/Lân/, 'ky_lan'], [/Long|Giao/, 'thanh_long'], [/Hạc/, 'linh_hac'], [/Ly|Băng|Tuyết/, 'bang_ly'], [/Kim.*Hổ|Hổ.*Kim/, 'kim_ho'], [/Hổ|Báo/, 'tieu_ho'], [/Hồ/, 'van_ho'], [/Quy|Rùa/, 'quy_giap'], [/Thiềm|Cóc/, 'kim_thiem']];
+    for (const [re, id] of R) if (re.test(name)) return id;
+    return this.r.pick(PET_IDS.filter((id) => PETS[id].tier === 0));
   }
   // ---------- Thời đại ----------
   era() { return this.s.era && ERA_MAP[this.s.era.id] ? { e: ERA_MAP[this.s.era.id], ...this.s.era } : null; }
@@ -1162,7 +1300,7 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
   basePower() {
     const P = this.P;
     const R = REALMS[P.realm];
-    return R.pow * (1 + subFrac(P.realm, P.tuvi) * 0.5) * (1 + (P.stats.can - 50) / 200) * (1 + Math.min(FIGHT_ADD_CAP, P.fight)) * (P.flags.pet ? 1.1 : 1) * this.tmul('fightMul');
+    return R.pow * (1 + subFrac(P.realm, P.tuvi) * 0.5) * (1 + (P.stats.can - 50) / 200) * (1 + Math.min(FIGHT_ADD_CAP, P.fight)) * this.tmul('fightMul');
   }
   /** Sức mạnh quy đổi gồm trang bị, dùng để so với đối thủ */
   rating() {
@@ -1190,6 +1328,7 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
     const lv = this.skillLvs();
     const hpx = this.tpFx('hpPct');
     if (hpx) pm.hpPct = (pm.hpPct || 0) + hpx;
+    for (const B of [gemBonus(P.eq || {}), petBonus(P.pet)]) { for (const k in B.pm) pm[k] = (pm[k] || 0) + B.pm[k]; for (const k in B.gear) gear[k] = (gear[k] || 0) + B.gear[k]; }
     const br = P.branch && BRANCH_MAP[P.branch];
     if (br) { for (const k in br.pm) pm[k] = (pm[k] || 0) + br.pm[k]; for (const k in br.gear) gear[k] = (gear[k] || 0) + br.gear[k]; }
     // Ma tu: sát khí hóa thành sức mạnh
@@ -1309,8 +1448,12 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
   }
   monsterFighter(m, scale = 1) {
     const r = new Rng(m.seed || 1);
-    const sk = ['can_xe', r.pick(['doc_nha', 'cuong_bao', 'vay_giap', 'gam_thet'])];
-    if (m.r >= 3 || (m.d || 0) >= 3) sk.push(r.pick(['vay_giap', 'cuong_bao', 'gam_thet']));
+    // chiêu theo họ: vùng/tầng càng sâu càng nhiều chiêu, quái lâu năm biết tự liếm vết thương
+    const kit = monKit(m.n);
+    const depth = (m.d || 0) + (m.tower ? Math.floor((m.floor || 0) / 250) : 0) + ((m.r || 0) >= 3 ? 1 : 0);
+    const sk = ['can_xe', ...kit.slice(0, Math.min(3, 1 + Math.floor(depth / 2)))];
+    if (depth >= 3 && r.chance(0.5)) sk.push('liem_thuong');
+    if (sk.length < 3) sk.push(r.pick(['doc_nha', 'cuong_bao', 'vay_giap', 'gam_thet']));
     // trùm tháp: bộ chiêu riêng
     if (m.skills) { sk.length = 0; sk.push('can_xe', ...m.skills); }
     // quái vùng khó coi như có trang bị tốt hơn; thiên phú của tinh anh/trùm thành chỉ số trong trận
@@ -1319,7 +1462,7 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
     for (const id of m.aff || []) { const a = MOB_AFFIX_MAP[id]; if (a) for (const k in a.gear) gear[k] = typeof a.gear[k] === 'number' ? (gear[k] || 0) + a.gear[k] : a.gear[k]; }
     if (m.kitGear) for (const k in m.kitGear) gear[k] = (gear[k] || 0) + m.kitGear[k];
     if (m.rage) gear.atkPct = (gear.atkPct || 0) + m.rage;
-    return fighter({ name: m.n, pw: m.pow * scale * eg * this.diffPow(), skills: [...new Set(sk)], beast: true, gear, mindless: MINDLESS_RE.test(m.n), look: { type: 'beast', seed: m.seed, realm: Math.min(m.r ?? 0, 7), name: m.n } });
+    return fighter({ name: m.n, pw: m.pow * scale * eg * this.diffPow() * MON_HARD, skills: [...new Set(sk)], beast: true, gear, mindless: MINDLESS_RE.test(m.n), look: { type: 'beast', seed: m.seed, realm: Math.min(m.r ?? 0, 7), name: m.n } });
   }
   botFighter(b) {
     return fighter({
@@ -1363,6 +1506,11 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
     const mp = this.monsterMap(m);
     const res = this.runBattle(this.playerFighter(mul), this.monsterFighter(m, scale), { lethal: 0.35 * (mp ? mp.lethal : 1), cause: `bị ${m.n} giết chết`, ...opts });
     if (res.win) this.P.cnt.beast++;
+    if (res.win && this.playing) {
+      const d = mp ? mp.d : 0;
+      if (this.r.chance(0.04 + 0.03 * d)) { const lv = Math.min(GEM_MAX, 1 + (d >= 4 && this.r.chance(0.3) ? 1 : 0) + (m.aff && m.aff.length ? 1 : 0)); const k = gemKey(this.r.pick(GEM_IDS), lv); this.gainGem(k); res.text += `\nNhặt được ${gemName(k)}.`; }
+      if (this.P.pet) this.petXp(1);
+    }
     if (res.win && this.r.chance(mp ? Math.min(0.8, 0.25 * mp.loot) : 0.25)) res.text += '\n' + this.gainItem(this.dropItem(m.r ?? this.P.realm, null, mp));
     if (res.win && mp && this.playing) {
       const t = this.gatherMats(mp, true); if (t) res.text += '\n' + t;
@@ -1443,7 +1591,14 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
     if (kind === 'elite') this.makeElite(m, 1 + Math.floor(f / 400), rr);
     if (kind === 'boss') this.makeElite(m, 2, rr, 'Trùm tầng');
     if (kind === 'final') this.makeElite(m, 3, rr, 'Tháp chủ');
-    m.pow /= 1 + 0.1 * (m.aff ? m.aff.length : 0); // floorPow đã tính sẵn độ mạnh tinh anh/trùm
+    if (kind !== 'boss' && kind !== 'final' && kind !== 'elite') {
+      const kit = BOSS_KITS[Math.min(BOSS_KITS.length - 1, Math.floor((f - 1) / 100))];
+      if (kit && f >= 50) m.skills = [kit.sk[rr.int(0, kit.sk.length - 1)], ...monKit(m.n).slice(0, 1)];
+      const na = f >= 600 ? (rr.chance(0.5) ? 2 : 1) : f >= 300 ? (rr.chance(0.5) ? 1 : 0) : f >= 100 && rr.chance(0.3) ? 1 : 0;
+      if (na) { this.makeElite(m, na, rr, 'Tinh nhuệ'); m.pow /= 1 + 0.1 * na; }
+    }
+    if (kind === 'elite' || kind === 'boss' || kind === 'final') m.pow /= 1 + 0.1 * (m.aff ? m.aff.length : 0); // floorPow đã tính sẵn độ mạnh tinh anh/trùm
+    m.pow *= 1.2; // bản 5.4: tháp khó hơn
     return m;
   }
   towerState(plane = this.plane) {
@@ -1476,6 +1631,10 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
       this._forging = q >= 4; // đồ Thần thoại của tháp (từ tầng 500) được phép
       out.push(this.gainItem(makeItem(this.r, this.s.nextItem++, P.realm, q), `Rương tầng ${f}`));
       this._forging = false;
+      // rương tinh anh có ngọc, tầng càng cao ngọc càng tốt
+      const gk = gemKey(this.r.pick(GEM_IDS), Math.min(GEM_MAX, 1 + Math.floor(f / 250)));
+      this.gainGem(gk);
+      out.push(`Trong rương có ${gemName(gk)}.`);
       P.mats.tinh_thiet = (P.mats.tinh_thiet || 0) + Math.round(2 * fr * dr);
       if (this.r.chance(0.4)) P.mats.linh_tinh = (P.mats.linh_tinh || 0) + Math.max(1, Math.round(fr * 0.5));
     }
@@ -1739,6 +1898,8 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
     // tinh anh: vùng càng khó càng hay gặp, mang 1-3 thiên phú
     const eliteP = [0, 0, 0.15, 0.25, 0.35, 0.5][map.d] || 0;
     if (eliteP && rr.chance(eliteP)) this.makeElite(m, rr.int(1, Math.min(3, map.d - 1)), rr);
+    // bản 5.4: quái thường ở vùng Vừa trở lên cũng hay mang một thiên phú
+    else if (map.d >= 1 && rr.chance(0.1 * map.d)) { this.makeElite(m, 1, rr, 'Tinh nhuệ'); m.pow /= 1.1; }
     return m;
   }
   /** Gắn thiên phú cho quái (tinh anh, trùm) */
@@ -1826,6 +1987,7 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
     const i = P.bag.findIndex((x) => x.id === id);
     if (i < 0 || P.bag[i].lock) return '';
     const it = P.bag.splice(i, 1)[0];
+    this.ungemAll(it);
     const y = this.salvageYield(it);
     for (const k in y) P.mats[k] = (P.mats[k] || 0) + y[k];
     if (this._rec) this._rec.push({ it, mats: y });
@@ -2061,6 +2223,9 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
     for (const it of [...P.bag, ...Object.values(P.eq)]) {
       if (it && it.q >= 4 && !it.tt) { const pool = THAN_THONG[it.slot]; it.tt = pool[Math.abs(it.id) % pool.length].id; }
     }
+    // bản 5.4: lỗ khảm cho đồ cũ
+    for (const it of [...P.bag, ...Object.values(P.eq)]) if (it && !it.sock) it.sock = Array(SOCKETS[it.q] || 0).fill(null);
+    if (!P.gems) P.gems = {};
     // bản 5: kiếp đang chơi từ bản cũ chưa có Thiên mệnh
     if (P === this.s.player && !P.destiny) { this.rollDestiny(P); P.destiny = { id: P.destinyOpts.find((id) => !DESTINY_MAP[id].until) || P.destinyOpts[0] }; }
     // bản 4.3: bế quan gộp vào tu luyện, bỏ kết giao
@@ -2444,6 +2609,7 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
     const i = P.bag.findIndex((x) => x.id === itemId);
     if (i < 0 || P.bag[i].lock) return 0;
     const it = P.bag.splice(i, 1)[0];
+    this.ungemAll(it);
     this.money(it.val);
     if (this._rec) this._rec.push({ it, money: it.val });
     return it.val;
@@ -3166,6 +3332,7 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
     if (act !== 'tu_luyen') P.tuStreak = 0;
     // tự mặc: món nào trong túi có lực chiến cao hơn đồ đang mặc thì thay (mỗi 3 năm xét lại)
     if (this.s.opt.autoEquip !== false && P.bag.length) this.equipBest();
+    if (P.age % 3 === 0) this.autoGem();
     if (P.sanNghiep > 0) this.money(Math.round(P.sanNghiep * 6 * ypt * (1 + P.realm * 1.5)));
     if (act !== 'vuot_thap' && act !== 'lich_luyen' && act !== 'tu_luyen' && act !== 'muu_sinh') this.purgeSat(2);
     if (this.checkSat()) return true; else if (act === 'lon_len' && P.age >= 6 && this.r.chance(0.2)) {
@@ -3203,6 +3370,7 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
     this.checkTitles();
     if (this._rank === 1) P.cnt.top1 = (P.cnt.top1 || 0) + 1;
     if (PATHS[P.path] && !P.branch && P.realm - (PLANES[P.plane || 0].base || 0) >= 3 && !this.s.queue.some((q) => q.id === 'nhanh_dao') && !(this.s.pending && this.s.pending.id === 'nhanh_dao')) this.s.queue.push({ id: 'nhanh_dao', botId: null, data: {} });
+    if (P.flags.pet && !P.pet) { this.gainPet(this.petFromName(P.flags.pet), P.flags.pet); P.pet.lv = Math.min(PET_MAX, 1 + (P.flags.petLv || 0)); }
     this.chapterTick(ypt);
     this.nemTick();
     this.checkDestiny();

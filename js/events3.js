@@ -340,8 +340,8 @@ export const EVENTS3 = [
     choices: (g) => {
       const need = 2 * fr3(g);
       return [
-        { t: `Cho ăn ${need} Linh tinh`, if: (g.P.mats.linh_tinh || 0) >= need, go: (g) => { g.P.mats.linh_tinh -= need; g.P.fight += 0.036; g.P.flags.petLv = (g.P.flags.petLv || 0) + 1; return `${g.P.flags.pet} nuốt hết linh tinh rồi lột xác. Thân hình to gấp rưỡi, mắt sáng như sao. Sức chiến đấu +3,5%.`; } },
-        { t: 'Để nó tự vượt qua', go: (g) => { if (g.r.chance(0.6)) { g.P.fight += 0.018; return `Ba ngày sau ${g.P.flags.pet} tự tiến hóa thành công. Sức chiến đấu +2%.`; } return `${g.P.flags.pet} vượt qua cơn sốt nhưng không tiến hóa được. Lần sau vậy.`; } },
+        { t: `Cho ăn ${need} Linh tinh`, if: (g.P.mats.linh_tinh || 0) >= need, go: (g) => { g.P.mats.linh_tinh -= need; g.P.fight += 0.036; g.P.flags.petLv = (g.P.flags.petLv || 0) + 1; if (g.P.pet) g.P.pet.lv = Math.min(10, g.P.pet.lv + 2); return `${g.P.flags.pet} nuốt hết linh tinh rồi lột xác. Thân hình to gấp rưỡi, mắt sáng như sao. Sức chiến đấu +3,5%.`; } },
+        { t: 'Để nó tự vượt qua', go: (g) => { if (g.r.chance(0.6)) { g.P.fight += 0.018; if (g.P.pet) g.P.pet.lv = Math.min(10, g.P.pet.lv + 1); return `Ba ngày sau ${g.P.flags.pet} tự tiến hóa thành công. Sức chiến đấu +2%.`; } return `${g.P.flags.pet} vượt qua cơn sốt nhưng không tiến hóa được. Lần sau vậy.`; } },
       ];
     },
   },

@@ -773,3 +773,30 @@ Mô phỏng 42 kiếp mỗi đạo (lịch trình Leo tháp, có rèn đồ):
   - Tạo thế giới khoảng 0,4 giây, một năm trong game khoảng 2,3ms, bản lưu khoảng 220–300KB.
   - Xem trước lựa chọn khoảng 25ms.
   - Đã thử 1000 linh hồn: 8,6ms mỗi năm, bản lưu 0,7MB, quá nặng cho điện thoại nên không dùng.
+
+## Bản 5.4: Quái mạnh và đa dạng, khảm ngọc, trân thú
+
+- **Yêu thú** (`MON_HARD = 1.3` cộng thêm vào `ENEMY_HARD`, chỉ áp cho quái vùng và tháp):
+  - Mỗi họ quái một bộ chiêu (`MON_KITS` theo tên): Lang/Hổ/Báo, Xà/Hạt/Độc, Quy/Thạch, Ưng/Bằng/Phượng, Lôi/Kỳ Lân, Hỏa/Viêm, Băng/Tuyết, Thi/Quỷ/Hồn, Long/Giao/Hải, Hồ/Mị/Yêu.
+  - 14 chiêu mới: Xé xác, Vồ mồi, Phun độc, Xuyên giáp, Thạch giáp, Húc choáng, Phong đao, Lôi kích, Phun lửa, Hàn băng thổ tức, Hút hồn, Mê hoặc, Long tức, Liếm vết thương.
+  - Vùng hay tầng càng sâu thì quái càng biết nhiều chiêu.
+  - Quái thường ở vùng Vừa trở lên có 10%/bậc mang một thiên phú (Tinh nhuệ).
+- **Tháp:**
+  - Mạnh thêm ×1,2.
+  - Quái thường mỗi khu mang một chiêu của trùm khu đó (từ tầng 50).
+  - Có thiên phú: từ tầng 100 30% mang 1; từ 300 50% mang 1; từ 600 mang 1–2.
+  - Rương tinh anh có thêm ngọc.
+- **Khảm ngọc** (`js/gear2.js`):
+  - 6 loại ngọc: Hồng (công %), Lam (thủ %), Lục (sinh lực %), Hoàng (bạo kích), Tử (né), Hắc (hút máu). Mỗi loại 5 cấp.
+  - Lỗ khảm theo phẩm: Trung, Thượng 1; Cực 2; Thần thoại 3.
+  - Nguồn ngọc: thắng yêu thú (4% + 3%/bậc vùng), rương tháp, Tụ Bảo Lâu (cấp 1).
+  - Ghép 3 thành 1 tốn linh thạch, gỡ ngọc tốn linh thạch. Bán, phân giải thì ngọc tự về túi.
+  - Lò rèn có tab Khảm ngọc. Tùy chọn tự khảm và tự ghép (mặc định bật).
+- **Trân thú:**
+  - 10 loài dùng tranh có sẵn: Tiểu Hổ, Vân Hồ, Quy Giáp, Kim Thiềm, Băng Ly, Linh Hạc, Kim Hổ, Hỏa Phượng, Kỳ Lân, Thanh Long. Chia 3 bậc hiếm.
+  - Cấp 1–10, hiệu ứng tăng theo cấp.
+  - Lên cấp: mỗi trận thắng +1 kinh nghiệm, mỗi thú hạch +2.
+  - Thu nhận qua kỳ ngộ "Ấu thú lạc đàn" (vùng Khó trở lên, loài hiếm hơn) và các kỳ ngộ linh thú cũ. Linh thú cũ tự chuyển thành trân thú.
+  - Hiện ở ô "Trân thú" bên phải túi trữ vật.
+- **Thể Tu:** hệ số đạo lộ bù lên (máu +25%, thủ +12%, công +8%, tu vi ×0,92).
+- **Mô phỏng (lịch trình, 36 kiếp mỗi đạo, có cường hóa, khảm ngọc, cho trân thú ăn):** cảnh giới trung bình Kiếm 5,2 / Thể 5,4 / Tinh 4,8.

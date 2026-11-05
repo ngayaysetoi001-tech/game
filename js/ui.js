@@ -5,7 +5,8 @@ import { STAT_NAMES, PERSONALITIES, TITLE_TIER_N, MAPS, MAP_MAP, DIFF, MATS, DEF
 import { drawSprite, spriteURL, botSeed } from './sprite.js';
 import { SKILLS, BEAST_SKILLS, TACTICS, WEAPON_TYPES, turnText, PATH_RES, PATH_SKILLS, SKILL_MAX, skillLvMul } from './combat.js';
 import { DESTINY_MAP, PERKS, perkLv, CHAPTER_MAP, BRANCH_MAP } from './fate.js';
-import { heroArt, heroStandArt, heroFilter, meditateArt, skillArt, monsterArt, needFlip, uiIcon } from './art.js';
+import { heroArt, heroStandArt, heroFilter, meditateArt, skillArt, monsterArt, needFlip, uiIcon, ART } from './art.js';
+import { GEMS, GEM_IDS, GEM_MAX, parseGem, gemName, gemText, PETS, PET_MAX, PET_TIER_N, petNeed } from './gear2.js';
 import { SLOTS, QUALITY, itemLine, TT_MAP, isSealed, isSuppressed, gearStats, itemName, PLUS_MAX, AFFIX } from './items.js';
 import { iconURL, itemIconOpts, armorColor, PILL_COLORS, ICON_TOKEN_RE, matIconOpts, skillIconOpts } from './icons.js';
 
@@ -1229,7 +1230,7 @@ function openForge() {
     };
     let body = '';
     if (forgeTab === 'cuong') {
-      body = `<details class="more"><summary>ⓘ Giải thích</summary><p class="intro">Mỗi cấp +8% công, thủ, sinh lực, tối đa +${PLUS_MAX}. Từ +5 có thể thất bại. Lên +8 trở lên mà thất bại thì tụt một cấp. Không bao giờ vỡ đồ.${g.ngheLv('luyen_khi') ? ` Luyện khí sư: rẻ hơn ${g.ngheLv('luyen_khi') * 4}%.` : ''}</p></details>` +
+      body = `<details class="more"><summary>ⓘ Giải thích</summary><p class="intro">Mỗi cấp +15% công, thủ, sinh lực, tối đa +${PLUS_MAX}. Từ +5 có thể thất bại. Lên +8 trở lên mà thất bại thì tụt một cấp. Không bao giờ vỡ đồ.${g.ngheLv('luyen_khi') ? ` Luyện khí sư: rẻ hơn ${g.ngheLv('luyen_khi') * 4}%.` : ''}</p></details>` +
         pick(all, (x) => {
           const it = x.it;
           if ((it.plus || 0) >= PLUS_MAX) return itemCard(it, `${mark(x)}<span class="meta">Đã cường hóa tối đa</span>`);
@@ -1254,6 +1255,10 @@ function openForge() {
           }).join('');
           return itemCard(it, `${mark(x)}<div class="cost">${costText(g.rerollCost(it))} mỗi lần</div>${rows}`);
         }) || '<p class="empty">Chưa có món Thượng phẩm trở lên.</p>');
+    } else if (forgeTab === 'ngoc') {
+      const list = all.filter((x) => x.it.sock && x.it.sock.length);
+      body = `<details class="more"><summary>ⓘ Giải thích</summary><p class="intro">Đồ Trung, Thượng phẩm có 1 lỗ khảm, Cực phẩm 2, Thần thoại 3. Ngọc rơi khi thắng yêu thú, trong rương tháp, mua ở Tụ Bảo Lâu. Ghép 3 viên cùng loại cùng cấp thành 1 viên cấp trên (tối đa cấp ${GEM_MAX}). Bán, phân giải đồ thì ngọc tự về túi. Gỡ ngọc tốn linh thạch.</p></details>`
+        + gemBag() + (pick(list, (x) => itemCard(x.it, sockEditor(x.it))) || '<p class="empty">Chưa có món nào có lỗ khảm (cần Trung phẩm trở lên).</p>');
     } else {
       const S = forgeSel;
       const cats = Object.keys(MATS).filter((m) => MATS[m].aff);
@@ -1267,7 +1272,7 @@ function openForge() {
         <button class="btn primary wide" data-forge="1" ${g.canPay(c) ? '' : 'disabled'}>⚒ Rèn</button>`;
     }
     if (forgeTab === 'thang') forgeTab = 'cuong';
-    const tabs = [['cuong', 'Cường hóa'], ['tay', 'Tẩy luyện'], ['moi', 'Rèn mới']];
+    const tabs = [['cuong', 'Cường hóa'], ['tay', 'Tẩy luyện'], ['ngoc', 'Khảm ngọc'], ['moi', 'Rèn mới']];
     openSheet(`<h2>Lò rèn</h2>
       <p class="intro">Tay nghề rèn: <b>${P.forge || 0}/100</b> (+${Math.round(g.forgeBonus() * 100)}% tỉ lệ thành công)${P.path === 'tinh' ? ', Tinh Thần Lực được cộng thêm' : ''}. Linh thạch: <b>${fmt(P.money)}</b>.</p>
       ${matChips(P)}
@@ -1278,6 +1283,9 @@ function openForge() {
       const q = (sel, fn) => $('sheetBody').querySelectorAll(sel).forEach((b) => { b.onclick = () => { const m = fn(b); save(); draw(typeof m === 'string' ? m : ''); dirty = true; }; });
       q('[data-ft]', (b) => { forgeTab = b.dataset.ft; });
       q('[data-fp]', (b) => { forgePick = forgePick === +b.dataset.fp ? null : +b.dataset.fp; });
+      q('[data-sock]', (b) => { const [id, i, k] = b.dataset.sock.split('|'); return g.socketGem(+id, +i, k); });
+      q('[data-unsock]', (b) => { const [id, i] = b.dataset.unsock.split('|'); return g.unsocketGem(+id, +i); });
+      q('[data-merge]', (b) => g.mergeGem(b.dataset.merge));
       bindPop(() => { forgePick = null; }, draw);
       q('[data-iron]', () => g.buyIron());
       q('[data-enh]', (b) => g.enhance(+b.dataset.enh));
@@ -1358,6 +1366,37 @@ function compareLine(it) {
 const popBox = (ico, title, meta, body, btns) => `<div class="itemPop" id="itemPop"><i class="ipArrow"></i>
     <div class="ipHead">${ico}<div class="ipT">${title}<span class="meta">${meta}</span></div><button class="ipX" data-ipx="1" aria-label="Đóng">✕</button></div>
     ${body}${btns ? `<div class="ipBtns">${btns}</div>` : ''}</div>`;
+const gemIco = (k) => { const { lv, g: G } = parseGem(k); return icoImg({ kind: 'mat', q: Math.min(4, lv - 1), col: G ? G.col : '#ccc' }); };
+/** Dòng lỗ khảm của một món */
+function sockLine(it) {
+  if (!it.sock || !it.sock.length) return '';
+  return `<div class="sockLine">${it.sock.map((k) => (k ? `<span class="sk on" title="${esc(gemName(k))}: ${esc(gemText(k))}">${gemIco(k)}<em>${esc(gemText(k))}</em></span>` : '<span class="sk">◇ trống</span>')).join('')}</div>`;
+}
+/** Khảm, gỡ ngọc cho một món (ở Lò rèn) */
+function sockEditor(it) {
+  const P = g.P;
+  const have = Object.keys(P.gems || {}).filter((k) => P.gems[k] > 0).sort((a, b) => parseGem(b).lv - parseGem(a).lv);
+  return it.sock.map((k, i) => k
+    ? `<div class="sockRow"><span>${gemIco(k)} ${esc(gemName(k))} · ${esc(gemText(k))}</span><button class="btn ghost sm" data-unsock="${it.id}|${i}">Gỡ · ${fmtShort(g.unsockCost(k))}</button></div>`
+    : `<div class="sockRow"><span>◇ Lỗ ${i + 1} trống</span>${have.length ? have.slice(0, 8).map((gk) => `<button class="btn ghost sm" data-sock="${it.id}|${i}|${gk}" title="${esc(gemText(gk))}">${gemIco(gk)} ${esc(gemName(gk))} ×${P.gems[gk]}</button>`).join('') : '<span class="meta">Chưa có ngọc</span>'}</div>`).join('');
+}
+/** Túi ngọc + ghép */
+function gemBag() {
+  const P = g.P;
+  const ks = Object.keys(P.gems || {}).filter((k) => P.gems[k] > 0).sort((a, b) => a.localeCompare(b));
+  if (!ks.length) return '<p class="meta">Túi ngọc trống.</p>';
+  return `<h3>Túi ngọc</h3><div class="gemBag">${ks.map((k) => { const { lv } = parseGem(k); const can = P.gems[k] >= 3 && lv < GEM_MAX; return `<div class="gemRow">${gemIco(k)}<span><b>${esc(gemName(k))}</b> ×${P.gems[k]}<em>${esc(gemText(k))}</em></span>${can ? `<button class="btn ghost sm" data-merge="${k}">Ghép 3→1 · ${fmtShort(g.mergeCost(k))}</button>` : ''}</div>`; }).join('')}</div>`;
+}
+/** Popup trân thú: cấp, kinh nghiệm, hiệu ứng, cho ăn */
+function petPop(pet) {
+  const P = g.P;
+  const d = PETS[pet.id];
+  const need = petNeed(pet.lv) * 2;
+  const hach = P.mats.thu_hach || 0;
+  return popBox(ART['pets/' + pet.id] ? `<img class="petImg big" src="${ART['pets/' + pet.id]}" alt="">` : '🐾', `<b class="t${d.tier}c">${esc(pet.name)}</b>`, `${esc(d.n)} · ${PET_TIER_N[d.tier]} · cấp ${pet.lv}/${PET_MAX}`,
+    `<div class="ipLine">${esc(d.t)}. Hiện tại: cấp ${pet.lv}.</div>${pet.lv < PET_MAX ? `<div class="petXp"><i style="width:${Math.round(((pet.xp || 0) / need) * 100)}%"></i></div><div class="meta">Kinh nghiệm ${pet.xp || 0}/${need} · mỗi trận thắng +1, mỗi thú hạch +2 · có ${hach} thú hạch</div>` : '<div class="meta pos">Đã trưởng thành.</div>'}`,
+    `${pet.lv < PET_MAX ? `<button class="btn primary sm" data-feed="1" ${hach ? '' : 'disabled'}>Cho ăn 1</button><button class="btn ghost sm" data-feed="10" ${hach ? '' : 'disabled'}>Cho ăn 10</button>` : ''}<button class="btn ghost sm" data-release="1">Thả đi</button>`);
+}
 /** Popup nhỏ cạnh món đồ: tên, chỉ số, so sánh lực chiến, các nút gọn */
 function itemPop(it, isEq) {
   const P = g.P;
@@ -1389,7 +1428,7 @@ function itemPop(it, isEq) {
   }
   return `<div class="itemPop" id="itemPop"><i class="ipArrow"></i>
     <div class="ipHead">${itemIco(it)}<div class="ipT"><b class="${qCls(it.q)}">${esc(itemName(it))}</b><span class="meta">${QUALITY[it.q].n} · ${SLOTS[it.slot]}${wt}${isEq ? ' · đang mặc' : ''}</span></div><button class="ipX" data-ipx="1" aria-label="Đóng">✕</button></div>
-    <div class="ipLine">${esc(itemLine(it))}</div>${ttLine(it)}${cmp}
+    <div class="ipLine">${esc(itemLine(it))}</div>${ttLine(it)}${sockLine(it)}${cmp}
     <div class="ipBtns">${btns.join('')}</div></div>`;
 }
 /** Đặt popup ngay dưới (hoặc trên) ô đồ đang chọn */
@@ -1397,7 +1436,7 @@ function placeItemPop() {
   const pop = $('itemPop');
   if (!pop) return;
   const B = $('sheetBody');
-  const tile = B.querySelector('.tile.sel[data-it], .tile.sel[data-skt], .tile.sel[data-pl], .tile.sel[data-mt], .tile.sel[data-ps], .tile.sel[data-fp]');
+  const tile = B.querySelector('.tile.sel[data-it], .tile.sel[data-skt], .tile.sel[data-pl], .tile.sel[data-mt], .tile.sel[data-ps], .tile.sel[data-fp], .tile.sel[data-pets]');
   if (!tile) { pop.remove(); return; }
   const card = $('sheet').querySelector('.card');
   const br = B.getBoundingClientRect(), tr = tile.getBoundingClientRect(), cr = card.getBoundingClientRect();
@@ -1452,11 +1491,15 @@ function bagEq() {
   const cf = (k) => bag.confirm === `${k}:${sel.id}`;
   const sellB = sel && !isEq ? (sel.lock ? '<span class="meta">Đã khóa: không bán, phân giải được</span>'
     : `<button class="btn ${cf('sell') ? 'danger' : 'ghost'}" data-sell="${sel.id}">${cf('sell') ? `Bấm lần nữa để bán ${QUALITY[sel.q].n}` : `💰 Bán · ${fmt(sel.val)}`}</button><button class="btn ${cf('salv') ? 'danger' : 'ghost'}" data-salv="${sel.id}" title="${esc(stripTok(g.matText(g.salvageYield(sel))))}">${cf('salv') ? 'Bấm lần nữa để phân giải' : '♻ Phân giải'}</button>`) : '';
-  const detail = sel ? itemPop(sel, isEq) : '';
+  const detail = sel ? itemPop(sel, isEq) : bag.sel === 'pet' && P.pet ? petPop(P.pet) : '';
   const picked = [...bag.picked].filter((id) => P.bag.some((x) => x.id === id));
   const cap = g.bagCap();
   const emptyCells = Array.from({ length: Math.max(0, cap - list.length) }, () => '<div class="tile cell"></div>').join('');
-  const spare = [0, 1, 2].map(() => '<div class="dollSlot"><div class="tile spare"><span class="tn">Sắp có</span></div></div>').join('');
+  const pet = P.pet && PETS[P.pet.id] ? P.pet : null;
+  const nGem = Object.values(P.gems || {}).reduce((m, n) => m + n, 0);
+  const spare = `<div class="dollSlot"><span class="meta">Trân thú</span><button class="tile petT ${pet ? `t${PETS[pet.id].tier}` : 'empty'} ${bag.sel === 'pet' ? 'sel' : ''}" data-pets="1">${pet && ART['pets/' + pet.id] ? `<img class="petImg" src="${ART['pets/' + pet.id]}" alt="">` : '<span class="ai">🐾</span>'}${pet ? `<span class="bdg plus">${pet.lv}</span>` : ''}<span class="tn">${pet ? esc(pet.name) : 'Chưa có'}</span></button></div>
+    <div class="dollSlot"><span class="meta">Ngọc khảm</span><button class="tile gemT" data-gems="1"><span class="ai">💎</span><span class="tn">${nGem ? `${nGem} viên` : 'Trống'}</span></button></div>
+    <div class="dollSlot"><div class="tile spare"><span class="tn">Sắp có</span></div></div>`;
   return `<div class="doll doll2"><div class="dollCol">${slotTile('vu_khi')}${slotTile('ao')}${slotTile('phu_kien')}</div><div class="dollFig"><canvas id="dollCv" width="32" height="40"></canvas><img id="dollArt" class="art" alt="" hidden></div><div class="dollCol">${spare}</div></div>
     <div class="statIcons">${stats.map(([k, n, v]) => `<button class="si" data-stat="f_${k}">${icoImg({ kind: STAT_ICO[k] })}<span>${n}</span><b>${v}</b></button>`).join('')}</div>
     ${tt.length ? `<div class="ttActive">Thần thông: ${tt.map((id) => `<span class="ttName">✦ ${esc(TT_MAP[id].n)}</span>`).join(' ')}</div>` : ''}
@@ -1542,6 +1585,7 @@ function bagSet() {
   return `<div class="setList">
     <h3>Trang bị</h3>
     ${tg('autoEquip', 'Nhặt được đồ mạnh hơn thì tự mặc', o.autoEquip !== false)}
+    ${tg('autoGem', 'Tự khảm ngọc vào lỗ trống, đủ 3 viên thì tự ghép', o.autoGem !== false)}
     <div class="item"><b>Nhặt đồ thì tự xử lý theo phẩm</b><div class="meta">Đồ khóa, Thần thoại luôn được giữ.</div>
       <div class="qRules">${[0, 1, 2, 3].map((q) => `<div class="qRule"><span class="q${q}">${QUALITY[q].n}</span>${[['keep', 'Giữ'], ['sell', 'Bán'], ['salv', 'Phân giải']].map(([k, n]) => `<button class="btn sm ${g.qRule(q) === k ? 'on' : 'ghost'}" data-qr="${q}:${k}">${n}</button>`).join('')}</div>`).join('')}</div></div>
     <button class="btn ${o.autoSalvage ? 'on' : 'ghost'} setT" data-opt2="autoSalvage"><span>Túi đầy thì</span><b>${o.autoSalvage ? 'phân giải món kém' : 'bán món kém'}</b></button>
@@ -1611,6 +1655,10 @@ function openBag(tabId) {
         bag.trialRes = { id: it.id, t: bag.trial, now, with: w, rl };
       });
       q('[data-bt]', (b) => { bag.tab = b.dataset.bt; bag.sel = null; bag.multi = false; bag.picked.clear(); });
+      q('[data-pets]', () => { if (!P.pet) return 'Chưa có trân thú. Lịch luyện sẽ có lúc gặp ấu thú, linh thú bị thương để thu nhận.'; bag.sel = bag.sel === 'pet' ? null : 'pet'; });
+      q('[data-gems]', () => { if (!g.forgeOpen()) return 'Lò rèn mở từ 12 tuổi.'; forgeTab = 'ngoc'; setTimeout(openForge, 0); return ''; });
+      q('[data-feed]', (b) => g.feedPet(+b.dataset.feed));
+      q('[data-release]', (b) => { if (bag.confirm !== 'release') { bag.confirm = 'release'; return 'Bấm Thả đi lần nữa để thả trân thú.'; } bag.confirm = null; bag.sel = null; return g.releasePet(); });
       q('[data-it]', (b) => {
         const id = +b.dataset.it;
         const it = P.bag.find((x) => x.id === id);
@@ -1644,7 +1692,7 @@ function openBag(tabId) {
             q('[data-pl]', (b) => { bag.sel = bag.sel === b.dataset.pl ? null : b.dataset.pl; });
       q('[data-mt]', (b) => { bag.sel = bag.sel === b.dataset.mt ? null : b.dataset.mt; });
       q('[data-use]', (b) => g.usePill(b.dataset.use) || '');
-      q('[data-opt2]', (b) => { const k = b.dataset.opt2; g.s.opt[k] = k === 'towerResume' || k === 'autoBaoKhi' || k === 'autoSkill' || k === 'autoEquip' || k === 'chapters' ? g.s.opt[k] === false : !g.s.opt[k]; if (k === 'autoPill' && !g.s.opt.autoPill) g.s.opt.autoBuyPill = false; if (k === 'autoSkill' && g.s.opt.autoSkill !== false) g.autoSpendSP(); });
+      q('[data-opt2]', (b) => { const k = b.dataset.opt2; g.s.opt[k] = k === 'towerResume' || k === 'autoBaoKhi' || k === 'autoSkill' || k === 'autoEquip' || k === 'chapters' || k === 'autoGem' ? g.s.opt[k] === false : !g.s.opt[k]; if (k === 'autoPill' && !g.s.opt.autoPill) g.s.opt.autoBuyPill = false; if (k === 'autoSkill' && g.s.opt.autoSkill !== false) g.autoSpendSP(); });
       bindPillOpts(draw);
       B.querySelectorAll('[data-goshop]').forEach((b) => { b.onclick = openShop; });
       B.querySelectorAll('[data-goforge]').forEach((b) => { b.onclick = () => { const [sl, wt] = b.dataset.goforge.split(':'); if (sl) { forgeTab = 'moi'; forgeSel.slot = sl; if (wt) forgeSel.wt = wt; } openForge(); }; });
@@ -1726,6 +1774,10 @@ function openShop() {
           `<div class="ipLine">${esc(itemLine(it))}</div>${ttLine(it)}<div class="ipPow">Lực chiến khi mặc <b class="${gn > 0.005 ? 'pos' : gn < -0.005 ? 'neg' : ''}">${pctS(gn)}</b></div>`,
           sold ? '<span class="meta">Đã bán hết</span>' : `<button class="btn primary sm" data-bg="${it.key}" ${P.money < it.price ? 'disabled' : ''}>Mua · ${fmtShort(it.price)}</button>`);
       }
+    } else if (shopSel && shopSel.startsWith('gem:')) {
+      const id = shopSel.slice(4), G = GEMS[id], k = `${id}:1`, c = g.gemPrice();
+      pop = popBox(gemIco(k), `<b>${esc(gemName(k))}</b>`, `Ngọc khảm cấp 1 · có ${(P.gems || {})[k] || 0}`, `<div class="ipLine">${esc(gemText(k))} khi khảm vào đồ. Ghép 3 viên cùng cấp thành cấp trên ở Lò rèn.</div>`,
+        `<button class="btn primary sm" data-buygem="${id}" ${P.money >= c ? '' : 'disabled'}>Mua · ${fmtShort(c)}</button>`);
     } else if (shopSel === 'sage') {
       pop = popBox(icoImg({ kind: 'bi_kip', q: 3 }), '<b>Ngọc giản ngộ đạo</b>', `Còn ${sg.left}/2 · đổi hàng mỗi 5 năm`, '<div class="ipLine">Đọc xong được 3 ngộ đạo điểm (◈) để nâng kỹ năng.</div>',
         `<button class="btn primary sm" data-sage="1" ${sg.left && P.money >= sg.price ? '' : 'disabled'}>Mua · ${fmtShort(sg.price)}</button>`);
@@ -1738,12 +1790,14 @@ function openShop() {
       ${msg ? `<p class="forgeMsg">${esc(msg)}</p>` : ''}
       <h3>Đan dược</h3><div class="grid5 shopGrid">${pills}</div>
       <h3>Pháp khí</h3><div class="grid5 shopGrid">${gear}</div>
+      <h3>Ngọc khảm</h3><div class="grid5 shopGrid">${GEM_IDS.map((id) => tile(`gem:${id}`, gemIco(`${id}:1`), GEMS[id].n, fmtShort(g.gemPrice()))).join('')}</div>
       <h3>Ngọc giản</h3><div class="grid5 shopGrid">${sage}</div>
       ${pop}`, () => {
       const B = $('sheetBody');
       B.querySelectorAll('[data-ps]').forEach((b) => { b.onclick = () => { shopSel = shopSel === b.dataset.ps ? null : b.dataset.ps; draw(); }; });
       B.querySelectorAll('[data-buy]').forEach((b) => { b.onclick = () => { const id = b.dataset.buy; const n0 = P.pills[id] || 0; g.buy(id); save(); draw((P.pills[id] || 0) > n0 ? `Đã mua 1 ${PILLS[id].n}.` : 'Không đủ linh thạch.'); }; });
       B.querySelectorAll('[data-bg]').forEach((b) => { b.onclick = () => { const m = g.buyGear(b.dataset.bg); shopSel = null; save(); draw(m || ''); }; });
+      B.querySelectorAll('[data-buygem]').forEach((b) => { b.onclick = () => { const m = g.buyGem(b.dataset.buygem); save(); draw(m || 'Không đủ linh thạch.'); }; });
       B.querySelectorAll('[data-sage]').forEach((b) => { b.onclick = () => { const m = g.buySage(); save(); draw(m || ''); }; });
       B.querySelectorAll('[data-use]').forEach((b) => { b.onclick = () => { const m = g.usePill(b.dataset.use); save(); draw(m || ''); }; });
       bindPop(() => { shopSel = null; }, draw);
