@@ -365,7 +365,7 @@ export function battle(A, B, r) {
         if (f.combo && foe.hp > 0 && r.chance(f.combo)) { hit(f, foe, { mult: 0.8 }, r, ev); ev.combo = true; }
         // bản mệnh phi kiếm chém theo
         if (f.fly && foe.hp > 0 && f.path === 'kiem' && !sk.beast) { hit(f, foe, { mult: f.fly, cls: 'kiem', wep: 'kiem' }, r, ev); ev.fly = true; }
-        if (landed && f.path === 'kiem' && sk.path === 'kiem' && !ultNow) gainCh(f, 2 + (ev.hits.some((h) => h.crit) ? 1 : 0));
+        if (landed && f.path === 'kiem' && sk.path === 'kiem' && !ultNow) gainCh(f, 3 + (ev.hits.some((h) => h.crit) ? 2 : 0)); // bản 5.6: trận dài nên Kiếm ý tích nhanh hơn
         if (f.path === 'tinh' && sk.path === 'tinh' && !ultNow) gainCh(f, 20);
         const mind = !foe.mindless && !foe.immuneMind;
         if (landed && foe.hp > 0 && !foe.immune && !foe.st.stunImm && f.stunHit && r.chance(f.stunHit)) { foe.st.stun = true; foe.st.stunName = 'choáng vì sấm'; ev.applied = 'choáng vì sấm'; }

@@ -820,3 +820,13 @@ Mô phỏng 42 kiếp mỗi đạo (lịch trình Leo tháp, có rèn đồ):
 - **Không mang đồ qua kiếp:** bỏ tàn niệm "Thần khí nhận chủ".
 - **Sửa lỗi:** bấm "Bỏ qua" giữa trận đôi khi báo lỗi JS (`applySnap` khi trận đã đóng).
 - **Mô phỏng (lịch trình, 36 kiếp mỗi đạo):** Thể 5,0 / Tinh 5,2 / Kiếm khoảng 4,3.
+
+## Bản 5.6
+
+- **Tỉ lệ thắng ở bảng chọn vùng** (`mapOdds`):
+  - Đánh thử 40 trận với quái thật của vùng (có cả tinh anh và quái mang thiên phú), trước đây chỉ đánh với quái điển hình.
+  - Nhớ kết quả theo lực chiến, thương thế, cảnh giới, thời đại.
+  - Với Kiếm Tu Hóa Thần đồ +6: Cổ Chiến Trường 43% → 30%; các vùng khác gần như không đổi.
+- **Kiếm Tu:** Kiếm ý +3 mỗi đòn trúng (+2 nếu bạo kích), trước +2/+1, để tung Tru Tiên Nhất Kiếm sớm hơn trong trận dài.
+- **Mô phỏng 72 kiếp mỗi đạo (lịch trình):** Kiếm 4,56 / Tinh 4,26 / Thể 3,85.
+- **Ghi chú:** Thể Tu chết dưới tay Túc địch khoảng một nửa số kiếp (máy luôn chọn đánh), cần cân lại.

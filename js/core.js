@@ -1959,10 +1959,21 @@ Kết thúc kiếp này sẽ được thêm Hồn lực.`;
     return m;
   }
   /** Tỉ lệ thắng một con yêu thú điển hình của vùng (dùng cho cảnh báo) */
+  /** Tỉ lệ thắng ở một vùng: đánh thử 40 trận với quái thật của vùng (cả tinh anh, quái mang thiên phú). Nhớ kết quả tới khi sức ngươi đổi. */
   mapOdds(id) {
     const map = MAP_MAP[id];
-    const m = this.typicalMonster(map);
-    return this.winOdds(() => this.monsterFighter(m));
+    if (!map) return 0;
+    const P = this.P;
+    const key = `${id}|${Math.round(this.combatValue())}|${Math.round(P.hp / 10)}|${P.realm}|${this.s.era ? this.s.era.id : ''}`;
+    this._mo = this._mo || new Map();
+    if (this._mo.has(key)) return this._mo.get(key);
+    const r = new Rng(9000 + map.d * 97);
+    let w = 0;
+    for (let i = 0; i < 40; i++) if (battle(this.playerFighter(), this.monsterFighter(this.mapMonster(map, r)), r).win) w++;
+    const p = w / 40;
+    if (this._mo.size > 60) this._mo.clear();
+    this._mo.set(key, p);
+    return p;
   }
   mapRisk(id) {
     const map = MAP_MAP[id];
