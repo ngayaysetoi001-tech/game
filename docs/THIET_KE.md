@@ -759,3 +759,17 @@ Mô phỏng 42 kiếp mỗi đạo (lịch trình Leo tháp, có rèn đồ):
   - Thần khí mang qua kiếp: về +0 và bị phong ấn (một nửa sức mạnh, không có thần thông) tới khi tu lại tới cảnh giới cũ (`sealTo`).
   - Tinh Thần Lực được bù nhẹ hệ số máu, thủ, công.
 - **Mô phỏng (lịch trình leo tháp, 36 kiếp mỗi đạo):** cảnh giới trung bình Kiếm 5,1 / Thể 5,5 / Tinh 4,2 (trước 6,6 / 8,3 / 6,9). Tầng tháp trung vị khoảng 300 (trước khoảng 700).
+
+## Bản 5.3: Thế giới đông người
+
+- **Số linh hồn:**
+  - Phàm giới 300 linh hồn (trước 40), Linh giới 225 (trước 30).
+  - Tông môn lúc tạo thế giới: 8 ở Phàm giới, 6 ở Linh giới.
+- **Thế giới cũ:** khi nạp, thêm linh hồn cho đủ số mới, đầu thai rải rác trong 60 năm tới. Thêm tông môn nếu thiếu.
+- **Tên:**
+  - Kho tên mở rộng lên 50 họ (có họ kép: Âu Dương, Mộ Dung, Thượng Quan…), 60 tên nam và 60 tên nữ.
+  - `genName` tránh trùng với người đang sống. Thế giới mới không có tên trùng.
+- **Hiệu năng** (đo bằng node):
+  - Tạo thế giới khoảng 0,4 giây, một năm trong game khoảng 2,3ms, bản lưu khoảng 220–300KB.
+  - Xem trước lựa chọn khoảng 25ms.
+  - Đã thử 1000 linh hồn: 8,6ms mỗi năm, bản lưu 0,7MB, quá nặng cho điện thoại nên không dùng.

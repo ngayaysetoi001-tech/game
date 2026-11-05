@@ -56,8 +56,10 @@ const BOT_RISK = { cuong: 0.35, tham: 0.45, muu: 0.6, nghia: 0.55, hien: 0.7, an
 const BOT_GQ_MUL = [1, 1.04, 1.08, 1.14, 1.3];
 
 export const SAVE_VERSION = 2;
-const LINH_SOULS = 30;
-export const SOUL_COUNT = 40;
+const LINH_SOULS = 225;
+export const SOUL_COUNT = 300;
+// số tông môn lúc tạo thế giới (Phàm giới, Linh giới)
+const SECT_START = [8, 6];
 const PREWARM_YEARS = 250;
 const MAX_SECTS = 7;
 const CLOSE_TAGS = ['huynh_de', 'dao_lu', 'su_phu', 'de_tu'];
@@ -103,6 +105,14 @@ export class Game {
     if (state.player && PATHS[state.player.path]) setWepBias(PATHS[state.player.path].wep);
     if (state.opt.autoSell === undefined) state.opt.autoSell = false;
     if (!state.opt.qRule) state.opt.qRule = { 0: 'salv', 1: 'salv', 2: 'keep', 3: 'keep' };
+    // bản 5.3: thế giới cũ chỉ có 40 linh hồn, thêm cho đủ (đầu thai rải rác trong 60 năm tới)
+    for (const [pl, want] of [[0, SOUL_COUNT], [1, LINH_SOULS]]) {
+      const have = state.souls.filter((b) => (b.plane || 0) === pl).length;
+      if (have >= want * 0.8 || !state.souls.some((b) => (b.plane || 0) === pl)) continue;
+      for (let i = have; i < want; i++) { const b = this.newSoul(pl); b.reborn = state.year + this.r.int(1, 60); }
+      const ns = state.sects.filter((x) => x.alive && (x.plane || 0) === pl).length;
+      for (let i = ns; i < SECT_START[pl]; i++) this.newSect(null, pl);
+    }
     if (!state.era || !ERA_MAP[state.era.id]) state.era = { id: 'thai_binh', from: state.year, until: state.year + 120 };
   }
 
@@ -126,7 +136,7 @@ export class Game {
   }
   /** Tạo dân bản địa và tông môn cho một vị diện, cho thế giới đó sống trước `years` năm */
   initPlane(plane, years = 0) {
-    for (let i = 0; i < 3; i++) this.newSect(null, plane);
+    for (let i = 0; i < SECT_START[1]; i++) this.newSect(null, plane);
     for (let i = 0; i < LINH_SOULS; i++) { const b = this.newSoul(plane); b.reborn = this.s.year - this.r.int(0, Math.max(1, years)); }
     if (!years) return;
     const y0 = this.s.year;
@@ -154,13 +164,13 @@ export class Game {
     st.souls.push({ id: -1, plane: 1, alive: false, ascended: true }); // giữ chỗ để constructor không tự tạo Linh giới lần nữa
     const g = new Game(st);
     st.souls = st.souls.filter((b) => b.id !== -1);
-    for (let i = 0; i < 4; i++) g.newSect(null);
+    for (let i = 0; i < SECT_START[0]; i++) g.newSect(null);
     for (let i = 0; i < SOUL_COUNT; i++) {
       const b = g.newSoul();
       b.reborn = g.r.int(0, 140);
     }
     // Linh giới: dân bản địa cũng sống song song từ đầu
-    for (let i = 0; i < 3; i++) g.newSect(null, 1);
+    for (let i = 0; i < SECT_START[1]; i++) g.newSect(null, 1);
     for (let i = 0; i < LINH_SOULS; i++) { const b = g.newSoul(1); b.reborn = g.r.int(0, 100); }
     for (let y = 0; y < PREWARM_YEARS; y++) g.worldYear();
     st.chron = st.chron.slice(-25);
@@ -202,7 +212,11 @@ export class Game {
     return this.s.souls.filter((b) => b.alive && b.sect === sid);
   }
   genName(gender) {
-    return this.r.pick(SURNAMES) + ' ' + this.r.pick(gender === 'nu' ? NAMES_F : NAMES_M);
+    // tránh trùng tên với người đang sống (thử vài lần)
+    const used = new Set(this.s.souls.filter((b) => b.alive).map((b) => b.name));
+    let n = '';
+    for (let i = 0; i < 8; i++) { n = this.r.pick(SURNAMES) + ' ' + this.r.pick(gender === 'nu' ? NAMES_F : NAMES_M); if (!used.has(n)) break; }
+    return n;
   }
   rollRoot() {
     const x = this.r.weighted(ROOTS, (o) => o.w);

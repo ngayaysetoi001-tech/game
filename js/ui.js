@@ -279,7 +279,7 @@ function renderBirth() {
   const leg = g.s.legacy ? LEGACIES.find((l) => l.id === g.s.legacy.id) : null;
   const first = g.s.lives.length === 0;
   $('scr-birth').innerHTML = `
-    ${first ? `<p class="intro">Thế giới này đã tồn tại ${fmt(g.s.year)} năm. Bốn mươi linh hồn đang tu luyện, kết thù, kết nghĩa, chết đi rồi đầu thai. Giờ đến lượt ngươi.</p>` : `<p class="intro">Linh hồn ngươi trôi dạt ${g.s.lives.length ? fmt(g.s.year - g.s.lives[g.s.lives.length - 1].year) : 0} năm rồi lại tìm về nhân gian. Kiếp thứ ${P.lifeNo}.</p>`}
+    ${first ? `<p class="intro">Thế giới này đã tồn tại ${fmt(g.s.year)} năm. Ba trăm linh hồn đang tu luyện, kết thù, kết nghĩa, chết đi rồi đầu thai. Giờ đến lượt ngươi.</p>` : `<p class="intro">Linh hồn ngươi trôi dạt ${g.s.lives.length ? fmt(g.s.year - g.s.lives[g.s.lives.length - 1].year) : 0} năm rồi lại tìm về nhân gian. Kiếp thứ ${P.lifeNo}.</p>`}
     <div class="card fate">
       <div class="head">
         <canvas class="portrait" id="birthPortrait" width="32" height="40"></canvas>
@@ -1766,7 +1766,7 @@ function openClose() {
 $('menuBtn').onclick = () => {
   openSheet(`<h2>Trăm Kiếp Phù Sinh</h2>
     <p class="intro">Mỗi năm chọn một việc. Kỳ ngộ sẽ tự tìm tới. Tu vi đầy thì đột phá. Chết rồi thì đầu thai, mang theo một tàn niệm.</p>
-    <p class="intro">Bốn mươi linh hồn khác cũng sống trong thế giới này. Họ tu luyện, kết thù, lập tông môn, chết đi rồi đầu thai như ngươi. Người từng thân với ngươi có thể nhận ra ngươi ở kiếp sau. Kẻ thù cũng vậy.</p>
+    <p class="intro">Ba trăm linh hồn khác cũng sống trong thế giới này. Họ tu luyện, kết thù, lập tông môn, chết đi rồi đầu thai như ngươi. Người từng thân với ngươi có thể nhận ra ngươi ở kiếp sau. Kẻ thù cũng vậy.</p>
     <p class="intro">Hữu tình: bạn bè hộ pháp khi ngươi đột phá. Vô tình: tu nhanh hơn, đột phá vững hơn, nhưng cô độc.</p>
     ${fsInfo()}
     <h3>Phiên bản</h3>
@@ -1931,7 +1931,7 @@ function decodeSave(text) {
 function openExport() {
   const code = exportCode();
   openSheet(`<h2>📤 Xuất bản lưu</h2>
-    <p class="intro">Đoạn mã dưới đây chứa cả thế giới: kiếp đang chơi, các kiếp trước, Hồn Lực, bốn mươi linh hồn. Chép lại rồi dán ở mục Nhập bản lưu của trang kia. Mã dài ${fmt(code.length)} ký tự.</p>
+    <p class="intro">Đoạn mã dưới đây chứa cả thế giới: kiếp đang chơi, các kiếp trước, Hồn Lực, ba trăm linh hồn. Chép lại rồi dán ở mục Nhập bản lưu của trang kia. Mã dài ${fmt(code.length)} ký tự.</p>
     <textarea class="saveBox" id="saveOut" readonly>${esc(code)}</textarea>
     <div class="row btnRow"><button class="btn primary" id="copySave">Chép mã</button>${document.querySelector('link[rel="manifest"]') ? '<button class="btn ghost" id="dlSave">Tải về thành tệp</button>' : ''}</div>
     <p class="intro" id="saveMsg"></p>`, () => {
